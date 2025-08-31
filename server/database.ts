@@ -74,7 +74,7 @@ export async function initializeDatabase(): Promise<void> {
     const tableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
-      WHERE table_schema = 'spmis2425ppm' 
+      WHERE table_schema = 'spmis2223yrk' 
       AND table_name = 'bmpa_members'
     `);
 
@@ -121,9 +121,96 @@ export async function initializeDatabase(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1
       `);
 
+      // Create admin users table
+      await executeQuery(`
+        CREATE TABLE admin_users (
+          admin_id int(10) NOT NULL AUTO_INCREMENT,
+          username varchar(50) NOT NULL UNIQUE,
+          password_hash varchar(255) NOT NULL,
+          full_name varchar(100) NOT NULL,
+          email varchar(100) NOT NULL,
+          role varchar(20) DEFAULT 'admin',
+          is_active int(1) DEFAULT '1',
+          last_login datetime NULL,
+          created_at datetime DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (admin_id),
+          UNIQUE KEY username (username),
+          UNIQUE KEY email (email)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
+      `);
+
+      // Create default admin user (username: admin, password: admin)
+      const bcrypt = await import('bcryptjs');
+      const defaultAdminPassword = await bcrypt.hash('admin', 12);
+      
+      await executeQuery(`
+        INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+        VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+      `, [defaultAdminPassword]);
+
       console.log('✅ Database tables created successfully');
+      console.log('🔑 Default admin user created (username: admin, password: admin)');
     } else {
       console.log('✅ Database tables already exist');
+      
+      // Check if admin table exists, if not create it
+      const adminTableExists = await executeQuerySingle(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'spmis2223yrk' 
+        AND table_name = 'admin_users'
+      `);
+
+      if (!adminTableExists || adminTableExists.count === 0) {
+        console.log('📋 Creating admin table...');
+        
+        // Create admin users table
+        await executeQuery(`
+          CREATE TABLE admin_users (
+            admin_id int(10) NOT NULL AUTO_INCREMENT,
+            username varchar(50) NOT NULL,
+            password_hash varchar(255) NOT NULL,
+            full_name varchar(100) NOT NULL,
+            email varchar(100) NOT NULL,
+            role varchar(20) DEFAULT 'admin',
+            is_active int(1) DEFAULT '1',
+            last_login datetime NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (admin_id),
+            UNIQUE KEY username (username),
+            UNIQUE KEY email (email)
+          ) ENGINE=InnoDB DEFAULT CHARSET=latin1
+        `);
+
+        // Create default admin user
+        const bcrypt = await import('bcryptjs');
+        const defaultAdminPassword = await bcrypt.hash('admin', 12);
+        
+        await executeQuery(`
+          INSERT INTO admin_users (username, password_hash, full_name, email, role)
+          VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+        `, [defaultAdminPassword]);
+
+        console.log('✅ Admin table created successfully');
+        console.log('🔑 Default admin user created (username: admin, password: admin)');
+      } else {
+        console.log('✅ Admin table already exists');
+        
+        // Ensure default admin user exists
+        try {
+          const bcrypt = await import('bcryptjs');
+          const defaultAdminPassword = await bcrypt.hash('admin', 12);
+          
+          await executeQuery(`
+            INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+            VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+          `, [defaultAdminPassword]);
+
+          console.log('✅ Default admin user verified');
+        } catch (error) {
+          console.log('ℹ️ Default admin user already exists');
+        }
+      }
     }
 
   } catch (error) {

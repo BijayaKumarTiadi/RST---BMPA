@@ -1,6 +1,7 @@
 import express from 'express';
 import { authService } from './authService';
 import { otpService } from './otpService';
+import { adminService } from './adminService';
 
 export const authRouter = express.Router();
 
@@ -224,6 +225,115 @@ authRouter.post('/logout', (req, res) => {
       });
     }
 
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  });
+});
+
+// Admin login
+authRouter.post('/admin-login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password are required'
+      });
+    }
+
+    const loginResult = await adminService.loginAdmin(username, password);
+    if (!loginResult.success) {
+      return res.status(400).json(loginResult);
+    }
+
+    // Store admin in session
+    req.session.adminId = loginResult.admin!.admin_id;
+    req.session.adminUsername = loginResult.admin!.username;
+    req.session.adminRole = loginResult.admin!.role;
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Login failed - session error'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Admin login successful',
+        admin: {
+          id: loginResult.admin!.admin_id,
+          username: loginResult.admin!.username,
+          name: loginResult.admin!.full_name,
+          email: loginResult.admin!.email,
+          role: loginResult.admin!.role
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Check admin session
+authRouter.get('/admin-user', async (req, res) => {
+  try {
+    if (!req.session.adminId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated'
+      });
+    }
+
+    const admin = await adminService.getAdminById(req.session.adminId);
+    if (!admin) {
+      // Clear invalid session
+      req.session.destroy(() => {});
+      return res.status(401).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      admin: {
+        id: admin.admin_id,
+        username: admin.username,
+        name: admin.full_name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Get admin user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Admin logout
+authRouter.post('/admin-logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session destroy error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Logout failed'
+      });
+    }
     res.json({
       success: true,
       message: 'Logged out successfully'

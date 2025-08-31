@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { authRouter } from "./authRoutes";
 import { otpService } from "./otpService";
+import { adminService } from "./adminService";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -9,6 +10,17 @@ const requireAuth = (req: any, res: any, next: any) => {
     return res.status(401).json({
       success: false,
       message: 'Authentication required'
+    });
+  }
+  next();
+};
+
+// Middleware to check if admin is authenticated
+const requireAdminAuth = (req: any, res: any, next: any) => {
+  if (!req.session.adminId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Admin authentication required'
     });
   }
   next();
@@ -22,6 +34,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.use('/api/auth', authRouter);
+
+  // Admin routes
+  app.get('/api/admin/dashboard-stats', requireAdminAuth, async (req, res) => {
+    try {
+      const stats = await adminService.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get('/api/admin/members', requireAdminAuth, async (req, res) => {
+    try {
+      const members = await adminService.getAllMembers();
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching members:", error);
+      res.status(500).json({ message: "Failed to fetch members" });
+    }
+  });
+
+  app.post('/api/admin/members/:memberId/approve', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.memberId);
+      const adminId = req.session.adminId;
+      const result = await adminService.approveMember(memberId, adminId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error approving member:", error);
+      res.status(500).json({ message: "Failed to approve member" });
+    }
+  });
+
+  app.post('/api/admin/members/:memberId/reject', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.memberId);
+      const adminId = req.session.adminId;
+      const result = await adminService.rejectMember(memberId, adminId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error rejecting member:", error);
+      res.status(500).json({ message: "Failed to reject member" });
+    }
+  });
 
   // Categories
   app.get('/api/categories', async (req, res) => {
