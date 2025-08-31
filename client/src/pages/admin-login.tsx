@@ -43,7 +43,10 @@ export default function AdminLogin() {
           title: "Login successful",
           description: `Welcome back, ${data.admin.name}!`,
         });
-        setLocation("/admin-dashboard");
+        // Small delay to let the toast show, then redirect
+        setTimeout(() => {
+          setLocation("/admin-dashboard");
+        }, 1000);
       } else {
         toast({
           title: "Login failed",
