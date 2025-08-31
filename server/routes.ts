@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { authRouter } from "./authRoutes";
 import { otpService } from "./otpService";
 import { adminService } from "./adminService";
+import { storage } from "./storage";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {

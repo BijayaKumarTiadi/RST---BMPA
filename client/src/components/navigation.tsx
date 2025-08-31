@@ -15,7 +15,7 @@ export default function Navigation() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-border sticky top-0 z-40">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-border dark:border-gray-700 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -105,7 +105,7 @@ export default function Navigation() {
                     {user?.last_login && (
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Clock className="h-3 w-3 mr-1" />
-                        Last: {new Date(user.last_login).toLocaleDateString()}
+                        Last: {new Date(user.last_login).toLocaleString()}
                       </div>
                     )}
                   </div>
@@ -136,7 +136,7 @@ export default function Navigation() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-white" data-testid="mobile-menu">
+        <div className="md:hidden border-t border-border dark:border-gray-700 bg-white dark:bg-gray-900" data-testid="mobile-menu">
           <div className="px-4 py-6 space-y-4">
             <Link 
               href="/" 
