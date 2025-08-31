@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import {
   DropdownMenu,
@@ -42,14 +42,9 @@ export default function Navigation() {
               Home
             </Link>
             {isAuthenticated && (
-              <>
-                <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
-                  Marketplace
-                </Link>
-                <Link href="/add-product" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-add-product">
-                  Add Product
-                </Link>
-              </>
+              <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
+                Marketplace
+              </Link>
             )}
             <Link href="/register" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-membership">
               Membership
@@ -128,6 +123,13 @@ export default function Navigation() {
                     <Link href="/profile" className="flex items-center space-x-2 w-full">
                       <User className="h-4 w-4" />
                       <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-product" className="flex items-center space-x-2 w-full">
+                      <Package className="h-4 w-4" />
+                      <span>Add Product</span>
                     </Link>
                   </DropdownMenuItem>
                   

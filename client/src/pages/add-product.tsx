@@ -94,7 +94,15 @@ export default function AddProduct() {
         description: "Product added successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      setLocation("/");
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/listings"] });
+      form.reset();
+      setUploadedImages([]);
+      
+      // Ask user if they want to add another product
+      const addAnother = window.confirm("Product added successfully! Would you like to add another product?");
+      if (!addAnother) {
+        setLocation("/marketplace");
+      }
     },
     onError: (error: any) => {
       toast({

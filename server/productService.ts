@@ -49,7 +49,7 @@ export class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       return await executeQuery(`
-        SELECT * FROM categories 
+        SELECT * FROM sl_categories 
         ORDER BY name ASC
       `);
     } catch (error) {
@@ -61,10 +61,10 @@ export class ProductService {
   // Create a new category
   async createCategory(name: string, description?: string, parentId?: string): Promise<{ success: boolean; message: string; categoryId?: string }> {
     try {
-      const categoryId = require('crypto').randomUUID();
+      const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const result = await executeQuery(`
-        INSERT INTO categories (id, name, description, parent_id)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO sl_categories (id, name, description, parent_id, created_at)
+        VALUES (?, ?, ?, ?, NOW())
       `, [categoryId, name, description || null, parentId || null]);
 
       return {
@@ -76,7 +76,7 @@ export class ProductService {
       console.error('Error creating category:', error);
       return {
         success: false,
-        message: 'Failed to create category'
+        message: `Failed to create category: ${error.message}`
       };
     }
   }
