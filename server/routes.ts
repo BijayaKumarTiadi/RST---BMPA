@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/stock/listings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/stock/listings', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const validatedData = insertStockListingSchema.parse(req.body);
@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/stock/listings/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/stock/listings/:id', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const listingId = req.params.id;
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/stock/listings/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/stock/listings/:id', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const listingId = req.params.id;
@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders
-  app.get('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const role = req.query.role as 'buyer' | 'seller' || 'buyer';
@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.post('/api/orders', requireAuth, async (req: any, res) => {
     try {
       const buyerId = (req.user as any)?.claims?.sub;
       const validatedData = insertOrderSchema.parse(req.body);
@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/orders/:id/status', isAuthenticated, async (req: any, res) => {
+  app.put('/api/orders/:id/status', requireAuth, async (req: any, res) => {
     try {
       const orderId = req.params.id;
       const { status, trackingNumber } = req.body;
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Messages
-  app.get('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.get('/api/messages', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const messages = await storage.getMessagesByUser(userId);
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', requireAuth, async (req: any, res) => {
     try {
       const senderId = req.user.claims.sub;
       const validatedData = insertMessageSchema.parse(req.body);
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics (Admin only)
-  app.get('/api/analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/analytics', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const user = await storage.getUser(userId);
@@ -306,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe subscription for membership
-  app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
+  app.post('/api/create-subscription', requireAuth, async (req: any, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       const user = await storage.getUser(userId);

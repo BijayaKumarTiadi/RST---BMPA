@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, User, Building, MapPin, Lock, Shield, Printer, CheckCircle } from "lucide-react";
+import { Loader2, Mail, User, Building, MapPin, Lock, Printer, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface RegistrationData {
@@ -192,300 +192,358 @@ export default function Register() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Join BMPA Stock Exchange
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Professional membership with comprehensive verification
-          </p>
-        </div>
-
-        {step === 'form' && (
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Registration Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="mr-2 h-5 w-5" />
-                  Member Registration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        {...form.register('firstName')}
-                        placeholder="John"
-                        data-testid="input-first-name"
-                      />
-                      {form.formState.errors.firstName && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.firstName.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        {...form.register('lastName')}
-                        placeholder="Doe"
-                        data-testid="input-last-name"
-                      />
-                      {form.formState.errors.lastName && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.lastName.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      {...form.register('email')}
-                      placeholder="john@company.com"
-                      data-testid="input-email"
-                    />
-                    {form.formState.errors.email && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="mobileNumber">Mobile Number</Label>
-                    <div className="flex">
-                      <Select defaultValue="+91">
-                        <SelectTrigger className="w-20">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="+91">+91</SelectItem>
-                          <SelectItem value="+1">+1</SelectItem>
-                          <SelectItem value="+44">+44</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        {...form.register('mobileNumber')}
-                        placeholder="9876543210"
-                        className="flex-1 ml-2"
-                        data-testid="input-mobile"
-                      />
-                    </div>
-                    {form.formState.errors.mobileNumber && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.mobileNumber.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      {...form.register('companyName')}
-                      placeholder="ABC Printing Co."
-                      data-testid="input-company"
-                    />
-                    {form.formState.errors.companyName && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.companyName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="designation">Designation</Label>
-                    <Input
-                      id="designation"
-                      {...form.register('designation')}
-                      placeholder="Managing Director"
-                      data-testid="input-designation"
-                    />
-                    {form.formState.errors.designation && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.designation.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="businessCategory">Business Category</Label>
-                    <Select onValueChange={(value) => form.setValue('businessCategory', value)}>
-                      <SelectTrigger data-testid="select-business-category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="commercial-printing">Commercial Printing</SelectItem>
-                        <SelectItem value="packaging">Packaging</SelectItem>
-                        <SelectItem value="digital-printing">Digital Printing</SelectItem>
-                        <SelectItem value="publishing">Publishing</SelectItem>
-                        <SelectItem value="supplies-equipment">Supplies & Equipment</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.businessCategory && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.businessCategory.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="gstNumber">GST Number</Label>
-                    <Input
-                      id="gstNumber"
-                      {...form.register('gstNumber')}
-                      placeholder="22AAAAA0000A1Z5"
-                      data-testid="input-gst"
-                    />
-                    {form.formState.errors.gstNumber && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.gstNumber.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="role">Role</Label>
-                    <Select onValueChange={(value: any) => form.setValue('role', value)}>
-                      <SelectTrigger data-testid="select-role">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="buyer">Buyer</SelectItem>
-                        <SelectItem value="seller">Seller</SelectItem>
-                        <SelectItem value="both">Both Buyer & Seller</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.role && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.role.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={registerMutation.isPending}
-                    data-testid="button-register"
-                  >
-                    {registerMutation.isPending ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                        Registering...
-                      </>
-                    ) : (
-                      <>
-                        <Phone className="mr-2 h-4 w-4" />
-                        Send OTP for Verification
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building className="mr-2 h-5 w-5" />
-                  Membership Benefits
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mt-1">
-                    <FileText className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Professional Network</h4>
-                    <p className="text-sm text-muted-foreground">Connect with 2,500+ verified printing professionals</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-chart-2 rounded-full flex items-center justify-center mt-1">
-                    <Mail className="h-3 w-3 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Secure Trading</h4>
-                    <p className="text-sm text-muted-foreground">Verified transactions with built-in dispute resolution</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-chart-1 rounded-full flex items-center justify-center mt-1">
-                    <Building className="h-3 w-3 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">BMPA Integration</h4>
-                    <p className="text-sm text-muted-foreground">Access to BMPA events, resources, and industry insights</p>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-2">Annual Membership Fee</h4>
-                  <div className="bg-secondary rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">BMPA Membership (Annual)</span>
-                      <span className="font-bold text-primary">₹15,000</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">GST (18%)</span>
-                      <span className="text-muted-foreground">₹2,700</span>
-                    </div>
-                    <hr className="my-2" />
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Total Amount</span>
-                      <span className="text-xl font-bold text-primary">₹17,700</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {step === 'otp' && formData && (
-          <OtpVerification
-            email={formData.email}
-            mobileNumber={formData.mobileNumber}
-            onVerified={handleOtpVerified}
-          />
-        )}
-
-        {step === 'payment' && (
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Complete Your Membership</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-6">
-                Your verification is complete. Please proceed to payment to activate your BMPA membership.
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-lg border-0 text-center">
+            <CardContent className="pt-8 pb-8">
+              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
+              
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Registration Complete!</h1>
+              <p className="text-gray-600 mb-6">
+                Your account has been created successfully. A welcome email has been sent to{' '}
+                <strong>{email}</strong>.
               </p>
-              <Button asChild size="lg" data-testid="button-proceed-payment">
-                <Link href="/subscribe">
-                  Proceed to Payment
-                </Link>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Next Steps:</strong><br />
+                  1. Complete your membership payment (₹17,700)<br />
+                  2. Wait for admin approval<br />
+                  3. Start exploring the marketplace
+                </p>
+              </div>
+
+              <Button 
+                onClick={() => window.location.href = '/'}
+                className="w-full"
+                data-testid="button-login"
+              >
+                Go to Login
               </Button>
             </CardContent>
           </Card>
-        )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Printer className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">BMPA Registration</h1>
+          <p className="text-gray-600 text-sm mt-1">Join the Printing Industry Marketplace</p>
+        </div>
+
+        <Card className="shadow-lg border-0">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="flex items-center justify-center text-xl">
+              <User className="mr-2 h-5 w-5 text-blue-600" />
+              Create Account
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              {step === 'email' && 'Enter your email to start registration'}
+              {step === 'otp' && 'Verify your email with the OTP code'}
+              {step === 'form' && 'Complete your member information'}
+            </p>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {step === 'email' && (
+              <form onSubmit={handleSendOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-email"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading}
+                  data-testid="button-send-otp"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending OTP...
+                    </>
+                  ) : (
+                    'Send Verification Code'
+                  )}
+                </Button>
+
+                <div className="text-center pt-4 border-t">
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-blue-600"
+                      onClick={() => window.location.href = '/'}
+                      data-testid="link-login"
+                    >
+                      Login here
+                    </Button>
+                  </p>
+                </div>
+              </form>
+            )}
+
+            {step === 'otp' && (
+              <form onSubmit={handleVerifyOTP} className="space-y-4">
+                {otpSent && (
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <Mail className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      Verification code sent to <strong>{email}</strong>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="otp">Verification Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="text-center text-lg tracking-widest font-mono"
+                    data-testid="input-otp"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading}
+                  data-testid="button-verify-otp"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Email'
+                  )}
+                </Button>
+
+                <div className="flex justify-between text-sm">
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    onClick={() => setStep('email')}
+                    data-testid="button-back"
+                  >
+                    ← Back
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    onClick={handleResendOTP}
+                    disabled={loading}
+                    data-testid="button-resend"
+                  >
+                    Resend OTP
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {step === 'form' && (
+              <form onSubmit={handleRegistration} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={formData.mname}
+                      onChange={(e) => setFormData({...formData, mname: e.target.value})}
+                      data-testid="input-name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Your phone number"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      data-testid="input-phone"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="company">Company Name *</Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="company"
+                      type="text"
+                      placeholder="Your company name"
+                      value={formData.company_name}
+                      onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                      className="pl-10"
+                      data-testid="input-company"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address1">Address Line 1 *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="address1"
+                      type="text"
+                      placeholder="Street address"
+                      value={formData.address1}
+                      onChange={(e) => setFormData({...formData, address1: e.target.value})}
+                      className="pl-10"
+                      data-testid="input-address1"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address2">Address Line 2</Label>
+                  <Input
+                    id="address2"
+                    type="text"
+                    placeholder="Apartment, suite, etc. (optional)"
+                    value={formData.address2}
+                    onChange={(e) => setFormData({...formData, address2: e.target.value})}
+                    data-testid="input-address2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      type="text"
+                      placeholder="City"
+                      value={formData.city}
+                      onChange={(e) => setFormData({...formData, city: e.target.value})}
+                      data-testid="input-city"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State *</Label>
+                    <Input
+                      id="state"
+                      type="text"
+                      placeholder="State"
+                      value={formData.state}
+                      onChange={(e) => setFormData({...formData, state: e.target.value})}
+                      data-testid="input-state"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Choose a strong password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="pl-10"
+                      data-testid="input-password"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-confirm-password"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading}
+                  data-testid="button-register"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Complete Registration'
+                  )}
+                </Button>
+
+                <div className="text-center">
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    onClick={() => setStep('otp')}
+                    data-testid="button-back-to-otp"
+                  >
+                    ← Back to OTP
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="text-center mt-6 text-xs text-gray-500">
+          <p>© 2025 BMPA Stock Exchange. All rights reserved.</p>
+          <p className="mt-1">Connecting the Printing Industry</p>
+        </div>
       </div>
     </div>
   );
