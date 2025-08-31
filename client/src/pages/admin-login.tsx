@@ -37,8 +37,11 @@ export default function AdminLogin() {
 
   const sendOtpMutation = useMutation({
     mutationFn: async (identifier: string) => {
+      console.log('Sending OTP for identifier:', identifier);
       const response = await apiRequest("POST", "/api/auth/admin-send-otp", { identifier });
-      return await response.json();
+      const data = await response.json();
+      console.log('OTP response:', data);
+      return data;
     },
     onSuccess: (data) => {
       if (data.success) {
@@ -98,8 +101,11 @@ export default function AdminLogin() {
   });
 
   const handleSendOtp = () => {
+    console.log('handleSendOtp called');
     const identifier = form.getValues("identifier");
+    console.log('identifier value:', identifier);
     if (!identifier) {
+      console.log('No identifier provided');
       toast({
         title: "Username required",
         description: "Please enter your username or email first",
@@ -107,6 +113,7 @@ export default function AdminLogin() {
       });
       return;
     }
+    console.log('About to call sendOtpMutation.mutate');
     sendOtpMutation.mutate(identifier);
   };
 
