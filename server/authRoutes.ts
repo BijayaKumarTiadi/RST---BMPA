@@ -232,19 +232,43 @@ authRouter.post('/logout', (req, res) => {
   });
 });
 
-// Admin login
-authRouter.post('/admin-login', async (req, res) => {
+// Send admin OTP
+authRouter.post('/admin-send-otp', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { identifier } = req.body;
 
-    if (!username || !password) {
+    if (!identifier) {
       return res.status(400).json({
         success: false,
-        message: 'Username and password are required'
+        message: 'Username or email is required'
       });
     }
 
-    const loginResult = await adminService.loginAdmin(username, password);
+    const otpResult = await adminService.sendAdminOTP(identifier);
+    res.json(otpResult);
+
+  } catch (error) {
+    console.error('Admin send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Admin login with OTP
+authRouter.post('/admin-login', async (req, res) => {
+  try {
+    const { identifier, otp } = req.body;
+
+    if (!identifier || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username/email and OTP are required'
+      });
+    }
+
+    const loginResult = await adminService.verifyAdminOTP(identifier, otp);
     if (!loginResult.success) {
       return res.status(400).json(loginResult);
     }

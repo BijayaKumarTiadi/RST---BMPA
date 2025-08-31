@@ -80,6 +80,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single member details
+  app.get('/api/admin/members/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.id);
+      const member = await adminService.getMemberById(memberId);
+      
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: 'Member not found'
+        });
+      }
+      
+      res.json(member);
+    } catch (error) {
+      console.error('Error getting member details:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
+
+  // Update member profile
+  app.put('/api/admin/members/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const result = await adminService.updateMemberProfile(memberId, updateData);
+      res.json(result);
+    } catch (error) {
+      console.error('Error updating member profile:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
+
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {

@@ -79,6 +79,102 @@ export class AdminService {
     }
   }
 
+  // Get admin by username/email for OTP login
+  async getAdminByUsernameOrEmail(identifier: string): Promise<AdminUser | null> {
+    try {
+      const admin = await executeQuerySingle<AdminUser>(
+        'SELECT * FROM admin_users WHERE (username = ? OR email = ?) AND is_active = 1',
+        [identifier, identifier]
+      );
+      return admin;
+    } catch (error) {
+      console.error('Error getting admin by username/email:', error);
+      return null;
+    }
+  }
+
+  // Send OTP to admin email
+  async sendAdminOTP(identifier: string): Promise<{ success: boolean; message: string; email?: string }> {
+    try {
+      const admin = await this.getAdminByUsernameOrEmail(identifier);
+      
+      if (!admin) {
+        return {
+          success: false,
+          message: 'Admin not found'
+        };
+      }
+
+      // Import OTPService here to avoid circular dependency
+      const { OTPService } = await import('./otpService');
+      const otpService = new OTPService();
+      
+      const result = await otpService.createAndSendOTP(admin.email, 'login');
+      
+      if (result.success) {
+        return {
+          success: true,
+          message: 'OTP sent to admin email',
+          email: admin.email
+        };
+      } else {
+        return result;
+      }
+    } catch (error) {
+      console.error('Error sending admin OTP:', error);
+      return {
+        success: false,
+        message: 'Failed to send OTP'
+      };
+    }
+  }
+
+  // Verify admin OTP and login
+  async verifyAdminOTP(identifier: string, otp: string): Promise<{ success: boolean; message: string; admin?: AdminUser }> {
+    try {
+      const admin = await this.getAdminByUsernameOrEmail(identifier);
+      
+      if (!admin) {
+        return {
+          success: false,
+          message: 'Admin not found'
+        };
+      }
+
+      // Import OTPService here to avoid circular dependency
+      const { OTPService } = await import('./otpService');
+      const otpService = new OTPService();
+      
+      const otpResult = await otpService.verifyOTP(admin.email, otp, 'login');
+      
+      if (!otpResult.success) {
+        return {
+          success: false,
+          message: otpResult.message
+        };
+      }
+
+      // Update last login
+      await executeQuery(
+        'UPDATE admin_users SET last_login = NOW() WHERE admin_id = ?',
+        [admin.admin_id]
+      );
+
+      return {
+        success: true,
+        message: 'Admin login successful',
+        admin
+      };
+
+    } catch (error) {
+      console.error('Error verifying admin OTP:', error);
+      return {
+        success: false,
+        message: 'OTP verification failed'
+      };
+    }
+  }
+
   // Get all members for admin dashboard
   async getAllMembers(): Promise<any[]> {
     try {
@@ -146,6 +242,79 @@ export class AdminService {
         success: false,
         message: 'Failed to reject member'
       };
+    }
+  }
+
+  // Update member profile
+  async updateMemberProfile(memberId: number, updateData: any): Promise<{ success: boolean; message: string }> {
+    try {
+      const allowedFields = [
+        'mname', 'email', 'phone', 'company_name', 'city', 'state',
+        'membership_paid', 'membership_valid_till', 'mstatus'
+      ];
+      
+      const updateFields = [];
+      const updateValues = [];
+      
+      for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+          updateFields.push(`${field} = ?`);
+          updateValues.push(updateData[field]);
+        }
+      }
+      
+      if (updateFields.length === 0) {
+        return {
+          success: false,
+          message: 'No valid fields to update'
+        };
+      }
+      
+      updateValues.push(memberId);
+      
+      await executeQuery(
+        `UPDATE bmpa_members SET ${updateFields.join(', ')} WHERE member_id = ?`,
+        updateValues
+      );
+
+      return {
+        success: true,
+        message: 'Member profile updated successfully'
+      };
+    } catch (error) {
+      console.error('Error updating member profile:', error);
+      return {
+        success: false,
+        message: 'Failed to update member profile'
+      };
+    }
+  }
+
+  // Get single member details
+  async getMemberById(memberId: number): Promise<any> {
+    try {
+      const member = await executeQuerySingle(`
+        SELECT 
+          member_id,
+          mname,
+          email,
+          phone,
+          company_name,
+          city,
+          state,
+          membership_paid,
+          membership_valid_till,
+          mstatus,
+          created_at,
+          approval_datetime
+        FROM bmpa_members 
+        WHERE member_id = ?
+      `, [memberId]);
+      
+      return member;
+    } catch (error) {
+      console.error('Error getting member by ID:', error);
+      return null;
     }
   }
 
