@@ -29,48 +29,48 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-foreground hover:text-primary transition-colors" data-testid="nav-home">
+            <Link href="/" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-home">
               Home
             </Link>
             {isAuthenticated && (
-              <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors" data-testid="nav-marketplace">
+              <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
                 Marketplace
               </Link>
             )}
-            {!isAuthenticated && (
-              <Link href="/register" className="text-foreground hover:text-primary transition-colors" data-testid="nav-membership">
-                Membership
-              </Link>
-            )}
-            <a href="#about" className="text-foreground hover:text-primary transition-colors" data-testid="nav-about">
+            <Link href="/register" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-membership">
+              Membership
+            </Link>
+            <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-about">
               About Us
             </a>
           </nav>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {!isAuthenticated ? (
               <>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => window.location.href = '/api/login'}
                   data-testid="button-login"
+                  className="font-medium"
                 >
                   Login
                 </Button>
-                <Button asChild data-testid="button-register">
+                <Button asChild data-testid="button-register" className="bg-primary hover:bg-primary/90">
                   <Link href="/register">Register</Link>
                 </Button>
               </>
             ) : (
               <>
-                <span className="text-sm text-muted-foreground hidden md:block" data-testid="user-greeting">
-                  Welcome, {user?.firstName}
+                <span className="text-sm text-muted-foreground hidden md:block px-3 py-1 bg-muted rounded-full" data-testid="user-greeting">
+                  Welcome, {user?.firstName || user?.name}
                 </span>
                 <Button 
                   variant="outline" 
                   onClick={() => window.location.href = '/api/logout'}
                   data-testid="button-logout"
+                  className="font-medium"
                 >
                   Logout
                 </Button>
@@ -112,16 +112,14 @@ export default function Navigation() {
                 Marketplace
               </Link>
             )}
-            {!isAuthenticated && (
-              <Link 
-                href="/register" 
-                className="block text-foreground hover:text-primary py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-                data-testid="mobile-nav-membership"
-              >
-                Membership
-              </Link>
-            )}
+            <Link 
+              href="/register" 
+              className="block text-foreground hover:text-primary py-2 font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+              data-testid="mobile-nav-membership"
+            >
+              Membership
+            </Link>
             <a 
               href="#about" 
               className="block text-foreground hover:text-primary py-2"

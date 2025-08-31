@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/queryClient";
-import Navigation from "@/components/navigation";
+import AdminNavigation from "@/components/admin-navigation";
 import { 
   Users, 
   UserCheck, 
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
   if (isAdminLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
+        <AdminNavigation />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground mt-4">Loading admin dashboard...</p>
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
+      <AdminNavigation />
       
       {/* Header */}
       <div className="border-b bg-card">
