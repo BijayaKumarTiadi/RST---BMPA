@@ -757,6 +757,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Temporary endpoint to fix database schema
+  app.post('/api/fix-database', async (req, res) => {
+    try {
+      console.log('🔧 Fixing database schema...');
+      
+      // Drop the existing foreign key constraint
+      try {
+        await executeQuery('ALTER TABLE products DROP FOREIGN KEY products_ibfk_2');
+        console.log('✅ Dropped old foreign key constraint');
+      } catch (error) {
+        console.log('ℹ️ Old constraint might not exist');
+      }
+      
+      // Add the correct foreign key constraint
+      await executeQuery('ALTER TABLE products ADD CONSTRAINT products_ibfk_2 FOREIGN KEY (category_id) REFERENCES bmpa_categories(category_id) ON DELETE RESTRICT');
+      console.log('✅ Added new foreign key constraint');
+      
+      // Insert demo categories if they don't exist
+      const demoCategories = [
+        ['Commercial Printing', 'High-volume commercial printing equipment and supplies'],
+        ['Digital Printing', 'Digital printing machines and consumables'],
+        ['Offset Printing', 'Offset printing presses and materials'],
+        ['Screen Printing', 'Screen printing equipment and inks'],
+        ['Paper & Substrates', 'Various papers and printing substrates'],
+        ['Inks & Chemicals', 'Printing inks, chemicals and consumables']
+      ];
+
+      for (const [name, description] of demoCategories) {
+        try {
+          await executeQuery('INSERT IGNORE INTO bmpa_categories (category_name, description, is_active) VALUES (?, ?, 1)', [name, description]);
+        } catch (error) {
+          console.log('Category might already exist:', name);
+        }
+      }
+      console.log('✅ Demo categories added');
+      
+      res.json({ success: true, message: 'Database schema fixed successfully' });
+    } catch (error) {
+      console.error('Error fixing database:', error);
+      res.status(500).json({ success: false, message: 'Failed to fix database schema' });
+    }
+  });
+
+  // Temporary endpoint to add demo products
+  app.post('/api/add-demo-products', async (req, res) => {
+    try {
+      console.log('📦 Adding demo products...');
+      
+      // Get categories first
+      const categories = await executeQuery('SELECT * FROM bmpa_categories LIMIT 6');
+      console.log('Available categories:', categories.map((c: any) => c.category_name));
+      
+      if (categories.length === 0) {
+        return res.status(400).json({ success: false, message: 'No categories found' });
+      }
+      
+      // Add demo products
+      const demoProducts = [
+        {
+          id: 'prod-hp-001',
+          title: 'HP Indigo 12000 Digital Press',
+          description: 'State-of-the-art digital printing press for high-quality commercial printing',
+          price: 2500000,
+          quantity: 1,
+          unit: 'piece',
+          location: 'Mumbai, Maharashtra',
+          seller_id: 2,
+          category_id: categories[1].category_id, // Digital Printing
+          specifications: JSON.stringify({brand: 'HP', model: 'Indigo 12000', printWidth: '750mm'})
+        },
+        {
+          id: 'prod-paper-001',
+          title: 'Premium Coated Paper 300gsm',
+          description: 'High-quality coated paper ideal for brochures and catalogs',
+          price: 85,
+          quantity: 500,
+          unit: 'kg',
+          location: 'Delhi',
+          seller_id: 2,
+          category_id: categories[4].category_id, // Paper & Substrates
+          specifications: JSON.stringify({weight: '300gsm', finish: 'Gloss Coated'})
+        },
+        {
+          id: 'prod-ink-001',
+          title: 'Offset Printing Ink - CMYK Set',
+          description: 'Professional grade offset printing inks for commercial printing',
+          price: 12500,
+          quantity: 20,
+          unit: 'set',
+          location: 'Bangalore, Karnataka',
+          seller_id: 2,
+          category_id: categories[5].category_id, // Inks & Chemicals
+          specifications: JSON.stringify({type: 'Sheet-fed Offset', colors: 'CMYK'})
+        }
+      ];
+
+      for (const product of demoProducts) {
+        try {
+          await executeQuery(`
+            INSERT IGNORE INTO products 
+            (id, title, description, price, quantity, unit, location, seller_id, category_id, specifications, status, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
+          `, [
+            product.id, product.title, product.description, product.price, 
+            product.quantity, product.unit, product.location, product.seller_id, 
+            product.category_id, product.specifications
+          ]);
+          console.log('✅ Added product:', product.title);
+        } catch (error) {
+          console.log('Product might already exist:', product.title);
+        }
+      }
+      
+      res.json({ success: true, message: 'Demo products added successfully' });
+    } catch (error) {
+      console.error('Error adding demo products:', error);
+      res.status(500).json({ success: false, message: 'Failed to add demo products' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
