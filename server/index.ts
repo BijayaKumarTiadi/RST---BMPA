@@ -10,30 +10,44 @@ const app = express();
 // Initialize database
 initializeDatabase().catch(console.error);
 
-// Setup session store
-const MySQLStoreSession = MySQLStore(session);
-const sessionStore = new MySQLStoreSession({
-  host: '103.155.204.186',
-  port: 3306,
-  user: 'manish',
-  password: 'manish',
-  database: 'spmis2425ppm',
-  createDatabaseTable: true,
-  schema: {
-    tableName: 'bmpa_sessions',
-    columnNames: {
-      session_id: 'session_id',
-      expires: 'expires_at',
-      data: 'session_data'
-    }
-  }
-});
+// Setup session store with in-memory fallback for admin
+import MemoryStore from 'memorystore';
+const MemStore = MemoryStore(session);
 
-// Session configuration
+let sessionStore;
+try {
+  // Try to use MySQL store for regular user sessions
+  const MySQLStoreSession = MySQLStore(session);
+  sessionStore = new MySQLStoreSession({
+    host: '103.155.204.186',
+    port: 3306,
+    user: 'manish',
+    password: 'manish',
+    database: 'spmis2425ppm',
+    createDatabaseTable: true,
+    schema: {
+      tableName: 'bmpa_sessions',
+      columnNames: {
+        session_id: 'session_id',
+        expires: 'expires_at',
+        data: 'session_data'
+      }
+    }
+  });
+} catch (error) {
+  console.log('⚠️ MySQL session store failed, using memory store');
+  sessionStore = new MemStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  });
+}
+
+// Session configuration with fallback to memory store
 app.use(session({
-  key: 'bmpa_session',
-  secret: 'bmpa-stock-exchange-secret-key-2025',
-  store: sessionStore,
+  key: 'stock_laabh_session',
+  secret: 'stock-laabh-secret-key-2025',
+  store: new MemStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  }),
   resave: false,
   saveUninitialized: false,
   cookie: {
