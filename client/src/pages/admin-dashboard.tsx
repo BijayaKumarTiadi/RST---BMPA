@@ -166,20 +166,12 @@ export default function AdminDashboard() {
       return await apiRequest("POST", `/api/admin/members/${memberId}/approve`, {});
     },
     onSuccess: (data) => {
-      if (data.success) {
-        toast({
-          title: "Member approved",
-          description: "Member has been successfully approved.",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Member approved",
+        description: "Member has been successfully approved.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -196,20 +188,12 @@ export default function AdminDashboard() {
       return await apiRequest("POST", `/api/admin/members/${memberId}/reject`, {});
     },
     onSuccess: (data) => {
-      if (data.success) {
-        toast({
-          title: "Member rejected",
-          description: "Member has been successfully rejected.",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Member rejected",
+        description: "Member has been successfully rejected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -231,8 +215,15 @@ export default function AdminDashboard() {
         description: "Member profile has been successfully updated.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
-      setEditingMember(null);
-      setEditFormData({});
+      // Refresh the form with updated data
+      if (data && editingMember) {
+        const updatedMember = { ...editingMember, ...editFormData };
+        setEditingMember(updatedMember);
+        setEditFormData(updatedMember);
+      } else {
+        setEditingMember(null);
+        setEditFormData({});
+      }
     },
     onError: (error: any) => {
       toast({
