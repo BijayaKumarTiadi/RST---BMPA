@@ -251,13 +251,15 @@ export async function initializeDatabase(): Promise<void> {
       console.log('📋 Creating bmpa_categories table...');
       await executeQuery(`
         CREATE TABLE bmpa_categories (
-          id varchar(36) PRIMARY KEY,
-          name varchar(100) NOT NULL,
+          category_id int(10) NOT NULL AUTO_INCREMENT,
+          category_name varchar(100) NOT NULL,
+          parent_id int(10) DEFAULT 0,
           description text,
-          parent_id varchar(36),
+          is_active int(1) DEFAULT 1,
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (parent_id) REFERENCES bmpa_categories(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+          PRIMARY KEY (category_id),
+          KEY parent_id (parent_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
       `);
       console.log('✅ BMPA Categories table created successfully');
     } else {
@@ -294,7 +296,7 @@ export async function initializeDatabase(): Promise<void> {
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
-          FOREIGN KEY (category_id) REFERENCES bmpa_categories(id) ON DELETE RESTRICT,
+          FOREIGN KEY (category_id) REFERENCES bmpa_categories(category_id) ON DELETE RESTRICT,
           INDEX idx_seller_id (seller_id),
           INDEX idx_category_id (category_id),
           INDEX idx_status (status),
@@ -315,9 +317,9 @@ export async function initializeDatabase(): Promise<void> {
       for (const category of defaultCategories) {
         try {
           await executeQuery(`
-            INSERT IGNORE INTO bmpa_categories (id, name, description)
-            VALUES (?, ?, ?)
-          `, [category.id, category.name, category.description]);
+            INSERT IGNORE INTO bmpa_categories (category_name, description)
+            VALUES (?, ?)
+          `, [category.name, category.description]);
         } catch (catError) {
           console.log(`Category ${category.name} might already exist`);
         }

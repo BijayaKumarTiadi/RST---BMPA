@@ -4,7 +4,7 @@ import crypto from 'crypto';
 export interface Product {
   id: string;
   seller_id: number;
-  category_id: string;
+  category_id: number;
   title: string;
   description?: string;
   price: number;
@@ -22,16 +22,17 @@ export interface Product {
 }
 
 export interface Category {
-  id: string;
-  name: string;
+  category_id: number;
+  category_name: string;
   description?: string;
-  parent_id?: string;
+  parent_id?: number;
+  is_active?: number;
   created_at: Date;
 }
 
 export interface CreateProductData {
   seller_id: number;
-  category_id: string;
+  category_id: number;
   title: string;
   description?: string;
   price: number;
@@ -51,7 +52,7 @@ export class ProductService {
     try {
       return await executeQuery(`
         SELECT * FROM bmpa_categories 
-        ORDER BY name ASC
+        ORDER BY category_name ASC
       `);
     } catch (error) {
       console.error('Error getting categories:', error);
@@ -60,18 +61,20 @@ export class ProductService {
   }
 
   // Create a new category
-  async createCategory(name: string, description?: string, parentId?: string): Promise<{ success: boolean; message: string; categoryId?: string }> {
+  async createCategory(name: string, description?: string, parentId?: number): Promise<{ success: boolean; message: string; categoryId?: number }> {
     try {
-      const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const result = await executeQuery(`
-        INSERT INTO bmpa_categories (id, name, description, parent_id, created_at)
-        VALUES (?, ?, ?, ?, NOW())
-      `, [categoryId, name, description || null, parentId || null]);
+        INSERT INTO bmpa_categories (category_name, description, parent_id, is_active, created_at)
+        VALUES (?, ?, ?, 1, NOW())
+      `, [name, description || null, parentId || 0]);
+
+      // Get the inserted ID
+      const insertedId = (result as any).insertId;
 
       return {
         success: true,
         message: 'Category created successfully',
-        categoryId
+        categoryId: insertedId
       };
     } catch (error) {
       console.error('Error creating category:', error);
@@ -84,7 +87,7 @@ export class ProductService {
 
   // Get all products with optional filtering
   async getProducts(filters?: {
-    category_id?: string;
+    category_id?: number;
     seller_id?: number;
     status?: string;
     search?: string;
