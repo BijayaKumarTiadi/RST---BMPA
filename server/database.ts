@@ -3,15 +3,15 @@ import mysql from 'mysql2/promise';
 // Database configuration
 const dbConfig = {
   host: '103.155.204.186',
-  port: 3306,
+  port: 23306,
   user: 'manish',
   password: 'manish',
-  database: 'spmis2425ppm',
+  database: 'spmis2223yrk',
   charset: 'utf8mb4',
   timezone: '+00:00',
+  connectTimeout: 60000,
   acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  timeout: 60000
 };
 
 // Create connection pool for better performance
@@ -19,9 +19,7 @@ export const pool = mysql.createPool({
   ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000
+  queueLimit: 0
 });
 
 // Test database connection
