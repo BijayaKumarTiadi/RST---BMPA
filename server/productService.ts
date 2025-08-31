@@ -1,4 +1,5 @@
 import { executeQuery, executeQuerySingle } from './database';
+import crypto from 'crypto';
 
 export interface Product {
   id: string;
@@ -49,7 +50,7 @@ export class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       return await executeQuery(`
-        SELECT * FROM categories 
+        SELECT * FROM bmpa_categories 
         ORDER BY name ASC
       `);
     } catch (error) {
@@ -63,7 +64,7 @@ export class ProductService {
     try {
       const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const result = await executeQuery(`
-        INSERT INTO categories (id, name, description, parent_id, created_at)
+        INSERT INTO bmpa_categories (id, name, description, parent_id, created_at)
         VALUES (?, ?, ?, ?, NOW())
       `, [categoryId, name, description || null, parentId || null]);
 
@@ -211,7 +212,7 @@ export class ProductService {
         expiry_date
       } = productData;
 
-      const productId = require('crypto').randomUUID();
+      const productId = crypto.randomUUID();
       const result = await executeQuery(`
         INSERT INTO products (
           id, seller_id, category_id, title, description, price, quantity, unit,

@@ -742,6 +742,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route to serve uploaded images from object storage
+  app.get('/objects/:objectPath(*)', async (req, res) => {
+    try {
+      const { ObjectStorageService } = await import('./objectStorage');
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      
+      // Stream the file to the response
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      res.status(404).json({ message: "Image not found" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

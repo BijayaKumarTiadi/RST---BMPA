@@ -239,27 +239,29 @@ export async function initializeDatabase(): Promise<void> {
       }
     }
 
-    // Check if categories table exists, if not create it
+    // Check if bmpa_categories table exists, if not create it
     const categoriesTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = 'spmis2223yrk' 
-      AND table_name = 'categories'
+      AND table_name = 'bmpa_categories'
     `);
 
     if (!categoriesTableExists || categoriesTableExists.count === 0) {
-      console.log('📋 Creating categories table...');
+      console.log('📋 Creating bmpa_categories table...');
       await executeQuery(`
-        CREATE TABLE categories (
+        CREATE TABLE bmpa_categories (
           id varchar(36) PRIMARY KEY,
           name varchar(100) NOT NULL,
           description text,
           parent_id varchar(36),
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
+          FOREIGN KEY (parent_id) REFERENCES bmpa_categories(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Categories table created successfully');
+      console.log('✅ BMPA Categories table created successfully');
+    } else {
+      console.log('✅ BMPA Categories table already exists');
     }
 
     // Check if products table exists, if not create it
@@ -292,7 +294,7 @@ export async function initializeDatabase(): Promise<void> {
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
-          FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+          FOREIGN KEY (category_id) REFERENCES bmpa_categories(id) ON DELETE RESTRICT,
           INDEX idx_seller_id (seller_id),
           INDEX idx_category_id (category_id),
           INDEX idx_status (status),
@@ -313,7 +315,7 @@ export async function initializeDatabase(): Promise<void> {
       for (const category of defaultCategories) {
         try {
           await executeQuery(`
-            INSERT IGNORE INTO categories (id, name, description)
+            INSERT IGNORE INTO bmpa_categories (id, name, description)
             VALUES (?, ?, ?)
           `, [category.id, category.name, category.description]);
         } catch (catError) {
