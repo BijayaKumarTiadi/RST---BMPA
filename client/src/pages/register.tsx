@@ -172,7 +172,7 @@ export default function Register() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-yellow-800 text-sm">
                   <strong>Next Steps:</strong><br />
-                  1. Pay membership fee (₹17,700)<br />
+                  1. Pay membership fee (₹2,499)<br />
                   2. Wait for admin approval<br />
                   3. Start trading!
                 </p>

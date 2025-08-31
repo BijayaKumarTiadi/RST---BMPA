@@ -253,7 +253,7 @@ export default function ApiDocs() {
                   <div className="bg-muted p-3 rounded-md font-mono text-sm">
                     POST /api/get-or-create-subscription
                   </div>
-                  <p className="text-muted-foreground text-sm mt-2">For annual membership (₹17,700)</p>
+                  <p className="text-muted-foreground text-sm mt-2">For annual membership (₹2,499)</p>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2">Stripe Webhook</h3>

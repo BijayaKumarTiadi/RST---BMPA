@@ -16,7 +16,7 @@ import { Shield, Lock, Printer, LogIn } from "lucide-react";
 
 const adminLoginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
-  otp: z.string().min(6, "OTP must be 6 digits").max(6, "OTP must be 6 digits")
+  otp: z.string().optional()
 });
 
 type AdminLoginData = z.infer<typeof adminLoginSchema>;
@@ -37,10 +37,8 @@ export default function AdminLogin() {
 
   const sendOtpMutation = useMutation({
     mutationFn: async (identifier: string) => {
-      console.log('Sending OTP for identifier:', identifier);
       const response = await apiRequest("POST", "/api/auth/admin-send-otp", { identifier });
       const data = await response.json();
-      console.log('OTP response:', data);
       return data;
     },
     onSuccess: (data) => {
@@ -101,11 +99,8 @@ export default function AdminLogin() {
   });
 
   const handleSendOtp = () => {
-    console.log('handleSendOtp called');
     const identifier = form.getValues("identifier");
-    console.log('identifier value:', identifier);
     if (!identifier) {
-      console.log('No identifier provided');
       toast({
         title: "Username required",
         description: "Please enter your username or email first",
@@ -113,15 +108,23 @@ export default function AdminLogin() {
       });
       return;
     }
-    console.log('About to call sendOtpMutation.mutate');
     sendOtpMutation.mutate(identifier);
   };
 
   const onSubmit = (data: AdminLoginData) => {
     if (!otpSent) {
-      handleSendOtp();
+      return; // Do nothing, separate button handles OTP sending
+    }
+    
+    if (!data.otp || data.otp.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter a valid 6-digit OTP",
+        variant: "destructive",
+      });
       return;
     }
+    
     loginMutation.mutate(data);
   };
 
@@ -204,33 +207,46 @@ export default function AdminLogin() {
                   </div>
                 )}
 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={loginMutation.isPending || sendOtpMutation.isPending}
-                  data-testid="button-login"
-                >
-                  {(loginMutation.isPending || sendOtpMutation.isPending) ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                      {sendOtpMutation.isPending ? "Sending OTP..." : "Logging in..."}
-                    </>
-                  ) : (
-                    <>
-                      {otpSent ? (
-                        <>
-                          <LogIn className="mr-2 h-4 w-4" />
-                          Verify & Login
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="mr-2 h-4 w-4" />
-                          Send OTP
-                        </>
-                      )}
-                    </>
-                  )}
-                </Button>
+                {!otpSent ? (
+                  <Button 
+                    type="button"
+                    onClick={handleSendOtp}
+                    className="w-full"
+                    disabled={sendOtpMutation.isPending}
+                    data-testid="button-send-otp"
+                  >
+                    {sendOtpMutation.isPending ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                        Sending OTP...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="mr-2 h-4 w-4" />
+                        Send OTP
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loginMutation.isPending}
+                    data-testid="button-login"
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Verify & Login
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 {otpSent && (
                   <Button 
@@ -252,7 +268,6 @@ export default function AdminLogin() {
 
             <div className="mt-6 pt-4 border-t text-center text-sm text-muted-foreground">
               <p>Enter your username or email to receive OTP</p>
-              <p className="mt-1">Default admin username: admin</p>
             </div>
           </CardContent>
         </Card>

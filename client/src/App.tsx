@@ -15,6 +15,7 @@ import SellerDashboard from "@/pages/seller-dashboard";
 import Marketplace from "@/pages/marketplace";
 import ApiDocs from "@/pages/api-docs";
 import Subscribe from "@/pages/subscribe";
+import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,9 @@ function Router() {
       
       {/* Subscription page */}
       <Route path="/subscribe" component={Subscribe} />
+      
+      {/* About page */}
+      <Route path="/about" component={About} />
       
       {/* Protected routes */}
       <Route path="/home" component={Home} />

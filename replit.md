@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a comprehensive B2B ecommerce marketplace for the trading industry branded as "Stock Laabh" with MySQL database backend. The platform provides a professional trading environment for business members to buy and sell stock, materials, and equipment. The system features user registration with email OTP verification, annual membership fees (₹17,700), admin approval workflow, and role-based access control.
+This is a comprehensive B2B ecommerce marketplace for the trading industry branded as "Stock Laabh" with MySQL database backend. The platform provides a professional trading environment for business members to buy and sell stock, materials, and equipment. The system features user registration with email OTP verification, annual membership fees (₹2,499), admin approval workflow, and role-based access control.
 
 ## User Preferences
 

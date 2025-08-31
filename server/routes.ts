@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             product: {
               name: 'Stock Laabh Annual Membership',
             },
-            unit_amount: 1770000, // ₹17,700 in paise
+            unit_amount: 249900, // ₹2,499 in paise
             recurring: {
               interval: 'year',
             },

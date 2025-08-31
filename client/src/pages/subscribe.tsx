@@ -82,7 +82,7 @@ const CheckoutForm = () => {
             ) : (
               <>
                 <Shield className="mr-2 h-4 w-4" />
-                Pay ₹17,700 Securely
+                Pay ₹2,499 Securely
               </>
             )}
           </Button>
@@ -185,17 +185,17 @@ export default function Subscribe() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">BMPA Annual Membership</span>
-                    <span className="font-medium">₹15,000</span>
+                    <span className="text-sm">Stock Laabh Annual Membership</span>
+                    <span className="font-medium">₹2,118</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">GST (18%)</span>
-                    <span className="text-muted-foreground">₹2,700</span>
+                    <span className="text-muted-foreground">₹381</span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Total Amount</span>
-                    <span className="text-xl font-bold text-primary">₹17,700</span>
+                    <span className="text-xl font-bold text-primary">₹2,499</span>
                   </div>
                 </div>
               </CardContent>

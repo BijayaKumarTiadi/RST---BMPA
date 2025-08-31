@@ -143,7 +143,7 @@ export function generateWelcomeEmail(memberName: string): string {
           <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px;">Next Steps:</h3>
             <ul style="color: #047857; margin: 0; padding-left: 20px;">
-              <li style="margin-bottom: 8px;">Complete your membership payment (₹17,700)</li>
+              <li style="margin-bottom: 8px;">Complete your membership payment (₹2,499)</li>
               <li style="margin-bottom: 8px;">Wait for admin approval</li>
               <li style="margin-bottom: 8px;">Start exploring the marketplace</li>
               <li>Connect with printing industry professionals</li>
