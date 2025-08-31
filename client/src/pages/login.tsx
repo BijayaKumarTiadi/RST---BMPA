@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock, Shield, Printer } from "lucide-react";
+import { Loader2, Mail, Lock, Shield, Printer, Clock, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Login() {
@@ -15,6 +15,7 @@ export default function Login() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [showPendingApproval, setShowPendingApproval] = useState(false);
   const { toast } = useToast();
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -86,11 +87,22 @@ export default function Login() {
         // Reload to refresh the app state
         window.location.href = '/home';
       } else {
-        toast({
-          title: "Login Failed",
-          description: data.message,
-          variant: "destructive",
-        });
+        // Check if it's a pending approval message
+        if (data.message && data.message.toLowerCase().includes('pending') && data.message.toLowerCase().includes('approval')) {
+          setShowPendingApproval(true);
+          toast({
+            title: "Account Under Review",
+            description: "Your membership is currently being reviewed by our admin team.",
+            variant: "default",
+            duration: 6000,
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: data.message,
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -210,11 +222,29 @@ export default function Login() {
               </form>
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
-                {otpSent && (
+                {otpSent && !showPendingApproval && (
                   <Alert className="border-blue-200 bg-blue-50">
                     <Mail className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-blue-800">
                       Verification code sent to <strong>{email}</strong>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {showPendingApproval && (
+                  <Alert className="border-yellow-200 bg-yellow-50">
+                    <Clock className="h-4 w-4 text-yellow-600" />
+                    <AlertDescription className="text-yellow-800">
+                      <div className="space-y-2">
+                        <div className="font-medium">Account Under Review</div>
+                        <div className="text-sm">
+                          Your BMPA membership application is currently being reviewed by our admin team. 
+                          Once approved, you'll receive an email notification and can access the marketplace.
+                        </div>
+                        <div className="text-xs text-yellow-700 mt-2">
+                          Review process typically takes 1-2 business days.
+                        </div>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -251,40 +281,66 @@ export default function Login() {
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                  data-testid="button-verify-login"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify & Login'
-                  )}
-                </Button>
+                {!showPendingApproval && (
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loading}
+                    data-testid="button-verify-login"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      'Verify & Login'
+                    )}
+                  </Button>
+                )}
+
+                {showPendingApproval && (
+                  <div className="space-y-3">
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        setShowPendingApproval(false);
+                        setStep('email');
+                        setOtp('');
+                        setPassword('');
+                      }}
+                      className="w-full"
+                      variant="outline"
+                      data-testid="button-try-different-account"
+                    >
+                      Try Different Account
+                    </Button>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-sm">
                   <Button 
                     type="button"
                     variant="ghost" 
-                    onClick={() => setStep('email')}
+                    onClick={() => {
+                      setStep('email');
+                      setShowPendingApproval(false);
+                    }}
                     data-testid="button-back"
                   >
                     ← Back
                   </Button>
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    onClick={handleResendOTP}
-                    disabled={loading}
-                    data-testid="button-resend"
-                  >
-                    Resend OTP
-                  </Button>
+                  {!showPendingApproval && (
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      onClick={handleResendOTP}
+                      disabled={loading}
+                      data-testid="button-resend"
+                    >
+                      Resend OTP
+                    </Button>
+                  )}
                 </div>
               </form>
             )}
