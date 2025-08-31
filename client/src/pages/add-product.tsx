@@ -130,8 +130,10 @@ export default function AddProduct() {
   };
 
   const handleUploadComplete = async (result: any) => {
+    console.log('Upload result:', result);
     if (result.successful && result.successful.length > 0) {
       const uploadedUrls = result.successful.map((file: any) => file.uploadURL);
+      console.log('Uploaded URLs:', uploadedUrls);
       
       // Process uploaded images through the backend to get proper object paths
       const processedImages = [];
@@ -140,6 +142,7 @@ export default function AddProduct() {
           const response = await apiRequest("PUT", "/api/product-images", {
             imageURL: url,
           });
+          console.log('Backend response:', response);
           processedImages.push(response.objectPath || url);
         } catch (error) {
           console.error("Error processing image URL:", error);
@@ -147,6 +150,7 @@ export default function AddProduct() {
         }
       }
       
+      console.log('Processed images:', processedImages);
       setUploadedImages([...uploadedImages, ...processedImages]);
     }
   };
@@ -217,8 +221,8 @@ export default function AddProduct() {
                             </FormControl>
                             <SelectContent>
                               {categories.map((category: any) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
+                                <SelectItem key={category.category_id} value={category.category_id.toString()}>
+                                  {category.category_name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
