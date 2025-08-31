@@ -348,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price_data: {
             currency: 'inr',
             product: {
-              name: 'BMPA Annual Membership',
+              name: 'Stock Laabh Annual Membership',
             },
             unit_amount: 1770000, // ₹17,700 in paise
             recurring: {

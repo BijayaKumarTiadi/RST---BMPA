@@ -19,13 +19,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Professional Printing Stock Exchange
+              Stock Laabh Trading Platform
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Connect suppliers and buyers in the printing industry ecosystem
+              Connect traders and investors in the professional marketplace
             </p>
             <p className="text-lg text-blue-200 max-w-3xl mx-auto">
-              BMPA's exclusive marketplace for clearing excess stock, finding quality printing materials, and connecting with trusted industry partners.
+              Professional trading platform for clearing excess stock, finding quality materials, and connecting with trusted business partners.
             </p>
           </div>
 

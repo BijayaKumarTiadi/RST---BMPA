@@ -164,7 +164,7 @@ export default function Register() {
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
               
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to BMPA! 🎉</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Stock Laabh! 🎉</h1>
               <p className="text-gray-600 mb-6">
                 Account created for <strong>{email}</strong>
               </p>
@@ -200,8 +200,8 @@ export default function Register() {
           <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Printer className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">BMPA Registration</h1>
-          <p className="text-gray-600 text-sm mt-1">Join the Printing Industry Marketplace</p>
+          <h1 className="text-2xl font-bold text-gray-900">Stock Laabh Registration</h1>
+          <p className="text-gray-600 text-sm mt-1">Join the Professional Trading Platform</p>
         </div>
 
         <Card className="shadow-xl border-0">
@@ -483,8 +483,8 @@ export default function Register() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
-          <p>© 2025 BMPA Stock Exchange. All rights reserved.</p>
-          <p className="mt-1">Connecting the Printing Industry</p>
+          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p className="mt-1">Professional Trading Platform</p>
         </div>
       </div>
     </div>

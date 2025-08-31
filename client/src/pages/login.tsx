@@ -82,7 +82,7 @@ export default function Login() {
       if (data.success) {
         toast({
           title: "Login Successful",
-          description: "Welcome back to BMPA Stock Exchange!",
+          description: "Welcome back to Stock Laabh!",
         });
         // Reload to refresh the app state
         window.location.href = '/home';
@@ -152,8 +152,8 @@ export default function Login() {
           <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Printer className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">BMPA Stock Exchange</h1>
-          <p className="text-gray-600 text-sm mt-1">Bombay Master Printers Association</p>
+          <h1 className="text-2xl font-bold text-gray-900">Stock Laabh</h1>
+          <p className="text-gray-600 text-sm mt-1">Professional Trading Platform</p>
         </div>
 
         <Card className="shadow-lg border-0">
@@ -349,8 +349,8 @@ export default function Login() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
-          <p>© 2025 BMPA Stock Exchange. All rights reserved.</p>
-          <p className="mt-1">Connecting the Printing Industry</p>
+          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p className="mt-1">Professional Trading Platform</p>
         </div>
       </div>
     </div>

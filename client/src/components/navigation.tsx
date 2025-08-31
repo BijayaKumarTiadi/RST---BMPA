@@ -22,8 +22,8 @@ export default function Navigation() {
               <Printer className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">BMPA Stock Exchange</h1>
-              <p className="text-xs text-muted-foreground">Printing Industry Marketplace</p>
+              <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
+              <p className="text-xs text-muted-foreground">Professional Trading Platform</p>
             </div>
           </Link>
 
@@ -42,8 +42,8 @@ export default function Navigation() {
                 Membership
               </Link>
             )}
-            <a href="https://bmpa.org" className="text-foreground hover:text-primary transition-colors" data-testid="nav-bmpa">
-              About BMPA
+            <a href="#about" className="text-foreground hover:text-primary transition-colors" data-testid="nav-about">
+              About Us
             </a>
           </nav>
 

@@ -49,7 +49,7 @@ const CheckoutForm = () => {
     } else {
       toast({
         title: "Payment Successful",
-        description: "Your BMPA membership is now active!",
+        description: "Your Stock Laabh membership is now active!",
       });
       // Redirect will happen automatically via return_url
     }

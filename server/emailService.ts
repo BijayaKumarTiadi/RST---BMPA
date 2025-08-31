@@ -19,7 +19,7 @@ export interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     await transporter.sendMail({
-      from: '"BMPA Stock Exchange" <bktiadi1@gmail.com>',
+      from: '"Stock Laabh" <bktiadi1@gmail.com>',
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -36,7 +36,7 @@ export function generateOTPEmail(otp: string, purpose: 'login' | 'registration')
   const title = purpose === 'login' ? 'Login Verification' : 'Registration Verification';
   const message = purpose === 'login' 
     ? 'Please use the following OTP to complete your login:'
-    : 'Welcome to BMPA! Please use the following OTP to verify your email and complete registration:';
+    : 'Welcome to Stock Laabh! Please use the following OTP to verify your email and complete registration:';
 
   return `
     <!DOCTYPE html>
@@ -44,7 +44,7 @@ export function generateOTPEmail(otp: string, purpose: 'login' | 'registration')
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title} - BMPA Stock Exchange</title>
+      <title>${title} - Stock Laabh</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -52,10 +52,10 @@ export function generateOTPEmail(otp: string, purpose: 'login' | 'registration')
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center;">
           <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-            BMPA Stock Exchange
+            Stock Laabh
           </h1>
           <p style="color: #e0e7ff; margin: 5px 0 0 0; font-size: 16px;">
-            Bombay Master Printers Association
+            Professional Trading Platform
           </p>
         </div>
 
@@ -93,10 +93,10 @@ export function generateOTPEmail(otp: string, purpose: 'login' | 'registration')
         <!-- Footer -->
         <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
           <p style="color: #6b7280; margin: 0; font-size: 14px;">
-            © 2025 BMPA Stock Exchange. All rights reserved.
+            © 2025 Stock Laabh. All rights reserved.
           </p>
           <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
-            Bombay Master Printers Association - Connecting the Printing Industry
+            Professional Trading Platform
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function generateWelcomeEmail(memberName: string): string {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Welcome to BMPA Stock Exchange</title>
+      <title>Welcome to Stock Laabh</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -120,7 +120,7 @@ export function generateWelcomeEmail(memberName: string): string {
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px 20px; text-align: center;">
           <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-            Welcome to BMPA!
+            Welcome to Stock Laabh!
           </h1>
           <p style="color: #d1fae5; margin: 5px 0 0 0; font-size: 16px;">
             Your registration is complete
@@ -134,7 +134,7 @@ export function generateWelcomeEmail(memberName: string): string {
           </h2>
           
           <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-            Thank you for registering with BMPA Stock Exchange. Your account has been successfully created and is now pending approval from our admin team.
+            Thank you for registering with Stock Laabh. Your account has been successfully created and is now pending approval from our admin team.
           </p>
 
           <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -174,10 +174,10 @@ export function generateWelcomeEmail(memberName: string): string {
         <!-- Footer -->
         <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
           <p style="color: #6b7280; margin: 0; font-size: 14px;">
-            © 2025 BMPA Stock Exchange. All rights reserved.
+            © 2025 Stock Laabh. All rights reserved.
           </p>
           <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
-            Bombay Master Printers Association - Connecting the Printing Industry
+            Professional Trading Platform
           </p>
         </div>
       </div>

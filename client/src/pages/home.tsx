@@ -28,7 +28,7 @@ export default function Home() {
             Welcome back, {user?.firstName || 'Member'}!
           </h1>
           <p className="text-muted-foreground">
-            Your professional printing marketplace dashboard
+            Your professional trading platform dashboard
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default function Home() {
             <CardContent className="p-6 text-center">
               <Search className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="font-semibold mb-2">Browse Stock</h3>
-              <p className="text-sm text-muted-foreground mb-4">Find printing materials and equipment</p>
+              <p className="text-sm text-muted-foreground mb-4">Find trading materials and opportunities</p>
               <Button asChild className="w-full">
                 <Link href="/marketplace">Browse Now</Link>
               </Button>

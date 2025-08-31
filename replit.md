@@ -1,8 +1,8 @@
-# BMPA Stock Exchange Marketplace
+# Stock Laabh Trading Platform
 
 ## Overview
 
-This is a full-stack web application for the British Printing Industries Association (BMPA) that provides a professional marketplace for printing industry members to buy and sell stock, materials, and equipment. The platform serves as a stock exchange connecting suppliers and buyers within the printing industry ecosystem, enabling members to clear excess inventory and source quality printing materials.
+This is a comprehensive B2B ecommerce marketplace for the trading industry branded as "Stock Laabh" with MySQL database backend. The platform provides a professional trading environment for business members to buy and sell stock, materials, and equipment. The system features user registration with email OTP verification, annual membership fees (₹17,700), admin approval workflow, and role-based access control.
 
 ## User Preferences
 

@@ -43,9 +43,9 @@ export default function AdminLogin() {
           <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
             <Printer className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">BMPA Admin Access</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Stock Laabh Admin Access</h1>
           <p className="text-muted-foreground">
-            Administrative portal for BMPA Stock Exchange
+            Administrative portal for Stock Laabh
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export default function AdminLogin() {
 
             <div className="pt-4 border-t">
               <p className="text-xs text-muted-foreground text-center">
-                Only authorized BMPA administrators can access this portal. 
+                Only authorized Stock Laabh administrators can access this portal. 
                 Unauthorized access attempts are logged and monitored.
               </p>
             </div>

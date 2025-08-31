@@ -57,10 +57,10 @@ export default function ApiDocs() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="api-docs-title">
-            BMPA API Documentation
+            Stock Laabh API Documentation
           </h1>
           <p className="text-muted-foreground">
-            Complete API reference for the BMPA Stock Exchange marketplace
+            Complete API reference for the Stock Laabh trading platform
           </p>
         </div>
 

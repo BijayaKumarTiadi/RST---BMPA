@@ -103,9 +103,9 @@ export class AuthService {
         const welcomeHtml = generateWelcomeEmail(data.mname);
         await sendEmail({
           to: data.email,
-          subject: 'Welcome to BMPA Stock Exchange - Registration Complete',
+          subject: 'Welcome to Stock Laabh - Registration Complete',
           html: welcomeHtml,
-          text: `Welcome to BMPA Stock Exchange! Your registration is complete and pending approval.`
+          text: `Welcome to Stock Laabh! Your registration is complete and pending approval.`
         });
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
