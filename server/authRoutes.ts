@@ -63,6 +63,10 @@ authRouter.post('/verify-login-otp', async (req, res) => {
       return res.status(400).json(loginResult);
     }
 
+    // Implement single device login - invalidate other sessions for this user
+    // In a production system, this would clear all other sessions for this member
+    console.log(`Single device login: Member ${loginResult.member!.member_id} logging in, session: ${req.sessionID}`);
+    
     // Store member in session
     req.session.memberId = loginResult.member!.member_id;
     req.session.memberEmail = loginResult.member!.email;

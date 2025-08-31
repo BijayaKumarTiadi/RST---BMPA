@@ -21,36 +21,47 @@ import AddProduct from "@/pages/add-product";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      {/* Default landing page - now shows login first */}
-      <Route path="/" component={Login} />
-      
-      {/* Admin login page - accessible to all */}
+      {/* Public routes - accessible without authentication */}
+      <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminLogin} />
-      
-      {/* Registration page */}
       <Route path="/register" component={Register} />
       
-      {/* Landing page moved to /welcome */}
-      <Route path="/welcome" component={Landing} />
-      
-      {/* Subscription page */}
-      <Route path="/subscribe" component={Subscribe} />
-      
-      {/* About page */}
-      <Route path="/about" component={About} />
-      
-      {/* Protected routes */}
-      <Route path="/home" component={Home} />
-      <Route path="/marketplace" component={Marketplace} />
-      <Route path="/admin-dashboard" component={AdminDashboard} />
-      <Route path="/buyer-dashboard" component={BuyerDashboard} />
-      <Route path="/seller-dashboard" component={SellerDashboard} />
-      <Route path="/add-product" component={AddProduct} />
-      <Route path="/api-docs" component={ApiDocs} />
-      
-      <Route component={NotFound} />
+      {/* All other routes require authentication */}
+      {isAuthenticated ? (
+        <>
+          <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
+          <Route path="/marketplace" component={Marketplace} />
+          <Route path="/admin-dashboard" component={AdminDashboard} />
+          <Route path="/buyer-dashboard" component={BuyerDashboard} />
+          <Route path="/seller-dashboard" component={SellerDashboard} />
+          <Route path="/add-product" component={AddProduct} />
+          <Route path="/api-docs" component={ApiDocs} />
+          <Route path="/welcome" component={Landing} />
+          <Route path="/subscribe" component={Subscribe} />
+          <Route path="/about" component={About} />
+          <Route component={NotFound} />
+        </>
+      ) : (
+        <>
+          {/* Redirect all unauthenticated users to login */}
+          <Route path="/" component={Login} />
+          <Route component={Login} />
+        </>
+      )}
     </Switch>
   );
 }

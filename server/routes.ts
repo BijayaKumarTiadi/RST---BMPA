@@ -705,10 +705,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Object Storage Routes for images
   app.post('/api/objects/upload', requireAuth, async (req: any, res) => {
     try {
-      // Generate a simple upload URL for now
-      // In a real implementation, this would create a presigned URL
-      const uploadId = Math.random().toString(36).substring(7);
-      const uploadURL = `https://storage.googleapis.com/bucket-name/uploads/${uploadId}`;
+      const { ObjectStorageService } = await import('./objectStorage');
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
       
       res.json({ uploadURL });
     } catch (error) {
@@ -728,12 +727,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // For now, just return success - in a real implementation this would
-      // update the object storage ACL policy
+      const { ObjectStorageService } = await import('./objectStorage');
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(imageURL);
+
       res.json({
         success: true,
         message: 'Image URL processed successfully',
-        objectPath: imageURL
+        objectPath
       });
     } catch (error) {
       console.error("Error processing image URL:", error);

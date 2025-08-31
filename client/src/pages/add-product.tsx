@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, X, Package, DollarSign, Hash, MapPin } from "lucide-react";
+import { ArrowLeft, Upload, X, Package, DollarSign, Hash, MapPin, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { ObjectUploader } from "@/components/ObjectUploader";
 
@@ -34,6 +35,9 @@ export default function AddProduct() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -53,6 +57,30 @@ export default function AddProduct() {
   // Fetch categories
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/categories"],
+  });
+
+  // Create category mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: { name: string; description?: string }) => {
+      return apiRequest("POST", "/api/categories", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Category created successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setShowAddCategory(false);
+      setNewCategoryName("");
+      setNewCategoryDescription("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create category",
+        variant: "destructive",
+      });
+    },
   });
 
   // Create product mutation
@@ -168,20 +196,86 @@ export default function AddProduct() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-category">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((category: any) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-category">
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.map((category: any) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
+                            <DialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                data-testid="add-category-button"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Add New Category</DialogTitle>
+                                <DialogDescription>
+                                  Create a new product category for the marketplace
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium">Category Name *</label>
+                                  <Input
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    placeholder="Enter category name"
+                                    data-testid="input-new-category-name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium">Description</label>
+                                  <Textarea
+                                    value={newCategoryDescription}
+                                    onChange={(e) => setNewCategoryDescription(e.target.value)}
+                                    placeholder="Enter category description"
+                                    data-testid="textarea-new-category-description"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowAddCategory(false)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    onClick={() => {
+                                      if (newCategoryName.trim()) {
+                                        createCategoryMutation.mutate({
+                                          name: newCategoryName.trim(),
+                                          description: newCategoryDescription.trim() || undefined,
+                                        });
+                                      }
+                                    }}
+                                    disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                                    data-testid="button-create-category"
+                                  >
+                                    {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
