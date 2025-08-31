@@ -239,6 +239,90 @@ export async function initializeDatabase(): Promise<void> {
       }
     }
 
+    // Check if categories table exists, if not create it
+    const categoriesTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'spmis2223yrk' 
+      AND table_name = 'categories'
+    `);
+
+    if (!categoriesTableExists || categoriesTableExists.count === 0) {
+      console.log('📋 Creating categories table...');
+      await executeQuery(`
+        CREATE TABLE categories (
+          id varchar(36) PRIMARY KEY,
+          name varchar(100) NOT NULL,
+          description text,
+          parent_id varchar(36),
+          created_at datetime DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Categories table created successfully');
+    }
+
+    // Check if products table exists, if not create it
+    const productsTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'spmis2223yrk' 
+      AND table_name = 'products'
+    `);
+
+    if (!productsTableExists || productsTableExists.count === 0) {
+      console.log('📋 Creating products table...');
+      await executeQuery(`
+        CREATE TABLE products (
+          id varchar(36) PRIMARY KEY,
+          seller_id int(10) NOT NULL,
+          category_id varchar(36) NOT NULL,
+          title varchar(200) NOT NULL,
+          description text,
+          price decimal(10,2) NOT NULL,
+          quantity int NOT NULL,
+          unit varchar(50) NOT NULL,
+          min_order_quantity int DEFAULT 1,
+          status enum('available', 'low_stock', 'out_of_stock', 'discontinued') DEFAULT 'available',
+          image_urls json,
+          specifications json,
+          location varchar(100),
+          is_active boolean DEFAULT true,
+          expiry_date datetime,
+          created_at datetime DEFAULT CURRENT_TIMESTAMP,
+          updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
+          FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_category_id (category_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Products table created successfully');
+
+      // Insert default categories
+      const defaultCategories = [
+        { id: 'cat-1', name: 'Printing Materials', description: 'Paper, ink, toner, and other printing supplies' },
+        { id: 'cat-2', name: 'Printing Equipment', description: 'Printers, scanners, and related hardware' },
+        { id: 'cat-3', name: 'Binding & Finishing', description: 'Binding machines, laminators, and finishing equipment' },
+        { id: 'cat-4', name: 'Office Supplies', description: 'Stationery, folders, and general office materials' },
+        { id: 'cat-5', name: 'Digital Services', description: 'Design, printing, and digital solutions' }
+      ];
+
+      for (const category of defaultCategories) {
+        try {
+          await executeQuery(`
+            INSERT IGNORE INTO categories (id, name, description)
+            VALUES (?, ?, ?)
+          `, [category.id, category.name, category.description]);
+        } catch (catError) {
+          console.log(`Category ${category.name} might already exist`);
+        }
+      }
+      console.log('✅ Default categories added');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;

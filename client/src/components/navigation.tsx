@@ -2,8 +2,15 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -35,9 +42,14 @@ export default function Navigation() {
               Home
             </Link>
             {isAuthenticated && (
-              <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
-                Marketplace
-              </Link>
+              <>
+                <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
+                  Marketplace
+                </Link>
+                <Link href="/add-product" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-add-product">
+                  Add Product
+                </Link>
+              </>
             )}
             <Link href="/register" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-membership">
               Membership
@@ -49,36 +61,6 @@ export default function Navigation() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-3">
-            {/* Theme Toggle for all users */}
-            <div className="relative">
-              <button
-                onClick={toggleTheme}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-purple-600 dark:to-blue-500 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                data-testid="theme-toggle"
-              >
-                <div className="flex items-center space-x-1">
-                  {theme === "light" ? (
-                    <>
-                      <Sun className="h-4 w-4" />
-                      <span className="text-sm font-medium hidden md:block">Light</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-4 w-4" />
-                      <span className="text-sm font-medium hidden md:block">Dark</span>
-                    </>
-                  )}
-                </div>
-                <div className="w-8 h-4 bg-white/20 rounded-full relative hidden md:block">
-                  <div 
-                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-300 ${
-                      theme === "dark" ? "transform translate-x-4" : "transform translate-x-0.5"
-                    }`}
-                  />
-                </div>
-              </button>
-            </div>
-
             {!isAuthenticated ? (
               <>
                 <Button 
@@ -94,31 +76,104 @@ export default function Navigation() {
                 </Button>
               </>
             ) : (
-              <>
-                {/* User Info Display */}
-                <div className="hidden md:flex items-center space-x-2 px-3 py-2 bg-muted/50 dark:bg-muted rounded-lg border" data-testid="user-info">
-                  <User className="h-4 w-4 text-primary" />
-                  <div className="text-sm">
-                    <div className="font-medium text-foreground">
-                      {user?.firstName || user?.name || 'User'}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+                    data-testid="user-profile-dropdown"
+                  >
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary-foreground" />
                     </div>
-                    {user?.last_login && (
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Last: {new Date(user.last_login).toLocaleString()}
-                      </div>
-                    )}
+                    <div className="hidden md:flex flex-col items-start">
+                      <span className="text-sm font-medium text-foreground">
+                        {user?.firstName || user?.name || 'User'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {user?.role || 'Member'}
+                      </span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center space-x-2 p-3 border-b">
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user?.firstName || user?.name || user?.email}</span>
+                      <span className="text-xs text-muted-foreground">{user?.email}</span>
+                      {user?.last_login && (
+                        <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            Last login: {new Date(user.last_login).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/api/logout'}
-                  data-testid="button-logout"
-                  className="font-medium"
-                >
-                  Logout
-                </Button>
-              </>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center space-x-2 w-full">
+                      <User className="h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="flex items-center space-x-2 w-full">
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center space-x-2 w-full">
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem 
+                    onClick={toggleTheme}
+                    className="flex items-center space-x-2"
+                  >
+                    {theme === "light" ? (
+                      <>
+                        <Moon className="h-4 w-4" />
+                        <span>Dark Mode</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="h-4 w-4" />
+                        <span>Light Mode</span>
+                      </>
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem asChild>
+                    <a href="/api/auth/logout" className="flex items-center space-x-2 w-full text-red-600 dark:text-red-400">
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             
             <Button 

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { authRouter } from "./authRoutes";
 import { otpService } from "./otpService";
 import { adminService } from "./adminService";
+import { productService } from "./productService";
 import { storage } from "./storage";
 
 // Middleware to check if user is authenticated
@@ -180,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {
-      const categories = await storage.getCategories();
+      const categories = await productService.getCategories();
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -188,7 +189,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stock listings
+  app.post('/api/categories', requireAuth, async (req: any, res) => {
+    try {
+      const { name, description, parent_id } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Category name is required'
+        });
+      }
+
+      const result = await productService.createCategory(name, description, parent_id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  // Products (replacing stock listings)
+  app.get('/api/products', async (req, res) => {
+    try {
+      const {
+        category_id,
+        search,
+        location,
+        seller_id,
+        status,
+        page = 1,
+        limit = 20
+      } = req.query;
+
+      const filters = {
+        category_id: category_id as string,
+        search: search as string,
+        location: location as string,
+        seller_id: seller_id ? parseInt(seller_id as string) : undefined,
+        status: status as string,
+        limit: parseInt(limit as string),
+        offset: (parseInt(page as string) - 1) * parseInt(limit as string),
+      };
+
+      const result = await productService.getProducts(filters);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.get('/api/products/:id', async (req, res) => {
+    try {
+      const product = await productService.getProductById(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
+  app.post('/api/products', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const {
+        category_id,
+        title,
+        description,
+        price,
+        quantity,
+        unit,
+        min_order_quantity,
+        image_urls,
+        specifications,
+        location,
+        expiry_date
+      } = req.body;
+
+      if (!category_id || !title || !price || !quantity || !unit) {
+        return res.status(400).json({
+          success: false,
+          message: 'Required fields are missing'
+        });
+      }
+
+      const result = await productService.createProduct({
+        seller_id: sellerId,
+        category_id,
+        title,
+        description,
+        price: parseFloat(price),
+        quantity: parseInt(quantity),
+        unit,
+        min_order_quantity: min_order_quantity ? parseInt(min_order_quantity) : 1,
+        image_urls: image_urls || [],
+        specifications,
+        location,
+        expiry_date: expiry_date ? new Date(expiry_date) : undefined,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Failed to create product" });
+    }
+  });
+
+  app.put('/api/products/:id', requireAuth, async (req: any, res) => {
+    try {
+      const productId = req.params.id;
+      const sellerId = req.session.memberId;
+      
+      const result = await productService.updateProduct(productId, sellerId, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
+  app.delete('/api/products/:id', requireAuth, async (req: any, res) => {
+    try {
+      const productId = req.params.id;
+      const sellerId = req.session.memberId;
+      
+      const result = await productService.deleteProduct(productId, sellerId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
+  // Keep stock listings for backward compatibility
   app.get('/api/stock/listings', async (req, res) => {
     try {
       const {
@@ -202,28 +346,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.query;
 
       const filters = {
-        categoryId: categoryId as string,
+        category_id: categoryId as string,
         search: search as string,
         location: location as string,
-        sellerId: sellerId as string,
+        seller_id: sellerId ? parseInt(sellerId as string) : undefined,
         status: status as string,
-        page: parseInt(page as string),
         limit: parseInt(limit as string),
+        offset: (parseInt(page as string) - 1) * parseInt(limit as string),
       };
 
-      const result = await storage.getStockListings(filters);
+      const result = await productService.getProducts(filters);
       
-      // Track search query for analytics
-      if (search) {
-        await storage.createSearchQuery({
-          userId: (req.user as any)?.claims?.sub,
-          query: search as string,
-          filters: { categoryId, location, status },
-          resultsCount: result.total,
-        });
-      }
-
-      res.json(result);
+      // Format response to match old structure
+      res.json({
+        listings: result.products,
+        total: result.total
+      });
     } catch (error) {
       console.error("Error fetching stock listings:", error);
       res.status(500).json({ message: "Failed to fetch stock listings" });
@@ -561,6 +699,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Stripe webhook error:", error);
       res.status(500).json({ message: "Webhook error" });
+    }
+  });
+
+  // Object Storage Routes for images
+  app.post('/api/objects/upload', requireAuth, async (req: any, res) => {
+    try {
+      // Generate a simple upload URL for now
+      // In a real implementation, this would create a presigned URL
+      const uploadId = Math.random().toString(36).substring(7);
+      const uploadURL = `https://storage.googleapis.com/bucket-name/uploads/${uploadId}`;
+      
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.put('/api/product-images', requireAuth, async (req: any, res) => {
+    try {
+      const { imageURL } = req.body;
+      
+      if (!imageURL) {
+        return res.status(400).json({
+          success: false,
+          message: 'Image URL is required'
+        });
+      }
+
+      // For now, just return success - in a real implementation this would
+      // update the object storage ACL policy
+      res.json({
+        success: true,
+        message: 'Image URL processed successfully',
+        objectPath: imageURL
+      });
+    } catch (error) {
+      console.error("Error processing image URL:", error);
+      res.status(500).json({ message: "Failed to process image URL" });
     }
   });
 
