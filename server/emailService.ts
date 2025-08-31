@@ -98,6 +98,9 @@ export function generateOTPEmail(otp: string, purpose: 'login' | 'registration')
           <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
             Professional Trading Platform
           </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 11px;">
+            Powered by Renuka Print ERP Solutions
+          </p>
         </div>
       </div>
     </body>
@@ -178,6 +181,9 @@ export function generateWelcomeEmail(memberName: string): string {
           </p>
           <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
             Professional Trading Platform
+          </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 11px;">
+            Powered by Renuka Print ERP Solutions
           </p>
         </div>
       </div>

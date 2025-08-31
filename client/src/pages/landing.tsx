@@ -390,12 +390,12 @@ export default function Landing() {
                   <Printer className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">BMPA Stock Exchange</h3>
-                  <p className="text-gray-300 text-sm">Professional Marketplace</p>
+                  <h3 className="text-xl font-bold">Stock Laabh</h3>
+                  <p className="text-gray-300 text-sm">Professional Trading Platform</p>
                 </div>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed">
-                The official stock exchange platform for BMPA members, facilitating efficient trading in printing industry materials and equipment.
+                Professional trading platform facilitating efficient trading in materials and equipment for business members.
               </p>
             </div>
 
@@ -405,7 +405,7 @@ export default function Landing() {
                 <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
                 <li><Link href="/marketplace" className="hover:text-white transition-colors">Marketplace</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Membership</Link></li>
-                <li><a href="https://bmpa.org" className="hover:text-white transition-colors">BMPA Main Site</a></li>
+                <li><a href="#about" className="hover:text-white transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API Documentation</a></li>
               </ul>
             </div>
@@ -434,7 +434,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-primary" />
-                  <span>info@bmpa-stock.com</span>
+                  <span>info@stocklaabh.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <ClockIcon className="h-4 w-4 text-primary" />
@@ -448,7 +448,10 @@ export default function Landing() {
           
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-300 text-sm">
-              © 2024 BMPA Stock Exchange. All rights reserved. Powered by Bombay Master Printers Association.
+              © 2025 Stock Laabh. All rights reserved.
+            </p>
+            <p className="text-gray-300 text-sm">
+              Designed by Renuka Print ERP Solutions
             </p>
           </div>
         </div>

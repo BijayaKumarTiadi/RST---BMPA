@@ -235,7 +235,7 @@ export default function Subscribe() {
                   <Check className="h-5 w-5 text-chart-2 mt-0.5" />
                   <div>
                     <h4 className="font-medium">Industry Events</h4>
-                    <p className="text-sm text-muted-foreground">Exclusive access to BMPA events and training programs</p>
+                    <p className="text-sm text-muted-foreground">Exclusive access to trading events and training programs</p>
                   </div>
                 </div>
                 
@@ -275,6 +275,9 @@ export default function Subscribe() {
               Back to Registration
             </Link>
           </Button>
+          <p className="text-xs text-muted-foreground mt-4">
+            Designed by Renuka Print ERP Solutions
+          </p>
         </div>
       </div>
     </div>

@@ -114,6 +114,9 @@ export default function AdminLogin() {
           <Button variant="ghost" onClick={() => window.location.href = '/'}>
             ← Back to Main Site
           </Button>
+          <p className="text-xs text-muted-foreground mt-4">
+            Designed by Renuka Print ERP Solutions
+          </p>
         </div>
       </div>
     </div>

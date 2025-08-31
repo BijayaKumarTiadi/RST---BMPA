@@ -123,11 +123,11 @@ export default function Navigation() {
               </Link>
             )}
             <a 
-              href="https://bmpa.org" 
+              href="#about" 
               className="block text-foreground hover:text-primary py-2"
-              data-testid="mobile-nav-bmpa"
+              data-testid="mobile-nav-about"
             >
-              About BMPA
+              About Us
             </a>
           </div>
         </div>

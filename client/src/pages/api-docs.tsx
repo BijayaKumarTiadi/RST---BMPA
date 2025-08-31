@@ -294,6 +294,12 @@ export default function ApiDocs() {
             </Card>
           )}
         </div>
+        
+        {/* Footer */}
+        <div className="mt-12 text-center text-xs text-muted-foreground">
+          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
+        </div>
       </div>
     </div>
   );
