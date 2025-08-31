@@ -145,7 +145,7 @@ export async function initializeDatabase(): Promise<void> {
       
       await executeQuery(`
         INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-        VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+        VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
       `, [defaultAdminPassword]);
 
       console.log('✅ Database tables created successfully');
@@ -188,7 +188,7 @@ export async function initializeDatabase(): Promise<void> {
         
         await executeQuery(`
           INSERT INTO admin_users (username, password_hash, full_name, email, role)
-          VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
         `, [defaultAdminPassword]);
 
         console.log('✅ Admin table created successfully');
@@ -203,9 +203,14 @@ export async function initializeDatabase(): Promise<void> {
           
           await executeQuery(`
             INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-            VALUES ('admin', ?, 'System Administrator', 'admin@stocklaabh.com', 'super_admin')
+            VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
           `, [defaultAdminPassword]);
 
+          // Update admin email if needed
+          await executeQuery(`
+            UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
+          `);
+          
           console.log('✅ Default admin user verified');
         } catch (error) {
           console.log('ℹ️ Default admin user already exists');
