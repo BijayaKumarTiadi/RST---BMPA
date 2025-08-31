@@ -49,7 +49,7 @@ export class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       return await executeQuery(`
-        SELECT * FROM sl_categories 
+        SELECT * FROM categories 
         ORDER BY name ASC
       `);
     } catch (error) {
@@ -63,7 +63,7 @@ export class ProductService {
     try {
       const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const result = await executeQuery(`
-        INSERT INTO sl_categories (id, name, description, parent_id, created_at)
+        INSERT INTO categories (id, name, description, parent_id, created_at)
         VALUES (?, ?, ?, ?, NOW())
       `, [categoryId, name, description || null, parentId || null]);
 

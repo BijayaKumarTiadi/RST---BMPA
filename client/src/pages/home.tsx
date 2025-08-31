@@ -63,15 +63,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Add Product Button for Authorized Users */}
-            {canAddProducts && (
-              <div className="mb-6">
-                <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-full shadow-lg transform hover:scale-105 transition-all duration-200" data-testid="add-product-btn">
-                  <Plus className="mr-2 h-5 w-5" />
-                  Add New Product
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>

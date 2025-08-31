@@ -132,18 +132,22 @@ export default function AddProduct() {
   const handleUploadComplete = async (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const uploadedUrls = result.successful.map((file: any) => file.uploadURL);
-      setUploadedImages([...uploadedImages, ...uploadedUrls]);
       
-      // Update backend with uploaded image URLs
+      // Process uploaded images through the backend to get proper object paths
+      const processedImages = [];
       for (const url of uploadedUrls) {
         try {
-          await apiRequest("PUT", "/api/product-images", {
+          const response = await apiRequest("PUT", "/api/product-images", {
             imageURL: url,
           });
+          processedImages.push(response.objectPath || url);
         } catch (error) {
-          console.error("Error updating image URL:", error);
+          console.error("Error processing image URL:", error);
+          processedImages.push(url); // Fallback to original URL
         }
       }
+      
+      setUploadedImages([...uploadedImages, ...processedImages]);
     }
   };
 
@@ -474,9 +478,14 @@ export default function AddProduct() {
                       {uploadedImages.map((url, index) => (
                         <div key={index} className="relative group">
                           <img
-                            src={url}
+                            src={url.startsWith('/objects/') ? url : url}
                             alt={`Product image ${index + 1}`}
                             className="w-full h-32 object-cover rounded-lg border"
+                            onError={(e) => {
+                              // Log the failed URL for debugging
+                              console.log('Failed to load image:', url);
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NzI4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                            }}
                           />
                           <button
                             type="button"
