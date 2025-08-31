@@ -192,6 +192,7 @@ authRouter.get('/current-member', async (req, res) => {
       member: {
         id: member.member_id,
         name: member.mname,
+        firstName: member.mname, // Also provide as firstName for compatibility
         email: member.email,
         phone: member.phone,
         company: member.company_name,
@@ -201,7 +202,9 @@ authRouter.get('/current-member', async (req, res) => {
         state: member.state,
         membershipPaid: member.membership_paid,
         membershipValidTill: member.membership_valid_till,
-        status: member.mstatus
+        status: member.mstatus,
+        last_login: member.last_login,
+        role: 'member' // Set a default role for UI compatibility
       }
     });
 

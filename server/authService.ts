@@ -176,10 +176,22 @@ export class AuthService {
         };
       }
 
+      // Update last login timestamp
+      await executeQuery(
+        'UPDATE bmpa_members SET last_login = NOW() WHERE member_id = ?',
+        [member.member_id]
+      );
+
+      // Get updated member data with last_login
+      const updatedMember = await executeQuerySingle<Member>(
+        'SELECT * FROM bmpa_members WHERE member_id = ?',
+        [member.member_id]
+      );
+
       return {
         success: true,
         message: 'Login successful',
-        member
+        member: updatedMember || member
       };
 
     } catch (error) {
