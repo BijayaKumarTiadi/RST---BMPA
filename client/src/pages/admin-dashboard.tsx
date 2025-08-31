@@ -55,6 +55,7 @@ interface Member {
   mstatus: number;
   created_at: string;
   approval_datetime: string;
+  last_login?: string;
 }
 
 interface DashboardStats {
@@ -225,21 +226,13 @@ export default function AdminDashboard() {
       return await apiRequest("PUT", `/api/admin/members/${memberId}`, data);
     },
     onSuccess: (data) => {
-      if (data.success) {
-        toast({
-          title: "Member updated",
-          description: "Member profile has been successfully updated.",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
-        setEditingMember(null);
-        setEditFormData({});
-      } else {
-        toast({
-          title: "Error",
-          description: data.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Member updated",
+        description: "Member profile has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
+      setEditingMember(null);
+      setEditFormData({});
     },
     onError: (error: any) => {
       toast({
@@ -417,8 +410,10 @@ export default function AdminDashboard() {
 
         {/* Main Content */}
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="members" data-testid="tab-members">Members</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="members" data-testid="tab-members">All Members</TabsTrigger>
+            <TabsTrigger value="pending" data-testid="tab-pending">Pending Users</TabsTrigger>
+            <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">Payment History</TabsTrigger>
           </TabsList>
 
@@ -662,6 +657,280 @@ export default function AdminDashboard() {
                                   </Button>
                                 )}
                               </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pending Users Tab */}
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Pending Users</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search pending users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                      data-testid="input-search-pending"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Registered</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isMembersLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredMembers.filter(m => m.mstatus === 0).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            No pending users found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredMembers.filter(m => m.mstatus === 0).map((member) => (
+                          <TableRow key={member.member_id} data-testid={`row-pending-${member.member_id}`}>
+                            <TableCell className="font-medium text-foreground">
+                              {member.mname}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.email}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.phone}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.company_name}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.city}, {member.state}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {new Date(member.created_at).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="default"
+                                  onClick={() => approveMutation.mutate(member.member_id)}
+                                  disabled={approveMutation.isPending}
+                                  data-testid={`button-approve-${member.member_id}`}
+                                >
+                                  {approveMutation.isPending ? (
+                                    <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Approve
+                                    </>
+                                  )}
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => rejectMutation.mutate(member.member_id)}
+                                  disabled={rejectMutation.isPending}
+                                  data-testid={`button-reject-${member.member_id}`}
+                                >
+                                  {rejectMutation.isPending ? (
+                                    <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                                  ) : (
+                                    <>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Approved Users Tab */}
+          <TabsContent value="approved">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Approved Users</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search approved users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                      data-testid="input-search-approved"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isMembersLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8">
+                            <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredMembers.filter(m => m.mstatus === 1).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                            No approved users found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredMembers.filter(m => m.mstatus === 1).map((member) => (
+                          <TableRow key={member.member_id} data-testid={`row-approved-${member.member_id}`}>
+                            <TableCell className="font-medium text-foreground">
+                              {member.mname}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.email}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.phone}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.company_name}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {member.city}, {member.state}
+                            </TableCell>
+                            <TableCell>
+                              {getMembershipBadge(member.membership_paid)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-muted-foreground">
+                                {member.last_login ? new Date(member.last_login).toLocaleDateString() : 'Never'}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleEditMember(member)}
+                                    data-testid={`button-edit-${member.member_id}`}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Member Profile</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="mname">Name</Label>
+                                      <Input
+                                        id="mname"
+                                        value={editFormData.mname || ''}
+                                        onChange={(e) => setEditFormData({ ...editFormData, mname: e.target.value })}
+                                        data-testid="input-edit-name"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="email">Email</Label>
+                                      <Input
+                                        id="email"
+                                        type="email"
+                                        value={editFormData.email || ''}
+                                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                        data-testid="input-edit-email"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="phone">Phone</Label>
+                                      <Input
+                                        id="phone"
+                                        value={editFormData.phone || ''}
+                                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                        data-testid="input-edit-phone"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="company_name">Company Name</Label>
+                                      <Input
+                                        id="company_name"
+                                        value={editFormData.company_name || ''}
+                                        onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
+                                        data-testid="input-edit-company"
+                                      />
+                                    </div>
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingMember(null);
+                                          setEditFormData({});
+                                        }}
+                                        data-testid="button-cancel-edit"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        onClick={handleUpdateMember}
+                                        disabled={updateMemberMutation.isPending}
+                                        data-testid="button-save-edit"
+                                      >
+                                        {updateMemberMutation.isPending ? "Saving..." : "Save"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))

@@ -70,19 +70,35 @@ export default function AdminNavigation() {
               </div>
             )}
             
-            {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              data-testid="theme-toggle"
-            >
-              {theme === "light" ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )}
-            </Button>
+            {/* Cool Theme Toggle */}
+            <div className="relative">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-purple-600 dark:to-blue-500 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                data-testid="theme-toggle"
+              >
+                <div className="flex items-center space-x-1">
+                  {theme === "light" ? (
+                    <>
+                      <Sun className="h-4 w-4" />
+                      <span className="text-sm font-medium">Light</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="h-4 w-4" />
+                      <span className="text-sm font-medium">Dark</span>
+                    </>
+                  )}
+                </div>
+                <div className="w-8 h-4 bg-white/20 rounded-full relative">
+                  <div 
+                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-300 ${
+                      theme === "dark" ? "transform translate-x-4" : "transform translate-x-0.5"
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
             
             {!isAdminAuthenticated && (
               <Button asChild data-testid="button-admin-login">

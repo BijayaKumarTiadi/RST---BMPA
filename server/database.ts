@@ -100,6 +100,7 @@ export async function initializeDatabase(): Promise<void> {
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           bmpa_approval_id int(10) DEFAULT '0',
           approval_datetime datetime DEFAULT CURRENT_TIMESTAMP,
+          last_login datetime NULL,
           PRIMARY KEY (member_id),
           UNIQUE KEY email (email)
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1
