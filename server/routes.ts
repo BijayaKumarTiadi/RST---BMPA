@@ -152,6 +152,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update member role
+  app.put('/api/admin/members/:id/role', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.id);
+      const { role } = req.body;
+      const adminId = req.session.adminId;
+      
+      if (!role) {
+        return res.status(400).json({
+          success: false,
+          message: 'Role is required'
+        });
+      }
+      
+      const result = await adminService.updateMemberRole(memberId, role, adminId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
+
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {

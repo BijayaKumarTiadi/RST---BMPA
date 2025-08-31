@@ -16,9 +16,11 @@ export interface Member {
   membership_paid: number;
   membership_valid_till: string;
   mstatus: number;
+  role: string;
   created_at: Date;
   bmpa_approval_id: number;
   approval_datetime: Date;
+  last_login?: Date;
 }
 
 export interface RegistrationData {

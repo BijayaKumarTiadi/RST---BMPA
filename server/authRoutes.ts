@@ -204,7 +204,7 @@ authRouter.get('/current-member', async (req, res) => {
         membershipValidTill: member.membership_valid_till,
         status: member.mstatus,
         last_login: member.last_login,
-        role: 'member' // Set a default role for UI compatibility
+        role: member.role || 'buyer' // Use role from database, default to buyer
       }
     });
 

@@ -190,6 +190,7 @@ export class AdminService {
           membership_paid,
           membership_valid_till,
           mstatus,
+          role,
           created_at,
           approval_datetime
         FROM bmpa_members 
@@ -305,6 +306,7 @@ export class AdminService {
           membership_paid,
           membership_valid_till,
           mstatus,
+          role,
           created_at,
           approval_datetime
         FROM bmpa_members 
@@ -476,6 +478,37 @@ export class AdminService {
         activeMembers: 0,
         expiredMembers: 0,
         expiringThisMonth: 0
+      };
+    }
+  }
+
+  // Update member role
+  async updateMemberRole(memberId: number, role: string, adminId: number): Promise<{ success: boolean; message: string }> {
+    try {
+      // Validate role
+      const validRoles = ['buyer', 'seller', 'both', 'admin'];
+      if (!validRoles.includes(role)) {
+        return {
+          success: false,
+          message: 'Invalid role. Must be buyer, seller, both, or admin'
+        };
+      }
+
+      // Update member role
+      await executeQuery(
+        'UPDATE bmpa_members SET role = ? WHERE member_id = ?',
+        [role, memberId]
+      );
+
+      return {
+        success: true,
+        message: 'Member role updated successfully'
+      };
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      return {
+        success: false,
+        message: 'Failed to update member role'
       };
     }
   }

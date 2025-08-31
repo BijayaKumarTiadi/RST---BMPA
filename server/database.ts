@@ -97,6 +97,7 @@ export async function initializeDatabase(): Promise<void> {
           membership_paid int(1) DEFAULT '0',
           membership_valid_till date DEFAULT '1900-01-01',
           mstatus int(1) DEFAULT '0',
+          role varchar(20) DEFAULT 'buyer',
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           bmpa_approval_id int(10) DEFAULT '0',
           approval_datetime datetime DEFAULT CURRENT_TIMESTAMP,
@@ -153,6 +154,25 @@ export async function initializeDatabase(): Promise<void> {
       console.log('🔑 Default admin user created (username: admin, password: admin)');
     } else {
       console.log('✅ Database tables already exist');
+      
+      // Check if role column exists in bmpa_members table, if not add it
+      const roleColumnExists = await executeQuerySingle(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.columns 
+        WHERE table_schema = 'spmis2223yrk' 
+        AND table_name = 'bmpa_members' 
+        AND column_name = 'role'
+      `);
+
+      if (!roleColumnExists || roleColumnExists.count === 0) {
+        console.log('🔧 Adding role column to bmpa_members table...');
+        await executeQuery(`
+          ALTER TABLE bmpa_members 
+          ADD COLUMN role varchar(20) DEFAULT 'buyer' 
+          AFTER mstatus
+        `);
+        console.log('✅ Role column added successfully');
+      }
       
       // Check if admin table exists, if not create it
       const adminTableExists = await executeQuerySingle(`
