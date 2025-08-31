@@ -359,6 +359,126 @@ export class AdminService {
       };
     }
   }
+
+  // Update member profile
+  async updateMemberProfile(memberId: number, data: {
+    mname?: string;
+    email?: string;
+    phone?: string;
+    company_name?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    state?: string;
+  }): Promise<{ success: boolean; message: string; member?: any }> {
+    try {
+      const updateFields = [];
+      const updateValues = [];
+      
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          updateFields.push(`${key} = ?`);
+          updateValues.push(value);
+        }
+      });
+
+      if (updateFields.length === 0) {
+        return {
+          success: false,
+          message: 'No fields to update'
+        };
+      }
+
+      updateValues.push(memberId);
+      
+      await executeQuery(
+        `UPDATE bmpa_members SET ${updateFields.join(', ')} WHERE member_id = ?`,
+        updateValues
+      );
+
+      const updatedMember = await executeQuerySingle(
+        'SELECT * FROM bmpa_members WHERE member_id = ?',
+        [memberId]
+      );
+
+      return {
+        success: true,
+        message: 'Member profile updated successfully',
+        member: updatedMember
+      };
+
+    } catch (error) {
+      console.error('Error updating member profile:', error);
+      return {
+        success: false,
+        message: 'Failed to update member profile'
+      };
+    }
+  }
+
+  // Get payment history
+  async getPaymentHistory(): Promise<any[]> {
+    try {
+      const payments = await executeQuery(`
+        SELECT 
+          m.member_id,
+          m.mname,
+          m.email,
+          m.company_name,
+          m.membership_paid,
+          m.membership_valid_till,
+          CASE 
+            WHEN m.membership_valid_till < NOW() THEN 'Expired'
+            WHEN m.membership_valid_till > NOW() THEN 'Active'
+            ELSE 'Pending'
+          END as membership_status,
+          DATEDIFF(m.membership_valid_till, NOW()) as days_remaining,
+          m.created_at as payment_date
+        FROM bmpa_members m
+        WHERE m.membership_paid = 1
+        ORDER BY m.membership_valid_till DESC
+      `);
+
+      return payments;
+    } catch (error) {
+      console.error('Error getting payment history:', error);
+      return [];
+    }
+  }
+
+  // Get payment statistics
+  async getPaymentStats(): Promise<{
+    totalCollected: number;
+    activeMembers: number;
+    expiredMembers: number;
+    expiringThisMonth: number;
+  }> {
+    try {
+      const stats = await executeQuerySingle(`
+        SELECT 
+          COUNT(CASE WHEN membership_paid = 1 THEN 1 END) * 2499 as totalCollected,
+          COUNT(CASE WHEN membership_paid = 1 AND membership_valid_till > NOW() THEN 1 END) as activeMembers,
+          COUNT(CASE WHEN membership_paid = 1 AND membership_valid_till < NOW() THEN 1 END) as expiredMembers,
+          COUNT(CASE WHEN membership_paid = 1 AND membership_valid_till BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 1 END) as expiringThisMonth
+        FROM bmpa_members
+      `);
+
+      return {
+        totalCollected: stats?.totalCollected || 0,
+        activeMembers: stats?.activeMembers || 0,
+        expiredMembers: stats?.expiredMembers || 0,
+        expiringThisMonth: stats?.expiringThisMonth || 0
+      };
+    } catch (error) {
+      console.error('Error getting payment stats:', error);
+      return {
+        totalCollected: 0,
+        activeMembers: 0,
+        expiredMembers: 0,
+        expiringThisMonth: 0
+      };
+    }
+  }
 }
 
 export const adminService = new AdminService();

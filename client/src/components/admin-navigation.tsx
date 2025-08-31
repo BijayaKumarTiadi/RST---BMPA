@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Printer, Menu, X, Shield, LogOut } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Printer, Menu, X, Shield, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/contexts/theme-context";
 import { apiRequest } from "@/lib/queryClient";
 
 interface AdminUser {
@@ -16,8 +16,7 @@ interface AdminUser {
 
 export default function AdminNavigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   // Check admin authentication
   const { data: adminAuth } = useQuery<{ success: boolean; admin: AdminUser }>({
@@ -27,30 +26,6 @@ export default function AdminNavigation() {
 
   const isAdminAuthenticated = adminAuth?.success && adminAuth?.admin;
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/auth/admin-logout", {});
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully",
-      });
-      setLocation("/admin");
-    },
-    onError: () => {
-      toast({
-        title: "Logout failed",
-        description: "An error occurred during logout",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -86,34 +61,30 @@ export default function AdminNavigation() {
 
           {/* Admin Actions */}
           <div className="flex items-center space-x-4">
-            {isAdminAuthenticated ? (
-              <>
-                <div className="hidden md:flex items-center space-x-2">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <span className="text-sm text-muted-foreground" data-testid="admin-greeting">
-                    Welcome, {adminAuth.admin.name}
-                  </span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                  data-testid="button-logout"
-                >
-                  {logoutMutation.isPending ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
-                      Logging out...
-                    </>
-                  ) : (
-                    <>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
+            {isAdminAuthenticated && (
+              <div className="hidden md:flex items-center space-x-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm text-muted-foreground" data-testid="admin-greeting">
+                  Welcome, {adminAuth.admin.name}
+                </span>
+              </div>
+            )}
+            
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              data-testid="theme-toggle"
+            >
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </Button>
+            
+            {!isAdminAuthenticated && (
               <Button asChild data-testid="button-admin-login">
                 <Link href="/admin">Admin Login</Link>
               </Button>
@@ -168,14 +139,6 @@ export default function AdminNavigation() {
                     Welcome, {adminAuth.admin.name}
                   </span>
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                  className="w-full"
-                >
-                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
-                </Button>
               </div>
             )}
           </div>

@@ -80,6 +80,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/admin/members/:memberId', requireAdminAuth, async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.memberId);
+      const result = await adminService.updateMemberProfile(memberId, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating member:", error);
+      res.status(500).json({ message: "Failed to update member" });
+    }
+  });
+
+  app.get('/api/admin/payment-history', requireAdminAuth, async (req, res) => {
+    try {
+      const history = await adminService.getPaymentHistory();
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching payment history:", error);
+      res.status(500).json({ message: "Failed to fetch payment history" });
+    }
+  });
+
+  app.get('/api/admin/payment-stats', requireAdminAuth, async (req, res) => {
+    try {
+      const stats = await adminService.getPaymentStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching payment stats:", error);
+      res.status(500).json({ message: "Failed to fetch payment stats" });
+    }
+  });
+
   // Get single member details
   app.get('/api/admin/members/:id', requireAdminAuth, async (req, res) => {
     try {
