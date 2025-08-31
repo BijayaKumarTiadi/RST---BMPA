@@ -1,31 +1,31 @@
-import { useState } from "react";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, User, Building, MapPin, Lock, Printer, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-
-interface RegistrationData {
-  mname: string;
-  phone: string;
-  company_name: string;
-  address1: string;
-  address2: string;
-  city: string;
-  state: string;
-  password: string;
-}
+import { 
+  Mail, 
+  Lock, 
+  User, 
+  Building, 
+  MapPin, 
+  Printer, 
+  CheckCircle, 
+  Loader2,
+  Shield
+} from "lucide-react";
 
 export default function Register() {
-  const [step, setStep] = useState<'email' | 'otp' | 'form' | 'success'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [formData, setFormData] = useState<RegistrationData>({
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [formData, setFormData] = useState({
     mname: '',
     phone: '',
     company_name: '',
@@ -36,10 +36,10 @@ export default function Register() {
     password: ''
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [success, setSuccess] = useState(false);
   const { toast } = useToast();
 
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOTP = async () => {
     if (!email.trim()) {
       toast({
         title: "Error",
@@ -55,11 +55,10 @@ export default function Register() {
       const data = await response.json();
 
       if (data.success) {
-        setStep('otp');
         setOtpSent(true);
         toast({
           title: "OTP Sent",
-          description: "Please check your email for the verification code",
+          description: "Check your email for the verification code",
         });
       } else {
         toast({
@@ -79,58 +78,50 @@ export default function Register() {
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp.trim()) {
+  const handleVerifyOTP = async () => {
+    if (!otp.trim() || otp.length !== 6) {
       toast({
         title: "Error",
-        description: "Please enter the verification code",
+        description: "Please enter the 6-digit verification code",
         variant: "destructive",
       });
       return;
     }
 
-    setStep('form');
+    setOtpVerified(true);
     toast({
-      title: "Email Verified",
-      description: "Please complete your registration details",
+      title: "Email Verified ✓",
+      description: "Complete your details below",
     });
   };
 
-  const handleRegistration = async (e: React.FormEvent) => {
+  const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
+    // Quick validation
+    if (!email || !otp || !otpVerified) {
+      toast({ title: "Error", description: "Please verify your email first", variant: "destructive" });
+      return;
+    }
+    
     if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
         !formData.address1.trim() || !formData.city.trim() || !formData.state.trim() || 
         !formData.password.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
     if (formData.password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
       return;
     }
 
     if (formData.password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
 
-    setLoading(true);
+    setRegistering(true);
     try {
       const response = await apiRequest("POST", "/api/auth/complete-registration", {
         email,
@@ -140,10 +131,10 @@ export default function Register() {
       const data = await response.json();
 
       if (data.success) {
-        setStep('success');
+        setSuccess(true);
         toast({
-          title: "Registration Successful",
-          description: "Welcome to BMPA Stock Exchange!",
+          title: "Success! 🎉",
+          description: "Account created successfully!",
         });
       } else {
         toast({
@@ -159,61 +150,31 @@ export default function Register() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setRegistering(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    setLoading(true);
-    try {
-      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: "OTP Resent",
-          description: "A new verification code has been sent to your email",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to resend OTP. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (step === 'success') {
+  if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Card className="shadow-lg border-0 text-center">
+          <Card className="shadow-xl border-0 text-center">
             <CardContent className="pt-8 pb-8">
               <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
               
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Registration Complete!</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to BMPA! 🎉</h1>
               <p className="text-gray-600 mb-6">
-                Your account has been created successfully. A welcome email has been sent to{' '}
-                <strong>{email}</strong>.
+                Account created for <strong>{email}</strong>
               </p>
               
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-yellow-800 text-sm">
                   <strong>Next Steps:</strong><br />
-                  1. Complete your membership payment (₹17,700)<br />
+                  1. Pay membership fee (₹17,700)<br />
                   2. Wait for admin approval<br />
-                  3. Start exploring the marketplace
+                  3. Start trading!
                 </p>
               </div>
 
@@ -233,7 +194,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -243,138 +204,113 @@ export default function Register() {
           <p className="text-gray-600 text-sm mt-1">Join the Printing Industry Marketplace</p>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="text-center pb-4">
+        <Card className="shadow-xl border-0">
+          <CardHeader className="text-center pb-6">
             <CardTitle className="flex items-center justify-center text-xl">
               <User className="mr-2 h-5 w-5 text-blue-600" />
-              Create Account
+              Create Your Account
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-2">
-              {step === 'email' && 'Enter your email to start registration'}
-              {step === 'otp' && 'Verify your email with the OTP code'}
-              {step === 'form' && 'Complete your member information'}
-            </p>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            {step === 'email' && (
-              <form onSubmit={handleSendOTP} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-email"
-                      required
-                    />
+          <CardContent>
+            <form onSubmit={handleCompleteRegistration} className="space-y-6">
+              {/* Email & OTP Section */}
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 flex items-center">
+                  <Shield className="h-4 w-4 mr-2 text-blue-600" />
+                  Email Verification
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-email"
+                        disabled={otpSent}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <Button 
+                      type="button"
+                      onClick={handleSendOTP}
+                      disabled={loading || !email || otpSent}
+                      className="w-full"
+                      data-testid="button-send-otp"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : otpSent ? (
+                        'OTP Sent ✓'
+                      ) : (
+                        'Send OTP'
+                      )}
+                    </Button>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                  data-testid="button-send-otp"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending OTP...
-                    </>
-                  ) : (
-                    'Send Verification Code'
-                  )}
-                </Button>
-
-                <div className="text-center pt-4 border-t">
-                  <p className="text-sm text-gray-600">
-                    Already have an account?{' '}
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-blue-600"
-                      onClick={() => window.location.href = '/'}
-                      data-testid="link-login"
-                    >
-                      Login here
-                    </Button>
-                  </p>
-                </div>
-              </form>
-            )}
-
-            {step === 'otp' && (
-              <form onSubmit={handleVerifyOTP} className="space-y-4">
                 {otpSent && (
-                  <Alert className="border-blue-200 bg-blue-50">
-                    <Mail className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800">
-                      Verification code sent to <strong>{email}</strong>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otp">Verification Code *</Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        placeholder="6-digit code"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="text-center text-lg tracking-widest font-mono"
+                        data-testid="input-otp"
+                        maxLength={6}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <Button 
+                        type="button"
+                        onClick={handleVerifyOTP}
+                        disabled={!otp || otp.length !== 6 || otpVerified}
+                        className="w-full"
+                        data-testid="button-verify-otp"
+                      >
+                        {otpVerified ? 'Verified ✓' : 'Verify OTP'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {otpVerified && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Email verified! Complete your details below.
                     </AlertDescription>
                   </Alert>
                 )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="otp">Verification Code</Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="text-center text-lg tracking-widest font-mono"
-                    data-testid="input-otp"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                  data-testid="button-verify-otp"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify Email'
-                  )}
-                </Button>
-
-                <div className="flex justify-between text-sm">
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    onClick={() => setStep('email')}
-                    data-testid="button-back"
-                  >
-                    ← Back
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    onClick={handleResendOTP}
-                    disabled={loading}
-                    data-testid="button-resend"
-                  >
-                    Resend OTP
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {step === 'form' && (
-              <form onSubmit={handleRegistration} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              {/* Registration Form */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900 flex items-center">
+                  <User className="h-4 w-4 mr-2 text-blue-600" />
+                  Member Information
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name *</Label>
                     <Input
@@ -447,7 +383,7 @@ export default function Register() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
                     <Input
@@ -474,49 +410,51 @@ export default function Register() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Choose a strong password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="pl-10"
-                      data-testid="input-password"
-                      required
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Choose a strong password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        className="pl-10"
+                        data-testid="input-password"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-confirm-password"
-                      required
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-confirm-password"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <Button 
                   type="submit" 
-                  className="w-full" 
-                  disabled={loading}
+                  className="w-full h-12 text-lg" 
+                  disabled={registering || !otpVerified}
                   data-testid="button-register"
                 >
-                  {loading ? (
+                  {registering ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Creating Account...
                     </>
                   ) : (
@@ -524,18 +462,22 @@ export default function Register() {
                   )}
                 </Button>
 
-                <div className="text-center">
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    onClick={() => setStep('otp')}
-                    data-testid="button-back-to-otp"
-                  >
-                    ← Back to OTP
-                  </Button>
+                <div className="text-center pt-4 border-t">
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <Button 
+                      type="button"
+                      variant="link" 
+                      className="p-0 h-auto text-blue-600"
+                      onClick={() => window.location.href = '/'}
+                      data-testid="link-login"
+                    >
+                      Login here
+                    </Button>
+                  </p>
                 </div>
-              </form>
-            )}
+              </div>
+            </form>
           </CardContent>
         </Card>
 
