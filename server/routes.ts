@@ -1,34 +1,27 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertStockListingSchema, insertOrderSchema, insertMessageSchema, insertOtpVerificationSchema } from "@shared/schema";
-import Stripe from "stripe";
-import { randomInt } from "crypto";
+import { authRouter } from "./authRoutes";
+import { otpService } from "./otpService";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-08-27.basil",
-});
+// Middleware to check if user is authenticated
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.session.memberId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Clean up expired OTPs periodically
+  setInterval(() => {
+    otpService.cleanupExpiredOTPs().catch(console.error);
+  }, 5 * 60 * 1000); // Every 5 minutes
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = (req.user as any)?.claims?.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  app.use('/api/auth', authRouter);
 
   // Categories
   app.get('/api/categories', async (req, res) => {

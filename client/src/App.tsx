@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
 import Home from "@/pages/home";
 import Register from "@/pages/register";
 import AdminLogin from "@/pages/admin-login";
@@ -17,31 +18,30 @@ import Subscribe from "@/pages/subscribe";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
   return (
     <Switch>
-      {/* Default landing page for login/signup */}
-      <Route path="/" component={Landing} />
+      {/* Default landing page - now shows login first */}
+      <Route path="/" component={Login} />
       
       {/* Admin login page - accessible to all */}
       <Route path="/admin" component={AdminLogin} />
       
-      {/* Registration and subscription pages */}
+      {/* Registration page */}
       <Route path="/register" component={Register} />
+      
+      {/* Landing page moved to /welcome */}
+      <Route path="/welcome" component={Landing} />
+      
+      {/* Subscription page */}
       <Route path="/subscribe" component={Subscribe} />
       
-      {/* Protected routes - only visible after login */}
-      {isAuthenticated && (
-        <>
-          <Route path="/home" component={Home} />
-          <Route path="/marketplace" component={Marketplace} />
-          <Route path="/admin-dashboard" component={AdminDashboard} />
-          <Route path="/buyer-dashboard" component={BuyerDashboard} />
-          <Route path="/seller-dashboard" component={SellerDashboard} />
-          <Route path="/api-docs" component={ApiDocs} />
-        </>
-      )}
+      {/* Protected routes */}
+      <Route path="/home" component={Home} />
+      <Route path="/marketplace" component={Marketplace} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/buyer-dashboard" component={BuyerDashboard} />
+      <Route path="/seller-dashboard" component={SellerDashboard} />
+      <Route path="/api-docs" component={ApiDocs} />
       
       <Route component={NotFound} />
     </Switch>

@@ -1,78 +1,195 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2, Mail, User, Building, MapPin, Lock, Shield, Printer, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import OtpVerification from "@/components/otp-verification";
-import Navigation from "@/components/navigation";
-import { Link } from "wouter";
-import { Phone, Mail, Building, User, FileText } from "lucide-react";
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
-  companyName: z.string().min(2, "Company name is required"),
-  designation: z.string().min(2, "Designation is required"),
-  businessCategory: z.string().min(1, "Business category is required"),
-  gstNumber: z.string().min(15, "Valid GST number is required"),
-  role: z.enum(['buyer', 'seller', 'both']),
-});
-
-type RegisterForm = z.infer<typeof registerSchema>;
+interface RegistrationData {
+  mname: string;
+  phone: string;
+  company_name: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  password: string;
+}
 
 export default function Register() {
-  const [step, setStep] = useState<'form' | 'otp' | 'payment'>('form');
-  const [formData, setFormData] = useState<RegisterForm | null>(null);
+  const [step, setStep] = useState<'email' | 'otp' | 'form' | 'success'>('email');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [formData, setFormData] = useState<RegistrationData>({
+    mname: '',
+    phone: '',
+    company_name: '',
+    address1: '',
+    address2: '',
+    city: '',
+    state: '',
+    password: ''
+  });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
 
-  const form = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'buyer',
-    },
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterForm) => {
-      const response = await apiRequest('POST', '/api/auth/register', data);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setFormData(form.getValues());
-      setStep('otp');
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
       toast({
-        title: "Registration Initiated",
-        description: "Please verify your email and mobile number with the OTP sent.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Registration Failed",
-        description: error.message,
+        title: "Error",
+        description: "Please enter your email address",
         variant: "destructive",
       });
-    },
-  });
+      return;
+    }
 
-  const handleFormSubmit = (data: RegisterForm) => {
-    registerMutation.mutate(data);
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
+      const data = await response.json();
+
+      if (data.success) {
+        setStep('otp');
+        setOtpSent(true);
+        toast({
+          title: "OTP Sent",
+          description: "Please check your email for the verification code",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleOtpVerified = () => {
-    setStep('payment');
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter the verification code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStep('form');
     toast({
-      title: "Verification Complete",
-      description: "Please complete the membership payment to activate your account.",
+      title: "Email Verified",
+      description: "Please complete your registration details",
     });
+  };
+
+  const handleRegistration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
+        !formData.address1.trim() || !formData.city.trim() || !formData.state.trim() || 
+        !formData.password.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/complete-registration", {
+        email,
+        otp,
+        registrationData: formData
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setStep('success');
+        toast({
+          title: "Registration Successful",
+          description: "Welcome to BMPA Stock Exchange!",
+        });
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Registration failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "OTP Resent",
+          description: "A new verification code has been sent to your email",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to resend OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
