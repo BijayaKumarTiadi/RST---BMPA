@@ -269,57 +269,10 @@ export default function Home() {
           )}
         </div>
 
-        {/* Platform Benefits Section */}
-        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Why Choose Stock Laabh?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Join thousands of businesses trading efficiently on our platform</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
-              <p className="text-muted-foreground">All our sellers are verified and approved by our admin team</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Competitive Prices</h3>
-              <p className="text-muted-foreground">Get the best deals on stock, materials, and equipment</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Direct Communication</h3>
-              <p className="text-muted-foreground">Chat directly with buyers and sellers for better deals</p>
-            </div>
-          </div>
-        </div>
 
         {/* User Dashboard Links */}
         {isAuthenticated && (
-          <div className="grid md:grid-cols-3 gap-6">
-            {user?.role === 'admin' && (
-              <Card data-testid="admin-dashboard-link" className="border-2 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary">
-                    <TrendingUp className="mr-2 h-5 w-5" />
-                    Admin Dashboard
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">Manage platform, users, and analytics</p>
-                  <Button asChild className="w-full">
-                    <Link href="/admin-dashboard">Open Dashboard</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
+          <div className="grid md:grid-cols-2 gap-6">
             {(user?.role === 'buyer' || user?.role === 'both') && (
               <Card data-testid="buyer-dashboard-link">
                 <CardHeader>
@@ -355,6 +308,37 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {/* Platform Benefits Section - Moved to Bottom */}
+        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mt-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Why Choose Stock Laabh?</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Join thousands of businesses trading efficiently on our platform</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
+              <p className="text-muted-foreground">All our sellers are verified and approved by our admin team</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Competitive Prices</h3>
+              <p className="text-muted-foreground">Get the best deals on stock, materials, and equipment</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Direct Communication</h3>
+              <p className="text-muted-foreground">Chat directly with buyers and sellers for better deals</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
