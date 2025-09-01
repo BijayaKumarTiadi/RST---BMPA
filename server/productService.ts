@@ -149,12 +149,45 @@ export class ProductService {
 
       const products = await executeQuery(productsQuery, [...params, limit, offset]);
 
-      // Parse JSON fields
-      const parsedProducts = products.map(product => ({
-        ...product,
-        image_urls: product.image_urls ? JSON.parse(product.image_urls) : [],
-        specifications: product.specifications ? JSON.parse(product.specifications) : null
-      }));
+      // Parse JSON fields safely
+      const parsedProducts = products.map((product: any) => {
+        let imageUrls = [];
+        let specifications = null;
+        
+        // Safely parse image_urls
+        if (product.image_urls) {
+          try {
+            if (typeof product.image_urls === 'string') {
+              imageUrls = JSON.parse(product.image_urls);
+            } else if (Array.isArray(product.image_urls)) {
+              imageUrls = product.image_urls;
+            }
+          } catch (error) {
+            console.error('Error parsing image_urls for product:', product.id, error);
+            imageUrls = [];
+          }
+        }
+        
+        // Safely parse specifications
+        if (product.specifications) {
+          try {
+            if (typeof product.specifications === 'string') {
+              specifications = JSON.parse(product.specifications);
+            } else if (typeof product.specifications === 'object') {
+              specifications = product.specifications;
+            }
+          } catch (error) {
+            console.error('Error parsing specifications for product:', product.id, error);
+            specifications = null;
+          }
+        }
+        
+        return {
+          ...product,
+          image_urls: imageUrls,
+          specifications
+        };
+      });
 
       return {
         products: parsedProducts,
@@ -185,11 +218,40 @@ export class ProductService {
 
       if (!product) return null;
 
-      // Parse JSON fields
+      // Parse JSON fields safely
+      let imageUrls = [];
+      let specifications = null;
+      
+      if (product.image_urls) {
+        try {
+          if (typeof product.image_urls === 'string') {
+            imageUrls = JSON.parse(product.image_urls);
+          } else if (Array.isArray(product.image_urls)) {
+            imageUrls = product.image_urls;
+          }
+        } catch (error) {
+          console.error('Error parsing image_urls for product:', product.id, error);
+          imageUrls = [];
+        }
+      }
+      
+      if (product.specifications) {
+        try {
+          if (typeof product.specifications === 'string') {
+            specifications = JSON.parse(product.specifications);
+          } else if (typeof product.specifications === 'object') {
+            specifications = product.specifications;
+          }
+        } catch (error) {
+          console.error('Error parsing specifications for product:', product.id, error);
+          specifications = null;
+        }
+      }
+      
       return {
         ...product,
-        image_urls: product.image_urls ? JSON.parse(product.image_urls) : [],
-        specifications: product.specifications ? JSON.parse(product.specifications) : null
+        image_urls: imageUrls,
+        specifications
       };
     } catch (error) {
       console.error('Error getting product by ID:', error);

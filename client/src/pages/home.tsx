@@ -19,6 +19,14 @@ export default function Home() {
     },
   });
 
+  const { data: productsData } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await fetch('/api/products?limit=12');
+      return response.json();
+    },
+  });
+
   const { data: categories } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: async () => {
@@ -159,51 +167,90 @@ export default function Home() {
             </div>
           </div>
 
-          {recentListings?.listings ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentListings.listings.map((listing: any) => (
-                <Card key={listing.id} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-md hover:scale-105" data-testid={`product-${listing.id}`}>
-                  {/* Product Image Placeholder */}
-                  <div className="relative overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/5 to-secondary/10 h-48 flex items-center justify-center">
-                    <Package className="h-16 w-16 text-primary/30" />
-                    <Badge className="absolute top-3 right-3 bg-red-500 text-white">
-                      {listing.status === 'available' ? 'In Stock' : listing.status}
-                    </Badge>
-                    {listing.featured && (
-                      <Badge className="absolute top-3 left-3 bg-yellow-500 text-white">
-                        <Star className="h-3 w-3 mr-1" />
-                        Featured
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <div className="mb-3">
-                      <h3 className="font-semibold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">{listing.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{listing.description}</p>
+          {productsData?.products?.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+              {productsData.products.map((product: any) => (
+                <Card key={product.id} className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-white border border-gray-200 overflow-hidden h-full flex flex-col" data-testid={`product-${product.id}`}>
+                  <div className="relative overflow-hidden bg-gray-50">
+                    {/* Product Image */}
+                    <div className="aspect-square relative">
+                      <img
+                        src={product.image_urls?.[0] ? 
+                          (product.image_urls[0].startsWith('/objects/') ? 
+                            `${window.location.origin}${product.image_urls[0]}` : 
+                            product.image_urls[0]
+                          ) : 
+                          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdDwvdGV4dD48L3N2Zz4='
+                        }
+                        alt={product.title}
+                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                        data-testid={`img-product-${product.id}`}
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdDwvdGV4dD48L3N2Zz4=';
+                        }}
+                      />
                     </div>
                     
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <span className="text-2xl font-bold text-primary">₹{listing.price}</span>
-                        <span className="text-sm text-muted-foreground">/{listing.unit}</span>
+                    {/* Category Badge */}
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="bg-blue-600 text-white text-xs font-medium px-2 py-1">
+                        {product.category_name || 'Product'}
+                      </Badge>
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-green-500 text-white text-xs">
+                        In Stock
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+                    {/* Product Title */}
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors flex-1" data-testid={`text-title-${product.id}`}>
+                      {product.title}
+                    </h3>
+                    
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-lg sm:text-xl font-bold text-primary" data-testid={`text-price-${product.id}`}>
+                        ₹{product.price?.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">
+                        /{product.unit}
+                      </span>
+                    </div>
+                    
+                    {/* Rating (placeholder) */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="h-3 w-3 fill-current" />
+                        ))}
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Available</p>
-                        <p className="text-sm font-semibold text-foreground">{listing.quantity} {listing.unit}</p>
+                      <span className="text-xs text-muted-foreground">(4.5)</span>
+                    </div>
+                    
+                    {/* Seller Info */}
+                    <div className="text-xs text-muted-foreground mb-2">
+                      <div className="truncate font-medium text-blue-600">
+                        {product.seller_company || product.seller_name}
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Button className="w-full bg-primary hover:bg-primary/90" data-testid={`view-product-${listing.id}`}>
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                      <Button variant="outline" className="w-full" data-testid={`quick-view-${listing.id}`}>
-                        Quick View
-                      </Button>
+                    
+                    {/* Quantity Available */}
+                    <div className="text-xs text-green-600 font-medium mb-3">
+                      {product.quantity} {product.unit} available
                     </div>
                   </CardContent>
+
+                  <div className="p-3 sm:p-4 pt-0">
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm py-2 transition-colors duration-200" data-testid={`button-view-${product.id}`}>
+                      <ShoppingCart className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
+                  </div>
                 </Card>
               ))}
             </div>
