@@ -216,11 +216,21 @@ export class ProductService {
       } = productData;
 
       const productId = crypto.randomUUID();
+      // First ensure category exists in bmpa_categories
+      const categoryCheck = await executeQuery('SELECT category_id FROM bmpa_categories WHERE category_id = ?', [category_id]);
+      if (categoryCheck.length === 0) {
+        console.error(`Category ${category_id} not found in bmpa_categories`);
+        return {
+          success: false,
+          message: 'Invalid category selected'
+        };
+      }
+
       const result = await executeQuery(`
         INSERT INTO products (
           id, seller_id, category_id, title, description, price, quantity, unit,
-          min_order_quantity, image_urls, specifications, location, expiry_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          min_order_quantity, image_urls, specifications, location, expiry_date, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
       `, [
         productId,
         seller_id,

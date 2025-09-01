@@ -482,7 +482,7 @@ export default function AddProduct() {
                       {uploadedImages.map((url, index) => (
                         <div key={index} className="relative group">
                           <img
-                            src={url.startsWith('/objects/') ? url : url}
+                            src={url.startsWith('/objects/') ? `${window.location.origin}${url}` : url}
                             alt={`Product image ${index + 1}`}
                             className="w-full h-32 object-cover rounded-lg border"
                             onError={(e) => {
