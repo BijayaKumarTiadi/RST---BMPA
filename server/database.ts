@@ -327,6 +327,68 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Default categories added');
     }
 
+    // Check if chats table exists
+    const chatsTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'chats'
+    `);
+
+    if (!chatsTableExists || chatsTableExists.count === 0) {
+      console.log('💬 Creating chats table...');
+      await executeQuery(`
+        CREATE TABLE chats (
+          id varchar(36) PRIMARY KEY,
+          product_id varchar(36) NOT NULL,
+          buyer_id int(10) NOT NULL,
+          seller_id int(10) NOT NULL,
+          status enum('active', 'closed', 'archived') DEFAULT 'active',
+          created_at datetime DEFAULT CURRENT_TIMESTAMP,
+          updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          FOREIGN KEY (buyer_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
+          FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
+          INDEX idx_product_id (product_id),
+          INDEX idx_buyer_id (buyer_id),
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_updated_at (updated_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Chats table created successfully');
+    }
+
+    // Check if chat_messages table exists
+    const chatMessagesTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'chat_messages'
+    `);
+
+    if (!chatMessagesTableExists || chatMessagesTableExists.count === 0) {
+      console.log('💬 Creating chat_messages table...');
+      await executeQuery(`
+        CREATE TABLE chat_messages (
+          id varchar(36) PRIMARY KEY,
+          chat_id varchar(36) NOT NULL,
+          sender_id int(10) NOT NULL,
+          message text,
+          message_type enum('text', 'image', 'file') DEFAULT 'text',
+          image_url varchar(500),
+          file_url varchar(500),
+          file_name varchar(200),
+          created_at datetime DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
+          FOREIGN KEY (sender_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
+          INDEX idx_chat_id (chat_id),
+          INDEX idx_sender_id (sender_id),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Chat messages table created successfully');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;

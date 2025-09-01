@@ -176,9 +176,11 @@ export default function Home() {
                     <div className="aspect-square relative">
                       <img
                         src={product.image_urls?.[0] ? 
-                          (product.image_urls[0].startsWith('/objects/') ? 
-                            `${window.location.origin}${product.image_urls[0]}` : 
-                            product.image_urls[0]
+                          (product.image_urls[0].startsWith('https://storage.googleapis.com/replit-objstore-') ? 
+                            `/api/images/${product.image_urls[0].split('/.private/')[1]}` :
+                            product.image_urls[0].startsWith('/objects/') ? 
+                              `${window.location.origin}${product.image_urls[0]}` : 
+                              product.image_urls[0]
                           ) : 
                           'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdDwvdGV4dD48L3N2Zz4='
                         }
@@ -246,9 +248,15 @@ export default function Home() {
                   </CardContent>
 
                   <div className="p-3 sm:p-4 pt-0">
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm py-2 transition-colors duration-200" data-testid={`button-view-${product.id}`}>
-                      <ShoppingCart className="h-4 w-4 mr-1" />
-                      View Details
+                    <Button 
+                      asChild
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm py-2 transition-colors duration-200" 
+                      data-testid={`button-view-${product.id}`}
+                    >
+                      <Link href={`/product/${product.id}`}>
+                        <ShoppingCart className="h-4 w-4 mr-1" />
+                        View Details
+                      </Link>
                     </Button>
                   </div>
                 </Card>

@@ -38,6 +38,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.use('/api/auth', authRouter);
 
+  // Serve Google Cloud Storage images
+  app.get('/api/images/*', async (req, res) => {
+    try {
+      const imagePath = req.params[0]; // Get the path after /api/images/
+      const fullPath = `https://storage.googleapis.com/replit-objstore-00314c75-0a87-46bf-b95e-3bcb2f3e6c32/.private/${imagePath}`;
+      
+      // Proxy the image
+      const response = await fetch(fullPath);
+      if (!response.ok) {
+        return res.status(404).json({ error: 'Image not found' });
+      }
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      
+      // Stream the image
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error('Error serving image:', error);
+      res.status(500).json({ error: 'Failed to load image' });
+    }
+  });
+
   // Temporary simple login bypass for testing
   app.post('/api/auth/simple-login', async (req, res) => {
     try {
@@ -391,6 +416,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting product:", error);
       res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
+  // Mark product as sold
+  app.put('/api/products/:id/mark-sold', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const productId = req.params.id;
+      const result = await productService.updateProductStatus(productId, sellerId, 'sold');
+      res.json(result);
+    } catch (error) {
+      console.error("Error marking product as sold:", error);
+      res.status(500).json({ message: "Failed to mark product as sold" });
+    }
+  });
+
+  // Chat endpoints
+  app.post('/api/chat/start', requireAuth, async (req: any, res) => {
+    try {
+      const buyerId = req.session.memberId;
+      const { productId, sellerId } = req.body;
+      
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      if (!productId || !sellerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product ID and Seller ID are required'
+        });
+      }
+
+      // Check if chat already exists
+      const existingChat = await executeQuerySingle(`
+        SELECT * FROM chats 
+        WHERE product_id = ? AND buyer_id = ? AND seller_id = ?
+      `, [productId, buyerId, sellerId]);
+
+      if (existingChat) {
+        return res.json({
+          success: true,
+          chatId: existingChat.id,
+          message: 'Chat already exists'
+        });
+      }
+
+      // Create new chat
+      const chatId = 'chat-' + Math.random().toString(36).substr(2, 9);
+      
+      await executeQuery(`
+        INSERT INTO chats (id, product_id, buyer_id, seller_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'active', NOW(), NOW())
+      `, [chatId, productId, buyerId, sellerId]);
+
+      res.json({
+        success: true,
+        chatId: chatId,
+        message: 'Chat started successfully'
+      });
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      res.status(500).json({ message: "Failed to start chat" });
+    }
+  });
+
+  app.get('/api/chat/:chatId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.memberId;
+      const { chatId } = req.params;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Verify user is part of the chat
+      const chat = await executeQuerySingle(`
+        SELECT * FROM chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+      `, [chatId, userId, userId]);
+
+      if (!chat) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized to view this chat'
+        });
+      }
+
+      // Get messages
+      const messages = await executeQuery(`
+        SELECT m.*, mem.company_name as sender_name
+        FROM chat_messages m
+        LEFT JOIN members mem ON m.sender_id = mem.id
+        WHERE m.chat_id = ?
+        ORDER BY m.created_at ASC
+      `, [chatId]);
+
+      res.json({
+        success: true,
+        messages: messages,
+        chat: chat
+      });
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post('/api/chat/:chatId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const senderId = req.session.memberId;
+      const { chatId } = req.params;
+      const { message, messageType = 'text', imageUrl } = req.body;
+      
+      if (!senderId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Verify user is part of the chat
+      const chat = await executeQuerySingle(`
+        SELECT * FROM chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+      `, [chatId, senderId, senderId]);
+
+      if (!chat) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized to send message to this chat'
+        });
+      }
+
+      if (!message && !imageUrl) {
+        return res.status(400).json({
+          success: false,
+          message: 'Message content or image is required'
+        });
+      }
+
+      // Insert message
+      const messageId = 'msg-' + Math.random().toString(36).substr(2, 9);
+      
+      await executeQuery(`
+        INSERT INTO chat_messages (id, chat_id, sender_id, message, message_type, image_url, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
+      `, [messageId, chatId, senderId, message || '', messageType, imageUrl || null]);
+
+      // Update chat timestamp
+      await executeQuery(`
+        UPDATE chats SET updated_at = NOW() WHERE id = ?
+      `, [chatId]);
+
+      res.json({
+        success: true,
+        messageId: messageId,
+        message: 'Message sent successfully'
+      });
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      res.status(500).json({ message: "Failed to send chat message" });
     }
   });
 
