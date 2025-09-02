@@ -138,9 +138,9 @@ export default function Chat() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Chat Not Found</h1>
-            <Button onClick={() => setLocation('/')}>
+            <Button onClick={() => setLocation('/messages')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
+              Back to Messages
             </Button>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function Chat() {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setLocation('/')}
+                  onClick={() => setLocation('/messages')}
                   data-testid="button-back"
                 >
                   <ArrowLeft className="h-4 w-4" />
