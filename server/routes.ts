@@ -39,6 +39,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRouter);
 
 
+  // Create test accounts endpoint
+  app.post('/api/create-test-accounts', async (req, res) => {
+    try {
+      const testAccounts = [
+        {
+          mname: 'John Seller',
+          email: 'seller1@test.com',
+          phone: '9876543210',
+          company_name: 'ABC Trading Co.',
+          address1: '123 Business Street',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          role: 'seller',
+          mstatus: 1
+        },
+        {
+          mname: 'Sarah Seller',
+          email: 'seller2@test.com',
+          phone: '9876543211',
+          company_name: 'XYZ Industries',
+          address1: '456 Commerce Road',
+          city: 'Delhi',
+          state: 'Delhi',
+          role: 'seller',
+          mstatus: 1
+        },
+        {
+          mname: 'Mike Buyer',
+          email: 'buyer1@test.com',
+          phone: '9876543212',
+          company_name: 'DEF Enterprises',
+          address1: '789 Market Square',
+          city: 'Bangalore',
+          state: 'Karnataka',
+          role: 'buyer',
+          mstatus: 1
+        },
+        {
+          mname: 'Lisa Buyer',
+          email: 'buyer2@test.com',
+          phone: '9876543213',
+          company_name: 'GHI Solutions',
+          address1: '321 Tech Park',
+          city: 'Pune',
+          state: 'Maharashtra',
+          role: 'buyer',
+          mstatus: 1
+        }
+      ];
+
+      const created = [];
+      for (const account of testAccounts) {
+        // Check if account already exists
+        const existing = await executeQuery('SELECT * FROM bmpa_members WHERE email = ?', [account.email]);
+        
+        if (existing.length === 0) {
+          await executeQuery(`
+            INSERT INTO bmpa_members (mname, email, phone, company_name, address1, city, state, role, mstatus, membership_paid, membership_valid_till)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, '2025-12-31')
+          `, [
+            account.mname,
+            account.email, 
+            account.phone,
+            account.company_name,
+            account.address1,
+            account.city,
+            account.state,
+            account.role,
+            account.mstatus
+          ]);
+          created.push(account.email);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Test accounts created: ${created.join(', ')}`,
+        accounts: testAccounts.map(acc => ({ email: acc.email, role: acc.role, company: acc.company_name }))
+      });
+
+    } catch (error) {
+      console.error('Error creating test accounts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create test accounts'
+      });
+    }
+  });
+
   // Temporary simple login bypass for testing
   app.post('/api/auth/simple-login', async (req, res) => {
     try {
@@ -51,8 +140,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get member from members table
-      const members = await executeQuery('SELECT * FROM members WHERE email = ?', [email]);
+      // Get member from bmpa_members table
+      const members = await executeQuery('SELECT * FROM bmpa_members WHERE email = ?', [email]);
       
       if (members.length === 0) {
         return res.status(401).json({
@@ -72,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store member in session
-      req.session.memberId = member.id;
+      req.session.memberId = member.member_id;
       req.session.memberEmail = member.email;
       req.session.isAuthenticated = true;
 
@@ -82,12 +171,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         message: 'Login successful',
         member: {
-          id: member.id,
+          id: member.member_id,
           email: member.email,
           company_name: member.company_name,
-          contact_person: member.contact_person,
+          mname: member.mname,
           role: member.role,
-          membership_status: member.membership_status
+          membership_status: member.mstatus
         }
       });
 
@@ -991,6 +1080,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Temporary endpoint to add demo products
+  // Chat/Messaging Routes
+  app.post('/api/chat/start', requireAuth, async (req: any, res) => {
+    try {
+      const { productId, sellerId } = req.body;
+      const buyerId = req.session.memberId;
+
+      if (!productId || !sellerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product ID and seller ID are required'
+        });
+      }
+
+      // Check if chat already exists
+      const existingChat = await executeQuery(`
+        SELECT * FROM bmpa_chats 
+        WHERE product_id = ? AND buyer_id = ? AND seller_id = ?
+      `, [productId, buyerId, sellerId]);
+
+      let chatId;
+      if (existingChat.length > 0) {
+        chatId = existingChat[0].id;
+      } else {
+        // Create new chat
+        chatId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await executeQuery(`
+          INSERT INTO bmpa_chats (id, product_id, buyer_id, seller_id)
+          VALUES (?, ?, ?, ?)
+        `, [chatId, productId, buyerId, sellerId]);
+      }
+
+      res.json({
+        success: true,
+        chatId: chatId,
+        message: 'Chat started successfully'
+      });
+
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start chat'
+      });
+    }
+  });
+
+  app.get('/api/chat/:chatId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const { chatId } = req.params;
+      const userId = req.session.memberId;
+
+      // Verify user is part of this chat
+      const chat = await executeQuery(`
+        SELECT * FROM bmpa_chats 
+        WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+      `, [chatId, userId, userId]);
+
+      if (chat.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this chat'
+        });
+      }
+
+      // Get messages
+      const messages = await executeQuery(`
+        SELECT 
+          m.*,
+          mb.mname as sender_name,
+          mb.company_name as sender_company
+        FROM bmpa_chat_messages m
+        JOIN bmpa_members mb ON m.sender_id = mb.member_id
+        WHERE m.chat_id = ?
+        ORDER BY m.created_at ASC
+      `, [chatId]);
+
+      res.json({
+        success: true,
+        messages: messages,
+        chat: chat[0]
+      });
+
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch messages'
+      });
+    }
+  });
+
+  app.post('/api/chat/:chatId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const { chatId } = req.params;
+      const { message } = req.body;
+      const senderId = req.session.memberId;
+
+      if (!message || !message.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Message content is required'
+        });
+      }
+
+      // Verify user is part of this chat
+      const chat = await executeQuery(`
+        SELECT * FROM bmpa_chats 
+        WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+      `, [chatId, senderId, senderId]);
+
+      if (chat.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this chat'
+        });
+      }
+
+      // Insert message
+      const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      await executeQuery(`
+        INSERT INTO bmpa_chat_messages (id, chat_id, sender_id, message)
+        VALUES (?, ?, ?, ?)
+      `, [messageId, chatId, senderId, message.trim()]);
+
+      // Update chat timestamp
+      await executeQuery(`
+        UPDATE bmpa_chats SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `, [chatId]);
+
+      res.json({
+        success: true,
+        messageId: messageId,
+        message: 'Message sent successfully'
+      });
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send message'
+      });
+    }
+  });
+
+  app.get('/api/chats', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.memberId;
+
+      const chats = await executeQuery(`
+        SELECT 
+          c.*,
+          p.title as product_title,
+          buyer.mname as buyer_name,
+          buyer.company_name as buyer_company,
+          seller.mname as seller_name,
+          seller.company_name as seller_company,
+          (SELECT COUNT(*) FROM bmpa_chat_messages WHERE chat_id = c.id AND sender_id != ? AND is_read = false) as unread_count,
+          (SELECT message FROM bmpa_chat_messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
+        FROM bmpa_chats c
+        LEFT JOIN bmpa_products p ON c.product_id = p.id
+        JOIN bmpa_members buyer ON c.buyer_id = buyer.member_id
+        JOIN bmpa_members seller ON c.seller_id = seller.member_id
+        WHERE c.buyer_id = ? OR c.seller_id = ?
+        ORDER BY c.updated_at DESC
+      `, [userId, userId, userId]);
+
+      res.json({
+        success: true,
+        chats: chats
+      });
+
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch chats'
+      });
+    }
+  });
+
   app.post('/api/add-demo-products', async (req, res) => {
     try {
       console.log('📦 Adding demo products...');
