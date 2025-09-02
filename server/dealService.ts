@@ -255,7 +255,7 @@ class DealService {
   }
 
   // Create a new deal
-  async createDeal(dealData: CreateDealData): Promise<{ success: boolean; message: string; dealId?: number }> {
+  async createDeal(dealData: CreateDealData, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
         group_id,
@@ -298,8 +298,9 @@ class DealService {
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, MakeID, GradeID, BrandID, memberID, 
-          Seller_comments, OfferPrice, OfferUnit
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          Seller_comments, OfferPrice, OfferUnit,
+          created_by_member_id, created_by_name, created_by_company
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
@@ -308,7 +309,10 @@ class DealService {
         seller_id,
         `${deal_title}\n${deal_description || ''}`,
         price,
-        unit
+        unit,
+        userInfo?.member_id || seller_id,
+        userInfo?.name || '',
+        userInfo?.company || ''
       ]);
 
       const insertId = (result as any).insertId;
@@ -328,11 +332,11 @@ class DealService {
   }
 
   // Update a deal
-  async updateDeal(dealId: number, sellerId: number, updateData: Partial<CreateDealData>): Promise<{ success: boolean; message: string }> {
+  async updateDeal(dealId: number, userId: number, updateData: Partial<CreateDealData>): Promise<{ success: boolean; message: string }> {
     try {
-      // Verify the deal belongs to the seller
+      // Verify the deal belongs to the user who created it
       const deal = await executeQuerySingle(`
-        SELECT SellerID FROM deal_master WHERE DealID = ?
+        SELECT created_by_member_id, memberID FROM deal_master WHERE TransID = ?
       `, [dealId]);
 
       if (!deal) {
@@ -342,7 +346,7 @@ class DealService {
         };
       }
 
-      if (deal.SellerID !== sellerId) {
+      if (deal.created_by_member_id !== userId) {
         return {
           success: false,
           message: 'Unauthorized to update this deal'
@@ -391,7 +395,7 @@ class DealService {
       updateValues.push(dealId);
       
       await executeQuery(
-        `UPDATE deal_master SET ${updateFields.join(', ')}, UpdatedAt = CURRENT_TIMESTAMP WHERE DealID = ?`,
+        `UPDATE deal_master SET ${updateFields.join(', ')}, deal_updated_at = CURRENT_TIMESTAMP WHERE TransID = ?`,
         updateValues
       );
 
@@ -409,11 +413,11 @@ class DealService {
   }
 
   // Delete a deal (change status to inactive)
-  async deleteDeal(dealId: number, sellerId: number): Promise<{ success: boolean; message: string }> {
+  async deleteDeal(dealId: number, userId: number): Promise<{ success: boolean; message: string }> {
     try {
-      // Verify the deal belongs to the seller
+      // Verify the deal belongs to the user who created it
       const deal = await executeQuerySingle(`
-        SELECT SellerID FROM deal_master WHERE DealID = ?
+        SELECT created_by_member_id FROM deal_master WHERE TransID = ?
       `, [dealId]);
 
       if (!deal) {
@@ -423,7 +427,7 @@ class DealService {
         };
       }
 
-      if (deal.SellerID !== sellerId) {
+      if (deal.created_by_member_id !== userId) {
         return {
           success: false,
           message: 'Unauthorized to delete this deal'
@@ -431,7 +435,7 @@ class DealService {
       }
 
       await executeQuery(`
-        UPDATE deal_master SET Status = 'inactive', UpdatedAt = CURRENT_TIMESTAMP WHERE DealID = ?
+        UPDATE deal_master SET StockStatus = 'inactive', deal_updated_at = CURRENT_TIMESTAMP WHERE TransID = ?
       `, [dealId]);
 
       return {

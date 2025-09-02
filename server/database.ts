@@ -403,6 +403,37 @@ export async function initializeDatabase(): Promise<void> {
       }
     }
 
+    // Check if deal_master table has user identification columns
+    const dealCreatorColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'deal_master' 
+      AND column_name = 'created_by_member_id'
+    `);
+
+    if (!dealCreatorColumnExists || dealCreatorColumnExists.count === 0) {
+      console.log('📝 Adding user identification columns to deal_master table...');
+      
+      // Add created_by_member_id column
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN created_by_member_id int(10) DEFAULT NULL,
+        ADD COLUMN created_by_name varchar(100) DEFAULT '',
+        ADD COLUMN created_by_company varchar(100) DEFAULT '',
+        ADD COLUMN deal_created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN deal_updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      `);
+
+      // Add foreign key constraint
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD FOREIGN KEY (created_by_member_id) REFERENCES bmpa_members(member_id) ON DELETE SET NULL
+      `);
+      
+      console.log('✅ User identification columns added to deal_master successfully');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;

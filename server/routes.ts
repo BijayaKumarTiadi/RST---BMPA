@@ -570,6 +570,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get user information for the deal
+      const member = await executeQuerySingle('SELECT member_id, mname, company_name FROM bmpa_members WHERE member_id = ?', [sellerId]);
+      
+      const userInfo = {
+        member_id: sellerId,
+        name: member?.mname || '',
+        company: member?.company_name || ''
+      };
+
       const result = await dealService.createDeal({
         group_id: parseInt(group_id),
         make_id: parseInt(make_id),
@@ -585,7 +594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_specifications,
         location,
         expires_at: expires_at ? new Date(expires_at) : undefined,
-      });
+      }, userInfo);
 
       res.json(result);
     } catch (error) {
@@ -597,13 +606,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/deals/:id', requireAuth, async (req: any, res) => {
     try {
       const dealId = parseInt(req.params.id);
-      const sellerId = req.session.memberId;
+      const userId = req.session.memberId;
       
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
       
-      const result = await dealService.updateDeal(dealId, sellerId, req.body);
+      const result = await dealService.updateDeal(dealId, userId, req.body);
       res.json(result);
     } catch (error) {
       console.error("Error updating deal:", error);
@@ -614,13 +623,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/deals/:id', requireAuth, async (req: any, res) => {
     try {
       const dealId = parseInt(req.params.id);
-      const sellerId = req.session.memberId;
+      const userId = req.session.memberId;
       
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
       
-      const result = await dealService.deleteDeal(dealId, sellerId);
+      const result = await dealService.deleteDeal(dealId, userId);
       res.json(result);
     } catch (error) {
       console.error("Error deleting deal:", error);

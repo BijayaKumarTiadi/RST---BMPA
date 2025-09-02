@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, ShoppingCart, MessageCircle, MapPin, Star, Heart, Eye } from "lucide-react";
+import { Package, Search, Filter, ShoppingCart, MessageCircle, MapPin, Star, Heart, Eye, Edit } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function Marketplace() {
@@ -310,27 +310,53 @@ export default function Marketplace() {
                           View Details
                         </Button>
                         
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleContactSeller(deal.TransID, deal.SellerID)}
-                            data-testid={`button-contact-seller-${deal.TransID}`}
-                          >
-                            <MessageCircle className="h-3 w-3 mr-1" />
-                            Chat
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setLocation(`/deal/${deal.TransID}`)}
-                            data-testid={`button-buy-now-${deal.TransID}`}
-                          >
-                            <ShoppingCart className="h-3 w-3 mr-1" />
-                            Buy
-                          </Button>
-                        </div>
+                        {/* Show edit button only for deals created by current user */}
+                        {deal.created_by_member_id === user?.member_id ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
+                              data-testid={`button-edit-deal-${deal.TransID}`}
+                              className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/deal/${deal.TransID}`)}
+                              data-testid={`button-view-own-deal-${deal.TransID}`}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleContactSeller(deal.TransID, deal.SellerID)}
+                              data-testid={`button-contact-seller-${deal.TransID}`}
+                            >
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              Chat
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/deal/${deal.TransID}`)}
+                              data-testid={`button-buy-now-${deal.TransID}`}
+                            >
+                              <ShoppingCart className="h-3 w-3 mr-1" />
+                              Buy
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Rating (placeholder) */}
