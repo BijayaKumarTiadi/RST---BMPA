@@ -160,24 +160,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Store member in session
+      // Store member in session and save it
       req.session.memberId = member.member_id;
       req.session.memberEmail = member.email;
       req.session.isAuthenticated = true;
 
-      console.log(`✅ Simple login successful for ${email}`);
-
-      res.json({
-        success: true,
-        message: 'Login successful',
-        member: {
-          id: member.member_id,
-          email: member.email,
-          company_name: member.company_name,
-          mname: member.mname,
-          role: member.role,
-          membership_status: member.mstatus
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Login failed - session error'
+          });
         }
+
+        console.log(`✅ Simple login successful for ${email}, session saved`);
+
+        res.json({
+          success: true,
+          message: 'Login successful',
+          member: {
+            id: member.member_id,
+            email: member.email,
+            company_name: member.company_name,
+            mname: member.mname,
+            role: member.role,
+            membership_status: member.mstatus
+          }
+        });
       });
 
     } catch (error) {
@@ -1093,8 +1103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await executeQuery(`
         UPDATE bmpa_chat_messages 
         SET is_read = 1 
-        WHERE chat_id = ? AND sender_id != ?
+        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
       `, [chatId, userId]);
+      
 
       // Get messages
       const messages = await executeQuery(`
@@ -1188,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           buyer.company_name as buyer_company,
           seller.mname as seller_name,
           seller.company_name as seller_company,
-          (SELECT COUNT(*) FROM bmpa_chat_messages WHERE chat_id = c.id AND sender_id != ? AND is_read = false) as unread_count,
+          (SELECT COUNT(*) FROM bmpa_chat_messages WHERE chat_id = c.id AND sender_id != ? AND is_read = 0) as unread_count,
           (SELECT message FROM bmpa_chat_messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
         FROM bmpa_chats c
         LEFT JOIN bmpa_products p ON c.product_id = p.id
@@ -1223,7 +1234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN bmpa_chats c ON cm.chat_id = c.id
         WHERE (c.buyer_id = ? OR c.seller_id = ?) 
         AND cm.sender_id != ? 
-        AND cm.is_read = false
+        AND cm.is_read = 0
       `, [userId, userId, userId]);
 
       res.json({

@@ -51,7 +51,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 15 * 60 * 1000, // 15 minutes session validity
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours session validity
     httpOnly: true,
     secure: false // Set to true in production with HTTPS
   }
