@@ -6,7 +6,7 @@ const dbConfig = {
   port: 23306,
   user: 'manish',
   password: 'manish',
-  database: 'spmis2223yrk',
+  database: 'trade_bmpa25',
   charset: 'utf8mb4',
   timezone: '+00:00',
   connectTimeout: 60000,
@@ -74,7 +74,7 @@ export async function initializeDatabase(): Promise<void> {
     const tableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
-      WHERE table_schema = 'spmis2223yrk' 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'bmpa_members'
     `);
 
@@ -159,7 +159,7 @@ export async function initializeDatabase(): Promise<void> {
       const roleColumnExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
         FROM information_schema.columns 
-        WHERE table_schema = 'spmis2223yrk' 
+        WHERE table_schema = 'trade_bmpa25' 
         AND table_name = 'bmpa_members' 
         AND column_name = 'role'
       `);
@@ -178,7 +178,7 @@ export async function initializeDatabase(): Promise<void> {
       const adminTableExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
         FROM information_schema.tables 
-        WHERE table_schema = 'spmis2223yrk' 
+        WHERE table_schema = 'trade_bmpa25' 
         AND table_name = 'admin_users'
       `);
 
@@ -243,7 +243,7 @@ export async function initializeDatabase(): Promise<void> {
     const categoriesTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
-      WHERE table_schema = 'spmis2223yrk' 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'bmpa_categories'
     `);
 
@@ -270,7 +270,7 @@ export async function initializeDatabase(): Promise<void> {
     const productsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
-      WHERE table_schema = 'spmis2223yrk' 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'bmpa_products'
     `);
 
@@ -388,7 +388,7 @@ export async function initializeDatabase(): Promise<void> {
       const columnExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
         FROM information_schema.columns 
-        WHERE table_schema = 'spmis2223yrk' 
+        WHERE table_schema = 'trade_bmpa25' 
         AND table_name = 'bmpa_chat_messages' 
         AND column_name = 'is_read'
       `);
