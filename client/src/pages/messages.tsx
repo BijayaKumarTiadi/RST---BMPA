@@ -171,9 +171,16 @@ export default function Messages() {
                     <>
                       <Separator className="mx-6" />
                       <CardContent className="pt-3 pb-4">
-                        <p className="text-sm text-muted-foreground truncate" data-testid={`text-last-message-${chat.id}`}>
-                          {chat.last_message}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground truncate flex-1" data-testid={`text-last-message-${chat.id}`}>
+                            {chat.last_message}
+                          </p>
+                          {chat.unread_count > 0 && (
+                            <Badge className="ml-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-xs" data-testid={`badge-unread-${chat.id}`}>
+                              {chat.unread_count}
+                            </Badge>
+                          )}
+                        </div>
                       </CardContent>
                     </>
                   )}

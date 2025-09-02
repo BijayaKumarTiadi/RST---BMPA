@@ -1089,6 +1089,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Mark messages as read for the current user (messages sent by others)
+      await executeQuery(`
+        UPDATE bmpa_chat_messages 
+        SET is_read = true 
+        WHERE chat_id = ? AND sender_id != ?
+      `, [chatId, userId]);
+
       // Get messages
       const messages = await executeQuery(`
         SELECT 
@@ -1181,6 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           buyer.company_name as buyer_company,
           seller.mname as seller_name,
           seller.company_name as seller_company,
+          (SELECT COUNT(*) FROM bmpa_chat_messages WHERE chat_id = c.id AND sender_id != ? AND is_read = false) as unread_count,
           (SELECT message FROM bmpa_chat_messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
         FROM bmpa_chats c
         LEFT JOIN bmpa_products p ON c.product_id = p.id
@@ -1188,7 +1196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN bmpa_members seller ON c.seller_id = seller.member_id
         WHERE c.buyer_id = ? OR c.seller_id = ?
         ORDER BY c.updated_at DESC
-      `, [userId, userId]);
+      `, [userId, userId, userId]);
 
       res.json({
         success: true,
@@ -1200,6 +1208,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch chats'
+      });
+    }
+  });
+
+  // Get total unread message count for navigation badge
+  app.get('/api/messages/unread-count', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.memberId;
+      
+      const result = await executeQuerySingle(`
+        SELECT COUNT(*) as unread_count
+        FROM bmpa_chat_messages cm
+        JOIN bmpa_chats c ON cm.chat_id = c.id
+        WHERE (c.buyer_id = ? OR c.seller_id = ?) 
+        AND cm.sender_id != ? 
+        AND cm.is_read = false
+      `, [userId, userId, userId]);
+
+      res.json({
+        success: true,
+        unreadCount: result?.unread_count || 0
+      });
+    } catch (error) {
+      console.error('Error getting unread count:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get unread count'
       });
     }
   });

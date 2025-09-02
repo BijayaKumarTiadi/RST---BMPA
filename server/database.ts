@@ -373,6 +373,7 @@ export async function initializeDatabase(): Promise<void> {
           chat_id varchar(36) NOT NULL,
           sender_id int(10) NOT NULL,
           message text,
+          is_read boolean DEFAULT false,
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (chat_id) REFERENCES bmpa_chats(id) ON DELETE CASCADE,
           FOREIGN KEY (sender_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
@@ -382,6 +383,24 @@ export async function initializeDatabase(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
       console.log('✅ BMPA Chat messages table created successfully');
+    } else {
+      // Check if is_read column exists, if not add it
+      const columnExists = await executeQuerySingle(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.columns 
+        WHERE table_schema = 'spmis2223yrk' 
+        AND table_name = 'bmpa_chat_messages' 
+        AND column_name = 'is_read'
+      `);
+
+      if (!columnExists || columnExists.count === 0) {
+        console.log('📝 Adding is_read column to bmpa_chat_messages table...');
+        await executeQuery(`
+          ALTER TABLE bmpa_chat_messages 
+          ADD COLUMN is_read boolean DEFAULT false
+        `);
+        console.log('✅ is_read column added successfully');
+      }
     }
 
   } catch (error) {
