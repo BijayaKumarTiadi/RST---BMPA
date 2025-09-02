@@ -1100,12 +1100,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Mark messages as read for the current user (messages sent by others)
-      await executeQuery(`
+      const updateResult = await executeQuery(`
         UPDATE bmpa_chat_messages 
         SET is_read = 1 
         WHERE chat_id = ? AND sender_id != ? AND is_read = 0
       `, [chatId, userId]);
       
+      console.log(`🔧 Update result for chat ${chatId}:`, updateResult);
+      
+      // Verify the update worked
+      const unreadCheck = await executeQuery(`
+        SELECT COUNT(*) as count FROM bmpa_chat_messages 
+        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
+      `, [chatId, userId]);
+      
+      console.log(`🔧 Remaining unread in chat ${chatId}:`, unreadCheck[0]?.count || 0);
 
       // Get messages
       const messages = await executeQuery(`
@@ -1228,6 +1237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.memberId;
       
+      console.log(`🔧 Checking unread count for user ${userId}`);
+      
       const result = await executeQuerySingle(`
         SELECT COUNT(*) as unread_count
         FROM bmpa_chat_messages cm
@@ -1236,6 +1247,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         AND cm.sender_id != ? 
         AND cm.is_read = 0
       `, [userId, userId, userId]);
+
+      console.log(`🔧 Unread count result:`, result);
 
       res.json({
         success: true,
