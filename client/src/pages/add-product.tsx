@@ -15,118 +15,138 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Package, DollarSign, Hash, MapPin, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
-const productSchema = z.object({
-  title: z.string().min(1, "Product title is required").max(200, "Title must be under 200 characters"),
-  description: z.string().optional(),
-  category_id: z.string().min(1, "Category is required"),
+const dealSchema = z.object({
+  deal_title: z.string().min(1, "Deal title is required").max(200, "Title must be under 200 characters"),
+  deal_description: z.string().optional(),
+  group_id: z.string().min(1, "Stock group is required"),
+  make_id: z.string().min(1, "Stock make is required"),
+  grade_id: z.string().min(1, "Stock grade is required"),
+  brand_id: z.string().min(1, "Stock brand is required"),
   price: z.number().min(0.01, "Price must be greater than 0"),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   unit: z.string().min(1, "Unit is required"),
   min_order_quantity: z.number().int().min(1, "Minimum order quantity must be at least 1").optional(),
   location: z.string().optional(),
-  expiry_date: z.string().optional(),
+  expires_at: z.string().optional(),
 });
 
-type ProductFormData = z.infer<typeof productSchema>;
+type DealFormData = z.infer<typeof dealSchema>;
 
-export default function AddProduct() {
+export default function AddDeal() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedMake, setSelectedMake] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState("");
 
-  const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<DealFormData>({
+    resolver: zodResolver(dealSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      category_id: "",
+      deal_title: "",
+      deal_description: "",
+      group_id: "",
+      make_id: "",
+      grade_id: "",
+      brand_id: "",
       price: 0,
       quantity: 1,
       unit: "",
       min_order_quantity: 1,
       location: "",
-      expiry_date: "",
+      expires_at: "",
     },
   });
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery({
-    queryKey: ["/api/categories"],
-  });
-
-  // Create category mutation
-  const createCategoryMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string }) => {
-      return apiRequest("POST", "/api/categories", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Category created successfully!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      setShowAddCategory(false);
-      setNewCategoryName("");
-      setNewCategoryDescription("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create category",
-        variant: "destructive",
-      });
+  // Fetch stock hierarchy
+  const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
+    queryKey: ["/api/stock/hierarchy"],
+    queryFn: async () => {
+      const response = await fetch('/api/stock/hierarchy');
+      if (!response.ok) throw new Error('Failed to fetch stock hierarchy');
+      return response.json();
     },
   });
 
-  // Create product mutation
-  const createProductMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
+  const groups = stockHierarchy?.groups || [];
+  const makes = stockHierarchy?.makes || [];
+  const grades = stockHierarchy?.grades || [];
+  const brands = stockHierarchy?.brands || [];
+
+  // Filter makes, grades, and brands based on selections
+  const filteredMakes = makes.filter((make: any) => 
+    selectedGroup ? make.GroupID.toString() === selectedGroup : true
+  );
+  const filteredGrades = grades.filter((grade: any) => 
+    selectedGroup ? grade.GroupID.toString() === selectedGroup : true
+  );
+  const filteredBrands = brands.filter((brand: any) => 
+    selectedMake ? brand.MakeID.toString() === selectedMake : true
+  );
+
+  // Handle selection changes to reset dependent fields
+  const handleGroupChange = (value: string) => {
+    setSelectedGroup(value);
+    setSelectedMake("");
+    setSelectedGrade("");
+    form.setValue("group_id", value);
+    form.setValue("make_id", "");
+    form.setValue("grade_id", "");
+    form.setValue("brand_id", "");
+  };
+
+  const handleMakeChange = (value: string) => {
+    setSelectedMake(value);
+    form.setValue("make_id", value);
+    form.setValue("brand_id", "");
+  };
+
+  const handleGradeChange = (value: string) => {
+    setSelectedGrade(value);
+    form.setValue("grade_id", value);
+  };
+
+  // Create deal mutation
+  const createDealMutation = useMutation({
+    mutationFn: async (data: DealFormData) => {
       const payload = {
         ...data,
-        category_id: parseInt(data.category_id),
-        expiry_date: data.expiry_date ? new Date(data.expiry_date).toISOString() : undefined,
+        group_id: parseInt(data.group_id),
+        make_id: parseInt(data.make_id),
+        grade_id: parseInt(data.grade_id),
+        brand_id: parseInt(data.brand_id),
+        expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : undefined,
       };
-      return apiRequest("POST", "/api/products", payload);
+      return apiRequest("POST", "/api/deals", payload);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Product added successfully!",
+        description: "Deal added successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
       setLocation("/seller-dashboard");
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add product",
+        description: error.message || "Failed to add deal",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = (data: ProductFormData) => {
-    createProductMutation.mutate(data);
+  const onSubmit = (data: DealFormData) => {
+    createDealMutation.mutate(data);
   };
 
-  const handleAddCategory = () => {
-    if (!newCategoryName.trim()) {
-      toast({
-        title: "Error",
-        description: "Category name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    createCategoryMutation.mutate({
-      name: newCategoryName.trim(),
-      description: newCategoryDescription.trim() || undefined,
-    });
-  };
+  if (hierarchyLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,37 +160,171 @@ export default function AddProduct() {
                 Back to Dashboard
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Add New Product</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Add New Deal</h1>
             <p className="text-muted-foreground">
-              Add a new product to your inventory and start selling to buyers on the platform.
+              Create a new stock deal by selecting from the stock hierarchy and set your terms.
             </p>
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Product Information */}
+                {/* Stock Selection */}
                 <div className="lg:col-span-2 space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
-                        Product Information
+                        Stock Selection
                       </CardTitle>
                       <CardDescription>
-                        Basic information about your product
+                        Select the stock hierarchy for your deal
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="group_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stock Group *</FormLabel>
+                              <FormControl>
+                                <Select 
+                                  value={field.value} 
+                                  onValueChange={handleGroupChange}
+                                  data-testid="select-group"
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select group" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {groups.map((group: any) => (
+                                      <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
+                                        {group.GroupName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="make_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stock Make *</FormLabel>
+                              <FormControl>
+                                <Select 
+                                  value={field.value} 
+                                  onValueChange={handleMakeChange}
+                                  disabled={!selectedGroup}
+                                  data-testid="select-make"
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select make" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filteredMakes.map((make: any) => (
+                                      <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
+                                        {make.MakeName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="grade_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stock Grade *</FormLabel>
+                              <FormControl>
+                                <Select 
+                                  value={field.value} 
+                                  onValueChange={handleGradeChange}
+                                  disabled={!selectedGroup}
+                                  data-testid="select-grade"
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select grade" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filteredGrades.map((grade: any) => (
+                                      <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
+                                        {grade.GradeName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="brand_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stock Brand *</FormLabel>
+                              <FormControl>
+                                <Select 
+                                  value={field.value} 
+                                  onValueChange={field.onChange}
+                                  disabled={!selectedMake}
+                                  data-testid="select-brand"
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select brand" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filteredBrands.map((brand: any) => (
+                                      <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
+                                        {brand.BrandName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Deal Information
+                      </CardTitle>
+                      <CardDescription>
+                        Basic information about your deal
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <FormField
                         control={form.control}
-                        name="title"
+                        name="deal_title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Title *</FormLabel>
+                            <FormLabel>Deal Title *</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="Enter product title" 
+                                placeholder="Enter deal title" 
                                 {...field} 
                                 data-testid="input-title"
                               />

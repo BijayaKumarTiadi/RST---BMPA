@@ -18,28 +18,33 @@ export default function Marketplace() {
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState("");
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery({
-    queryKey: ["/api/categories"],
+  // Fetch stock hierarchy
+  const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
+    queryKey: ["/api/stock/hierarchy"],
+    queryFn: async () => {
+      const response = await fetch('/api/stock/hierarchy');
+      if (!response.ok) throw new Error('Failed to fetch stock hierarchy');
+      return response.json();
+    },
   });
 
-  // Fetch products with filters
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["/api/products", { 
+  // Fetch deals with filters
+  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+    queryKey: ["/api/deals", { 
       search: searchTerm, 
-      category: selectedCategory, 
+      group_id: selectedCategory, 
       sort: sortBy, 
       priceRange 
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory && selectedCategory !== 'all') params.append('category_id', selectedCategory);
+      if (selectedCategory && selectedCategory !== 'all') params.append('group_id', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
       if (priceRange && priceRange !== 'all') params.append('price_range', priceRange);
       
-      const response = await fetch(`/api/products?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch products');
+      const response = await fetch(`/api/deals?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
   });
@@ -59,9 +64,10 @@ export default function Marketplace() {
     );
   }
 
-  const products = productsData?.products || [];
+  const deals = dealsData?.deals || [];
+  const groups = stockHierarchy?.groups || [];
 
-  const handleContactSeller = async (productId: string, sellerId: string) => {
+  const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
       const response = await fetch('/api/chat/start', {
         method: 'POST',
@@ -69,7 +75,7 @@ export default function Marketplace() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          productId,
+          dealId,
           sellerId
         })
       });
@@ -95,14 +101,14 @@ export default function Marketplace() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Marketplace</h1>
           <p className="text-muted-foreground">
-            Discover products from verified sellers across the trading industry
+            Discover stock deals from verified sellers across the trading industry
           </p>
         </div>
 
         {/* Filters Section */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-lg">Find Products</CardTitle>
+            <CardTitle className="text-lg">Find Deals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -110,7 +116,7 @@ export default function Marketplace() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products..."
+                  placeholder="Search deals..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -118,16 +124,16 @@ export default function Marketplace() {
                 />
               </div>
 
-              {/* Category Filter */}
+              {/* Group Filter */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="All Categories" />
+                <SelectTrigger data-testid="select-group">
+                  <SelectValue placeholder="All Groups" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category: any) => (
-                    <SelectItem key={category.category_id} value={category.category_id.toString()}>
-                      {category.category_name}
+                  <SelectItem value="all">All Groups</SelectItem>
+                  {groups.map((group: any) => (
+                    <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
+                      {group.GroupName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -166,15 +172,15 @@ export default function Marketplace() {
           </CardContent>
         </Card>
 
-        {/* Products Grid */}
-        {productsLoading ? (
+        {/* Deals Grid */}
+        {dealsLoading || hierarchyLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : products.length === 0 ? (
+        ) : deals.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">No deals found</h3>
             <p className="text-muted-foreground mb-4">Try adjusting your search filters</p>
             <Button onClick={() => {
               setSearchTerm("");
@@ -190,31 +196,31 @@ export default function Marketplace() {
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-muted-foreground">
-                Found {products.length} products
+                Found {deals.length} deals
               </p>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
                   {searchTerm && `"${searchTerm}"`}
-                  {selectedCategory && ` in ${categories.find((c: any) => c.category_id.toString() === selectedCategory)?.category_name}`}
+                  {selectedCategory && ` in ${groups.find((g: any) => g.GroupID.toString() === selectedCategory)?.GroupName}`}
                 </span>
               </div>
             </div>
 
-            {/* Products Grid */}
+            {/* Deals Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-              {products.map((product: any) => (
+              {deals.map((deal: any) => (
                 <Card 
-                  key={product.id} 
+                  key={deal.DealID} 
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                  data-testid={`product-card-${product.id}`}
+                  data-testid={`deal-card-${deal.DealID}`}
                 >
                   <div className="relative">
-                    {/* Product Display */}
+                    {/* Deal Display */}
                     <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center relative">
                       <div className="text-center p-3">
                         <Package className="h-8 w-8 mx-auto mb-2 text-indigo-600" />
-                        <p className="text-xs text-indigo-700 font-medium line-clamp-2">{product.title}</p>
+                        <p className="text-xs text-indigo-700 font-medium line-clamp-2">{deal.DealTitle}</p>
                       </div>
                       
                       {/* Wishlist Button */}
@@ -222,66 +228,73 @@ export default function Marketplace() {
                         size="sm"
                         variant="ghost"
                         className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        data-testid={`button-wishlist-${product.id}`}
+                        data-testid={`button-wishlist-${deal.DealID}`}
                       >
                         <Heart className="h-4 w-4" />
                       </Button>
 
-                      {/* Category Badge */}
+                      {/* Group Badge */}
                       <div className="absolute top-2 left-2">
                         <Badge variant="secondary" className="bg-blue-600 text-white text-xs">
-                          {product.category_name}
+                          {deal.GroupName}
                         </Badge>
                       </div>
 
                       {/* Status Badge */}
                       <div className="absolute bottom-2 left-2">
                         <Badge 
-                          variant={product.status === 'available' ? 'default' : 'secondary'}
+                          variant={deal.Status === 'active' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {product.status === 'available' ? 'In Stock' : product.status}
+                          {deal.Status === 'active' ? 'Available' : deal.Status}
                         </Badge>
                       </div>
                     </div>
 
                     <CardContent className="p-3">
-                      {/* Product Info */}
-                      <Link href={`/product/${product.id}`}>
-                        <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`product-title-${product.id}`}>
-                          {product.title}
+                      {/* Deal Info */}
+                      <Link href={`/deal/${deal.DealID}`}>
+                        <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`deal-title-${deal.DealID}`}>
+                          {deal.DealTitle}
                         </h3>
                       </Link>
 
+                      {/* Stock Hierarchy */}
+                      <div className="text-xs text-muted-foreground mb-2 space-y-1">
+                        {deal.MakeName && <div>Make: {deal.MakeName}</div>}
+                        {deal.GradeName && <div>Grade: {deal.GradeName}</div>}
+                        {deal.BrandName && <div>Brand: {deal.BrandName}</div>}
+                      </div>
+
                       {/* Price */}
                       <div className="flex items-baseline gap-1 mb-2">
-                        <span className="text-lg font-bold text-primary" data-testid={`product-price-${product.id}`}>
-                          ₹{product.price?.toLocaleString('en-IN')}
+                        <span className="text-lg font-bold text-primary" data-testid={`deal-price-${deal.DealID}`}>
+                          ₹{deal.Price?.toLocaleString('en-IN')}
                         </span>
-                        <span className="text-xs text-muted-foreground">/{product.unit}</span>
+                        <span className="text-xs text-muted-foreground">/{deal.Unit}</span>
                       </div>
 
                       {/* Seller Info */}
                       <div className="flex items-center gap-1 mb-2">
                         <span className="text-xs text-muted-foreground">by</span>
-                        <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${product.id}`}>
-                          {product.seller_name || product.seller_company || 'Seller'}
+                        <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.DealID}`}>
+                          {deal.seller_name || deal.seller_company || 'Seller'}
                         </span>
                       </div>
 
                       {/* Location */}
-                      {product.location && (
+                      {deal.Location && (
                         <div className="flex items-center gap-1 mb-3">
                           <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{product.location}</span>
+                          <span className="text-xs text-muted-foreground">{deal.Location}</span>
                         </div>
                       )}
 
                       {/* Quantity Info */}
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                        <span>Qty: {product.quantity} {product.unit}</span>
-                        {product.min_order_quantity > 1 && (
-                          <span>Min: {product.min_order_quantity}</span>
+                        <span>Qty: {deal.Quantity} {deal.Unit}</span>
+                        {deal.MinOrderQuantity > 1 && (
+                          <span>Min: {deal.MinOrderQuantity}</span>
                         )}
                       </div>
 
@@ -290,8 +303,8 @@ export default function Marketplace() {
                         <Button
                           size="sm"
                           className="w-full"
-                          onClick={() => setLocation(`/product/${product.id}`)}
-                          data-testid={`button-view-details-${product.id}`}
+                          onClick={() => setLocation(`/deal/${deal.DealID}`)}
+                          data-testid={`button-view-details-${deal.DealID}`}
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View Details
@@ -301,8 +314,8 @@ export default function Marketplace() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleContactSeller(product.id, product.seller_id)}
-                            data-testid={`button-contact-seller-${product.id}`}
+                            onClick={() => handleContactSeller(deal.DealID, deal.SellerID)}
+                            data-testid={`button-contact-seller-${deal.DealID}`}
                           >
                             <MessageCircle className="h-3 w-3 mr-1" />
                             Chat
@@ -311,8 +324,8 @@ export default function Marketplace() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setLocation(`/product/${product.id}`)}
-                            data-testid={`button-buy-now-${product.id}`}
+                            onClick={() => setLocation(`/deal/${deal.DealID}`)}
+                            data-testid={`button-buy-now-${deal.DealID}`}
                           >
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             Buy

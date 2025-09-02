@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { authRouter } from "./authRoutes";
 import { otpService } from "./otpService";
 import { adminService } from "./adminService";
-import { productService } from "./productService";
+import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 
@@ -343,7 +343,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {
-      const categories = await productService.getCategories();
+      // Categories are now handled differently - return empty array
+      const categories = [];
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -362,7 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const result = await productService.createCategory(name, description, parent_id);
+      // Categories are now handled differently
+      const result = { success: false, message: 'Category creation not supported in stock-based system' };
       res.json(result);
     } catch (error) {
       console.error("Error creating category:", error);
@@ -370,11 +372,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Products (replacing stock listings)
-  app.get('/api/products', async (req, res) => {
+  // Stock hierarchy endpoints
+  app.get('/api/stock/hierarchy', async (req, res) => {
+    try {
+      const hierarchy = await dealService.getStockHierarchy();
+      res.json(hierarchy);
+    } catch (error) {
+      console.error("Error fetching stock hierarchy:", error);
+      res.status(500).json({ message: "Failed to fetch stock hierarchy" });
+    }
+  });
+
+  // Deals (replacing products)
+  app.get('/api/deals', async (req, res) => {
     try {
       const {
-        category_id,
+        group_id,
+        make_id,
+        grade_id,
+        brand_id,
         search,
         location,
         seller_id,
@@ -384,7 +400,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.query;
 
       const filters = {
-        category_id: category_id as string,
+        group_id: group_id ? parseInt(group_id as string) : undefined,
+        make_id: make_id ? parseInt(make_id as string) : undefined,
+        grade_id: grade_id ? parseInt(grade_id as string) : undefined,
+        brand_id: brand_id ? parseInt(brand_id as string) : undefined,
         search: search as string,
         location: location as string,
         seller_id: seller_id ? parseInt(seller_id as string) : undefined,
@@ -393,28 +412,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: (parseInt(page as string) - 1) * parseInt(limit as string),
       };
 
-      const result = await productService.getProducts(filters);
+      const result = await dealService.getDeals(filters);
       res.json(result);
     } catch (error) {
-      console.error("Error fetching products:", error);
-      res.status(500).json({ message: "Failed to fetch products" });
+      console.error("Error fetching deals:", error);
+      res.status(500).json({ message: "Failed to fetch deals" });
     }
   });
 
-  app.get('/api/products/:id', async (req, res) => {
+  app.get('/api/deals/:id', async (req, res) => {
     try {
-      const product = await productService.getProductById(req.params.id);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+      const dealId = parseInt(req.params.id);
+      if (isNaN(dealId)) {
+        return res.status(400).json({ message: "Invalid deal ID" });
       }
-      res.json(product);
+      
+      const deal = await dealService.getDealById(dealId);
+      if (!deal) {
+        return res.status(404).json({ message: "Deal not found" });
+      }
+      res.json(deal);
     } catch (error) {
-      console.error("Error fetching product:", error);
-      res.status(500).json({ message: "Failed to fetch product" });
+      console.error("Error fetching deal:", error);
+      res.status(500).json({ message: "Failed to fetch deal" });
     }
   });
 
-  app.post('/api/products', requireAuth, async (req: any, res) => {
+  app.post('/api/deals', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
       
@@ -426,76 +450,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const {
-        category_id,
-        title,
-        description,
+        group_id,
+        make_id,
+        grade_id,
+        brand_id,
+        deal_title,
+        deal_description,
         price,
         quantity,
         unit,
         min_order_quantity,
-        specifications,
+        deal_specifications,
         location,
-        expiry_date
+        expires_at
       } = req.body;
 
-      if (!category_id || !title || !price || !quantity || !unit) {
+      if (!group_id || !make_id || !grade_id || !brand_id || !deal_title || !price || !quantity || !unit) {
         return res.status(400).json({
           success: false,
-          message: 'Required fields are missing'
+          message: 'Required fields are missing: group_id, make_id, grade_id, brand_id, deal_title, price, quantity, unit'
         });
       }
 
-      const result = await productService.createProduct({
+      const result = await dealService.createDeal({
+        group_id: parseInt(group_id),
+        make_id: parseInt(make_id),
+        grade_id: parseInt(grade_id),
+        brand_id: parseInt(brand_id),
         seller_id: sellerId,
-        category_id,
-        title,
-        description,
+        deal_title,
+        deal_description,
         price: parseFloat(price),
         quantity: parseInt(quantity),
         unit,
         min_order_quantity: min_order_quantity ? parseInt(min_order_quantity) : 1,
-        specifications,
+        deal_specifications,
         location,
-        expiry_date: expiry_date ? new Date(expiry_date) : undefined,
+        expires_at: expires_at ? new Date(expires_at) : undefined,
       });
 
       res.json(result);
     } catch (error) {
-      console.error("Error creating product:", error);
-      res.status(500).json({ message: "Failed to create product" });
+      console.error("Error creating deal:", error);
+      res.status(500).json({ message: "Failed to create deal" });
     }
   });
 
-  app.put('/api/products/:id', requireAuth, async (req: any, res) => {
+  app.put('/api/deals/:id', requireAuth, async (req: any, res) => {
     try {
-      const productId = req.params.id;
+      const dealId = parseInt(req.params.id);
       const sellerId = req.session.memberId;
       
-      const result = await productService.updateProduct(productId, sellerId, req.body);
+      if (isNaN(dealId)) {
+        return res.status(400).json({ message: "Invalid deal ID" });
+      }
+      
+      const result = await dealService.updateDeal(dealId, sellerId, req.body);
       res.json(result);
     } catch (error) {
-      console.error("Error updating product:", error);
-      res.status(500).json({ message: "Failed to update product" });
+      console.error("Error updating deal:", error);
+      res.status(500).json({ message: "Failed to update deal" });
     }
   });
 
-  app.delete('/api/products/:id', requireAuth, async (req: any, res) => {
+  app.delete('/api/deals/:id', requireAuth, async (req: any, res) => {
     try {
-      const productId = req.params.id;
+      const dealId = parseInt(req.params.id);
       const sellerId = req.session.memberId;
       
-      const result = await productService.deleteProduct(productId, sellerId);
+      if (isNaN(dealId)) {
+        return res.status(400).json({ message: "Invalid deal ID" });
+      }
+      
+      const result = await dealService.deleteDeal(dealId, sellerId);
       res.json(result);
     } catch (error) {
-      console.error("Error deleting product:", error);
-      res.status(500).json({ message: "Failed to delete product" });
+      console.error("Error deleting deal:", error);
+      res.status(500).json({ message: "Failed to delete deal" });
     }
   });
 
-  // Mark product as sold
-  app.put('/api/products/:id/mark-sold', requireAuth, async (req: any, res) => {
+  // Mark deal as sold
+  app.put('/api/deals/:id/mark-sold', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
+      const dealId = parseInt(req.params.id);
       
       if (!sellerId) {
         return res.status(401).json({
@@ -504,12 +543,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const productId = req.params.id;
-      const result = await productService.updateProductStatus(productId, sellerId, 'sold');
+      if (isNaN(dealId)) {
+        return res.status(400).json({ message: "Invalid deal ID" });
+      }
+      
+      // Update deal status through direct database query
+      await executeQuery('UPDATE deal_master SET Status = "sold", UpdatedAt = NOW() WHERE DealID = ? AND SellerID = ?', [dealId, sellerId]);
+      const result = { success: true, message: 'Deal marked as sold' };
       res.json(result);
     } catch (error) {
-      console.error("Error marking product as sold:", error);
-      res.status(500).json({ message: "Failed to mark product as sold" });
+      console.error("Error marking deal as sold:", error);
+      res.status(500).json({ message: "Failed to mark deal as sold" });
     }
   });
 
@@ -517,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/chat/start', requireAuth, async (req: any, res) => {
     try {
       const buyerId = req.session.memberId;
-      const { productId, sellerId } = req.body;
+      const { dealId, sellerId } = req.body;
       
       if (!buyerId) {
         return res.status(401).json({
@@ -526,18 +570,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (!productId || !sellerId) {
+      if (!dealId || !sellerId) {
         return res.status(400).json({
           success: false,
-          message: 'Product ID and Seller ID are required'
+          message: 'Deal ID and Seller ID are required'
         });
       }
 
       // Check if chat already exists
       const existingChat = await executeQuerySingle(`
         SELECT * FROM bmpa_chats 
-        WHERE product_id = ? AND buyer_id = ? AND seller_id = ?
-      `, [productId, buyerId, sellerId]);
+        WHERE deal_id = ? AND buyer_id = ? AND seller_id = ?
+      `, [dealId, buyerId, sellerId]);
 
       if (existingChat) {
         return res.json({
@@ -551,9 +595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const chatId = 'chat-' + Math.random().toString(36).substr(2, 9);
       
       await executeQuery(`
-        INSERT INTO bmpa_chats (id, product_id, buyer_id, seller_id, status, created_at, updated_at)
+        INSERT INTO bmpa_chats (id, deal_id, buyer_id, seller_id, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'active', NOW(), NOW())
-      `, [chatId, productId, buyerId, sellerId]);
+      `, [chatId, dealId, buyerId, sellerId]);
 
       res.json({
         success: true,
@@ -635,11 +679,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Keep stock listings for backward compatibility
+  // Keep stock listings for backward compatibility - now using deals
   app.get('/api/stock/listings', async (req, res) => {
     try {
       const {
-        categoryId,
+        group_id,
+        make_id,
+        grade_id,
+        brand_id,
         search,
         location,
         sellerId,
@@ -649,7 +696,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.query;
 
       const filters = {
-        category_id: categoryId as string,
+        group_id: group_id ? parseInt(group_id as string) : undefined,
+        make_id: make_id ? parseInt(make_id as string) : undefined,
+        grade_id: grade_id ? parseInt(grade_id as string) : undefined,
+        brand_id: brand_id ? parseInt(brand_id as string) : undefined,
         search: search as string,
         location: location as string,
         seller_id: sellerId ? parseInt(sellerId as string) : undefined,
@@ -658,11 +708,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: (parseInt(page as string) - 1) * parseInt(limit as string),
       };
 
-      const result = await productService.getProducts(filters);
+      const result = await dealService.getDeals(filters);
       
       // Format response to match old structure
       res.json({
-        listings: result.products,
+        listings: result.deals,
         total: result.total
       });
     } catch (error) {
@@ -673,7 +723,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/stock/listings/:id', async (req, res) => {
     try {
-      const listing = await storage.getStockListingById(req.params.id);
+      const dealId = parseInt(req.params.id);
+      if (isNaN(dealId)) {
+        return res.status(400).json({ message: "Invalid listing ID" });
+      }
+      
+      const listing = await dealService.getDealById(dealId);
       if (!listing) {
         return res.status(404).json({ message: "Stock listing not found" });
       }
@@ -684,60 +739,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Redirect to deals endpoint for creating listings
   app.post('/api/stock/listings', requireAuth, async (req: any, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      const validatedData = insertStockListingSchema.parse(req.body);
+      const sellerId = req.session.memberId;
       
-      const listing = await storage.createStockListing({
-        ...validatedData,
-        sellerId: userId,
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // This endpoint now redirects to deals - inform client to use /api/deals
+      res.status(400).json({
+        success: false,
+        message: 'Please use /api/deals endpoint for creating new listings',
+        redirect: '/api/deals'
       });
-      
-      res.status(201).json(listing);
     } catch (error) {
-      console.error("Error creating stock listing:", error);
-      res.status(500).json({ message: "Failed to create stock listing" });
+      console.error("Error with stock listing creation:", error);
+      res.status(500).json({ message: "Failed to process request" });
     }
   });
 
+  // Redirect to deals endpoint for updating listings
   app.put('/api/stock/listings/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      const listingId = req.params.id;
-      
-      // Check if user owns the listing
-      const existingListing = await storage.getStockListingById(listingId);
-      if (!existingListing || existingListing.sellerId !== userId) {
-        return res.status(403).json({ message: "Unauthorized to update this listing" });
-      }
-      
-      const validatedData = insertStockListingSchema.partial().parse(req.body);
-      const updatedListing = await storage.updateStockListing(listingId, validatedData);
-      
-      res.json(updatedListing);
+      // This endpoint now redirects to deals - inform client to use /api/deals
+      res.status(400).json({
+        success: false,
+        message: `Please use /api/deals/${req.params.id} endpoint for updating listings`,
+        redirect: `/api/deals/${req.params.id}`
+      });
     } catch (error) {
-      console.error("Error updating stock listing:", error);
-      res.status(500).json({ message: "Failed to update stock listing" });
+      console.error("Error with stock listing update:", error);
+      res.status(500).json({ message: "Failed to process request" });
     }
   });
 
+  // Redirect to deals endpoint for deleting listings
   app.delete('/api/stock/listings/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      const listingId = req.params.id;
-      
-      // Check if user owns the listing
-      const existingListing = await storage.getStockListingById(listingId);
-      if (!existingListing || existingListing.sellerId !== userId) {
-        return res.status(403).json({ message: "Unauthorized to delete this listing" });
-      }
-      
-      await storage.deleteStockListing(listingId);
-      res.status(204).send();
+      // This endpoint now redirects to deals - inform client to use /api/deals
+      res.status(400).json({
+        success: false,
+        message: `Please use /api/deals/${req.params.id} endpoint for deleting listings`,
+        redirect: `/api/deals/${req.params.id}`
+      });
     } catch (error) {
-      console.error("Error deleting stock listing:", error);
-      res.status(500).json({ message: "Failed to delete stock listing" });
+      console.error("Error with stock listing deletion:", error);
+      res.status(500).json({ message: "Failed to process request" });
     }
   });
 
