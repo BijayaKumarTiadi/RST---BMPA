@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, MessageCircle } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -75,6 +75,9 @@ export default function Navigation() {
               <>
                 <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
                   Marketplace
+                </Link>
+                <Link href="/messages" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-messages">
+                  Messages
                 </Link>
                 {(user?.role === 'seller' || user?.role === 'both') && (
                   <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-seller-dashboard">

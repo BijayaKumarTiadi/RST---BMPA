@@ -600,61 +600,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/chat/:chatId/messages', requireAuth, async (req: any, res) => {
-    try {
-      const senderId = req.session.memberId;
-      const { chatId } = req.params;
-      const { message, messageType = 'text', imageUrl } = req.body;
-      
-      if (!senderId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
-      }
-
-      // Verify user is part of the chat
-      const chat = await executeQuerySingle(`
-        SELECT * FROM bmpa_chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
-      `, [chatId, senderId, senderId]);
-
-      if (!chat) {
-        return res.status(403).json({
-          success: false,
-          message: 'Unauthorized to send message to this chat'
-        });
-      }
-
-      if (!message && !imageUrl) {
-        return res.status(400).json({
-          success: false,
-          message: 'Message content or image is required'
-        });
-      }
-
-      // Insert message
-      const messageId = 'msg-' + Math.random().toString(36).substr(2, 9);
-      
-      await executeQuery(`
-        INSERT INTO bmpa_chat_messages (id, chat_id, sender_id, message, message_type, created_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
-      `, [messageId, chatId, senderId, message || '', messageType]);
-
-      // Update chat timestamp
-      await executeQuery(`
-        UPDATE bmpa_chats SET updated_at = NOW() WHERE id = ?
-      `, [chatId]);
-
-      res.json({
-        success: true,
-        messageId: messageId,
-        message: 'Message sent successfully'
-      });
-    } catch (error) {
-      console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Failed to send chat message" });
-    }
-  });
 
   // Keep stock listings for backward compatibility
   app.get('/api/stock/listings', async (req, res) => {
@@ -1236,7 +1181,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           buyer.company_name as buyer_company,
           seller.mname as seller_name,
           seller.company_name as seller_company,
-          (SELECT COUNT(*) FROM bmpa_chat_messages WHERE chat_id = c.id AND sender_id != ? AND is_read = false) as unread_count,
           (SELECT message FROM bmpa_chat_messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
         FROM bmpa_chats c
         LEFT JOIN bmpa_products p ON c.product_id = p.id
@@ -1244,7 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN bmpa_members seller ON c.seller_id = seller.member_id
         WHERE c.buyer_id = ? OR c.seller_id = ?
         ORDER BY c.updated_at DESC
-      `, [userId, userId, userId]);
+      `, [userId, userId]);
 
       res.json({
         success: true,
