@@ -34,9 +34,9 @@ export default function Marketplace() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('category_id', selectedCategory);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category_id', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
-      if (priceRange) params.append('price_range', priceRange);
+      if (priceRange && priceRange !== 'all') params.append('price_range', priceRange);
       
       const response = await fetch(`/api/products?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch products');
@@ -124,7 +124,7 @@ export default function Marketplace() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category: any) => (
                     <SelectItem key={category.category_id} value={category.category_id.toString()}>
                       {category.category_name}
@@ -139,7 +139,7 @@ export default function Marketplace() {
                   <SelectValue placeholder="Price Range" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Prices</SelectItem>
+                  <SelectItem value="all">All Prices</SelectItem>
                   <SelectItem value="0-1000">₹0 - ₹1,000</SelectItem>
                   <SelectItem value="1000-5000">₹1,000 - ₹5,000</SelectItem>
                   <SelectItem value="5000-10000">₹5,000 - ₹10,000</SelectItem>
@@ -178,8 +178,8 @@ export default function Marketplace() {
             <p className="text-muted-foreground mb-4">Try adjusting your search filters</p>
             <Button onClick={() => {
               setSearchTerm("");
-              setSelectedCategory("");
-              setPriceRange("");
+              setSelectedCategory("all");
+              setPriceRange("all");
               setSortBy("newest");
             }}>
               Clear Filters
