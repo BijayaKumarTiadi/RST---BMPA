@@ -482,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Deals (replacing products)
-  app.get('/api/deals', async (req, res) => {
+  app.get('/api/deals', async (req: any, res) => {
     try {
       const {
         group_id,
@@ -492,10 +492,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search,
         location,
         seller_id,
+        seller_only,
         status,
         page = 1,
         limit = 20
       } = req.query;
+
+      // If seller_only is true, use the authenticated user's ID
+      let actualSellerId = seller_id ? parseInt(seller_id as string) : undefined;
+      if (seller_only === 'true' && req.session?.memberId) {
+        actualSellerId = req.session.memberId;
+      }
 
       const filters = {
         group_id: group_id ? parseInt(group_id as string) : undefined,
@@ -504,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brand_id: brand_id ? parseInt(brand_id as string) : undefined,
         search: search as string,
         location: location as string,
-        seller_id: seller_id ? parseInt(seller_id as string) : undefined,
+        seller_id: actualSellerId,
         status: status as string,
         limit: parseInt(limit as string),
         offset: (parseInt(page as string) - 1) * parseInt(limit as string),

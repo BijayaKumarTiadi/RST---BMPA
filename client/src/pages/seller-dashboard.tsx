@@ -17,17 +17,17 @@ export default function SellerDashboard() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
-  // Fetch seller's products
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["/api/seller/products"],
+  // Fetch seller's deals (products)
+  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+    queryKey: ["/api/seller/deals"],
     queryFn: async () => {
-      const response = await fetch(`/api/products?seller_id=${user?.id}`, {
+      const response = await fetch(`/api/deals?seller_only=true`, {
         credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to fetch products');
+      if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: isAuthenticated && !!user?.id,
+    enabled: isAuthenticated && !!user?.member_id,
   });
 
   // Fetch seller stats
@@ -47,54 +47,54 @@ export default function SellerDashboard() {
   const { data: ordersData } = useQuery({
     queryKey: ["/api/seller/orders"],
     queryFn: async () => {
-      const response = await fetch(`/api/orders?seller_id=${user?.id}`, {
+      const response = await fetch(`/api/orders?seller_id=${user?.member_id}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch orders');
       return response.json();
     },
-    enabled: isAuthenticated && !!user?.id,
+    enabled: isAuthenticated && !!user?.member_id,
   });
 
-  // Mark product as sold mutation
+  // Mark deal as sold mutation
   const markAsSoldMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      return apiRequest('PUT', `/api/products/${productId}/mark-sold`);
+    mutationFn: async (dealId: string) => {
+      return apiRequest('PUT', `/api/deals/${dealId}/mark-sold`);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Product marked as sold successfully!",
+        description: "Deal marked as sold successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/seller/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/deals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to mark product as sold",
+        description: error.message || "Failed to mark deal as sold",
         variant: "destructive",
       });
     },
   });
 
-  // Delete product mutation
-  const deleteProductMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      return apiRequest('DELETE', `/api/products/${productId}`);
+  // Delete deal mutation
+  const deleteDealMutation = useMutation({
+    mutationFn: async (dealId: string) => {
+      return apiRequest('DELETE', `/api/deals/${dealId}`);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Product deleted successfully!",
+        description: "Deal deleted successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/seller/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/deals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete product",
+        description: error.message || "Failed to delete deal",
         variant: "destructive",
       });
     },
@@ -115,8 +115,8 @@ export default function SellerDashboard() {
     );
   }
 
-  const stats = statsData || { totalProducts: 0, totalOrders: 0, totalRevenue: 0, activeProducts: 0 };
-  const products = productsData?.products || [];
+  const stats = statsData || { totalProducts: 0, totalDeals: 0, totalOrders: 0, totalRevenue: 0, activeDeals: 0 };
+  const deals = dealsData?.deals || [];
   const orders = ordersData || [];
 
   return (
@@ -133,10 +133,10 @@ export default function SellerDashboard() {
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
             </div>
-            <Button asChild className="bg-primary hover:bg-primary/90" data-testid="button-add-product">
+            <Button asChild className="bg-primary hover:bg-primary/90" data-testid="button-add-deal">
               <Link href="/add-product">
                 <Plus className="mr-2 h-4 w-4" />
-                Add New Product
+                Add New Deal
               </Link>
             </Button>
           </div>
@@ -146,13 +146,13 @@ export default function SellerDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Deals</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-products">{products.length}</div>
+              <div className="text-2xl font-bold" data-testid="stat-total-deals">{deals.length}</div>
               <p className="text-xs text-muted-foreground">
-                {products.filter((p: any) => p.status === 'available').length} active listings
+                {deals.filter((d: any) => d.Status === 'active').length} active listings
               </p>
             </CardContent>
           </Card>
