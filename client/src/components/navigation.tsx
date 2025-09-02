@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +19,36 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/auth/logout');
+      
+      // Clear all query cache
+      queryClient.clear();
+      
+      // Redirect to home page
+      setLocation('/');
+      
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -42,9 +72,21 @@ export default function Navigation() {
               Home
             </Link>
             {isAuthenticated && (
-              <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
-                Marketplace
-              </Link>
+              <>
+                <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
+                  Marketplace
+                </Link>
+                {(user?.role === 'seller' || user?.role === 'both') && (
+                  <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-seller-dashboard">
+                    Seller Dashboard
+                  </Link>
+                )}
+                {(user?.role === 'buyer' || user?.role === 'both') && (
+                  <Link href="/orders" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-orders">
+                    My Orders
+                  </Link>
+                )}
+              </>
             )}
             <Link href="/register" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-membership">
               Membership
@@ -168,11 +210,13 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator />
                   
-                  <DropdownMenuItem asChild>
-                    <a href="/api/auth/logout" className="flex items-center space-x-2 w-full text-red-600 dark:text-red-400">
-                      <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </a>
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center space-x-2 text-red-600 dark:text-red-400 cursor-pointer"
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
