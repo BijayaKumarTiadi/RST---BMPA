@@ -100,6 +100,9 @@ export default function SellerDashboard() {
     },
   });
 
+  const deals = dealsData?.deals || [];
+  const orders = ordersData?.orders || [];
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
@@ -116,8 +119,6 @@ export default function SellerDashboard() {
   }
 
   const stats = statsData || { totalProducts: 0, totalDeals: 0, totalOrders: 0, totalRevenue: 0, activeDeals: 0 };
-  const deals = dealsData?.deals || [];
-  const orders = ordersData || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,7 +193,7 @@ export default function SellerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" data-testid="stat-active-products">
-                {products.filter((p: any) => p.status === 'available').length}
+                {deals.filter((d: any) => d.Status === 'active' || !d.Status).length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Available for sale
@@ -218,14 +219,14 @@ export default function SellerDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {productsLoading ? (
+                {dealsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                   </div>
-                ) : products.length === 0 ? (
+                ) : deals.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No products yet</h3>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No deals yet</h3>
                     <p className="text-muted-foreground mb-4">Start selling by adding your first product</p>
                     <Button asChild data-testid="button-add-first-product">
                       <Link href="/add-product">Add Your First Product</Link>
@@ -233,7 +234,7 @@ export default function SellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {products.map((product: any) => (
+                    {deals.map((deal: any) => (
                       <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow" data-testid={`product-card-${product.id}`}>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
