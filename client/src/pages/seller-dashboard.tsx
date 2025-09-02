@@ -235,7 +235,7 @@ export default function SellerDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {deals.map((deal: any) => (
-                      <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow" data-testid={`product-card-${product.id}`}>
+                      <div key={deal.TransID} className="border rounded-lg p-4 hover:shadow-md transition-shadow" data-testid={`deal-card-${deal.TransID}`}>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -243,13 +243,13 @@ export default function SellerDashboard() {
                                 <Package className="h-8 w-8 text-indigo-600" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-lg" data-testid={`product-title-${product.id}`}>{product.title}</h4>
-                                <p className="text-sm text-muted-foreground">{product.category_name}</p>
+                                <h4 className="font-semibold text-lg" data-testid={`deal-title-${deal.TransID}`}>{deal.Seller_comments?.split('\n')[0] || 'No Title'}</h4>
+                                <p className="text-sm text-muted-foreground">{deal.GroupName || 'No Category'}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant={product.status === 'available' ? 'default' : 'secondary'} data-testid={`product-status-${product.id}`}>
-                                    {product.status}
+                                  <Badge variant={!deal.Status || deal.Status === 'active' ? 'default' : 'secondary'} data-testid={`deal-status-${deal.TransID}`}>
+                                    {deal.Status || 'active'}
                                   </Badge>
-                                  {product.quantity <= 5 && product.quantity > 0 && (
+                                  {deal.QtyMT <= 5 && deal.QtyMT > 0 && (
                                     <Badge variant="destructive">Low Stock</Badge>
                                   )}
                                 </div>
@@ -259,20 +259,20 @@ export default function SellerDashboard() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                               <div>
                                 <span className="text-muted-foreground">Price:</span>
-                                <p className="font-semibold" data-testid={`product-price-${product.id}`}>₹{product.price?.toLocaleString('en-IN')} / {product.unit}</p>
+                                <p className="font-semibold" data-testid={`deal-price-${deal.TransID}`}>₹{deal.OfferPrice?.toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}</p>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Quantity:</span>
-                                <p className="font-semibold" data-testid={`product-quantity-${product.id}`}>{product.quantity} {product.unit}</p>
+                                <p className="font-semibold" data-testid={`deal-quantity-${deal.TransID}`}>{deal.QtyMT} {deal.OfferUnit || 'MT'}</p>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Views:</span>
-                                <p className="font-semibold">{product.views || 0}</p>
+                                <p className="font-semibold">{deal.Views || 0}</p>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Created:</span>
                                 <p className="font-semibold">
-                                  {new Date(product.created_at).toLocaleDateString('en-IN')}
+                                  {new Date(deal.uplaodDate || deal.CreatedAt).toLocaleDateString('en-IN')}
                                 </p>
                               </div>
                             </div>
@@ -283,9 +283,9 @@ export default function SellerDashboard() {
                               size="sm" 
                               variant="outline"
                               asChild
-                              data-testid={`button-view-${product.id}`}
+                              data-testid={`button-view-${deal.TransID}`}
                             >
-                              <Link href={`/product/${product.id}`}>
+                              <Link href={`/deal/${deal.TransID}`}>
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Link>
@@ -295,21 +295,21 @@ export default function SellerDashboard() {
                               size="sm" 
                               variant="outline"
                               asChild
-                              data-testid={`button-edit-${product.id}`}
+                              data-testid={`button-edit-${deal.TransID}`}
                             >
-                              <Link href={`/edit-product/${product.id}`}>
+                              <Link href={`/edit-deal/${deal.TransID}`}>
                                 <Edit2 className="h-4 w-4 mr-1" />
                                 Edit
                               </Link>
                             </Button>
                             
-                            {product.status === 'available' && (
+                            {(!deal.Status || deal.Status === 'active') && (
                               <Button 
                                 size="sm" 
                                 variant="secondary"
-                                onClick={() => markAsSoldMutation.mutate(product.id)}
+                                onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
                                 disabled={markAsSoldMutation.isPending}
-                                data-testid={`button-mark-sold-${product.id}`}
+                                data-testid={`button-mark-sold-${deal.TransID}`}
                               >
                                 Mark Sold
                               </Button>

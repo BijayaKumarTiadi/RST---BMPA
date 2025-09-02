@@ -671,6 +671,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get seller statistics
+  app.get('/api/seller/stats', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Get total deals for this seller
+      const totalDealsResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM deal_master WHERE memberID = ?
+      `, [sellerId]);
+
+      // Get active deals for this seller  
+      const activeDealsResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM deal_master 
+        WHERE memberID = ? AND (Status IS NULL OR Status = 'active')
+      `, [sellerId]);
+
+      // Get sold deals for this seller
+      const soldDealsResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM deal_master 
+        WHERE memberID = ? AND Status = 'sold'
+      `, [sellerId]);
+
+      // Get total revenue (sum of sold deals)
+      const revenueResult = await executeQuerySingle(`
+        SELECT SUM(OfferPrice * QtyMT) as revenue FROM deal_master 
+        WHERE memberID = ? AND Status = 'sold'
+      `, [sellerId]);
+
+      const stats = {
+        totalDeals: totalDealsResult?.count || 0,
+        activeDeals: activeDealsResult?.count || 0,
+        soldDeals: soldDealsResult?.count || 0,
+        totalRevenue: revenueResult?.revenue || 0,
+        // For backward compatibility
+        totalProducts: totalDealsResult?.count || 0,
+        totalOrders: soldDealsResult?.count || 0
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching seller stats:', error);
+      res.status(500).json({ message: 'Failed to fetch seller stats' });
+    }
+  });
+
   // Chat endpoints
   app.post('/api/chat/start', requireAuth, async (req: any, res) => {
     try {
