@@ -87,9 +87,11 @@ export default function Marketplace() {
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
       console.log('Starting chat with dealId:', dealId, 'sellerId:', sellerId);
+      console.log('Deal object:', deals.find(d => d.TransID === dealId));
       
       if (!dealId || !sellerId) {
         console.error('Missing dealId or sellerId');
+        alert(`Missing dealId (${dealId}) or sellerId (${sellerId}). Please try again.`);
         return;
       }
       

@@ -425,6 +425,22 @@ export async function initializeDatabase(): Promise<void> {
         console.log('✅ deal_id column added to bmpa_chats table');
       }
 
+      // Remove product_id foreign key constraint and make it nullable
+      try {
+        console.log('🔧 Dropping product_id foreign key constraint...');
+        await executeQuery(`
+          ALTER TABLE bmpa_chats 
+          DROP FOREIGN KEY bmpa_chats_ibfk_1
+        `);
+        await executeQuery(`
+          ALTER TABLE bmpa_chats 
+          MODIFY COLUMN product_id varchar(36) DEFAULT NULL
+        `);
+        console.log('✅ product_id constraint removed and made nullable');
+      } catch (error) {
+        console.log('🔧 Foreign key constraint may already be removed');
+      }
+
       // Check if is_read column exists, if not add it
       const columnExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
