@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, MessageCircle } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, MessageCircle, CreditCard, Info } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -99,19 +99,8 @@ export default function Navigation() {
                     Seller Dashboard
                   </Link>
                 )}
-                {(user?.role === 'buyer' || user?.role === 'both') && (
-                  <Link href="/orders" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-orders">
-                    My Orders
-                  </Link>
-                )}
               </>
             )}
-            <Link href="/register" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-membership">
-              Membership
-            </Link>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-about">
-              About Us
-            </a>
           </nav>
 
           {/* User Actions */}
@@ -207,6 +196,20 @@ export default function Navigation() {
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
                     </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/register" className="flex items-center space-x-2 w-full">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Membership</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <a href="#about" className="flex items-center space-x-2 w-full">
+                      <Info className="h-4 w-4" />
+                      <span>About Us</span>
+                    </a>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />

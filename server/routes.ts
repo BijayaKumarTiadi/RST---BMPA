@@ -1092,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark messages as read for the current user (messages sent by others)
       await executeQuery(`
         UPDATE bmpa_chat_messages 
-        SET is_read = true 
+        SET is_read = 1 
         WHERE chat_id = ? AND sender_id != ?
       `, [chatId, userId]);
 
