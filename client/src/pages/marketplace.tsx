@@ -209,11 +209,11 @@ export default function Marketplace() {
 
             {/* Deals Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-              {deals.map((deal: any) => (
+              {deals.map((deal: any, index: number) => (
                 <Card 
-                  key={deal.DealID} 
+                  key={deal.TransID} 
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                  data-testid={`deal-card-${deal.DealID}`}
+                  data-testid={`deal-card-${deal.TransID}`}
                 >
                   <div className="relative">
                     {/* Deal Display */}
@@ -228,7 +228,7 @@ export default function Marketplace() {
                         size="sm"
                         variant="ghost"
                         className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        data-testid={`button-wishlist-${deal.DealID}`}
+                        data-testid={`button-wishlist-${deal.TransID}`}
                       >
                         <Heart className="h-4 w-4" />
                       </Button>
@@ -253,8 +253,8 @@ export default function Marketplace() {
 
                     <CardContent className="p-3">
                       {/* Deal Info */}
-                      <Link href={`/deal/${deal.DealID}`}>
-                        <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`deal-title-${deal.DealID}`}>
+                      <Link href={`/deal/${deal.TransID}`}>
+                        <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
                           {deal.DealTitle}
                         </h3>
                       </Link>
@@ -268,7 +268,7 @@ export default function Marketplace() {
 
                       {/* Price */}
                       <div className="flex items-baseline gap-1 mb-2">
-                        <span className="text-lg font-bold text-primary" data-testid={`deal-price-${deal.DealID}`}>
+                        <span className="text-lg font-bold text-primary" data-testid={`deal-price-${deal.TransID}`}>
                           ₹{deal.Price?.toLocaleString('en-IN')}
                         </span>
                         <span className="text-xs text-muted-foreground">/{deal.Unit}</span>
@@ -277,7 +277,7 @@ export default function Marketplace() {
                       {/* Seller Info */}
                       <div className="flex items-center gap-1 mb-2">
                         <span className="text-xs text-muted-foreground">by</span>
-                        <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.DealID}`}>
+                        <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
                           {deal.seller_name || deal.seller_company || 'Seller'}
                         </span>
                       </div>
@@ -303,8 +303,8 @@ export default function Marketplace() {
                         <Button
                           size="sm"
                           className="w-full"
-                          onClick={() => setLocation(`/deal/${deal.DealID}`)}
-                          data-testid={`button-view-details-${deal.DealID}`}
+                          onClick={() => setLocation(`/deal/${deal.TransID}`)}
+                          data-testid={`button-view-details-${deal.TransID}`}
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View Details
@@ -314,8 +314,8 @@ export default function Marketplace() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleContactSeller(deal.DealID, deal.SellerID)}
-                            data-testid={`button-contact-seller-${deal.DealID}`}
+                            onClick={() => handleContactSeller(deal.TransID, deal.SellerID)}
+                            data-testid={`button-contact-seller-${deal.TransID}`}
                           >
                             <MessageCircle className="h-3 w-3 mr-1" />
                             Chat
@@ -324,8 +324,8 @@ export default function Marketplace() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setLocation(`/deal/${deal.DealID}`)}
-                            data-testid={`button-buy-now-${deal.DealID}`}
+                            onClick={() => setLocation(`/deal/${deal.TransID}`)}
+                            data-testid={`button-buy-now-${deal.TransID}`}
                           >
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             Buy

@@ -75,13 +75,13 @@ export default function AddDeal() {
 
   // Filter makes, grades, and brands based on selections
   const filteredMakes = makes.filter((make: any) => 
-    selectedGroup ? make.GroupID.toString() === selectedGroup : true
+    selectedGroup ? make.GroupID?.toString() === selectedGroup : true
   );
   const filteredGrades = grades.filter((grade: any) => 
-    selectedGroup ? grade.GroupID.toString() === selectedGroup : true
+    selectedMake ? grade.Make_ID?.toString() === selectedMake : true
   );
   const filteredBrands = brands.filter((brand: any) => 
-    selectedMake ? brand.MakeID.toString() === selectedMake : true
+    selectedMake ? brand.make_ID?.toString() === selectedMake : true
   );
 
   // Handle selection changes to reset dependent fields
@@ -230,8 +230,8 @@ export default function AddDeal() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {filteredMakes.map((make: any) => (
-                                      <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
-                                        {make.MakeName}
+                                      <SelectItem key={make.make_ID} value={make.make_ID?.toString() || ""}>
+                                        {make.make_Name}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -260,7 +260,7 @@ export default function AddDeal() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {filteredGrades.map((grade: any) => (
-                                      <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
+                                      <SelectItem key={grade.gradeID} value={grade.gradeID?.toString() || ""}>
                                         {grade.GradeName}
                                       </SelectItem>
                                     ))}
@@ -290,8 +290,8 @@ export default function AddDeal() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {filteredBrands.map((brand: any) => (
-                                      <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
-                                        {brand.BrandName}
+                                      <SelectItem key={brand.brandID} value={brand.brandID?.toString() || ""}>
+                                        {brand.brandname}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -522,10 +522,10 @@ export default function AddDeal() {
                         <Button
                           type="submit"
                           className="w-full"
-                          disabled={createProductMutation.isPending}
+                          disabled={createDealMutation.isPending}
                           data-testid="button-submit"
                         >
-                          {createProductMutation.isPending ? "Adding Product..." : "Add Product"}
+                          {createDealMutation.isPending ? "Adding Deal..." : "Add Deal"}
                         </Button>
                         
                         <Button
