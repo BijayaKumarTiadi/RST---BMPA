@@ -128,6 +128,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create demo deals for testing
+  app.post('/api/demo/create-deals', async (req, res) => {
+    try {
+      // Sample demo deals
+      const demoDeals = [
+        {
+          GroupID: 1,
+          MakeID: 1,
+          GradeID: 1,
+          BrandID: 1,
+          SellerID: 1,
+          DealTitle: 'Premium Offset Paper - 80GSM',
+          DealDescription: 'High-quality offset printing paper, perfect for books, magazines, and brochures. Excellent ink absorption and bright white finish.',
+          Price: 45.50,
+          Quantity: 5000,
+          Unit: 'sheets',
+          MinOrderQuantity: 500,
+          Location: 'Mumbai',
+          DealSpecifications: JSON.stringify({
+            weight: '80GSM',
+            size: 'A4',
+            finish: 'Matte',
+            color: 'Bright White',
+            packaging: 'Ream (500 sheets)'
+          }),
+          ExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        },
+        {
+          GroupID: 1,
+          MakeID: 1,
+          GradeID: 1,
+          BrandID: 1,
+          SellerID: 1,
+          DealTitle: 'Coated Art Paper - 120GSM',
+          DealDescription: 'Premium coated art paper suitable for high-end magazines, catalogs, and promotional materials. Excellent print quality with vibrant colors.',
+          Price: 62.75,
+          Quantity: 3000,
+          Unit: 'sheets',
+          MinOrderQuantity: 250,
+          Location: 'Delhi',
+          DealSpecifications: JSON.stringify({
+            weight: '120GSM',
+            size: 'A3',
+            finish: 'Glossy',
+            color: 'Ultra White',
+            coating: 'Double-sided'
+          }),
+          ExpiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+        },
+        {
+          GroupID: 1,
+          MakeID: 1,
+          GradeID: 1,
+          BrandID: 1,
+          SellerID: 1,
+          DealTitle: 'Newsprint Paper - 45GSM',
+          DealDescription: 'Economic newsprint paper for newspapers, tabloids, and low-cost printing. Good opacity and printability at budget-friendly prices.',
+          Price: 28.90,
+          Quantity: 10000,
+          Unit: 'sheets',
+          MinOrderQuantity: 1000,
+          Location: 'Bangalore',
+          DealSpecifications: JSON.stringify({
+            weight: '45GSM',
+            size: 'Broadsheet',
+            finish: 'Uncoated',
+            color: 'Natural White',
+            usage: 'Newspaper printing'
+          }),
+          ExpiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
+        }
+      ];
+
+      const createdDeals = [];
+      for (const deal of demoDeals) {
+        const result = await executeQuery(`
+          INSERT INTO deal_master (
+            GroupID, MakeID, GradeID, BrandID, SellerID, DealTitle, DealDescription, 
+            Price, Quantity, Unit, MinOrderQuantity, Location, DealSpecifications, 
+            ExpiresAt, CreatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          deal.GroupID,
+          deal.MakeID,
+          deal.GradeID,
+          deal.BrandID,
+          deal.SellerID,
+          deal.DealTitle,
+          deal.DealDescription,
+          deal.Price,
+          deal.Quantity,
+          deal.Unit,
+          deal.MinOrderQuantity,
+          deal.Location,
+          deal.DealSpecifications,
+          deal.ExpiresAt
+        ]);
+        
+        createdDeals.push({
+          id: result.insertId,
+          title: deal.DealTitle
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Created ${createdDeals.length} demo deals`,
+        deals: createdDeals
+      });
+
+    } catch (error) {
+      console.error('Error creating demo deals:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create demo deals',
+        error: error.message
+      });
+    }
+  });
+
   // Temporary simple login bypass for testing
   app.post('/api/auth/simple-login', async (req, res) => {
     try {

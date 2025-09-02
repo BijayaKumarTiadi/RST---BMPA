@@ -87,8 +87,8 @@ class DealService {
     offset?: number;
   }): Promise<{ deals: Deal[]; total: number }> {
     try {
-      let whereConditions = ['d.Status = ?'];
-      let params: any[] = ['active'];
+      let whereConditions = ['1=1']; // Remove Status filter for now
+      let params: any[] = [];
 
       if (filters?.group_id) {
         whereConditions.push('d.GroupID = ?');
@@ -115,10 +115,11 @@ class DealService {
         params.push(filters.seller_id);
       }
 
-      if (filters?.status) {
-        whereConditions[0] = 'd.Status = ?';
-        params[0] = filters.status;
-      }
+      // Status filtering disabled for now
+      // if (filters?.status) {
+      //   whereConditions.push('d.Status = ?');
+      //   params.push(filters.status);
+      // }
 
       if (filters?.search) {
         whereConditions.push('(d.DealTitle LIKE ? OR d.DealDescription LIKE ? OR g.GroupName LIKE ? OR m.MakeName LIKE ?)');
@@ -226,7 +227,7 @@ class DealService {
         LEFT JOIN stock_grade gr ON d.GradeID = gr.GradeID
         LEFT JOIN stock_brand b ON d.BrandID = b.BrandID
         LEFT JOIN bmpa_members mb ON d.SellerID = mb.member_id
-        WHERE d.DealID = ? AND d.Status = 'active'
+        WHERE d.DealID = ?
       `, [dealId]);
 
       if (!deal) return null;
@@ -342,7 +343,7 @@ class DealService {
     try {
       // Verify the deal belongs to the seller
       const deal = await executeQuerySingle(`
-        SELECT SellerID FROM deal_master WHERE DealID = ? AND Status = 'active'
+        SELECT SellerID FROM deal_master WHERE DealID = ?
       `, [dealId]);
 
       if (!deal) {
@@ -423,7 +424,7 @@ class DealService {
     try {
       // Verify the deal belongs to the seller
       const deal = await executeQuerySingle(`
-        SELECT SellerID FROM deal_master WHERE DealID = ? AND Status = 'active'
+        SELECT SellerID FROM deal_master WHERE DealID = ?
       `, [dealId]);
 
       if (!deal) {
