@@ -168,12 +168,14 @@ export default function Navigation() {
                     </Link>
                   </DropdownMenuItem>
                   
-                  <DropdownMenuItem asChild>
-                    <Link href="/add-product" className="flex items-center space-x-2 w-full">
-                      <Package className="h-4 w-4" />
-                      <span>Add Product</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  {(user?.role === 'seller' || user?.role === 'both') && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/add-product" className="flex items-center space-x-2 w-full">
+                        <Package className="h-4 w-4" />
+                        <span>Add Product</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center space-x-2 w-full">

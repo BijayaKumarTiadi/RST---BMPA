@@ -5,7 +5,7 @@ import { otpService } from "./otpService";
 import { adminService } from "./adminService";
 import { productService } from "./productService";
 import { storage } from "./storage";
-import { executeQuery } from "./database";
+import { executeQuery, executeQuerySingle } from "./database";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if chat already exists
       const existingChat = await executeQuerySingle(`
-        SELECT * FROM chats 
+        SELECT * FROM bmpa_chats 
         WHERE product_id = ? AND buyer_id = ? AND seller_id = ?
       `, [productId, buyerId, sellerId]);
 
@@ -541,7 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const chatId = 'chat-' + Math.random().toString(36).substr(2, 9);
       
       await executeQuery(`
-        INSERT INTO chats (id, product_id, buyer_id, seller_id, status, created_at, updated_at)
+        INSERT INTO bmpa_chats (id, product_id, buyer_id, seller_id, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'active', NOW(), NOW())
       `, [chatId, productId, buyerId, sellerId]);
 
@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user is part of the chat
       const chat = await executeQuerySingle(`
-        SELECT * FROM chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+        SELECT * FROM bmpa_chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
       `, [chatId, userId, userId]);
 
       if (!chat) {
@@ -582,9 +582,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get messages
       const messages = await executeQuery(`
-        SELECT m.*, mem.company_name as sender_name
-        FROM chat_messages m
-        LEFT JOIN members mem ON m.sender_id = mem.id
+        SELECT m.*, mem.mname as sender_name, mem.company_name as sender_company
+        FROM bmpa_chat_messages m
+        LEFT JOIN bmpa_members mem ON m.sender_id = mem.member_id
         WHERE m.chat_id = ?
         ORDER BY m.created_at ASC
       `, [chatId]);
@@ -615,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user is part of the chat
       const chat = await executeQuerySingle(`
-        SELECT * FROM chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
+        SELECT * FROM bmpa_chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)
       `, [chatId, senderId, senderId]);
 
       if (!chat) {
@@ -636,13 +636,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messageId = 'msg-' + Math.random().toString(36).substr(2, 9);
       
       await executeQuery(`
-        INSERT INTO chat_messages (id, chat_id, sender_id, message, message_type, image_url, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
-      `, [messageId, chatId, senderId, message || '', messageType, imageUrl || null]);
+        INSERT INTO bmpa_chat_messages (id, chat_id, sender_id, message, message_type, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+      `, [messageId, chatId, senderId, message || '', messageType]);
 
       // Update chat timestamp
       await executeQuery(`
-        UPDATE chats SET updated_at = NOW() WHERE id = ?
+        UPDATE bmpa_chats SET updated_at = NOW() WHERE id = ?
       `, [chatId]);
 
       res.json({

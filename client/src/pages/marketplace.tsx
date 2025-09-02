@@ -61,8 +61,29 @@ export default function Marketplace() {
 
   const products = productsData?.products || [];
 
-  const handleContactSeller = (productId: string, sellerId: string) => {
-    setLocation(`/chat/new?product=${productId}&seller=${sellerId}`);
+  const handleContactSeller = async (productId: string, sellerId: string) => {
+    try {
+      const response = await fetch('/api/chat/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId,
+          sellerId
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setLocation(`/chat/${result.chatId}`);
+      } else {
+        console.error('Failed to start chat:', result.message);
+      }
+    } catch (error) {
+      console.error('Error starting chat:', error);
+    }
   };
 
   return (
