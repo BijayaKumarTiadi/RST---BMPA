@@ -49,10 +49,10 @@ export interface CreateDealData {
 }
 
 export interface StockHierarchy {
-  groups: Array<{ GroupID: number; GroupName: string; GroupDescription: string }>;
-  makes: Array<{ MakeID: number; GroupID: number; MakeName: string; MakeDescription: string }>;
-  grades: Array<{ GradeID: number; GroupID: number; GradeName: string; GradeDescription: string }>;
-  brands: Array<{ BrandID: number; MakeID: number; BrandName: string; BrandDescription: string }>;
+  groups: Array<{ GroupID: number; GroupName: string }>;
+  makes: Array<{ make_ID: number; GroupID: number; make_Name: string }>;
+  grades: Array<{ gradeID: number; Make_ID: number; GradeName: string }>;
+  brands: Array<{ brandID: number; make_ID: number; brandname: string }>;
 }
 
 class DealService {
@@ -60,10 +60,10 @@ class DealService {
   async getStockHierarchy(): Promise<StockHierarchy> {
     try {
       const [groups, makes, grades, brands] = await Promise.all([
-        executeQuery('SELECT GroupID, GroupName, GroupDescription FROM stock_groups WHERE IsActive = 1 ORDER BY GroupName'),
-        executeQuery('SELECT MakeID, GroupID, MakeName, MakeDescription FROM stock_make_master WHERE IsActive = 1 ORDER BY MakeName'),
-        executeQuery('SELECT GradeID, GroupID, GradeName, GradeDescription FROM stock_grade WHERE IsActive = 1 ORDER BY GradeName'),
-        executeQuery('SELECT BrandID, MakeID, BrandName, BrandDescription FROM stock_brand WHERE IsActive = 1 ORDER BY BrandName')
+        executeQuery('SELECT GroupID, GroupName FROM stock_groups WHERE IsActive = 1 ORDER BY GroupName'),
+        executeQuery('SELECT make_ID, GroupID, make_Name FROM stock_make_master WHERE IsActive = 1 ORDER BY make_Name'),
+        executeQuery('SELECT gradeID, Make_ID, GradeName FROM stock_grade WHERE IsActive = 1 ORDER BY GradeName'),
+        executeQuery('SELECT brandID, make_ID, brandname FROM stock_brand WHERE IsActive = 1 ORDER BY brandname')
       ]);
 
       return { groups, makes, grades, brands };
@@ -91,7 +91,7 @@ class DealService {
       let params: any[] = [];
 
       if (filters?.group_id) {
-        whereConditions.push('d.GroupID = ?');
+        whereConditions.push('d.groupID = ?');
         params.push(filters.group_id);
       }
 
@@ -111,7 +111,7 @@ class DealService {
       }
 
       if (filters?.seller_id) {
-        whereConditions.push('d.SellerID = ?');
+        whereConditions.push('d.memberID = ?');
         params.push(filters.seller_id);
       }
 
@@ -122,9 +122,9 @@ class DealService {
       // }
 
       if (filters?.search) {
-        whereConditions.push('(d.DealTitle LIKE ? OR d.DealDescription LIKE ? OR g.GroupName LIKE ? OR m.MakeName LIKE ?)');
+        whereConditions.push('(d.Seller_comments LIKE ? OR g.GroupName LIKE ? OR m.make_Name LIKE ?)');
         const searchTerm = `%${filters.search}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm);
       }
 
       if (filters?.location) {
@@ -138,8 +138,8 @@ class DealService {
       const countQuery = `
         SELECT COUNT(*) as total 
         FROM deal_master d 
-        LEFT JOIN stock_groups g ON d.GroupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.MakeID
+        LEFT JOIN stock_groups g ON d.groupID = g.GroupID
+        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
         ${whereClause}
       `;
       const countResult = await executeQuerySingle(countQuery, params);
@@ -153,21 +153,21 @@ class DealService {
         SELECT 
           d.*,
           g.GroupName,
-          m.MakeName,
+          m.make_Name as MakeName,
           gr.GradeName,
-          b.BrandName,
+          b.brandname as BrandName,
           mb.mname as seller_name,
           mb.company_name as seller_company,
           mb.email as seller_email,
           mb.phone as seller_phone
         FROM deal_master d
-        LEFT JOIN stock_groups g ON d.GroupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.MakeID
-        LEFT JOIN stock_grade gr ON d.GradeID = gr.GradeID
-        LEFT JOIN stock_brand b ON d.BrandID = b.BrandID
-        LEFT JOIN bmpa_members mb ON d.SellerID = mb.member_id
+        LEFT JOIN stock_groups g ON d.groupID = g.GroupID
+        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
+        LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
+        LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+        LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         ${whereClause}
-        ORDER BY d.CreatedAt DESC
+        ORDER BY d.uplaodDate DESC
         LIMIT ? OFFSET ?
       `;
 
@@ -210,24 +210,20 @@ class DealService {
         SELECT 
           d.*,
           g.GroupName,
-          g.GroupDescription,
-          m.MakeName,
-          m.MakeDescription,
+          m.make_Name as MakeName,
           gr.GradeName,
-          gr.GradeDescription,
-          b.BrandName,
-          b.BrandDescription,
+          b.brandname as BrandName,
           mb.mname as seller_name,
           mb.company_name as seller_company,
           mb.email as seller_email,
           mb.phone as seller_phone
         FROM deal_master d
-        LEFT JOIN stock_groups g ON d.GroupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.MakeID
-        LEFT JOIN stock_grade gr ON d.GradeID = gr.GradeID
-        LEFT JOIN stock_brand b ON d.BrandID = b.BrandID
-        LEFT JOIN bmpa_members mb ON d.SellerID = mb.member_id
-        WHERE d.DealID = ?
+        LEFT JOIN stock_groups g ON d.groupID = g.GroupID
+        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
+        LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
+        LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+        LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
+        WHERE d.TransID = ?
       `, [dealId]);
 
       if (!deal) return null;
@@ -282,13 +278,13 @@ class DealService {
       const hierarchyCheck = await executeQuerySingle(`
         SELECT 
           g.GroupID,
-          m.MakeID,
-          gr.GradeID,
-          b.BrandID
+          m.make_ID as MakeID,
+          gr.gradeID as GradeID,
+          b.brandID as BrandID
         FROM stock_groups g
-        LEFT JOIN stock_make_master m ON g.GroupID = m.GroupID AND m.MakeID = ?
-        LEFT JOIN stock_grade gr ON g.GroupID = gr.GroupID AND gr.GradeID = ?
-        LEFT JOIN stock_brand b ON m.MakeID = b.MakeID AND b.BrandID = ?
+        LEFT JOIN stock_make_master m ON g.GroupID = m.GroupID AND m.make_ID = ?
+        LEFT JOIN stock_grade gr ON m.make_ID = gr.Make_ID AND gr.gradeID = ?
+        LEFT JOIN stock_brand b ON m.make_ID = b.make_ID AND b.brandID = ?
         WHERE g.GroupID = ?
       `, [make_id, grade_id, brand_id, group_id]);
 
@@ -301,25 +297,18 @@ class DealService {
 
       const result = await executeQuery(`
         INSERT INTO deal_master (
-          GroupID, MakeID, GradeID, BrandID, SellerID, DealTitle, DealDescription, 
-          Price, Quantity, Unit, MinOrderQuantity, Location, DealSpecifications, 
-          Status, ExpiresAt, CreatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW())
+          groupID, MakeID, GradeID, BrandID, memberID, 
+          Seller_comments, OfferPrice, OfferUnit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
         grade_id,
         brand_id,
         seller_id,
-        deal_title,
-        deal_description || null,
+        `${deal_title}\n${deal_description || ''}`,
         price,
-        quantity,
-        unit,
-        min_order_quantity,
-        location || null,
-        deal_specifications ? JSON.stringify(deal_specifications) : null,
-        expires_at || null
+        unit
       ]);
 
       const insertId = (result as any).insertId;

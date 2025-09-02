@@ -336,13 +336,13 @@ export default function AddDeal() {
 
                       <FormField
                         control={form.control}
-                        name="description"
+                        name="deal_description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Deal Description</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Detailed description of your product"
+                                placeholder="Detailed description of your deal"
                                 className="min-h-24"
                                 {...field}
                                 data-testid="input-description"
@@ -353,89 +353,6 @@ export default function AddDeal() {
                         )}
                       />
 
-                      <div className="flex gap-4">
-                        <FormField
-                          control={form.control}
-                          name="category_id"
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormLabel>Category *</FormLabel>
-                              <FormControl>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <SelectTrigger data-testid="select-category">
-                                    <SelectValue placeholder="Select category" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {categories.map((category: any) => (
-                                      <SelectItem 
-                                        key={category.category_id} 
-                                        value={category.category_id.toString()}
-                                      >
-                                        {category.category_name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
-                          <DialogTrigger asChild>
-                            <Button type="button" variant="outline" className="mt-8">
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Category
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Add New Category</DialogTitle>
-                              <DialogDescription>
-                                Create a new product category for better organization.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <label className="text-sm font-medium">Category Name *</label>
-                                <Input
-                                  value={newCategoryName}
-                                  onChange={(e) => setNewCategoryName(e.target.value)}
-                                  placeholder="e.g., Commercial Printing"
-                                  data-testid="input-category-name"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium">Description</label>
-                                <Textarea
-                                  value={newCategoryDescription}
-                                  onChange={(e) => setNewCategoryDescription(e.target.value)}
-                                  placeholder="Brief description of the category"
-                                  data-testid="input-category-description"
-                                />
-                              </div>
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => setShowAddCategory(false)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={handleAddCategory}
-                                  disabled={createCategoryMutation.isPending}
-                                  data-testid="button-add-category"
-                                >
-                                  {createCategoryMutation.isPending ? "Adding..." : "Add Category"}
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
                     </CardContent>
                   </Card>
 

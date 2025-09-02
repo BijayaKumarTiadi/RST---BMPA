@@ -128,76 +128,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check table structures
+  app.get('/api/debug/table-structure', async (req, res) => {
+    try {
+      const tables = ['stock_groups', 'stock_make_master', 'stock_grade', 'stock_brand', 'deal_master'];
+      const results = {};
+      
+      for (const table of tables) {
+        try {
+          const columns = await executeQuery(`DESCRIBE ${table}`);
+          results[table] = columns;
+        } catch (error) {
+          results[table] = { error: error.message };
+        }
+      }
+      
+      res.json({ success: true, tables: results });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create demo deals for testing
   app.post('/api/demo/create-deals', async (req, res) => {
     try {
       // Sample demo deals
       const demoDeals = [
         {
-          GroupID: 1,
+          groupID: 1,
           MakeID: 1,
           GradeID: 1,
           BrandID: 1,
-          SellerID: 1,
-          DealTitle: 'Premium Offset Paper - 80GSM',
-          DealDescription: 'High-quality offset printing paper, perfect for books, magazines, and brochures. Excellent ink absorption and bright white finish.',
-          Price: 45.50,
-          Quantity: 5000,
-          Unit: 'sheets',
-          MinOrderQuantity: 500,
-          Location: 'Mumbai',
-          DealSpecifications: JSON.stringify({
-            weight: '80GSM',
-            size: 'A4',
-            finish: 'Matte',
-            color: 'Bright White',
-            packaging: 'Ream (500 sheets)'
-          }),
-          ExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          memberID: 1,
+          Seller_comments: 'Premium ITC FBB CYBER XL - 80GSM\nHigh-quality offset printing paper, perfect for books, magazines, and brochures. Excellent ink absorption and bright white finish.',
+          OfferPrice: 45.50,
+          OfferUnit: 'sheets'
         },
         {
-          GroupID: 1,
+          groupID: 1,
           MakeID: 1,
-          GradeID: 1,
-          BrandID: 1,
-          SellerID: 1,
-          DealTitle: 'Coated Art Paper - 120GSM',
-          DealDescription: 'Premium coated art paper suitable for high-end magazines, catalogs, and promotional materials. Excellent print quality with vibrant colors.',
-          Price: 62.75,
-          Quantity: 3000,
-          Unit: 'sheets',
-          MinOrderQuantity: 250,
-          Location: 'Delhi',
-          DealSpecifications: JSON.stringify({
-            weight: '120GSM',
-            size: 'A3',
-            finish: 'Glossy',
-            color: 'Ultra White',
-            coating: 'Double-sided'
-          }),
-          ExpiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+          GradeID: 2,
+          BrandID: 2,
+          memberID: 1,
+          Seller_comments: 'ITC SBS SAPPHIRE GRAPHIC - 120GSM\nPremium coated art paper suitable for high-end magazines, catalogs, and promotional materials. Excellent print quality with vibrant colors.',
+          OfferPrice: 62.75,
+          OfferUnit: 'sheets'
         },
         {
-          GroupID: 1,
-          MakeID: 1,
-          GradeID: 1,
-          BrandID: 1,
-          SellerID: 1,
-          DealTitle: 'Newsprint Paper - 45GSM',
-          DealDescription: 'Economic newsprint paper for newspapers, tabloids, and low-cost printing. Good opacity and printability at budget-friendly prices.',
-          Price: 28.90,
-          Quantity: 10000,
-          Unit: 'sheets',
-          MinOrderQuantity: 1000,
-          Location: 'Bangalore',
-          DealSpecifications: JSON.stringify({
-            weight: '45GSM',
-            size: 'Broadsheet',
-            finish: 'Uncoated',
-            color: 'Natural White',
-            usage: 'Newspaper printing'
-          }),
-          ExpiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
+          groupID: 1,
+          MakeID: 2,
+          GradeID: 3,
+          BrandID: 6,
+          memberID: 1,
+          Seller_comments: 'EMAMI FBB MAXO FOLD - 100GSM\nEconomic newsprint paper for newspapers, tabloids, and low-cost printing. Good opacity and printability at budget-friendly prices.',
+          OfferPrice: 28.90,
+          OfferUnit: 'sheets'
         }
       ];
 
@@ -205,30 +190,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const deal of demoDeals) {
         const result = await executeQuery(`
           INSERT INTO deal_master (
-            GroupID, MakeID, GradeID, BrandID, SellerID, DealTitle, DealDescription, 
-            Price, Quantity, Unit, MinOrderQuantity, Location, DealSpecifications, 
-            ExpiresAt, CreatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            groupID, MakeID, GradeID, BrandID, memberID, 
+            Seller_comments, OfferPrice, OfferUnit
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          deal.GroupID,
+          deal.groupID,
           deal.MakeID,
           deal.GradeID,
           deal.BrandID,
-          deal.SellerID,
-          deal.DealTitle,
-          deal.DealDescription,
-          deal.Price,
-          deal.Quantity,
-          deal.Unit,
-          deal.MinOrderQuantity,
-          deal.Location,
-          deal.DealSpecifications,
-          deal.ExpiresAt
+          deal.memberID,
+          deal.Seller_comments,
+          deal.OfferPrice,
+          deal.OfferUnit
         ]);
         
         createdDeals.push({
           id: result.insertId,
-          title: deal.DealTitle
+          title: deal.Seller_comments.split('\n')[0]
         });
       }
 
