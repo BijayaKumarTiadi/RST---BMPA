@@ -107,12 +107,6 @@ export default function ProductDetails() {
   const isProductOwner = isAuthenticated && user?.id === product.seller_id;
   const isSoldOut = product.status === 'sold' || product.quantity === 0;
 
-  const handleImageLoad = (imageUrl: string) => {
-    if (imageUrl.startsWith('https://storage.googleapis.com/replit-objstore-')) {
-      return `/api/images/${imageUrl.split('/.private/')[1]}`;
-    }
-    return imageUrl;
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,35 +125,15 @@ export default function ProductDetails() {
         </Button>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Product Images */}
+          {/* Product Display */}
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
-              <img
-                src={product.image_urls?.[0] ? 
-                  handleImageLoad(product.image_urls[0]) : 
-                  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjI1MCIgeT0iMjUwIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdCBJbWFnZTwvdGV4dD48L3N2Zz4='
-                }
-                alt={product.title}
-                className="w-full h-full object-cover"
-                data-testid="img-product-main"
-              />
-            </div>
-            
-            {/* Thumbnail Images */}
-            {product.image_urls?.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {product.image_urls.slice(1, 5).map((imageUrl: string, index: number) => (
-                  <div key={index} className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
-                    <img
-                      src={handleImageLoad(imageUrl)}
-                      alt={`${product.title} ${index + 2}`}
-                      className="w-full h-full object-cover cursor-pointer hover:opacity-80"
-                      data-testid={`img-thumbnail-${index}`}
-                    />
-                  </div>
-                ))}
+            <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="text-center p-8">
+                <Package className="h-24 w-24 mx-auto mb-4 text-indigo-600" />
+                <h2 className="text-xl font-semibold text-indigo-800 mb-2">{product.title}</h2>
+                <p className="text-indigo-600">{product.category_name || 'Product'}</p>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Product Info */}

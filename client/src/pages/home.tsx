@@ -172,25 +172,12 @@ export default function Home() {
               {productsData.products.map((product: any) => (
                 <Card key={product.id} className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-white border border-gray-200 overflow-hidden h-full flex flex-col" data-testid={`product-${product.id}`}>
                   <div className="relative overflow-hidden bg-gray-50">
-                    {/* Product Image */}
-                    <div className="aspect-square relative">
-                      <img
-                        src={product.image_urls?.[0] ? 
-                          (product.image_urls[0].startsWith('https://storage.googleapis.com/replit-objstore-') ? 
-                            `/api/images/${product.image_urls[0].split('/.private/')[1]}` :
-                            product.image_urls[0].startsWith('/objects/') ? 
-                              `${window.location.origin}${product.image_urls[0]}` : 
-                              product.image_urls[0]
-                          ) : 
-                          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdDwvdGV4dD48L3N2Zz4='
-                        }
-                        alt={product.title}
-                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
-                        data-testid={`img-product-${product.id}`}
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHVjdDwvdGV4dD48L3N2Zz4=';
-                        }}
-                      />
+                    {/* Product Placeholder */}
+                    <div className="aspect-square relative bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <Package className="h-8 w-8 mx-auto mb-2 text-indigo-600" />
+                        <p className="text-xs text-indigo-700 font-medium line-clamp-2">{product.title}</p>
+                      </div>
                     </div>
                     
                     {/* Category Badge */}

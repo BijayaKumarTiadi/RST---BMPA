@@ -12,7 +12,6 @@ export interface Product {
   unit: string;
   min_order_quantity: number;
   status: 'available' | 'low_stock' | 'out_of_stock' | 'discontinued';
-  image_urls?: string[];
   specifications?: any;
   location?: string;
   is_active: boolean;
@@ -39,7 +38,6 @@ export interface CreateProductData {
   quantity: number;
   unit: string;
   min_order_quantity?: number;
-  image_urls?: string[];
   specifications?: any;
   location?: string;
   expiry_date?: Date;
@@ -123,7 +121,7 @@ export class ProductService {
       // Get total count
       const countQuery = `
         SELECT COUNT(*) as total 
-        FROM products p 
+        FROM bmpa_products p 
         ${whereClause}
       `;
       const countResult = await executeQuerySingle(countQuery, params);
@@ -136,11 +134,11 @@ export class ProductService {
       const productsQuery = `
         SELECT 
           p.*,
-          c.name as category_name,
+          c.category_name,
           m.mname as seller_name,
           m.company_name as seller_company
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
+        FROM bmpa_products p
+        LEFT JOIN bmpa_categories c ON p.category_id = c.category_id
         LEFT JOIN bmpa_members m ON p.seller_id = m.member_id
         ${whereClause}
         ORDER BY p.created_at DESC
@@ -151,22 +149,7 @@ export class ProductService {
 
       // Parse JSON fields safely
       const parsedProducts = products.map((product: any) => {
-        let imageUrls = [];
         let specifications = null;
-        
-        // Safely parse image_urls
-        if (product.image_urls) {
-          try {
-            if (typeof product.image_urls === 'string') {
-              imageUrls = JSON.parse(product.image_urls);
-            } else if (Array.isArray(product.image_urls)) {
-              imageUrls = product.image_urls;
-            }
-          } catch (error) {
-            console.error('Error parsing image_urls for product:', product.id, error);
-            imageUrls = [];
-          }
-        }
         
         // Safely parse specifications
         if (product.specifications) {
@@ -184,7 +167,6 @@ export class ProductService {
         
         return {
           ...product,
-          image_urls: imageUrls,
           specifications
         };
       });
@@ -205,13 +187,13 @@ export class ProductService {
       const product = await executeQuerySingle(`
         SELECT 
           p.*,
-          c.name as category_name,
+          c.category_name,
           m.mname as seller_name,
           m.company_name as seller_company,
           m.email as seller_email,
           m.phone as seller_phone
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
+        FROM bmpa_products p
+        LEFT JOIN bmpa_categories c ON p.category_id = c.category_id
         LEFT JOIN bmpa_members m ON p.seller_id = m.member_id
         WHERE p.id = ? AND p.is_active = 1
       `, [productId]);
@@ -219,21 +201,7 @@ export class ProductService {
       if (!product) return null;
 
       // Parse JSON fields safely
-      let imageUrls = [];
       let specifications = null;
-      
-      if (product.image_urls) {
-        try {
-          if (typeof product.image_urls === 'string') {
-            imageUrls = JSON.parse(product.image_urls);
-          } else if (Array.isArray(product.image_urls)) {
-            imageUrls = product.image_urls;
-          }
-        } catch (error) {
-          console.error('Error parsing image_urls for product:', product.id, error);
-          imageUrls = [];
-        }
-      }
       
       if (product.specifications) {
         try {
@@ -250,7 +218,6 @@ export class ProductService {
       
       return {
         ...product,
-        image_urls: imageUrls,
         specifications
       };
     } catch (error) {
@@ -271,7 +238,6 @@ export class ProductService {
         quantity,
         unit,
         min_order_quantity = 1,
-        image_urls = [],
         specifications,
         location,
         expiry_date
@@ -289,10 +255,10 @@ export class ProductService {
       }
 
       const result = await executeQuery(`
-        INSERT INTO products (
+        INSERT INTO bmpa_products (
           id, seller_id, category_id, title, description, price, quantity, unit,
-          min_order_quantity, image_urls, specifications, location, expiry_date, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
+          min_order_quantity, specifications, location, expiry_date, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
       `, [
         productId,
         seller_id,
@@ -303,7 +269,6 @@ export class ProductService {
         quantity,
         unit,
         min_order_quantity,
-        JSON.stringify(image_urls),
         specifications ? JSON.stringify(specifications) : null,
         location || null,
         expiry_date || null
@@ -328,7 +293,7 @@ export class ProductService {
     try {
       // Verify the product belongs to the seller
       const product = await executeQuerySingle(`
-        SELECT seller_id FROM products WHERE id = ? AND is_active = 1
+        SELECT seller_id FROM bmpa_products WHERE id = ? AND is_active = 1
       `, [productId]);
 
       if (!product) {
@@ -347,7 +312,7 @@ export class ProductService {
 
       const allowedFields = [
         'category_id', 'title', 'description', 'price', 'quantity', 'unit',
-        'min_order_quantity', 'image_urls', 'specifications', 'location', 'expiry_date'
+        'min_order_quantity', 'specifications', 'location', 'expiry_date'
       ];
       
       const updateFields = [];
@@ -355,7 +320,7 @@ export class ProductService {
       
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
-          if (field === 'image_urls' || field === 'specifications') {
+          if (field === 'specifications') {
             updateFields.push(`${field} = ?`);
             updateValues.push(JSON.stringify(updateData[field]));
           } else {
@@ -375,7 +340,7 @@ export class ProductService {
       updateValues.push(productId);
       
       await executeQuery(
-        `UPDATE products SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE bmpa_products SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         updateValues
       );
 
@@ -397,7 +362,7 @@ export class ProductService {
     try {
       // Verify the product belongs to the seller
       const product = await executeQuerySingle(`
-        SELECT seller_id FROM products WHERE id = ? AND is_active = 1
+        SELECT seller_id FROM bmpa_products WHERE id = ? AND is_active = 1
       `, [productId]);
 
       if (!product) {
@@ -415,7 +380,7 @@ export class ProductService {
       }
 
       await executeQuery(`
-        UPDATE products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        UPDATE bmpa_products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `, [productId]);
 
       return {
@@ -444,7 +409,7 @@ export class ProductService {
 
       // Verify the product belongs to the seller
       const product = await executeQuerySingle(`
-        SELECT seller_id FROM products WHERE id = ? AND is_active = 1
+        SELECT seller_id FROM bmpa_products WHERE id = ? AND is_active = 1
       `, [productId]);
 
       if (!product) {
@@ -462,7 +427,7 @@ export class ProductService {
       }
 
       await executeQuery(`
-        UPDATE products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        UPDATE bmpa_products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `, [status, productId]);
 
       return {

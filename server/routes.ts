@@ -38,30 +38,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.use('/api/auth', authRouter);
 
-  // Serve Google Cloud Storage images
-  app.get('/api/images/*', async (req, res) => {
-    try {
-      const imagePath = req.params[0]; // Get the path after /api/images/
-      const fullPath = `https://storage.googleapis.com/replit-objstore-00314c75-0a87-46bf-b95e-3bcb2f3e6c32/.private/${imagePath}`;
-      
-      // Proxy the image
-      const response = await fetch(fullPath);
-      if (!response.ok) {
-        return res.status(404).json({ error: 'Image not found' });
-      }
-      
-      // Set appropriate headers
-      res.setHeader('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-      
-      // Stream the image
-      const buffer = await response.arrayBuffer();
-      res.send(Buffer.from(buffer));
-    } catch (error) {
-      console.error('Error serving image:', error);
-      res.status(500).json({ error: 'Failed to load image' });
-    }
-  });
 
   // Temporary simple login bypass for testing
   app.post('/api/auth/simple-login', async (req, res) => {
@@ -358,7 +334,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity,
         unit,
         min_order_quantity,
-        image_urls,
         specifications,
         location,
         expiry_date
@@ -380,7 +355,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: parseInt(quantity),
         unit,
         min_order_quantity: min_order_quantity ? parseInt(min_order_quantity) : 1,
-        image_urls: image_urls || [],
         specifications,
         location,
         expiry_date: expiry_date ? new Date(expiry_date) : undefined,
@@ -963,60 +937,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object Storage Routes for images
-  app.post('/api/objects/upload', requireAuth, async (req: any, res) => {
-    try {
-      const { ObjectStorageService } = await import('./objectStorage');
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ message: "Failed to get upload URL" });
-    }
-  });
-
-  app.put('/api/product-images', requireAuth, async (req: any, res) => {
-    try {
-      const { imageURL } = req.body;
-      
-      if (!imageURL) {
-        return res.status(400).json({
-          success: false,
-          message: 'Image URL is required'
-        });
-      }
-
-      const { ObjectStorageService } = await import('./objectStorage');
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(imageURL);
-
-      res.json({
-        success: true,
-        message: 'Image URL processed successfully',
-        objectPath
-      });
-    } catch (error) {
-      console.error("Error processing image URL:", error);
-      res.status(500).json({ message: "Failed to process image URL" });
-    }
-  });
-
-  // Route to serve uploaded images from object storage
-  app.get('/objects/:objectPath(*)', async (req, res) => {
-    try {
-      const { ObjectStorageService } = await import('./objectStorage');
-      const objectStorageService = new ObjectStorageService();
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      
-      // Stream the file to the response
-      await objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error serving object:", error);
-      res.status(404).json({ message: "Image not found" });
-    }
-  });
 
   // Temporary endpoint to fix database schema
   app.post('/api/fix-database', async (req, res) => {
@@ -1028,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const constraintName of constraintsToTry) {
         try {
-          await executeQuery(`ALTER TABLE products DROP FOREIGN KEY ${constraintName}`);
+          await executeQuery(`ALTER TABLE bmpa_products DROP FOREIGN KEY ${constraintName}`);
           console.log(`✅ Dropped constraint: ${constraintName}`);
         } catch (error: any) {
           console.log(`ℹ️ Constraint ${constraintName} might not exist:`, error.message);
@@ -1038,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the correct foreign key constraint with a new name each time
       const newConstraintName = `fk_products_bmpa_cat_${Date.now()}`;
       try {
-        await executeQuery(`ALTER TABLE products ADD CONSTRAINT ${newConstraintName} FOREIGN KEY (category_id) REFERENCES bmpa_categories(category_id) ON DELETE RESTRICT`);
+        await executeQuery(`ALTER TABLE bmpa_products ADD CONSTRAINT ${newConstraintName} FOREIGN KEY (category_id) REFERENCES bmpa_categories(category_id) ON DELETE RESTRICT`);
         console.log(`✅ Added new foreign key constraint: ${newConstraintName}`);
       } catch (error: any) {
         console.log('Foreign key error:', error.message);

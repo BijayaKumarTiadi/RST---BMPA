@@ -266,21 +266,21 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ BMPA Categories table already exists');
     }
 
-    // Check if products table exists, if not create it
+    // Check if bmpa_products table exists, if not create it
     const productsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = 'spmis2223yrk' 
-      AND table_name = 'products'
+      AND table_name = 'bmpa_products'
     `);
 
     if (!productsTableExists || productsTableExists.count === 0) {
-      console.log('📋 Creating products table...');
+      console.log('📋 Creating bmpa_products table...');
       await executeQuery(`
-        CREATE TABLE products (
+        CREATE TABLE bmpa_products (
           id varchar(36) PRIMARY KEY,
           seller_id int(10) NOT NULL,
-          category_id varchar(36) NOT NULL,
+          category_id int(10) NOT NULL,
           title varchar(200) NOT NULL,
           description text,
           price decimal(10,2) NOT NULL,
@@ -288,7 +288,6 @@ export async function initializeDatabase(): Promise<void> {
           unit varchar(50) NOT NULL,
           min_order_quantity int DEFAULT 1,
           status enum('available', 'low_stock', 'out_of_stock', 'discontinued') DEFAULT 'available',
-          image_urls json,
           specifications json,
           location varchar(100),
           is_active boolean DEFAULT true,
@@ -303,7 +302,7 @@ export async function initializeDatabase(): Promise<void> {
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Products table created successfully');
+      console.log('✅ BMPA Products table created successfully');
 
       // Insert default categories
       const defaultCategories = [
@@ -327,18 +326,18 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Default categories added');
     }
 
-    // Check if chats table exists
+    // Check if bmpa_chats table exists
     const chatsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
-      AND table_name = 'chats'
+      AND table_name = 'bmpa_chats'
     `);
 
     if (!chatsTableExists || chatsTableExists.count === 0) {
-      console.log('💬 Creating chats table...');
+      console.log('💬 Creating bmpa_chats table...');
       await executeQuery(`
-        CREATE TABLE chats (
+        CREATE TABLE bmpa_chats (
           id varchar(36) PRIMARY KEY,
           product_id varchar(36) NOT NULL,
           buyer_id int(10) NOT NULL,
@@ -346,7 +345,7 @@ export async function initializeDatabase(): Promise<void> {
           status enum('active', 'closed', 'archived') DEFAULT 'active',
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES bmpa_products(id) ON DELETE CASCADE,
           FOREIGN KEY (buyer_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
           FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
           INDEX idx_product_id (product_id),
@@ -355,38 +354,34 @@ export async function initializeDatabase(): Promise<void> {
           INDEX idx_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Chats table created successfully');
+      console.log('✅ BMPA Chats table created successfully');
     }
 
-    // Check if chat_messages table exists
+    // Check if bmpa_chat_messages table exists
     const chatMessagesTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
-      AND table_name = 'chat_messages'
+      AND table_name = 'bmpa_chat_messages'
     `);
 
     if (!chatMessagesTableExists || chatMessagesTableExists.count === 0) {
-      console.log('💬 Creating chat_messages table...');
+      console.log('💬 Creating bmpa_chat_messages table...');
       await executeQuery(`
-        CREATE TABLE chat_messages (
+        CREATE TABLE bmpa_chat_messages (
           id varchar(36) PRIMARY KEY,
           chat_id varchar(36) NOT NULL,
           sender_id int(10) NOT NULL,
           message text,
-          message_type enum('text', 'image', 'file') DEFAULT 'text',
-          image_url varchar(500),
-          file_url varchar(500),
-          file_name varchar(200),
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
+          FOREIGN KEY (chat_id) REFERENCES bmpa_chats(id) ON DELETE CASCADE,
           FOREIGN KEY (sender_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
           INDEX idx_chat_id (chat_id),
           INDEX idx_sender_id (sender_id),
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Chat messages table created successfully');
+      console.log('✅ BMPA Chat messages table created successfully');
     }
 
   } catch (error) {

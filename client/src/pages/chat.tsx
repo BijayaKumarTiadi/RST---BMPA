@@ -1,16 +1,17 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { ObjectUploader } from "@/components/ObjectUploader";
-import { ArrowLeft, Send, Image, Paperclip, MoreVertical, Phone, Video } from "lucide-react";
+import { ArrowLeft, Send, MoreVertical, Phone, Video } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+
 // Simple Avatar components for chat
 const Avatar = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <div className={`inline-flex items-center justify-center rounded-full bg-muted ${className}`}>
@@ -28,8 +29,6 @@ const AvatarInitials = ({ name }: { name: string }) => {
   const initials = name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
   return <span>{initials}</span>;
 };
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 
 export default function Chat() {
   const { chatId } = useParams();
@@ -52,11 +51,9 @@ export default function Chat() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ message, imageUrl }: { message?: string; imageUrl?: string }) => {
+    mutationFn: async ({ message }: { message: string }) => {
       return apiRequest('POST', `/api/chat/${chatId}/messages`, {
-        message,
-        messageType: imageUrl ? 'image' : 'text',
-        imageUrl
+        message
       });
     },
     onSuccess: () => {
@@ -75,21 +72,6 @@ export default function Chat() {
   const handleSendMessage = () => {
     if (!message.trim()) return;
     sendMessageMutation.mutate({ message: message.trim() });
-  };
-
-  const handleImageUpload = async () => {
-    // This will be triggered by the ObjectUploader component
-    return {
-      method: 'PUT' as const,
-      url: await apiRequest('POST', '/api/objects/upload').then(res => res.uploadURL)
-    };
-  };
-
-  const handleImageComplete = (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadUrl = result.successful[0].uploadURL;
-      sendMessageMutation.mutate({ imageUrl: uploadUrl });
-    }
   };
 
   const scrollToBottom = () => {
@@ -121,13 +103,6 @@ export default function Chat() {
     } else {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
-  };
-
-  const handleImageLoad = (imageUrl: string) => {
-    if (imageUrl?.startsWith('https://storage.googleapis.com/replit-objstore-')) {
-      return `/api/images/${imageUrl.split('/.private/')[1]}`;
-    }
-    return imageUrl;
   };
 
   if (!isAuthenticated) {
@@ -283,23 +258,7 @@ export default function Chat() {
                             }`}
                             data-testid={`message-${msg.id}`}
                           >
-                            {msg.message_type === 'image' && msg.image_url ? (
-                              <div className="space-y-2">
-                                <img
-                                  src={handleImageLoad(msg.image_url)}
-                                  alt="Shared image"
-                                  className="rounded-lg max-w-full h-auto"
-                                  onError={(e) => {
-                                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjU3Mzg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2U8L3RleHQ+PC9zdmc+';
-                                  }}
-                                />
-                                {msg.message && (
-                                  <p className="text-sm">{msg.message}</p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-sm">{msg.message}</p>
-                            )}
+                            <p className="text-sm">{msg.message}</p>
                           </div>
                           
                           <div className={`flex items-center gap-1 mt-1 text-xs text-muted-foreground ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
@@ -320,22 +279,6 @@ export default function Chat() {
           {/* Message Input */}
           <div className="p-4">
             <div className="flex items-end gap-2">
-              <div className="flex gap-1">
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={5242880} // 5MB
-                  onGetUploadParameters={handleImageUpload}
-                  onComplete={handleImageComplete}
-                  buttonClassName="p-2 h-9 w-9"
-                >
-                  <Image className="h-4 w-4" />
-                </ObjectUploader>
-                
-                <Button variant="ghost" size="sm" className="p-2 h-9 w-9">
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-              </div>
-
               <div className="flex-1">
                 <Textarea
                   placeholder="Type your message..."
