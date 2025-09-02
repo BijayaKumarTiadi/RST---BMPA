@@ -54,12 +54,16 @@ export default function Messages() {
   const { data: chatData, isLoading: messagesLoading } = useQuery({
     queryKey: ['/api/chat', selectedChatId, 'messages'],
     queryFn: async () => {
-      const response = await fetch(`/api/chat/${selectedChatId}/messages`);
+      const response = await fetch(`/api/chat/${selectedChatId}/messages`, {
+        cache: 'no-store'
+      });
       if (!response.ok) throw new Error('Failed to fetch chat');
       return response.json();
     },
     enabled: !!selectedChatId && isAuthenticated,
     refetchInterval: 2000, // Poll every 2 seconds for new messages
+    staleTime: 0, // Never use stale data
+    cacheTime: 0, // Don't cache this query
   });
 
   const sendMessageMutation = useMutation({

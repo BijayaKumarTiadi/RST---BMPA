@@ -590,6 +590,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Mark messages as read for the current user (messages sent by others)
+      const updateResult = await executeQuery(`
+        UPDATE bmpa_chat_messages 
+        SET is_read = 1 
+        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
+      `, [chatId, userId]);
+      
+      console.log(`🔧 Update result for chat ${chatId}:`, updateResult);
+      
+      // Verify the update worked
+      const unreadCheck = await executeQuery(`
+        SELECT COUNT(*) as count FROM bmpa_chat_messages 
+        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
+      `, [chatId, userId]);
+      
+      console.log(`🔧 Remaining unread in chat ${chatId}:`, unreadCheck[0]?.count || 0);
+
       // Get messages
       const messages = await executeQuery(`
         SELECT m.*, mem.mname as sender_name, mem.company_name as sender_company
@@ -598,6 +615,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE m.chat_id = ?
         ORDER BY m.created_at ASC
       `, [chatId]);
+
+      // Disable caching by setting appropriate headers
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
 
       res.json({
         success: true,
@@ -1098,23 +1122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Access denied to this chat'
         });
       }
-
-      // Mark messages as read for the current user (messages sent by others)
-      const updateResult = await executeQuery(`
-        UPDATE bmpa_chat_messages 
-        SET is_read = 1 
-        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
-      `, [chatId, userId]);
-      
-      console.log(`🔧 Update result for chat ${chatId}:`, updateResult);
-      
-      // Verify the update worked
-      const unreadCheck = await executeQuery(`
-        SELECT COUNT(*) as count FROM bmpa_chat_messages 
-        WHERE chat_id = ? AND sender_id != ? AND is_read = 0
-      `, [chatId, userId]);
-      
-      console.log(`🔧 Remaining unread in chat ${chatId}:`, unreadCheck[0]?.count || 0);
 
       // Get messages
       const messages = await executeQuery(`
