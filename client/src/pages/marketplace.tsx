@@ -471,7 +471,7 @@ export default function Marketplace() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleContactSeller(deal.TransID, deal.SellerID)}
+                                  onClick={() => handleContactSeller(deal.TransID, deal.memberID)}
                                   data-testid={`button-contact-seller-${deal.TransID}`}
                                 >
                                   <MessageCircle className="h-3 w-3 mr-1" />
