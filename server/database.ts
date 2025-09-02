@@ -266,6 +266,27 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ BMPA Categories table already exists');
     }
 
+    // Add member information columns to deal_master if they don't exist
+    const memberInfoColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'deal_master' 
+      AND column_name = 'created_by_name'
+    `);
+
+    if (!memberInfoColumnExists || memberInfoColumnExists.count === 0) {
+      console.log('🔧 Adding member information columns to deal_master...');
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN created_by_name varchar(100) DEFAULT '',
+        ADD COLUMN created_by_company varchar(100) DEFAULT '',
+        ADD COLUMN created_by_email varchar(100) DEFAULT '',
+        ADD COLUMN created_by_phone varchar(15) DEFAULT ''
+      `);
+      console.log('✅ Member information columns added to deal_master');
+    }
+
     // Check if bmpa_products table exists, if not create it
     const productsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
@@ -339,13 +360,14 @@ export async function initializeDatabase(): Promise<void> {
       await executeQuery(`
         CREATE TABLE bmpa_chats (
           id varchar(36) PRIMARY KEY,
-          product_id varchar(36) NOT NULL,
+          deal_id int(10) DEFAULT NULL,
+          product_id varchar(36) DEFAULT NULL,
           buyer_id int(10) NOT NULL,
           seller_id int(10) NOT NULL,
           status enum('active', 'closed', 'archived') DEFAULT 'active',
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (product_id) REFERENCES bmpa_products(id) ON DELETE CASCADE,
+          FOREIGN KEY (deal_id) REFERENCES deal_master(TransID) ON DELETE CASCADE,
           FOREIGN KEY (buyer_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
           FOREIGN KEY (seller_id) REFERENCES bmpa_members(member_id) ON DELETE CASCADE,
           INDEX idx_product_id (product_id),
@@ -384,6 +406,25 @@ export async function initializeDatabase(): Promise<void> {
       `);
       console.log('✅ BMPA Chat messages table created successfully');
     } else {
+      // Check if deal_id column exists in bmpa_chats, if not add it
+      const dealIdColumnExists = await executeQuerySingle(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() 
+        AND table_name = 'bmpa_chats' 
+        AND column_name = 'deal_id'
+      `);
+
+      if (!dealIdColumnExists || dealIdColumnExists.count === 0) {
+        console.log('🔧 Adding deal_id column to bmpa_chats table...');
+        await executeQuery(`
+          ALTER TABLE bmpa_chats 
+          ADD COLUMN deal_id int(10) DEFAULT NULL,
+          ADD FOREIGN KEY (deal_id) REFERENCES deal_master(TransID) ON DELETE CASCADE
+        `);
+        console.log('✅ deal_id column added to bmpa_chats table');
+      }
+
       // Check if is_read column exists, if not add it
       const columnExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
