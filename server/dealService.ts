@@ -295,12 +295,18 @@ class DealService {
         };
       }
 
+      // Extract GSM, Deckle_mm, grain_mm from deal_specifications
+      const gsm = deal_specifications?.GSM || 0;
+      const deckle_mm = deal_specifications?.Deckle_mm || 0;
+      const grain_mm = deal_specifications?.grain_mm || 0;
+
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, MakeID, GradeID, BrandID, memberID, 
           Seller_comments, OfferPrice, OfferUnit,
+          GSM, Deckle_mm, grain_mm,
           created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
@@ -310,6 +316,9 @@ class DealService {
         `${deal_title}\n${deal_description || ''}`,
         price,
         unit,
+        gsm,
+        deckle_mm,
+        grain_mm,
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || ''
