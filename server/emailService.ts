@@ -191,3 +191,146 @@ export function generateWelcomeEmail(memberName: string): string {
     </html>
   `;
 }
+
+export interface InquiryEmailData {
+  buyerName: string;
+  buyerCompany: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  productId: number;
+  productTitle: string;
+  productDetails: {
+    make?: string;
+    grade?: string;
+    brand?: string;
+    gsm?: number;
+    deckle?: number;
+    grain?: number;
+    sellerPrice: number;
+    unit: string;
+  };
+  buyerQuotedPrice: string;
+  quantity: string;
+  message: string;
+  sellerName: string;
+  sellerCompany: string;
+}
+
+export function generateInquiryEmail(data: InquiryEmailData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Product Inquiry - Stock Laabh</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+            Stock Laabh
+          </h1>
+          <p style="color: #e0e7ff; margin: 5px 0 0 0; font-size: 16px;">
+            New Product Inquiry
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
+            Hello ${data.sellerName},
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+            You have received a new inquiry for your product listing on Stock Laabh marketplace.
+          </p>
+
+          <!-- Product Information -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px;">📦 Product Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Product:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${data.productTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Product ID:</td>
+                <td style="padding: 8px 0; color: #1f2937;">#${data.productId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Your Price:</td>
+                <td style="padding: 8px 0; color: #1f2937;">₹${data.productDetails.sellerPrice.toLocaleString('en-IN')} per ${data.productDetails.unit}</td>
+              </tr>
+              ${data.productDetails.make ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Make:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.make}</td></tr>` : ''}
+              ${data.productDetails.grade ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Grade:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.grade}</td></tr>` : ''}
+              ${data.productDetails.brand ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Brand:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.brand}</td></tr>` : ''}
+            </table>
+          </div>
+
+          <!-- Buyer Information -->
+          <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #059669; margin: 0 0 15px 0; font-size: 18px;">👤 Buyer Information</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #064e3b; font-weight: bold;">Name:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${data.buyerName}</td>
+              </tr>
+              ${data.buyerCompany ? `<tr><td style="padding: 8px 0; color: #064e3b; font-weight: bold;">Company:</td><td style="padding: 8px 0; color: #1f2937;">${data.buyerCompany}</td></tr>` : ''}
+              <tr>
+                <td style="padding: 8px 0; color: #064e3b; font-weight: bold;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937;"><a href="mailto:${data.buyerEmail}" style="color: #3b82f6;">${data.buyerEmail}</a></td>
+              </tr>
+              ${data.buyerPhone ? `<tr><td style="padding: 8px 0; color: #064e3b; font-weight: bold;">Phone:</td><td style="padding: 8px 0; color: #1f2937;"><a href="tel:${data.buyerPhone}" style="color: #3b82f6;">${data.buyerPhone}</a></td></tr>` : ''}
+            </table>
+          </div>
+
+          <!-- Inquiry Details -->
+          <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">💰 Inquiry Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              ${data.buyerQuotedPrice ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Buyer's Quoted Price:</td><td style="padding: 8px 0; color: #1f2937;">₹${data.buyerQuotedPrice}</td></tr>` : ''}
+              ${data.quantity ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Quantity Required:</td><td style="padding: 8px 0; color: #1f2937;">${data.quantity}</td></tr>` : ''}
+            </table>
+            ${data.message ? `
+              <div style="margin-top: 15px;">
+                <p style="color: #92400e; font-weight: bold; margin: 0 0 8px 0;">Additional Message:</p>
+                <p style="color: #1f2937; margin: 0; background-color: #ffffff; padding: 12px; border-radius: 4px; border-left: 4px solid #f59e0b;">${data.message}</p>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Call to Action -->
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              Please respond to this buyer directly using the contact information provided above.
+            </p>
+            <a href="mailto:${data.buyerEmail}?subject=Re: Inquiry for ${data.productTitle} (ID: ${data.productId})" 
+               style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
+              Reply to Buyer
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+            This inquiry was sent through Stock Laabh marketplace. If you have any questions, please contact our support team.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 14px;">
+            © 2025 Stock Laabh. All rights reserved.
+          </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
+            Professional Trading Platform
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}

@@ -10,8 +10,10 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, ShoppingCart, MessageCircle, MapPin, Star, Heart, Eye, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { Package, Search, Filter, ShoppingCart, MessageCircle, MapPin, Star, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import ProductDetailsModal from "@/components/product-details-modal";
+import InquiryFormModal from "@/components/inquiry-form-modal";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
@@ -34,6 +36,11 @@ export default function Marketplace() {
     brands: false,
     location: false
   });
+  
+  // Modal states
+  const [selectedDeal, setSelectedDeal] = useState<any>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
   // Fetch stock hierarchy
   const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
@@ -123,6 +130,31 @@ export default function Marketplace() {
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Modal handlers
+  const handleViewDetails = (deal: any) => {
+    setSelectedDeal(deal);
+    setIsProductModalOpen(true);
+  };
+
+  const handleSendInquiry = (deal: any) => {
+    setSelectedDeal(deal);
+    setIsInquiryModalOpen(true);
+  };
+
+  const handleSendWhatsApp = (deal: any) => {
+    const buyerName = user?.name || 'Buyer';
+    const productDetails = `${deal.DealTitle} (ID: ${deal.TransID})`;
+    const cost = `₹${deal.OfferPrice?.toLocaleString('en-IN')} per ${deal.OfferUnit}`;
+    const buyerPrice = 'Please specify your quoted price';
+    
+    const message = encodeURIComponent(
+      `Hey, I am ${buyerName}. I am interested in ${productDetails}, your price is ${cost}, and my quotation price is ${buyerPrice}.`
+    );
+    
+    const whatsappUrl = `https://wa.me/918984222915?text=${message}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -437,7 +469,7 @@ export default function Marketplace() {
                             <Button
                               size="sm"
                               className="w-full"
-                              onClick={() => setLocation(`/deal/${deal.TransID}`)}
+                              onClick={() => handleViewDetails(deal)}
                               data-testid={`button-view-details-${deal.TransID}`}
                             >
                               <Eye className="h-3 w-3 mr-1" />
@@ -469,25 +501,40 @@ export default function Marketplace() {
                                 </Button>
                               </div>
                             ) : (
-                              <div className="grid grid-cols-2 gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleContactSeller(deal.TransID, deal.memberID)}
-                                  data-testid={`button-contact-seller-${deal.TransID}`}
-                                >
-                                  <MessageCircle className="h-3 w-3 mr-1" />
-                                  Chat
-                                </Button>
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSendInquiry(deal)}
+                                    data-testid={`button-send-inquiry-${deal.TransID}`}
+                                    className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                  >
+                                    <Mail className="h-3 w-3 mr-1" />
+                                    Send Inquiry
+                                  </Button>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSendWhatsApp(deal)}
+                                    data-testid={`button-send-whatsapp-${deal.TransID}`}
+                                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                                  >
+                                    <MessageSquare className="h-3 w-3 mr-1" />
+                                    WhatsApp
+                                  </Button>
+                                </div>
                                 
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setLocation(`/deal/${deal.TransID}`)}
                                   data-testid={`button-buy-now-${deal.TransID}`}
+                                  className="w-full"
                                 >
                                   <ShoppingCart className="h-3 w-3 mr-1" />
-                                  Buy
+                                  Buy Now
                                 </Button>
                               </div>
                             )}
@@ -511,6 +558,19 @@ export default function Marketplace() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <ProductDetailsModal 
+        isOpen={isProductModalOpen} 
+        onClose={() => setIsProductModalOpen(false)} 
+        deal={selectedDeal} 
+      />
+      
+      <InquiryFormModal 
+        isOpen={isInquiryModalOpen} 
+        onClose={() => setIsInquiryModalOpen(false)} 
+        deal={selectedDeal} 
+      />
     </div>
   );
 }

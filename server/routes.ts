@@ -6,6 +6,7 @@ import { adminService } from "./adminService";
 import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
+import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -1557,6 +1558,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error adding demo products:', error);
       res.status(500).json({ success: false, message: 'Failed to add demo products' });
+    }
+  });
+
+  // Send Inquiry Email Route
+  app.post('/api/inquiries/send', requireAuth, async (req, res) => {
+    try {
+      const inquiryData: InquiryEmailData = req.body;
+      
+      // Generate the email HTML
+      const emailHtml = generateInquiryEmail(inquiryData);
+      
+      // Get seller email (try to get from database or use a default format)
+      let sellerEmail = inquiryData.to;
+      if (!sellerEmail) {
+        // Try to get seller email from database
+        try {
+          const sellerQuery = `
+            SELECT email FROM members WHERE id = (
+              SELECT memberID FROM deal_master WHERE TransID = ?
+            )
+          `;
+          const seller = await executeQuerySingle(sellerQuery, [inquiryData.productId]);
+          sellerEmail = seller?.email || `seller${inquiryData.productId}@stocklaabh.com`;
+        } catch (dbError) {
+          console.error('Error fetching seller email:', dbError);
+          sellerEmail = `seller${inquiryData.productId}@stocklaabh.com`;
+        }
+      }
+      
+      // Send the email
+      const emailSent = await sendEmail({
+        to: sellerEmail,
+        subject: `New Inquiry: ${inquiryData.productTitle} (ID: ${inquiryData.productId})`,
+        html: emailHtml,
+        text: `New inquiry from ${inquiryData.buyerName} for product ${inquiryData.productTitle} (ID: ${inquiryData.productId}). Contact: ${inquiryData.buyerEmail}`
+      });
+      
+      if (emailSent) {
+        // Log the inquiry to database for tracking (optional)
+        try {
+          await executeQuery(`
+            INSERT INTO inquiries (product_id, buyer_name, buyer_email, buyer_company, buyer_phone, quoted_price, quantity, message, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+          `, [
+            inquiryData.productId,
+            inquiryData.buyerName,
+            inquiryData.buyerEmail,
+            inquiryData.buyerCompany || null,
+            inquiryData.buyerPhone || null,
+            inquiryData.buyerQuotedPrice || null,
+            inquiryData.quantity || null,
+            inquiryData.message || null
+          ]);
+        } catch (dbError) {
+          console.error('Error logging inquiry to database:', dbError);
+          // Continue even if logging fails
+        }
+        
+        res.json({ 
+          success: true, 
+          message: 'Inquiry sent successfully',
+          sellerEmail: sellerEmail
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send inquiry email' 
+        });
+      }
+    } catch (error) {
+      console.error('Error processing inquiry:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error while processing inquiry' 
+      });
     }
   });
 
