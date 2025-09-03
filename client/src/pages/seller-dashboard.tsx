@@ -4,18 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SellerDashboard() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Fetch seller's deals (products)
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
@@ -103,6 +108,18 @@ export default function SellerDashboard() {
   const deals = dealsData?.deals || [];
   const orders = ordersData?.orders || [];
 
+  // Filter deals based on search and status
+  const filteredDeals = deals.filter((deal: any) => {
+    const matchesSearch = deal.Seller_comments?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         deal.GroupName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         deal.TransID.toString().includes(searchTerm);
+    
+    const matchesStatus = statusFilter === "all" || 
+                         (statusFilter === "active" && (!deal.StockStatus || deal.StockStatus === 'available')) ||
+                         (statusFilter === "sold" && deal.StockStatus === 'sold');
+    
+    return matchesSearch && matchesStatus;
+  });
 
   if (!isAuthenticated) {
     return (
@@ -122,7 +139,7 @@ export default function SellerDashboard() {
   const stats = statsData || { totalProducts: 0, totalDeals: 0, totalOrders: 0, totalRevenue: 0, activeDeals: 0 };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -130,12 +147,16 @@ export default function SellerDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Seller Dashboard</h1>
+              <p className="text-slate-600">
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
             </div>
-            <Button asChild className="bg-primary hover:bg-primary/90" data-testid="button-add-deal">
+            <Button 
+              asChild 
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg" 
+              data-testid="button-add-deal"
+            >
               <Link href="/add-product">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Deal
@@ -146,57 +167,57 @@ export default function SellerDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Deals</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-100">Total Deals</CardTitle>
+              <Package className="h-5 w-5 text-blue-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-deals">{stats.totalDeals}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold" data-testid="stat-total-deals">{stats.totalDeals}</div>
+              <p className="text-xs text-blue-100 mt-1">
                 {stats.activeDeals} active listings
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-green-100">Total Orders</CardTitle>
+              <TrendingUp className="h-5 w-5 text-green-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-orders">{orders.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold" data-testid="stat-total-orders">{orders.length}</div>
+              <p className="text-xs text-green-100 mt-1">
                 Orders received
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-purple-100">Total Revenue</CardTitle>
+              <IndianRupee className="h-5 w-5 text-purple-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-revenue">
+              <div className="text-3xl font-bold" data-testid="stat-total-revenue">
                 ₹{orders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-purple-100 mt-1">
                 Gross sales
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Products</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-orange-100">Active Products</CardTitle>
+              <Users className="h-5 w-5 text-orange-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-active-products">
+              <div className="text-3xl font-bold" data-testid="stat-active-products">
                 {stats.activeDeals}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-orange-100 mt-1">
                 Available for sale
               </p>
             </CardContent>
@@ -205,136 +226,201 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-400">
-            <TabsTrigger value="products">My Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 lg:w-400 bg-white border shadow-sm">
+            <TabsTrigger value="products" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">My Products</TabsTrigger>
+            <TabsTrigger value="orders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           </TabsList>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Products</CardTitle>
-                <CardDescription>
-                  Manage your product listings and inventory
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {dealsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-slate-900">Product Inventory</CardTitle>
+                    <CardDescription className="text-slate-600">
+                      Manage your product listings and inventory
+                    </CardDescription>
                   </div>
-                ) : deals.length === 0 ? (
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="sold">Sold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {dealsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                  </div>
+                ) : filteredDeals.length === 0 ? (
                   <div className="text-center py-12">
-                    <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No deals yet</h3>
-                    <p className="text-muted-foreground mb-4">Start selling by adding your first product</p>
-                    <Button asChild data-testid="button-add-first-product">
-                      <Link href="/add-product">Add Your First Product</Link>
-                    </Button>
+                    <Package className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      {deals.length === 0 ? "No deals yet" : "No matching products"}
+                    </h3>
+                    <p className="text-slate-600 mb-4">
+                      {deals.length === 0 ? "Start selling by adding your first product" : "Try adjusting your search or filters"}
+                    </p>
+                    {deals.length === 0 && (
+                      <Button asChild className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-first-product">
+                        <Link href="/add-product">Add Your First Product</Link>
+                      </Button>
+                    )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {deals.map((deal: any) => (
-                      <div key={deal.TransID} className="border rounded-lg p-4 hover:shadow-md transition-shadow" data-testid={`deal-card-${deal.TransID}`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center">
-                                <Package className="h-8 w-8 text-indigo-600" />
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="font-semibold text-slate-700">Product</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Category</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Specifications</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Price</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Date</TableHead>
+                        <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDeals.map((deal: any) => (
+                        <TableRow 
+                          key={deal.TransID} 
+                          className="hover:bg-slate-50 transition-colors"
+                          data-testid={`deal-row-${deal.TransID}`}
+                        >
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Package className="h-5 w-5 text-blue-600" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-lg" data-testid={`deal-title-${deal.TransID}`}>{deal.Seller_comments?.split('\n')[0] || 'No Title'}</h4>
-                                <p className="text-sm text-muted-foreground">{deal.GroupName || 'No Category'}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant={deal.StockStatus === 'sold' ? 'secondary' : 'default'} data-testid={`deal-status-${deal.TransID}`}>
-                                    {deal.StockStatus || 'available'}
-                                  </Badge>
-                                  {deal.StockAge > 30 && (
-                                    <Badge variant="destructive">Old Stock</Badge>
-                                  )}
+                                <div className="font-medium text-slate-900" data-testid={`deal-title-${deal.TransID}`}>
+                                  {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                                </div>
+                                <div className="text-sm text-slate-500">
+                                  ID: {deal.TransID}
                                 </div>
                               </div>
                             </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">Price:</span>
-                                <p className="font-semibold" data-testid={`deal-price-${deal.TransID}`}>₹{deal.OfferPrice?.toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">GSM:</span>
-                                <p className="font-semibold" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Size:</span>
-                                <p className="font-semibold">{deal.Deckle_mm}×{deal.grain_mm} mm</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Created:</span>
-                                <p className="font-semibold">
-                                  {new Date(deal.uplaodDate || deal.deal_created_at).toLocaleDateString('en-IN')}
-                                </p>
-                              </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium text-slate-900">
+                              {deal.GroupName || 'No Category'}
                             </div>
-                          </div>
-                          
-                          <div className="flex flex-col gap-2 ml-4">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              asChild
-                              data-testid={`button-view-${deal.TransID}`}
-                            >
-                              <Link href={`/deal/${deal.TransID}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Link>
-                            </Button>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              asChild
-                              data-testid={`button-edit-${deal.TransID}`}
-                            >
-                              <Link href={`/edit-deal/${deal.TransID}`}>
-                                <Edit2 className="h-4 w-4 mr-1" />
-                                Edit
-                              </Link>
-                            </Button>
-                            
-                            {(!deal.Status || deal.Status === 'active') && (
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1 text-sm">
+                              <div><span className="text-slate-500">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
+                              <div><span className="text-slate-500">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-semibold text-slate-900" data-testid={`deal-price-${deal.TransID}`}>
+                              ₹{deal.OfferPrice?.toLocaleString('en-IN')}
+                            </div>
+                            <div className="text-sm text-slate-500">
+                              per {deal.OfferUnit || 'unit'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge 
+                                variant={deal.StockStatus === 'sold' ? 'secondary' : 'default'}
+                                className={deal.StockStatus === 'sold' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}
+                                data-testid={`deal-status-${deal.TransID}`}
+                              >
+                                {deal.StockStatus || 'Available'}
+                              </Badge>
+                              {deal.StockAge > 30 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Old Stock
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-slate-900">
+                              {new Date(deal.uplaodDate || deal.deal_created_at).toLocaleDateString('en-IN')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <Button 
                                 size="sm" 
-                                variant="secondary"
-                                onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
-                                disabled={markAsSoldMutation.isPending}
-                                data-testid={`button-mark-sold-${deal.TransID}`}
+                                variant="ghost"
+                                asChild
+                                className="h-8 w-8 p-0 hover:bg-blue-100"
+                                data-testid={`button-view-${deal.TransID}`}
                               >
-                                Mark Sold
+                                <Link href={`/deal/${deal.TransID}`}>
+                                  <Eye className="h-4 w-4 text-blue-600" />
+                                </Link>
                               </Button>
-                            )}
-                            
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => {
-                                if (confirm('Are you sure you want to delete this product?')) {
-                                  deleteDealMutation.mutate(deal.TransID.toString());
-                                }
-                              }}
-                              disabled={deleteDealMutation.isPending}
-                              data-testid={`button-delete-${deal.TransID}`}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                              
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                asChild
+                                className="h-8 w-8 p-0 hover:bg-green-100"
+                                data-testid={`button-edit-${deal.TransID}`}
+                              >
+                                <Link href={`/edit-deal/${deal.TransID}`}>
+                                  <Edit2 className="h-4 w-4 text-green-600" />
+                                </Link>
+                              </Button>
+                              
+                              {(!deal.Status || deal.Status === 'active') && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
+                                  disabled={markAsSoldMutation.isPending}
+                                  className="h-8 px-2 text-xs hover:bg-orange-100"
+                                  data-testid={`button-mark-sold-${deal.TransID}`}
+                                >
+                                  <DollarSign className="h-3 w-3 text-orange-600 mr-1" />
+                                  Sold
+                                </Button>
+                              )}
+                              
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this product?')) {
+                                    deleteDealMutation.mutate(deal.TransID.toString());
+                                  }
+                                }}
+                                disabled={deleteDealMutation.isPending}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                data-testid={`button-delete-${deal.TransID}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>
@@ -342,46 +428,92 @@ export default function SellerDashboard() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+                <CardTitle className="text-slate-900">Order Management</CardTitle>
+                <CardDescription className="text-slate-600">
                   Orders and inquiries from buyers
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {orders.length === 0 ? (
                   <div className="text-center py-12">
-                    <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
-                    <p className="text-muted-foreground">Orders will appear here once buyers start purchasing</p>
+                    <ShoppingCart className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">No orders yet</h3>
+                    <p className="text-slate-600">Orders will appear here once buyers start purchasing</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {orders.map((order: any) => (
-                      <div key={order.id} className="border rounded-lg p-4" data-testid={`order-card-${order.id}`}>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-semibold" data-testid={`order-id-${order.id}`}>Order #{order.id?.slice(0, 8)}</h4>
-                            <p className="text-sm text-muted-foreground">{order.product_title}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge data-testid={`order-status-${order.id}`}>{order.status}</Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(order.created_at).toLocaleDateString('en-IN')}
-                              </span>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="font-semibold text-slate-700">Order ID</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Product</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Customer</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Amount</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Date</TableHead>
+                        <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order: any) => (
+                        <TableRow 
+                          key={order.id} 
+                          className="hover:bg-slate-50 transition-colors"
+                          data-testid={`order-row-${order.id}`}
+                        >
+                          <TableCell className="py-4">
+                            <div className="font-medium text-slate-900" data-testid={`order-id-${order.id}`}>
+                              #{order.id?.slice(0, 8)}
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold" data-testid={`order-amount-${order.id}`}>₹{order.total_amount?.toLocaleString('en-IN')}</p>
-                            <Button size="sm" variant="outline" className="mt-2" data-testid={`button-contact-buyer-${order.id}`}>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium text-slate-900">
+                              {order.product_title || 'N/A'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-slate-900">
+                              {order.customer_name || 'Anonymous'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-semibold text-slate-900" data-testid={`order-amount-${order.id}`}>
+                              ₹{order.total_amount?.toLocaleString('en-IN')}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              className={
+                                order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-blue-100 text-blue-700'
+                              }
+                              data-testid={`order-status-${order.id}`}
+                            >
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-slate-900">
+                              {new Date(order.created_at).toLocaleDateString('en-IN')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="hover:bg-blue-50"
+                              data-testid={`button-contact-buyer-${order.id}`}
+                            >
                               <MessageCircle className="h-4 w-4 mr-1" />
-                              Contact Buyer
+                              Contact
                             </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>
