@@ -22,6 +22,16 @@ export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  // Pending filters (UI state, not applied yet)
+  const [pendingMakes, setPendingMakes] = useState<string[]>([]);
+  const [pendingGrades, setPendingGrades] = useState<string[]>([]);
+  const [pendingBrands, setPendingBrands] = useState<string[]>([]);
+  const [pendingGsm, setPendingGsm] = useState<string[]>([]);
+  const [pendingUnits, setPendingUnits] = useState<string[]>([]);
+  const [pendingStockStatus, setPendingStockStatus] = useState<string[]>([]);
+  const [pendingLocations, setPendingLocations] = useState<string[]>([]);
+  
+  // Applied filters (actually used in queries)
   const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -118,10 +128,45 @@ export default function Marketplace() {
   // Reset to page 1 when filters change
   const resetPage = () => setCurrentPage(1);
 
-  // Reset page when any filter changes
+  // Reset page when any applied filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory, selectedMakes, selectedGrades, selectedBrands, selectedGsm, selectedUnits, selectedStockStatus]);
+  
+  // Apply pending filters
+  const applyFilters = () => {
+    setSelectedMakes(pendingMakes);
+    setSelectedGrades(pendingGrades);
+    setSelectedBrands(pendingBrands);
+    setSelectedGsm(pendingGsm);
+    setSelectedUnits(pendingUnits);
+    setSelectedStockStatus(pendingStockStatus);
+    setSelectedLocations(pendingLocations);
+    setCurrentPage(1);
+  };
+  
+  // Clear all filters
+  const clearAllFilters = () => {
+    // Clear both pending and applied filters
+    setPendingMakes([]);
+    setPendingGrades([]);
+    setPendingBrands([]);
+    setPendingGsm([]);
+    setPendingUnits([]);
+    setPendingStockStatus([]);
+    setPendingLocations([]);
+    setSelectedMakes([]);
+    setSelectedGrades([]);
+    setSelectedBrands([]);
+    setSelectedGsm([]);
+    setSelectedUnits([]);
+    setSelectedStockStatus([]);
+    setSelectedLocations([]);
+    setSearchTerm("");
+    setSelectedCategory("");
+    setSortBy("newest");
+    setCurrentPage(1);
+  };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -304,14 +349,14 @@ export default function Marketplace() {
                         <div key={make.make_ID || make.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`make-${make.make_ID || make.id}`}
-                            checked={selectedMakes.includes((make.make_ID || make.id)?.toString())}
+                            checked={pendingMakes.includes((make.make_ID || make.id)?.toString())}
                             onCheckedChange={(checked) => {
                               const makeId = (make.make_ID || make.id)?.toString();
                               if (makeId) {
                                 if (checked) {
-                                  setSelectedMakes([...selectedMakes, makeId]);
+                                  setPendingMakes([...pendingMakes, makeId]);
                                 } else {
-                                  setSelectedMakes(selectedMakes.filter(id => id !== makeId));
+                                  setPendingMakes(pendingMakes.filter(id => id !== makeId));
                                 }
                               }
                             }}
@@ -343,14 +388,14 @@ export default function Marketplace() {
                         <div key={grade.gradeID || grade.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`grade-${grade.gradeID || grade.id}`}
-                            checked={selectedGrades.includes((grade.gradeID || grade.id)?.toString())}
+                            checked={pendingGrades.includes((grade.gradeID || grade.id)?.toString())}
                             onCheckedChange={(checked) => {
                               const gradeId = (grade.gradeID || grade.id)?.toString();
                               if (gradeId) {
                                 if (checked) {
-                                  setSelectedGrades([...selectedGrades, gradeId]);
+                                  setPendingGrades([...pendingGrades, gradeId]);
                                 } else {
-                                  setSelectedGrades(selectedGrades.filter(id => id !== gradeId));
+                                  setPendingGrades(pendingGrades.filter(id => id !== gradeId));
                                 }
                               }
                             }}
@@ -382,14 +427,14 @@ export default function Marketplace() {
                         <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`brand-${brand.brandID || brand.id}`}
-                            checked={selectedBrands.includes((brand.brandID || brand.id)?.toString())}
+                            checked={pendingBrands.includes((brand.brandID || brand.id)?.toString())}
                             onCheckedChange={(checked) => {
                               const brandId = (brand.brandID || brand.id)?.toString();
                               if (brandId) {
                                 if (checked) {
-                                  setSelectedBrands([...selectedBrands, brandId]);
+                                  setPendingBrands([...pendingBrands, brandId]);
                                 } else {
-                                  setSelectedBrands(selectedBrands.filter(id => id !== brandId));
+                                  setPendingBrands(pendingBrands.filter(id => id !== brandId));
                                 }
                               }
                             }}
@@ -426,12 +471,12 @@ export default function Marketplace() {
                         <div key={status.value} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`status-${status.value}`}
-                            checked={selectedStockStatus.includes(status.value)}
+                            checked={pendingStockStatus.includes(status.value)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedStockStatus([...selectedStockStatus, status.value]);
+                                setPendingStockStatus([...pendingStockStatus, status.value]);
                               } else {
-                                setSelectedStockStatus(selectedStockStatus.filter(val => val !== status.value));
+                                setPendingStockStatus(pendingStockStatus.filter(val => val !== status.value));
                               }
                             }}
                           />
@@ -463,26 +508,23 @@ export default function Marketplace() {
                   </Select>
                 </div>
                 
-                {/* Clear Filters Button */}
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedCategory("");
-                    setSortBy("newest");
-                    setSelectedMakes([]);
-                    setSelectedGrades([]);
-                    setSelectedBrands([]);
-                    setSelectedGsm([]);
-                    setSelectedUnits([]);
-                    setSelectedStockStatus([]);
-                    setSelectedLocations([]);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Clear All Filters
-                </Button>
+                {/* Filter Action Buttons */}
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                    onClick={applyFilters}
+                  >
+                    Apply Filters
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={clearAllFilters}
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -512,12 +554,7 @@ export default function Marketplace() {
                 </p>
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedCategory("");
-                    setSortBy("newest");
-                    setCurrentPage(1);
-                  }}
+                  onClick={clearAllFilters}
                 >
                   Clear Filters
                 </Button>
