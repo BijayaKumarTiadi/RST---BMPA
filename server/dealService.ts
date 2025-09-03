@@ -181,9 +181,6 @@ class DealService {
 
       const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-      console.log('🔍 WHERE conditions:', whereConditions);
-      console.log('🔍 SQL params:', params);
-
       // Get total count
       const countQuery = `
         SELECT COUNT(*) as total 
@@ -192,7 +189,6 @@ class DealService {
         LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
         ${whereClause}
       `;
-      console.log('🔍 Count query:', countQuery);
       const countResult = await executeQuerySingle(countQuery, params);
       const total = countResult?.total || 0;
 
@@ -222,8 +218,6 @@ class DealService {
         LIMIT ? OFFSET ?
       `;
 
-      console.log('🔍 Deals query:', dealsQuery);
-      console.log('🔍 Final params:', [...params, limit, offset]);
       const deals = await executeQuery(dealsQuery, [...params, limit, offset]);
 
       // Parse JSON fields safely

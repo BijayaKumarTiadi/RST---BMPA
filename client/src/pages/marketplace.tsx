@@ -81,7 +81,6 @@ export default function Marketplace() {
       if (selectedUnits.length > 0) params.append('units', selectedUnits.join(','));
       if (selectedStockStatus.length > 0) params.append('stock_status', selectedStockStatus.join(','));
       
-      console.log('🔍 Filter params:', params.toString());
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();

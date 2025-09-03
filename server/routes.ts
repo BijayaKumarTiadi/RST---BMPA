@@ -530,9 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: (parseInt(page as string) - 1) * parseInt(limit as string),
       };
 
-      console.log('🔍 Received filters:', filters);
       const result = await dealService.getDeals(filters);
-      console.log('🔍 Found deals:', result.deals.length);
       res.json(result);
     } catch (error) {
       console.error("Error fetching deals:", error);
