@@ -139,7 +139,7 @@ export default function SellerDashboard() {
   const stats = statsData || { totalProducts: 0, totalDeals: 0, totalOrders: 0, totalRevenue: 0, activeDeals: 0 };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-muted">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -147,7 +147,7 @@ export default function SellerDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Seller Dashboard</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
               <p className="text-slate-600">
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
@@ -237,7 +237,7 @@ export default function SellerDashboard() {
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-slate-900">Product Inventory</CardTitle>
+                    <CardTitle className="text-foreground">Product Inventory</CardTitle>
                     <CardDescription className="text-slate-600">
                       Manage your product listings and inventory
                     </CardDescription>
@@ -274,7 +274,7 @@ export default function SellerDashboard() {
                 ) : filteredDeals.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    <h3 className="text-lg font-medium text-foreground mb-2">
                       {deals.length === 0 ? "No deals yet" : "No matching products"}
                     </h3>
                     <p className="text-slate-600 mb-4">
@@ -289,21 +289,21 @@ export default function SellerDashboard() {
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50">
-                        <TableHead className="font-semibold text-slate-700">Product</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Category</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Specifications</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Price</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Status</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Date</TableHead>
-                        <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
+                      <TableRow className="bg-muted">
+                        <TableHead className="font-semibold text-foreground">Product</TableHead>
+                        <TableHead className="font-semibold text-foreground">Category</TableHead>
+                        <TableHead className="font-semibold text-foreground">Specifications</TableHead>
+                        <TableHead className="font-semibold text-foreground">Price</TableHead>
+                        <TableHead className="font-semibold text-foreground">Status</TableHead>
+                        <TableHead className="font-semibold text-foreground">Date</TableHead>
+                        <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredDeals.map((deal: any) => (
                         <TableRow 
                           key={deal.TransID} 
-                          className="hover:bg-slate-50 transition-colors"
+                          className="hover:bg-muted/50 transition-colors"
                           data-testid={`deal-row-${deal.TransID}`}
                         >
                           <TableCell className="py-4">
@@ -312,31 +312,31 @@ export default function SellerDashboard() {
                                 <Package className="h-5 w-5 text-blue-600" />
                               </div>
                               <div>
-                                <div className="font-medium text-slate-900" data-testid={`deal-title-${deal.TransID}`}>
+                                <div className="font-medium text-foreground" data-testid={`deal-title-${deal.TransID}`}>
                                   {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
                                 </div>
-                                <div className="text-sm text-slate-500">
+                                <div className="text-sm text-muted-foreground">
                                   ID: {deal.TransID}
                                 </div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm font-medium text-slate-900">
+                            <div className="text-sm font-medium text-foreground">
                               {deal.GroupName || 'No Category'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1 text-sm">
-                              <div><span className="text-slate-500">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
-                              <div><span className="text-slate-500">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
+                              <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
+                              <div><span className="text-muted-foreground">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-semibold text-slate-900" data-testid={`deal-price-${deal.TransID}`}>
+                            <div className="font-semibold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
                               ₹{deal.OfferPrice?.toLocaleString('en-IN')}
                             </div>
-                            <div className="text-sm text-slate-500">
+                            <div className="text-sm text-muted-foreground">
                               per {deal.OfferUnit || 'unit'}
                             </div>
                           </TableCell>
@@ -357,7 +357,7 @@ export default function SellerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-slate-900">
+                            <div className="text-sm text-foreground">
                               {new Date(deal.uplaodDate || deal.deal_created_at).toLocaleDateString('en-IN')}
                             </div>
                           </TableCell>
@@ -396,7 +396,7 @@ export default function SellerDashboard() {
                                   className="h-8 px-2 text-xs hover:bg-orange-100"
                                   data-testid={`button-mark-sold-${deal.TransID}`}
                                 >
-                                  <DollarSign className="h-3 w-3 text-orange-600 mr-1" />
+                                  <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
                                   Sold
                                 </Button>
                               )}
@@ -430,7 +430,7 @@ export default function SellerDashboard() {
           <TabsContent value="orders" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
-                <CardTitle className="text-slate-900">Order Management</CardTitle>
+                <CardTitle className="text-foreground">Order Management</CardTitle>
                 <CardDescription className="text-slate-600">
                   Orders and inquiries from buyers
                 </CardDescription>
@@ -439,46 +439,46 @@ export default function SellerDashboard() {
                 {orders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 mb-2">No orders yet</h3>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
                     <p className="text-slate-600">Orders will appear here once buyers start purchasing</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50">
-                        <TableHead className="font-semibold text-slate-700">Order ID</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Product</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Customer</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Amount</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Status</TableHead>
-                        <TableHead className="font-semibold text-slate-700">Date</TableHead>
-                        <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
+                      <TableRow className="bg-muted">
+                        <TableHead className="font-semibold text-foreground">Order ID</TableHead>
+                        <TableHead className="font-semibold text-foreground">Product</TableHead>
+                        <TableHead className="font-semibold text-foreground">Customer</TableHead>
+                        <TableHead className="font-semibold text-foreground">Amount</TableHead>
+                        <TableHead className="font-semibold text-foreground">Status</TableHead>
+                        <TableHead className="font-semibold text-foreground">Date</TableHead>
+                        <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {orders.map((order: any) => (
                         <TableRow 
                           key={order.id} 
-                          className="hover:bg-slate-50 transition-colors"
+                          className="hover:bg-muted/50 transition-colors"
                           data-testid={`order-row-${order.id}`}
                         >
                           <TableCell className="py-4">
-                            <div className="font-medium text-slate-900" data-testid={`order-id-${order.id}`}>
+                            <div className="font-medium text-foreground" data-testid={`order-id-${order.id}`}>
                               #{order.id?.slice(0, 8)}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium text-slate-900">
+                            <div className="font-medium text-foreground">
                               {order.product_title || 'N/A'}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-slate-900">
+                            <div className="text-foreground">
                               {order.customer_name || 'Anonymous'}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-semibold text-slate-900" data-testid={`order-amount-${order.id}`}>
+                            <div className="font-semibold text-foreground" data-testid={`order-amount-${order.id}`}>
                               ₹{order.total_amount?.toLocaleString('en-IN')}
                             </div>
                           </TableCell>
@@ -495,7 +495,7 @@ export default function SellerDashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-slate-900">
+                            <div className="text-sm text-foreground">
                               {new Date(order.created_at).toLocaleDateString('en-IN')}
                             </div>
                           </TableCell>

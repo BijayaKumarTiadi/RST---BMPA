@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Package, DollarSign, Hash, Save } from "lucide-react";
+import { ArrowLeft, Package, IndianRupee, Hash, Save } from "lucide-react";
 import { Link, useLocation, useParams } from "wouter";
 import Navigation from "@/components/navigation";
 
@@ -430,7 +430,7 @@ export default function EditDeal() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
+                    <IndianRupee className="h-5 w-5" />
                     Pricing & Details
                   </CardTitle>
                   <CardDescription>

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Package, DollarSign, Hash, Plus } from "lucide-react";
+import { ArrowLeft, Package, IndianRupee, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 
@@ -443,7 +443,7 @@ export default function AddDeal() {
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
-                    <DollarSign className="h-5 w-5" />
+                    <IndianRupee className="h-5 w-5" />
                     Pricing & Details
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">

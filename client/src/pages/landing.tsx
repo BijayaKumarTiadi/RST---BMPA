@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
-import { Search, Mic, Users, Package, DollarSign, TrendingUp, Shield, Clock, Code, LifeBuoy, Printer, ShoppingCart, Cog, ChartLine, GraduationCap, Handshake, MapPin, Phone, Mail, Clock as ClockIcon } from "lucide-react";
+import { Search, Mic, Users, Package, IndianRupee, TrendingUp, Shield, Clock, Code, LifeBuoy, Printer, ShoppingCart, Cog, ChartLine, GraduationCap, Handshake, MapPin, Phone, Mail, Clock as ClockIcon } from "lucide-react";
 
 export default function Landing() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +131,7 @@ export default function Landing() {
                 <p className="text-muted-foreground mb-4">Find quality stock at competitive prices with verified suppliers across the network.</p>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   <li className="flex items-center"><Search className="mr-2 h-4 w-4 text-primary" />Advanced Search & Filters</li>
-                  <li className="flex items-center"><DollarSign className="mr-2 h-4 w-4 text-primary" />Price Comparison</li>
+                  <li className="flex items-center"><IndianRupee className="mr-2 h-4 w-4 text-primary" />Price Comparison</li>
                   <li className="flex items-center"><Shield className="mr-2 h-4 w-4 text-primary" />Secure Payment Gateway</li>
                   <li className="flex items-center"><Package className="mr-2 h-4 w-4 text-primary" />Order Tracking</li>
                 </ul>
@@ -150,7 +150,7 @@ export default function Landing() {
                 <ul className="text-sm text-muted-foreground space-y-2">
                   <li className="flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Member Management</li>
                   <li className="flex items-center"><TrendingUp className="mr-2 h-4 w-4 text-primary" />Transaction Monitoring</li>
-                  <li className="flex items-center"><DollarSign className="mr-2 h-4 w-4 text-primary" />Payment Reconciliation</li>
+                  <li className="flex items-center"><IndianRupee className="mr-2 h-4 w-4 text-primary" />Payment Reconciliation</li>
                   <li className="flex items-center"><ChartLine className="mr-2 h-4 w-4 text-primary" />Platform Analytics</li>
                 </ul>
               </CardContent>
