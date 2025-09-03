@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, MessageCircle, CreditCard, Info } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -24,14 +24,6 @@ export default function Navigation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // Fetch unread messages count
-  const { data: unreadData } = useQuery({
-    queryKey: ['/api/messages/unread-count'],
-    enabled: isAuthenticated,
-    refetchInterval: 5000, // Refresh every 5 seconds
-  });
-
-  const unreadCount = (unreadData as any)?.unreadCount || 0;
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -85,14 +77,6 @@ export default function Navigation() {
               <>
                 <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
                   Marketplace
-                </Link>
-                <Link href="/messages" className="text-foreground hover:text-primary transition-colors font-medium relative inline-flex items-center" data-testid="nav-messages">
-                  Messages
-                  {unreadCount > 0 && (
-                    <Badge className="ml-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-xs" data-testid="unread-badge">
-                      {unreadCount}
-                    </Badge>
-                  )}
                 </Link>
                 {(user?.role === 'seller' || user?.role === 'both') && (
                   <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-seller-dashboard">
@@ -279,19 +263,6 @@ export default function Navigation() {
                   data-testid="mobile-nav-marketplace"
                 >
                   Marketplace
-                </Link>
-                <Link 
-                  href="/messages" 
-                  className="block text-foreground hover:text-primary py-2 flex items-center"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  data-testid="mobile-nav-messages"
-                >
-                  Messages
-                  {unreadCount > 0 && (
-                    <Badge className="ml-2 bg-red-500 text-white px-2 py-1 text-xs" data-testid="mobile-unread-badge">
-                      {unreadCount}
-                    </Badge>
-                  )}
                 </Link>
               </>
             )}

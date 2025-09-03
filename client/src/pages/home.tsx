@@ -137,16 +137,6 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="quick-action-messages">
-            <CardContent className="p-6 text-center">
-              <MessageSquare className="h-12 w-12 text-chart-4 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Messages</h3>
-              <p className="text-sm text-muted-foreground mb-4">Communicate with buyers and sellers</p>
-              <Button asChild className="w-full" variant="outline">
-                <Link href="/messages">Open Messages</Link>
-              </Button>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Featured Products Section */}

@@ -184,12 +184,6 @@ export default function BuyerDashboard() {
               Saved Items
             </Link>
           </Button>
-          <Button asChild variant="outline" className="h-auto p-4 flex-col" data-testid="quick-action-messages">
-            <Link href="/messages">
-              <MessageSquare className="h-8 w-8 mb-2" />
-              Messages
-            </Link>
-          </Button>
         </div>
 
         {/* Main Content */}

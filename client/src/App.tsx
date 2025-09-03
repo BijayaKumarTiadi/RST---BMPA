@@ -20,8 +20,6 @@ import About from "@/pages/about";
 import AddProduct from "@/pages/add-product";
 import EditProduct from "@/pages/edit-product";
 import ProductDetails from "@/pages/product-details";
-import Chat from "@/pages/chat";
-import Messages from "@/pages/messages";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -57,8 +55,6 @@ function Router() {
           <Route path="/edit-product/:id" component={EditProduct} />
           <Route path="/product/:id" component={ProductDetails} />
           <Route path="/deal/:id" component={ProductDetails} />
-          <Route path="/chat/:chatId" component={Chat} />
-          <Route path="/messages" component={Messages} />
           <Route path="/api-docs" component={ApiDocs} />
           <Route path="/welcome" component={Landing} />
           <Route path="/subscribe" component={Subscribe} />
