@@ -71,8 +71,8 @@ export default function Marketplace() {
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory && selectedCategory !== 'all') params.append('group_id', selectedCategory);
+      if (searchTerm?.trim()) params.append('search', searchTerm.trim());
+      if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== '') params.append('group_id', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
       if (selectedMakes.length > 0) params.append('makes', selectedMakes.join(','));
       if (selectedGrades.length > 0) params.append('grades', selectedGrades.join(','));
@@ -81,6 +81,7 @@ export default function Marketplace() {
       if (selectedUnits.length > 0) params.append('units', selectedUnits.join(','));
       if (selectedStockStatus.length > 0) params.append('stock_status', selectedStockStatus.join(','));
       
+      console.log('🔍 Filter params:', params.toString());
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
