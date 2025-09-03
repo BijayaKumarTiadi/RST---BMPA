@@ -332,9 +332,11 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredMakes.map((make: any) => (
-                                  <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
-                                    {make.MakeName}
-                                  </SelectItem>
+                                  make.MakeID != null ? (
+                                    <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
+                                      {make.MakeName}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
@@ -362,9 +364,11 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredGrades.map((grade: any) => (
-                                  <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
-                                    {grade.GradeName}
-                                  </SelectItem>
+                                  grade.GradeID != null ? (
+                                    <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
+                                      {grade.GradeName}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
@@ -392,9 +396,11 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredBrands.map((brand: any) => (
-                                  <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
-                                    {brand.BrandName}
-                                  </SelectItem>
+                                  brand.BrandID != null ? (
+                                    <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
+                                      {brand.BrandName}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
