@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
 import DashboardStats from "@/components/dashboard-stats";
 import { Link } from "wouter";
-import { ShoppingBag, Bookmark, TrendingUp, MessageSquare, Package, Search, Heart, AlertCircle } from "lucide-react";
+import { ShoppingBag, Bookmark, TrendingUp, MessageSquare, Package, Search, Heart, AlertCircle, Mail, Phone, Building } from "lucide-react";
 
 export default function BuyerDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -40,6 +40,22 @@ export default function BuyerDashboard() {
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch orders');
+      }
+      return response.json();
+    },
+    retry: false,
+    enabled: !!user,
+  });
+
+  const { data: inquiriesData, isLoading: inquiriesLoading } = useQuery({
+    queryKey: ['/api/inquiries/buyer'],
+    queryFn: async () => {
+      const response = await fetch('/api/inquiries/buyer', {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to fetch inquiries');
       }
       return response.json();
     },
@@ -200,48 +216,161 @@ export default function BuyerDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <ShoppingBag className="mr-2 h-5 w-5" />
-                  Order History
+                  Orders & Inquiries
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {orders && orders.length > 0 ? (
-                  <div className="space-y-4">
-                    {orders.map((order: any) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 border border-border rounded-lg" data-testid={`order-${order.id}`}>
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                            <Package className="h-6 w-6 text-muted-foreground" />
+                {/* Orders Section */}
+                {orders && orders.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <Package className="mr-2 h-4 w-4" />
+                      Recent Orders
+                    </h3>
+                    <div className="space-y-4">
+                      {orders.map((order: any) => (
+                        <div key={order.id} className="flex items-center justify-between p-4 border border-border rounded-lg" data-testid={`order-${order.id}`}>
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">Order #{order.id.slice(-8)}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {order.quantity} items • ₹{order.totalAmount}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold">Order #{order.id.slice(-8)}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {order.quantity} items • ₹{order.totalAmount}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </p>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={
+                              order.status === 'delivered' ? 'default' :
+                              order.status === 'shipped' ? 'secondary' :
+                              order.status === 'confirmed' ? 'outline' : 'destructive'
+                            }>
+                              {order.status}
+                            </Badge>
+                            <Button size="sm" variant="outline" data-testid={`view-order-${order.id}`}>
+                              View Details
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={
-                            order.status === 'delivered' ? 'default' :
-                            order.status === 'shipped' ? 'secondary' :
-                            order.status === 'confirmed' ? 'outline' : 'destructive'
-                          }>
-                            {order.status}
-                          </Badge>
-                          <Button size="sm" variant="outline" data-testid={`view-order-${order.id}`}>
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                ) : (
+                )}
+
+                {/* Inquiries Section */}
+                {inquiriesData?.inquiries && inquiriesData.inquiries.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Your Inquiries
+                    </h3>
+                    <div className="space-y-4">
+                      {inquiriesData.inquiries.map((inquiry: any) => (
+                        <div key={inquiry.id} className="p-4 border border-border rounded-lg" data-testid={`inquiry-${inquiry.id}`}>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                                <Mail className="h-6 w-6 text-blue-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold">
+                                  {inquiry.product_title || `${inquiry.MakeName} ${inquiry.GradeName}`}
+                                </h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {inquiry.GroupName} {inquiry.BrandName && `• ${inquiry.BrandName}`}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                              Inquiry Sent
+                            </Badge>
+                          </div>
+
+                          {/* Inquiry Details */}
+                          <div className="grid md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Your Details:</p>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex items-center">
+                                  <Building className="h-3 w-3 mr-1 text-muted-foreground" />
+                                  <span className="font-medium">{inquiry.buyer_name}</span>
+                                </div>
+                                {inquiry.buyer_company && (
+                                  <div className="flex items-center">
+                                    <Building className="h-3 w-3 mr-1 text-muted-foreground" />
+                                    <span>{inquiry.buyer_company}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center">
+                                  <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
+                                  <span>{inquiry.buyer_email}</span>
+                                </div>
+                                {inquiry.buyer_phone && (
+                                  <div className="flex items-center">
+                                    <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
+                                    <span>{inquiry.buyer_phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Inquiry Details:</p>
+                              <div className="space-y-1 text-xs">
+                                {inquiry.quantity && (
+                                  <div><span className="font-medium">Quantity:</span> {inquiry.quantity}</div>
+                                )}
+                                {inquiry.quoted_price && (
+                                  <div><span className="font-medium">Your Price:</span> ₹{inquiry.quoted_price}</div>
+                                )}
+                                {inquiry.OfferPrice && (
+                                  <div><span className="font-medium">Seller Price:</span> ₹{inquiry.OfferPrice}/{inquiry.OfferUnit}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Message */}
+                          {inquiry.message && (
+                            <div className="mb-3">
+                              <p className="text-sm text-muted-foreground mb-1">Your Message:</p>
+                              <p className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                "{inquiry.message}"
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Seller Info and Date */}
+                          <div className="flex items-center justify-between pt-3 border-t text-xs text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Sent to:</span> {inquiry.seller_name || inquiry.seller_company || 'Seller'}
+                            </div>
+                            <div>
+                              {new Date(inquiry.created_at).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {(!orders || orders.length === 0) && (!inquiriesData?.inquiries || inquiriesData.inquiries.length === 0) && (
                   <div className="text-center py-12">
                     <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
-                    <p className="text-muted-foreground mb-4">Start browsing the marketplace to place your first order</p>
+                    <h3 className="text-lg font-semibold mb-2">No Orders or Inquiries Yet</h3>
+                    <p className="text-muted-foreground mb-4">Start browsing the marketplace to place your first order or send inquiries</p>
                     <Button asChild>
                       <Link href="/marketplace">Browse Marketplace</Link>
                     </Button>

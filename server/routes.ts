@@ -1222,6 +1222,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get buyer's inquiries
+  app.get('/api/inquiries/buyer', requireAuth, async (req, res) => {
+    try {
+      const buyerEmail = req.session.memberEmail;
+      
+      if (!buyerEmail) {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
+      }
+
+      const inquiries = await executeQuery(`
+        SELECT 
+          i.*,
+          d.Seller_comments as product_title,
+          d.OfferPrice,
+          d.OfferUnit,
+          m.mname as seller_name,
+          m.company_name as seller_company,
+          groups.GroupName,
+          makes.make_Name as MakeName,
+          grades.GradeName,
+          brands.brandname as BrandName
+        FROM inquiries i
+        LEFT JOIN deal_master d ON i.product_id = d.TransID
+        LEFT JOIN bmpa_members m ON d.memberID = m.member_id
+        LEFT JOIN stock_groups groups ON d.groupID = groups.GroupID
+        LEFT JOIN stock_make_master makes ON d.MakeID = makes.make_ID
+        LEFT JOIN stock_grade grades ON d.GradeID = grades.gradeID
+        LEFT JOIN stock_brand brands ON d.BrandID = brands.brandID
+        WHERE i.buyer_email = ?
+        ORDER BY i.created_at DESC
+      `, [buyerEmail]);
+
+      res.json({ success: true, inquiries });
+    } catch (error) {
+      console.error('Error fetching buyer inquiries:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch inquiries' });
+    }
+  });
+
   // Send Inquiry Email Route
   app.post('/api/inquiries/send', requireAuth, async (req, res) => {
     try {
