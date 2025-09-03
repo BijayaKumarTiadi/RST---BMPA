@@ -19,10 +19,16 @@ export default function ProductDetails() {
   const queryClient = useQueryClient();
   const [quantity, setQuantity] = useState(1);
 
+  // Detect if we're on /deal/:id or /product/:id route
+  const currentPath = window.location.pathname;
+  const isDealRoute = currentPath.startsWith('/deal/');
+  const apiEndpoint = isDealRoute ? `/api/deals/${id}` : `/api/products/${id}`;
+  const apiKey = isDealRoute ? '/api/deals' : '/api/products';
+
   const { data: product, isLoading } = useQuery({
-    queryKey: ['/api/products', id],
+    queryKey: [apiKey, id],
     queryFn: async () => {
-      const response = await fetch(`/api/products/${id}`);
+      const response = await fetch(apiEndpoint);
       if (!response.ok) throw new Error('Product not found');
       return response.json();
     },
@@ -32,15 +38,19 @@ export default function ProductDetails() {
   // Mark as sold mutation (for sellers only)
   const markAsSoldMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('PUT', `/api/products/${id}/mark-sold`, {});
+      const markSoldEndpoint = isDealRoute ? `/api/deals/${id}/mark-sold` : `/api/products/${id}/mark-sold`;
+      return apiRequest('PUT', markSoldEndpoint, {});
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Product marked as sold successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/products', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: [apiKey, id] });
+      queryClient.invalidateQueries({ queryKey: [apiKey] });
+      if (isDealRoute) {
+        queryClient.invalidateQueries({ queryKey: ["/api/deals", "seller_only"] });
+      }
     },
     onError: (error: any) => {
       toast({
