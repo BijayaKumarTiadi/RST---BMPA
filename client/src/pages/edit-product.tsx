@@ -236,7 +236,7 @@ export default function EditDeal() {
     );
   }
 
-  if (!dealData?.deal) {
+  if (!dealData) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
