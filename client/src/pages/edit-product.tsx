@@ -143,6 +143,13 @@ export default function EditDeal() {
     selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
   );
 
+  console.log("🔍 Filter state:", { selectedGroup, selectedMake });
+  console.log("🔍 Filtered results:", { 
+    makes: filteredMakes.length, 
+    grades: filteredGrades.length, 
+    brands: filteredBrands.length 
+  });
+
   // Handle selection changes
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
@@ -161,8 +168,14 @@ export default function EditDeal() {
 
   // Update form when deal data is loaded
   useEffect(() => {
-    if (dealData) {
+    if (dealData && stockHierarchy) {
       const deal = dealData;
+      console.log("🔍 Setting form with deal data:", deal);
+      console.log("🔍 Available groups:", groups.length);
+      console.log("🔍 Available makes:", makes.length);
+      console.log("🔍 Available grades:", grades.length);
+      console.log("🔍 Available brands:", brands.length);
+      
       form.reset({
         groupID: deal.groupID?.toString() || "",
         MakeID: deal.MakeID?.toString() || "",
@@ -177,8 +190,14 @@ export default function EditDeal() {
       });
       
       // Set selected values for cascading dropdowns
-      setSelectedGroup(deal.groupID?.toString() || "");
-      setSelectedMake(deal.MakeID?.toString() || "");
+      const groupId = deal.groupID?.toString() || "";
+      const makeId = deal.MakeID?.toString() || "";
+      
+      console.log("🔍 Setting selectedGroup to:", groupId);
+      console.log("🔍 Setting selectedMake to:", makeId);
+      
+      setSelectedGroup(groupId);
+      setSelectedMake(makeId);
 
       // Set unit conversion input values (assuming data is stored in mm)
       if (deal.Deckle_mm) {
@@ -188,7 +207,7 @@ export default function EditDeal() {
         setGrainInputValue(deal.grain_mm.toString());
       }
     }
-  }, [dealData, form]);
+  }, [dealData, stockHierarchy, form]);
 
   // Update deal mutation
   const updateDealMutation = useMutation({
