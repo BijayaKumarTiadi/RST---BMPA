@@ -79,6 +79,12 @@ class DealService {
     make_id?: number;
     grade_id?: number;
     brand_id?: number;
+    makes?: string;
+    grades?: string;
+    brands?: string;
+    gsm?: string;
+    units?: string;
+    stock_status?: string;
     seller_id?: number;
     status?: string;
     search?: string;
@@ -87,7 +93,7 @@ class DealService {
     offset?: number;
   }): Promise<{ deals: Deal[]; total: number }> {
     try {
-      let whereConditions = ['1=1']; // Remove Status filter for now
+      let whereConditions = ['d.StockStatus = 1']; // Only show available deals (1 = Available for sale)
       let params: any[] = [];
 
       if (filters?.group_id) {
@@ -110,6 +116,47 @@ class DealService {
         params.push(filters.brand_id);
       }
 
+      // Handle array-based filters from frontend
+      if (filters?.makes) {
+        const makesArray = filters.makes.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        if (makesArray.length > 0) {
+          whereConditions.push(`d.MakeID IN (${makesArray.map(() => '?').join(',')})`);
+          params.push(...makesArray);
+        }
+      }
+
+      if (filters?.grades) {
+        const gradesArray = filters.grades.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        if (gradesArray.length > 0) {
+          whereConditions.push(`d.GradeID IN (${gradesArray.map(() => '?').join(',')})`);
+          params.push(...gradesArray);
+        }
+      }
+
+      if (filters?.brands) {
+        const brandsArray = filters.brands.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        if (brandsArray.length > 0) {
+          whereConditions.push(`d.BrandID IN (${brandsArray.map(() => '?').join(',')})`);
+          params.push(...brandsArray);
+        }
+      }
+
+      if (filters?.gsm) {
+        const gsmArray = filters.gsm.split(',').map(gsm => gsm.trim()).filter(gsm => gsm);
+        if (gsmArray.length > 0) {
+          whereConditions.push(`d.GSM IN (${gsmArray.map(() => '?').join(',')})`);
+          params.push(...gsmArray);
+        }
+      }
+
+      if (filters?.units) {
+        const unitsArray = filters.units.split(',').map(unit => unit.trim()).filter(unit => unit);
+        if (unitsArray.length > 0) {
+          whereConditions.push(`d.OfferUnit IN (${unitsArray.map(() => '?').join(',')})`);
+          params.push(...unitsArray);
+        }
+      }
+
       if (filters?.seller_id) {
         whereConditions.push('d.memberID = ?');
         params.push(filters.seller_id);
@@ -122,9 +169,9 @@ class DealService {
       // }
 
       if (filters?.search) {
-        whereConditions.push('(d.Seller_comments LIKE ? OR g.GroupName LIKE ? OR m.make_Name LIKE ?)');
+        whereConditions.push('(d.Seller_comments LIKE ? OR g.GroupName LIKE ? OR m.make_Name LIKE ? OR gr.GradeName LIKE ? OR b.brandname LIKE ?)');
         const searchTerm = `%${filters.search}%`;
-        params.push(searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
 
       if (filters?.location) {

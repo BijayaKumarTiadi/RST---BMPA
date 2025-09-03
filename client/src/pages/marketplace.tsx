@@ -286,12 +286,12 @@ export default function Marketplace() {
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {makes.map((make: any) => (
-                        <div key={make.MakeID || make.id} className="flex items-center space-x-2">
+                        <div key={make.make_ID || make.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`make-${make.MakeID || make.id}`}
-                            checked={selectedMakes.includes((make.MakeID || make.id)?.toString())}
+                            id={`make-${make.make_ID || make.id}`}
+                            checked={selectedMakes.includes((make.make_ID || make.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              const makeId = (make.MakeID || make.id)?.toString();
+                              const makeId = (make.make_ID || make.id)?.toString();
                               if (makeId) {
                                 if (checked) {
                                   setSelectedMakes([...selectedMakes, makeId]);
@@ -301,8 +301,8 @@ export default function Marketplace() {
                               }
                             }}
                           />
-                          <label htmlFor={`make-${make.MakeID || make.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {make.MakeName || make.name}
+                          <label htmlFor={`make-${make.make_ID || make.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {make.make_Name || make.name}
                           </label>
                         </div>
                       ))}
@@ -325,12 +325,12 @@ export default function Marketplace() {
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {grades.map((grade: any) => (
-                        <div key={grade.GradeID || grade.id} className="flex items-center space-x-2">
+                        <div key={grade.gradeID || grade.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`grade-${grade.GradeID || grade.id}`}
-                            checked={selectedGrades.includes((grade.GradeID || grade.id)?.toString())}
+                            id={`grade-${grade.gradeID || grade.id}`}
+                            checked={selectedGrades.includes((grade.gradeID || grade.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              const gradeId = (grade.GradeID || grade.id)?.toString();
+                              const gradeId = (grade.gradeID || grade.id)?.toString();
                               if (gradeId) {
                                 if (checked) {
                                   setSelectedGrades([...selectedGrades, gradeId]);
@@ -340,7 +340,7 @@ export default function Marketplace() {
                               }
                             }}
                           />
-                          <label htmlFor={`grade-${grade.GradeID || grade.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          <label htmlFor={`grade-${grade.gradeID || grade.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             {grade.GradeName || grade.name}
                           </label>
                         </div>
@@ -364,12 +364,12 @@ export default function Marketplace() {
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {brands.map((brand: any) => (
-                        <div key={brand.BrandID || brand.id} className="flex items-center space-x-2">
+                        <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`brand-${brand.BrandID || brand.id}`}
-                            checked={selectedBrands.includes((brand.BrandID || brand.id)?.toString())}
+                            id={`brand-${brand.brandID || brand.id}`}
+                            checked={selectedBrands.includes((brand.brandID || brand.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              const brandId = (brand.BrandID || brand.id)?.toString();
+                              const brandId = (brand.brandID || brand.id)?.toString();
                               if (brandId) {
                                 if (checked) {
                                   setSelectedBrands([...selectedBrands, brandId]);
@@ -379,8 +379,8 @@ export default function Marketplace() {
                               }
                             }}
                           />
-                          <label htmlFor={`brand-${brand.BrandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {brand.BrandName || brand.name}
+                          <label htmlFor={`brand-${brand.brandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {brand.brandname || brand.name}
                           </label>
                         </div>
                       ))}
