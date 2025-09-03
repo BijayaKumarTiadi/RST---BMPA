@@ -69,130 +69,107 @@ export default function Orders() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {inquiries.map((inquiry: any) => (
-              <Card key={inquiry.id} className="overflow-hidden" data-testid={`inquiry-card-${inquiry.id}`}>
-                <CardHeader className="bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg" data-testid={`inquiry-id-${inquiry.id}`}>
+              <Card key={inquiry.id} className="overflow-hidden hover:shadow-md transition-shadow" data-testid={`inquiry-card-${inquiry.id}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-base font-semibold" data-testid={`inquiry-id-${inquiry.id}`}>
                         Inquiry #{inquiry.id}
                       </CardTitle>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            {new Date(inquiry.created_at).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        </div>
-                        <Badge className="bg-blue-100 text-blue-800" data-testid={`inquiry-status-${inquiry.id}`}>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(inquiry.created_at).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                        <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0" data-testid={`inquiry-status-${inquiry.id}`}>
                           Sent
                         </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-medium text-foreground" data-testid={`inquiry-quantity-${inquiry.id}`}>
-                        Qty: {inquiry.quantity} {inquiry.unit}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {inquiry.grade_name} - {inquiry.gsm}GSM
-                      </p>
-                    </div>
                   </div>
                 </CardHeader>
                 
-                <CardContent className="p-6">
-                  <div className="grid lg:grid-cols-3 gap-6">
-                    {/* Product Info */}
-                    <div className="lg:col-span-2">
-                      <div className="flex items-start gap-4">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package className="h-10 w-10 text-indigo-600" />
+                <CardContent className="pt-0 pb-4 px-4">
+                  {/* Product Summary */}
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Package className="h-6 w-6 text-indigo-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm mb-1 truncate" data-testid={`product-title-${inquiry.id}`}>
+                          {inquiry.brand_name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {inquiry.product_type} - {inquiry.grade_name}
+                        </p>
+                        <p className="text-xs text-foreground">
+                          <span className="font-medium">Qty:</span> {inquiry.quantity} {inquiry.unit} | 
+                          <span className="font-medium"> GSM:</span> {inquiry.gsm}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Seller Info Compact */}
+                    <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Building className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-xs font-medium truncate" data-testid={`seller-company-${inquiry.id}`}>
+                          {inquiry.seller_company}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{inquiry.seller_phone}</span>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-lg mb-1" data-testid={`product-title-${inquiry.id}`}>
-                            {inquiry.brand_name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {inquiry.product_type} - {inquiry.grade_name}
-                          </p>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">GSM:</span>
-                              <p className="font-medium">{inquiry.gsm}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Location:</span>
-                              <p className="font-medium">{inquiry.location}</p>
-                            </div>
-                          </div>
-                          {inquiry.message && (
-                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
-                              <p className="text-sm font-medium text-muted-foreground">Your Message:</p>
-                              <p className="text-sm mt-1">{inquiry.message}</p>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{inquiry.seller_location}</span>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Seller Info */}
-                    <div className="space-y-4">
-                      <div>
-                        <h5 className="font-medium text-foreground mb-2 flex items-center gap-2">
-                          <Building className="h-4 w-4" />
-                          Seller Details
-                        </h5>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium" data-testid={`seller-company-${inquiry.id}`}>
-                            {inquiry.seller_company}
-                          </p>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            <span>{inquiry.seller_phone}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Mail className="h-3 w-3" />
-                            <span>{inquiry.seller_email}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            <span>{inquiry.seller_location}</span>
-                          </div>
-                        </div>
+
+                    {inquiry.message && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+                        <p className="text-xs font-medium text-amber-800 mb-1">Your Message:</p>
+                        <p className="text-xs text-amber-700 line-clamp-2">{inquiry.message}</p>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Inquiry Actions */}
-                  <div className="flex items-center gap-3 mt-6 pt-4 border-t">
+                  {/* Compact Actions */}
+                  <div className="flex gap-2 mt-4">
                     <Button 
                       size="sm" 
                       variant="outline" 
+                      className="flex-1 text-xs h-8"
                       asChild
                       data-testid={`button-view-product-${inquiry.id}`}
                     >
                       <Link href={`/deal/${inquiry.trans_id}`}>
-                        <Eye className="h-4 w-4 mr-1" />
+                        <Eye className="h-3 w-3 mr-1" />
                         View Deal
                       </Link>
                     </Button>
                     
                     <Button 
                       size="sm" 
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs h-8"
                       onClick={() => {
                         const message = `Hi! I sent an inquiry for ${inquiry.brand_name} (${inquiry.grade_name} - ${inquiry.gsm}GSM). Inquiry ID: ${inquiry.id}`;
                         window.open(`https://wa.me/${inquiry.seller_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                       }}
                       data-testid={`button-whatsapp-seller-${inquiry.id}`}
                     >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      WhatsApp Seller
+                      <MessageCircle className="h-3 w-3 mr-1" />
+                      WhatsApp
                     </Button>
                   </div>
                 </CardContent>
