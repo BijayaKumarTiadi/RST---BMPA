@@ -99,11 +99,22 @@ export default function AddDeal() {
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
       const payload = {
-        ...data,
-        groupID: data.groupID ? parseInt(data.groupID) : 0,
-        MakeID: data.MakeID ? parseInt(data.MakeID) : 0,
-        GradeID: data.GradeID ? parseInt(data.GradeID) : 0,
-        BrandID: data.BrandID ? parseInt(data.BrandID) : 0,
+        group_id: data.groupID ? parseInt(data.groupID) : 0,
+        make_id: data.MakeID ? parseInt(data.MakeID) : 0,
+        grade_id: data.GradeID ? parseInt(data.GradeID) : 0,
+        brand_id: data.BrandID ? parseInt(data.BrandID) : 0,
+        deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
+        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+        price: data.OfferPrice,
+        quantity: 1000, // Default quantity
+        unit: data.OfferUnit,
+        min_order_quantity: 100, // Default min order quantity
+        deal_specifications: {
+          GSM: data.GSM,
+          Deckle_mm: data.Deckle_mm,
+          grain_mm: data.grain_mm,
+        },
+        location: 'India', // Default location
       };
       return apiRequest("POST", "/api/deals", payload);
     },
@@ -165,57 +176,64 @@ export default function AddDeal() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-900">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <Link href="/seller-dashboard">
-              <Button variant="ghost" className="mb-4">
+              <Button variant="ghost" className="mb-4 text-white hover:bg-white/10">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Add New Stock Deal</h1>
-            <p className="text-muted-foreground">
-              Add your stock inventory to the marketplace. Fill in the details below to create a new deal that buyers can discover.
-            </p>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-white mb-2">Add New Stock Deal</h1>
+              <p className="text-slate-300">
+                Add your stock inventory to the marketplace. Fill in the details below to create a new deal that buyers can discover.
+              </p>
+            </div>
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Stock Selection */}
-              <Card>
+              <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-white">
                     <Package className="h-5 w-5" />
                     Stock Selection
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-slate-300">
                     Select the stock hierarchy for your deal
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-6">
+                  {/* First Row: Group and Make */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="groupID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Stock Group *</FormLabel>
+                          <FormLabel className="text-white">Stock Group *</FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
                               onValueChange={handleGroupChange}
                               data-testid="select-group"
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                                 <SelectValue placeholder="Select group" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-slate-700 border-slate-600">
                                 {groups.map((group: any) => (
                                   group.GroupID != null ? (
-                                    <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
+                                    <SelectItem 
+                                      key={group.GroupID} 
+                                      value={group.GroupID.toString()}
+                                      className="text-white hover:bg-slate-600"
+                                    >
                                       {group.GroupName || `Group ${group.GroupID}`}
                                     </SelectItem>
                                   ) : null
@@ -233,7 +251,7 @@ export default function AddDeal() {
                       name="MakeID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Stock Make *</FormLabel>
+                          <FormLabel className="text-white">Stock Make *</FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -241,13 +259,17 @@ export default function AddDeal() {
                               disabled={!selectedGroup}
                               data-testid="select-make"
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                                 <SelectValue placeholder="Select make" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-slate-700 border-slate-600">
                                 {filteredMakes.map((make: any) => (
                                   make.make_ID != null ? (
-                                    <SelectItem key={make.make_ID} value={make.make_ID.toString()}>
+                                    <SelectItem 
+                                      key={make.make_ID} 
+                                      value={make.make_ID.toString()}
+                                      className="text-white hover:bg-slate-600"
+                                    >
                                       {make.make_Name || `Make ${make.make_ID}`}
                                     </SelectItem>
                                   ) : null
@@ -260,12 +282,16 @@ export default function AddDeal() {
                       )}
                     />
 
+                  </div>
+
+                  {/* Second Row: Grade and Brand */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="GradeID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grade *</FormLabel>
+                          <FormLabel className="text-white">Grade *</FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -273,13 +299,17 @@ export default function AddDeal() {
                               disabled={!selectedMake}
                               data-testid="select-grade"
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                                 <SelectValue placeholder="Select grade" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-slate-700 border-slate-600">
                                 {filteredGrades.map((grade: any) => (
                                   grade.gradeID != null ? (
-                                    <SelectItem key={grade.gradeID} value={grade.gradeID.toString()}>
+                                    <SelectItem 
+                                      key={grade.gradeID} 
+                                      value={grade.gradeID.toString()}
+                                      className="text-white hover:bg-slate-600"
+                                    >
                                       {grade.GradeName || `Grade ${grade.gradeID}`}
                                     </SelectItem>
                                   ) : null
@@ -297,7 +327,7 @@ export default function AddDeal() {
                       name="BrandID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Brand *</FormLabel>
+                          <FormLabel className="text-white">Brand *</FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -305,13 +335,17 @@ export default function AddDeal() {
                               disabled={!selectedMake}
                               data-testid="select-brand"
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                                 <SelectValue placeholder="Select brand" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-slate-700 border-slate-600">
                                 {filteredBrands.map((brand: any) => (
                                   brand.brandID != null ? (
-                                    <SelectItem key={brand.brandID} value={brand.brandID.toString()}>
+                                    <SelectItem 
+                                      key={brand.brandID} 
+                                      value={brand.brandID.toString()}
+                                      className="text-white hover:bg-slate-600"
+                                    >
                                       {brand.brandname || `Brand ${brand.brandID}`}
                                     </SelectItem>
                                   ) : null
@@ -328,31 +362,32 @@ export default function AddDeal() {
               </Card>
 
               {/* Technical Specifications */}
-              <Card>
+              <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-white">
                     <Hash className="h-5 w-5" />
                     Technical Specifications
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-slate-300">
                     Enter the technical details for your stock
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
                       name="GSM"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>GSM *</FormLabel>
+                          <FormLabel className="text-white">GSM *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               placeholder="e.g., 80" 
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-gsm" 
+                              data-testid="input-gsm"
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
                           </FormControl>
                           <FormMessage />
@@ -365,14 +400,15 @@ export default function AddDeal() {
                       name="Deckle_mm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Deckle (mm) *</FormLabel>
+                          <FormLabel className="text-white">Deckle (mm) *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               placeholder="e.g., 650" 
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-deckle" 
+                              data-testid="input-deckle"
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
                           </FormControl>
                           <FormMessage />
@@ -385,14 +421,15 @@ export default function AddDeal() {
                       name="grain_mm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grain (mm) *</FormLabel>
+                          <FormLabel className="text-white">Grain (mm) *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               placeholder="e.g., 900" 
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-grain" 
+                              data-testid="input-grain"
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
                           </FormControl>
                           <FormMessage />
@@ -403,25 +440,25 @@ export default function AddDeal() {
                 </CardContent>
               </Card>
 
-              {/* Pricing & Comments */}
-              <Card>
+              {/* Pricing & Details */}
+              <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-white">
                     <DollarSign className="h-5 w-5" />
                     Pricing & Details
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-slate-300">
                     Set your offer price and add any seller comments
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="OfferPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Offer Price *</FormLabel>
+                          <FormLabel className="text-white">Offer Price *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -429,7 +466,8 @@ export default function AddDeal() {
                               placeholder="e.g., 45.50" 
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-price" 
+                              data-testid="input-price"
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
                           </FormControl>
                           <FormMessage />
@@ -442,18 +480,18 @@ export default function AddDeal() {
                       name="OfferUnit"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Unit *</FormLabel>
+                          <FormLabel className="text-white">Unit *</FormLabel>
                           <FormControl>
                             <Select value={field.value} onValueChange={field.onChange} data-testid="select-unit">
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                                 <SelectValue placeholder="Select unit" />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="kg">Kg</SelectItem>
-                                <SelectItem value="ton">Ton</SelectItem>
-                                <SelectItem value="ream">Ream</SelectItem>
-                                <SelectItem value="sheet">Sheet</SelectItem>
-                                <SelectItem value="bundle">Bundle</SelectItem>
+                              <SelectContent className="bg-slate-700 border-slate-600">
+                                <SelectItem value="kg" className="text-white hover:bg-slate-600">Kg</SelectItem>
+                                <SelectItem value="ton" className="text-white hover:bg-slate-600">Ton</SelectItem>
+                                <SelectItem value="ream" className="text-white hover:bg-slate-600">Ream</SelectItem>
+                                <SelectItem value="sheet" className="text-white hover:bg-slate-600">Sheet</SelectItem>
+                                <SelectItem value="bundle" className="text-white hover:bg-slate-600">Bundle</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -468,12 +506,13 @@ export default function AddDeal() {
                     name="Seller_comments"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Seller Comments</FormLabel>
+                        <FormLabel className="text-white">Seller Comments</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Add any additional details about the stock..."
                             {...field}
                             data-testid="input-comments"
+                            className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                           />
                         </FormControl>
                         <FormMessage />
@@ -484,10 +523,10 @@ export default function AddDeal() {
               </Card>
 
               {/* Submit Buttons */}
-              <Card>
+              <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
-                  <CardTitle className="text-lg">Save Options</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg text-white">Save Options</CardTitle>
+                  <CardDescription className="text-slate-300">
                     Choose how you want to proceed after saving this deal
                   </CardDescription>
                 </CardHeader>
@@ -495,7 +534,7 @@ export default function AddDeal() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Button
                       type="submit"
-                      className="h-12"
+                      className="h-12 bg-blue-600 hover:bg-blue-700 text-white"
                       disabled={createDealMutation.isPending}
                       data-testid="button-submit"
                     >
@@ -506,7 +545,7 @@ export default function AddDeal() {
                     <Button
                       type="button"
                       variant="secondary"
-                      className="h-12"
+                      className="h-12 bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
                       disabled={createDealMutation.isPending}
                       onClick={() => form.handleSubmit(onSubmitAndAddAnother)()}
                       data-testid="button-submit-add-another"
@@ -520,7 +559,7 @@ export default function AddDeal() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
                       onClick={() => setLocation("/seller-dashboard")}
                       data-testid="button-cancel"
                     >
