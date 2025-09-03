@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Package, DollarSign, Hash } from "lucide-react";
+import { ArrowLeft, Package, DollarSign, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const dealSchema = z.object({
@@ -35,6 +35,7 @@ export default function AddDeal() {
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
+  const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
 
   const form = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
@@ -99,21 +100,43 @@ export default function AddDeal() {
     mutationFn: async (data: DealFormData) => {
       const payload = {
         ...data,
-        groupID: parseInt(data.groupID),
-        MakeID: parseInt(data.MakeID),
-        GradeID: parseInt(data.GradeID),
-        BrandID: parseInt(data.BrandID),
+        groupID: data.groupID ? parseInt(data.groupID) : 0,
+        MakeID: data.MakeID ? parseInt(data.MakeID) : 0,
+        GradeID: data.GradeID ? parseInt(data.GradeID) : 0,
+        BrandID: data.BrandID ? parseInt(data.BrandID) : 0,
       };
       return apiRequest("POST", "/api/deals", payload);
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Deal added successfully!",
-      });
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
-      setLocation("/seller-dashboard");
+      
+      if (saveAndAddAnother) {
+        toast({
+          title: "Success",
+          description: "Deal added successfully! Add another deal below.",
+        });
+        // Reset form for next entry, but keep the selected group and make for convenience
+        form.reset({
+          groupID: selectedGroup,
+          MakeID: selectedMake,
+          GradeID: "",
+          BrandID: "",
+          GSM: 0,
+          Deckle_mm: 0,
+          grain_mm: 0,
+          OfferPrice: 0,
+          OfferUnit: "",
+          Seller_comments: "",
+        });
+        setSaveAndAddAnother(false);
+      } else {
+        toast({
+          title: "Success",
+          description: "Deal added successfully!",
+        });
+        setLocation("/seller-dashboard");
+      }
     },
     onError: (error: any) => {
       toast({
@@ -125,6 +148,11 @@ export default function AddDeal() {
   });
 
   const onSubmit = (data: DealFormData) => {
+    createDealMutation.mutate(data);
+  };
+
+  const onSubmitAndAddAnother = (data: DealFormData) => {
+    setSaveAndAddAnother(true);
     createDealMutation.mutate(data);
   };
 
@@ -148,9 +176,9 @@ export default function AddDeal() {
                 Back to Dashboard
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Add New Deal</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Add New Stock Deal</h1>
             <p className="text-muted-foreground">
-              Create a new stock deal using the deal_master table structure.
+              Add your stock inventory to the marketplace. Fill in the details below to create a new deal that buyers can discover.
             </p>
           </div>
 
@@ -447,19 +475,40 @@ export default function AddDeal() {
                 </CardContent>
               </Card>
 
-              {/* Submit Button */}
+              {/* Submit Buttons */}
               <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
+                <CardHeader>
+                  <CardTitle className="text-lg">Save Options</CardTitle>
+                  <CardDescription>
+                    Choose how you want to proceed after saving this deal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="h-12"
                       disabled={createDealMutation.isPending}
                       data-testid="button-submit"
                     >
-                      {createDealMutation.isPending ? "Adding Deal..." : "Add Deal"}
+                      <Package className="mr-2 h-4 w-4" />
+                      {createDealMutation.isPending ? "Saving..." : "Save & Go to Dashboard"}
                     </Button>
                     
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-12"
+                      disabled={createDealMutation.isPending}
+                      onClick={() => form.handleSubmit(onSubmitAndAddAnother)()}
+                      data-testid="button-submit-add-another"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {createDealMutation.isPending ? "Saving..." : "Save & Add Another"}
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4">
                     <Button
                       type="button"
                       variant="outline"

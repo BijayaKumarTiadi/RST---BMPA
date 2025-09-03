@@ -298,7 +298,7 @@ export default function SellerDashboard() {
                               asChild
                               data-testid={`button-edit-${deal.TransID}`}
                             >
-                              <Link href={`/edit-product/${deal.TransID}`}>
+                              <Link href={`/edit-deal/${deal.TransID}`}>
                                 <Edit2 className="h-4 w-4 mr-1" />
                                 Edit
                               </Link>
