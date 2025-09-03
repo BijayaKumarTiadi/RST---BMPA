@@ -85,13 +85,13 @@ export default function EditDeal() {
 
   // Filter makes, grades, and brands based on selections
   const filteredMakes = makes.filter((make: any) => 
-    selectedGroup ? make.GroupID?.toString() === selectedGroup : true
+    selectedGroup ? (make.GroupID != null ? make.GroupID.toString() === selectedGroup : false) : true
   );
   const filteredGrades = grades.filter((grade: any) => 
-    selectedMake ? grade.Make_ID?.toString() === selectedMake : true
+    selectedMake ? (grade.Make_ID != null ? grade.Make_ID.toString() === selectedMake : false) : true
   );
   const filteredBrands = brands.filter((brand: any) => 
-    selectedMake ? brand.make_ID?.toString() === selectedMake : true
+    selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
   );
 
   // Handle selection changes

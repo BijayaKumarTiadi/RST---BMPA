@@ -19,7 +19,7 @@ export default function SellerDashboard() {
 
   // Fetch seller's deals (products)
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/seller/deals"],
+    queryKey: ["/api/deals", "seller_only"],
     queryFn: async () => {
       const response = await fetch(`/api/deals?seller_only=true`, {
         credentials: 'include',
@@ -27,7 +27,7 @@ export default function SellerDashboard() {
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: isAuthenticated && !!user?.member_id,
+    enabled: isAuthenticated && !!user?.id,
   });
 
   // Fetch seller stats
@@ -66,7 +66,7 @@ export default function SellerDashboard() {
         title: "Success",
         description: "Deal marked as sold successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/seller/deals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deals", "seller_only"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
     },
     onError: (error: any) => {
@@ -88,7 +88,7 @@ export default function SellerDashboard() {
         title: "Success",
         description: "Deal deleted successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/seller/deals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deals", "seller_only"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
     },
     onError: (error: any) => {
@@ -103,14 +103,6 @@ export default function SellerDashboard() {
   const deals = dealsData?.deals || [];
   const orders = ordersData?.orders || [];
 
-  // Debug logging
-  console.log('🔧 Dashboard Debug:', {
-    dealsLoading,
-    dealsData,
-    deals: deals?.length,
-    user: user?.id,
-    isAuthenticated
-  });
 
   if (!isAuthenticated) {
     return (
