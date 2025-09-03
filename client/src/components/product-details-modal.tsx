@@ -121,19 +121,19 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                     {deal.created_by_name || deal.seller_name || 'Seller'}
                   </span>
                 </div>
-                {deal.email && (
+                {(deal.seller_email || deal.email) && (
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a href={`mailto:${deal.email}`} className="text-primary hover:underline">
-                      {deal.email}
+                    <a href={`mailto:${deal.seller_email || deal.email}`} className="text-primary hover:underline">
+                      {deal.seller_email || deal.email}
                     </a>
                   </div>
                 )}
-                {deal.phone && (
+                {(deal.seller_phone || deal.phone) && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${deal.phone}`} className="text-primary hover:underline">
-                      {deal.phone}
+                    <a href={`tel:${deal.seller_phone || deal.phone}`} className="text-primary hover:underline">
+                      {deal.seller_phone || deal.phone}
                     </a>
                   </div>
                 )}

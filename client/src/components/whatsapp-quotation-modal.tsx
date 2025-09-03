@@ -51,7 +51,10 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
     }
     
     const encodedMessage = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/918984222915?text=${encodedMessage}`;
+    // Use seller's phone number or fallback to default
+    const sellerPhone = deal.seller_phone || deal.phone || '918984222915';
+    const cleanPhone = sellerPhone.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
     
     // Reset form and close modal
