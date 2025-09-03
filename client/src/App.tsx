@@ -18,6 +18,7 @@ import ApiDocs from "@/pages/api-docs";
 import Subscribe from "@/pages/subscribe";
 import About from "@/pages/about";
 import AddProduct from "@/pages/add-product";
+import EditProduct from "@/pages/edit-product";
 import ProductDetails from "@/pages/product-details";
 import Chat from "@/pages/chat";
 import Messages from "@/pages/messages";
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/buyer-dashboard" component={BuyerDashboard} />
           <Route path="/seller-dashboard" component={SellerDashboard} />
           <Route path="/add-product" component={AddProduct} />
+          <Route path="/edit-deal/:id" component={EditProduct} />
           <Route path="/product/:id" component={ProductDetails} />
           <Route path="/chat/:chatId" component={Chat} />
           <Route path="/messages" component={Messages} />
