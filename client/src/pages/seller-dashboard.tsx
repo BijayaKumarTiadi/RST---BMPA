@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,28 @@ export default function SellerDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
+
+  // Helper function to calculate relative time
+  const getRelativeTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+    } else {
+      return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    }
+  };
 
   // Fetch seller's deals (products)
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
@@ -380,14 +402,9 @@ export default function SellerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-foreground">
-                              {deal.deal_created_at ? 
-                                new Date(deal.deal_created_at).toLocaleDateString('en-US', {
-                                  month: '2-digit',
-                                  day: '2-digit', 
-                                  year: 'numeric'
-                                }) : 'N/A'
-                              }
+                            <div className="flex items-center gap-2 text-sm text-foreground">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              {getRelativeTime(deal.deal_created_at)}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
