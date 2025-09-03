@@ -14,6 +14,7 @@ import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, Chevr
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
+import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
@@ -43,6 +44,7 @@ export default function Marketplace() {
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   // Fetch stock hierarchy
   const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
@@ -179,27 +181,15 @@ export default function Marketplace() {
   };
 
   const handleSendWhatsApp = (deal: any) => {
-    const buyerName = user?.name || user?.company_name || 'Buyer';
-    const productTitle = deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product';
-    const productDetails = `${productTitle} (ID: ${deal.TransID})`;
-    const sellerPrice = `₹${(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')} per ${deal.OfferUnit || deal.Unit || 'unit'}`;
-    const additionalDetails = [];
-    
-    if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
-    if (deal.GradeName) additionalDetails.push(`Grade: ${deal.GradeName}`);
-    if (deal.BrandName) additionalDetails.push(`Brand: ${deal.BrandName}`);
-    if (deal.GSM) additionalDetails.push(`GSM: ${deal.GSM}`);
-    
-    const productInfo = additionalDetails.length > 0 
-      ? `${productDetails} (${additionalDetails.join(', ')})` 
-      : productDetails;
-    
-    const message = encodeURIComponent(
-      `Hey, I am ${buyerName}. I am interested in ${productInfo}, your price is ${sellerPrice}, my quotation price is [Please specify your price].`
-    );
-    
-    const whatsappUrl = `https://wa.me/918984222915?text=${message}`;
-    window.open(whatsappUrl, '_blank');
+    setSelectedDeal(deal);
+    setIsWhatsAppModalOpen(true);
+  };
+
+  // Handler for WhatsApp from product details modal
+  const handleSendWhatsAppFromModal = (deal: any) => {
+    setIsProductModalOpen(false); // Close product details modal first
+    setSelectedDeal(deal);
+    setIsWhatsAppModalOpen(true);
   };
 
   return (
@@ -710,13 +700,20 @@ export default function Marketplace() {
         onClose={() => setIsProductModalOpen(false)} 
         deal={selectedDeal} 
         onSendInquiry={handleSendInquiry}
-        onSendWhatsApp={handleSendWhatsApp}
+        onSendWhatsApp={handleSendWhatsAppFromModal}
       />
       
       <InquiryFormModal 
         isOpen={isInquiryModalOpen} 
         onClose={() => setIsInquiryModalOpen(false)} 
         deal={selectedDeal} 
+      />
+      
+      <WhatsAppQuotationModal 
+        isOpen={isWhatsAppModalOpen} 
+        onClose={() => setIsWhatsAppModalOpen(false)} 
+        deal={selectedDeal} 
+        user={user}
       />
     </div>
   );

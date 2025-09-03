@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Package, MapPin, Calendar, User, Building, Mail, MessageSquare } from "lucide-react";
+import { Package, MapPin, Calendar, User, Building, Mail, MessageSquare, Phone } from "lucide-react";
 
 interface ProductDetailsModalProps {
   isOpen: boolean;
@@ -121,6 +121,22 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                     {deal.created_by_name || deal.seller_name || 'Seller'}
                   </span>
                 </div>
+                {deal.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a href={`mailto:${deal.email}`} className="text-primary hover:underline">
+                      {deal.email}
+                    </a>
+                  </div>
+                )}
+                {deal.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a href={`tel:${deal.phone}`} className="text-primary hover:underline">
+                      {deal.phone}
+                    </a>
+                  </div>
+                )}
                 {deal.Location && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
