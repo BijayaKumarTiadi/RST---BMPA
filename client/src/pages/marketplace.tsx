@@ -275,20 +275,23 @@ export default function Marketplace() {
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {makes.map((make: any) => (
-                        <div key={make.MakeID} className="flex items-center space-x-2">
+                        <div key={make.MakeID || make.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`make-${make.MakeID}`}
-                            checked={selectedMakes.includes(make.MakeID.toString())}
+                            id={`make-${make.MakeID || make.id}`}
+                            checked={selectedMakes.includes((make.MakeID || make.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedMakes([...selectedMakes, make.MakeID.toString()]);
-                              } else {
-                                setSelectedMakes(selectedMakes.filter(id => id !== make.MakeID.toString()));
+                              const makeId = (make.MakeID || make.id)?.toString();
+                              if (makeId) {
+                                if (checked) {
+                                  setSelectedMakes([...selectedMakes, makeId]);
+                                } else {
+                                  setSelectedMakes(selectedMakes.filter(id => id !== makeId));
+                                }
                               }
                             }}
                           />
-                          <label htmlFor={`make-${make.MakeID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {make.MakeName}
+                          <label htmlFor={`make-${make.MakeID || make.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {make.MakeName || make.name}
                           </label>
                         </div>
                       ))}
@@ -311,20 +314,23 @@ export default function Marketplace() {
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {grades.map((grade: any) => (
-                        <div key={grade.GradeID} className="flex items-center space-x-2">
+                        <div key={grade.GradeID || grade.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`grade-${grade.GradeID}`}
-                            checked={selectedGrades.includes(grade.GradeID.toString())}
+                            id={`grade-${grade.GradeID || grade.id}`}
+                            checked={selectedGrades.includes((grade.GradeID || grade.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedGrades([...selectedGrades, grade.GradeID.toString()]);
-                              } else {
-                                setSelectedGrades(selectedGrades.filter(id => id !== grade.GradeID.toString()));
+                              const gradeId = (grade.GradeID || grade.id)?.toString();
+                              if (gradeId) {
+                                if (checked) {
+                                  setSelectedGrades([...selectedGrades, gradeId]);
+                                } else {
+                                  setSelectedGrades(selectedGrades.filter(id => id !== gradeId));
+                                }
                               }
                             }}
                           />
-                          <label htmlFor={`grade-${grade.GradeID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {grade.GradeName}
+                          <label htmlFor={`grade-${grade.GradeID || grade.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {grade.GradeName || grade.name}
                           </label>
                         </div>
                       ))}
@@ -347,20 +353,23 @@ export default function Marketplace() {
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {brands.map((brand: any) => (
-                        <div key={brand.BrandID} className="flex items-center space-x-2">
+                        <div key={brand.BrandID || brand.id} className="flex items-center space-x-2">
                           <Checkbox 
-                            id={`brand-${brand.BrandID}`}
-                            checked={selectedBrands.includes(brand.BrandID.toString())}
+                            id={`brand-${brand.BrandID || brand.id}`}
+                            checked={selectedBrands.includes((brand.BrandID || brand.id)?.toString())}
                             onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedBrands([...selectedBrands, brand.BrandID.toString()]);
-                              } else {
-                                setSelectedBrands(selectedBrands.filter(id => id !== brand.BrandID.toString()));
+                              const brandId = (brand.BrandID || brand.id)?.toString();
+                              if (brandId) {
+                                if (checked) {
+                                  setSelectedBrands([...selectedBrands, brandId]);
+                                } else {
+                                  setSelectedBrands(selectedBrands.filter(id => id !== brandId));
+                                }
                               }
                             }}
                           />
-                          <label htmlFor={`brand-${brand.BrandID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {brand.BrandName}
+                          <label htmlFor={`brand-${brand.BrandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {brand.BrandName || brand.name}
                           </label>
                         </div>
                       ))}
@@ -497,7 +506,7 @@ export default function Marketplace() {
                 {/* Deal Cards Grid - 4 products per row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {deals.map((deal: any) => (
-                    <Card key={deal.TransID} className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+                    <Card key={deal.TransID} className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
                       <div className="relative">
                         {/* Product Image Placeholder */}
                         <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
@@ -532,7 +541,7 @@ export default function Marketplace() {
                           </div>
                         </div>
 
-                        <CardContent className="p-3">
+                        <CardContent className="p-3 flex-1 flex flex-col">
                           {/* Deal Info */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
@@ -599,7 +608,7 @@ export default function Marketplace() {
                           )}
 
                           {/* Action Buttons */}
-                          <div className="space-y-2">
+                          <div className="space-y-2 mt-auto">
                             <Button
                               size="sm"
                               className="w-full"
