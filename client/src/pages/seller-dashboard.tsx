@@ -193,7 +193,7 @@ export default function SellerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" data-testid="stat-active-products">
-                {deals.filter((d: any) => d.Status === 'active' || !d.Status).length}
+                {stats.activeDeals}
               </div>
               <p className="text-xs text-muted-foreground">
                 Available for sale
@@ -246,11 +246,11 @@ export default function SellerDashboard() {
                                 <h4 className="font-semibold text-lg" data-testid={`deal-title-${deal.TransID}`}>{deal.Seller_comments?.split('\n')[0] || 'No Title'}</h4>
                                 <p className="text-sm text-muted-foreground">{deal.GroupName || 'No Category'}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant={!deal.Status || deal.Status === 'active' ? 'default' : 'secondary'} data-testid={`deal-status-${deal.TransID}`}>
-                                    {deal.Status || 'active'}
+                                  <Badge variant={deal.StockStatus === 'sold' ? 'secondary' : 'default'} data-testid={`deal-status-${deal.TransID}`}>
+                                    {deal.StockStatus || 'available'}
                                   </Badge>
-                                  {deal.QtyMT <= 5 && deal.QtyMT > 0 && (
-                                    <Badge variant="destructive">Low Stock</Badge>
+                                  {deal.StockAge > 30 && (
+                                    <Badge variant="destructive">Old Stock</Badge>
                                   )}
                                 </div>
                               </div>
@@ -262,17 +262,17 @@ export default function SellerDashboard() {
                                 <p className="font-semibold" data-testid={`deal-price-${deal.TransID}`}>₹{deal.OfferPrice?.toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}</p>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Quantity:</span>
-                                <p className="font-semibold" data-testid={`deal-quantity-${deal.TransID}`}>{deal.QtyMT} {deal.OfferUnit || 'MT'}</p>
+                                <span className="text-muted-foreground">GSM:</span>
+                                <p className="font-semibold" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</p>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Views:</span>
-                                <p className="font-semibold">{deal.Views || 0}</p>
+                                <span className="text-muted-foreground">Size:</span>
+                                <p className="font-semibold">{deal.Deckle_mm}×{deal.grain_mm} mm</p>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Created:</span>
                                 <p className="font-semibold">
-                                  {new Date(deal.uplaodDate || deal.CreatedAt).toLocaleDateString('en-IN')}
+                                  {new Date(deal.uplaodDate || deal.deal_created_at).toLocaleDateString('en-IN')}
                                 </p>
                               </div>
                             </div>
@@ -297,7 +297,7 @@ export default function SellerDashboard() {
                               asChild
                               data-testid={`button-edit-${deal.TransID}`}
                             >
-                              <Link href={`/edit-deal/${deal.TransID}`}>
+                              <Link href={`/edit-product/${deal.TransID}`}>
                                 <Edit2 className="h-4 w-4 mr-1" />
                                 Edit
                               </Link>
