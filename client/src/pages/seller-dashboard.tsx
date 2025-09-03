@@ -148,7 +148,7 @@ export default function SellerDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
-              <p className="text-slate-600">
+              <p className="text-muted-foreground">
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
             </div>
@@ -226,7 +226,7 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-400 bg-white border shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:w-400 bg-background border shadow-sm">
             <TabsTrigger value="products" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">My Products</TabsTrigger>
             <TabsTrigger value="orders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           </TabsList>
@@ -234,17 +234,17 @@ export default function SellerDashboard() {
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
             <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+              <CardHeader className="bg-muted border-b">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground">Product Inventory</CardTitle>
-                    <CardDescription className="text-slate-600">
+                    <CardDescription className="text-muted-foreground">
                       Manage your product listings and inventory
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         placeholder="Search products..."
                         value={searchTerm}
@@ -273,11 +273,11 @@ export default function SellerDashboard() {
                   </div>
                 ) : filteredDeals.length === 0 ? (
                   <div className="text-center py-12">
-                    <Package className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">
                       {deals.length === 0 ? "No deals yet" : "No matching products"}
                     </h3>
-                    <p className="text-slate-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       {deals.length === 0 ? "Start selling by adding your first product" : "Try adjusting your search or filters"}
                     </p>
                     {deals.length === 0 && (
@@ -431,16 +431,16 @@ export default function SellerDashboard() {
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
                 <CardTitle className="text-foreground">Order Management</CardTitle>
-                <CardDescription className="text-slate-600">
+                <CardDescription className="text-muted-foreground">
                   Orders and inquiries from buyers
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {orders.length === 0 ? (
                   <div className="text-center py-12">
-                    <ShoppingCart className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
-                    <p className="text-slate-600">Orders will appear here once buyers start purchasing</p>
+                    <p className="text-muted-foreground">Orders will appear here once buyers start purchasing</p>
                   </div>
                 ) : (
                   <Table>
