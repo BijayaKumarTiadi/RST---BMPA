@@ -158,6 +158,26 @@ export default function Marketplace() {
     setIsInquiryModalOpen(true);
   };
 
+  // Helper function to calculate relative time
+  const getRelativeTime = (dateString: string) => {
+    if (!dateString) return 'Recently';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 30) return `${diffDays} days ago`;
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return months === 1 ? '1 month ago' : `${months} months ago`;
+    }
+    const years = Math.floor(diffDays / 365);
+    return years === 1 ? '1 year ago' : `${years} years ago`;
+  };
+
   const handleSendWhatsApp = (deal: any) => {
     const buyerName = user?.name || user?.company_name || 'Buyer';
     const productDetails = `${deal.DealTitle} (ID: ${deal.TransID})`;
@@ -542,12 +562,20 @@ export default function Marketplace() {
                         </div>
 
                         <CardContent className="p-3 flex-1 flex flex-col">
-                          {/* Deal Info */}
+                          {/* Product Name First */}
                           <Link href={`/deal/${deal.TransID}`}>
-                            <h3 className="font-semibold text-sm line-clamp-2 mb-2 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
+                            <h3 className="font-semibold text-base line-clamp-2 mb-3 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
                               {deal.DealTitle}
                             </h3>
                           </Link>
+
+                          {/* Price - More Prominent */}
+                          <div className="flex items-baseline gap-1 mb-3">
+                            <span className="text-xl font-bold text-primary" data-testid={`deal-price-${deal.TransID}`}>
+                              ₹{deal.Price?.toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-sm text-muted-foreground">/{deal.Unit}</span>
+                          </div>
 
                           {/* Enhanced Product Details */}
                           <div className="text-xs text-muted-foreground mb-2 space-y-1">
@@ -557,14 +585,6 @@ export default function Marketplace() {
                             {deal.GSM && <div><span className="font-medium">GSM:</span> {deal.GSM}</div>}
                             {deal.Deckle && <div><span className="font-medium">Deckle:</span> {deal.Deckle}</div>}
                             {deal.Grain && <div><span className="font-medium">Grain:</span> {deal.Grain}</div>}
-                          </div>
-
-                          {/* Price */}
-                          <div className="flex items-baseline gap-1 mb-2">
-                            <span className="text-lg font-bold text-primary" data-testid={`deal-price-${deal.TransID}`}>
-                              ₹{deal.Price?.toLocaleString('en-IN')}
-                            </span>
-                            <span className="text-xs text-muted-foreground">/{deal.Unit}</span>
                           </div>
 
                           {/* Seller Info */}
@@ -599,11 +619,11 @@ export default function Marketplace() {
                             )}
                           </div>
 
-                          {/* Deal Created Date */}
+                          {/* Deal Age - Relative Time */}
                           {deal.deal_created_at && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
                               <Calendar className="h-3 w-3" />
-                              <span>Listed: {new Date(deal.deal_created_at).toLocaleDateString('en-IN')}</span>
+                              <span>{getRelativeTime(deal.deal_created_at)}</span>
                             </div>
                           )}
 
