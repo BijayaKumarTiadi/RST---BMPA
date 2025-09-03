@@ -19,6 +19,11 @@ import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  // Pending filters (UI state, not applied yet)
+  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
+  const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
+  
+  // Applied filters (actually used in queries)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -135,6 +140,8 @@ export default function Marketplace() {
   
   // Apply pending filters
   const applyFilters = () => {
+    setSearchTerm(pendingSearchTerm);
+    setSelectedCategory(pendingSelectedCategory);
     setSelectedMakes(pendingMakes);
     setSelectedGrades(pendingGrades);
     setSelectedBrands(pendingBrands);
@@ -148,6 +155,8 @@ export default function Marketplace() {
   // Clear all filters
   const clearAllFilters = () => {
     // Clear both pending and applied filters
+    setPendingSearchTerm("");
+    setPendingSelectedCategory("");
     setPendingMakes([]);
     setPendingGrades([]);
     setPendingBrands([]);
@@ -155,6 +164,8 @@ export default function Marketplace() {
     setPendingUnits([]);
     setPendingStockStatus([]);
     setPendingLocations([]);
+    setSearchTerm("");
+    setSelectedCategory("");
     setSelectedMakes([]);
     setSelectedGrades([]);
     setSelectedBrands([]);
@@ -162,8 +173,6 @@ export default function Marketplace() {
     setSelectedUnits([]);
     setSelectedStockStatus([]);
     setSelectedLocations([]);
-    setSearchTerm("");
-    setSelectedCategory("");
     setSortBy("newest");
     setCurrentPage(1);
   };
@@ -283,8 +292,8 @@ export default function Marketplace() {
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search deals..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      value={pendingSearchTerm}
+                      onChange={(e) => setPendingSearchTerm(e.target.value)}
                       className="pl-10"
                       data-testid="input-search"
                     />
@@ -308,8 +317,8 @@ export default function Marketplace() {
                       <div className="flex items-center space-x-2">
                         <Checkbox 
                           id="all-categories" 
-                          checked={selectedCategory === "" || selectedCategory === "all"}
-                          onCheckedChange={(checked) => setSelectedCategory(checked ? "all" : "")}
+                          checked={pendingSelectedCategory === "" || pendingSelectedCategory === "all"}
+                          onCheckedChange={(checked) => setPendingSelectedCategory(checked ? "all" : "")}
                         />
                         <label htmlFor="all-categories" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                           All Categories
@@ -319,8 +328,8 @@ export default function Marketplace() {
                         <div key={group.GroupID} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`category-${group.GroupID}`}
-                            checked={selectedCategory === group.GroupID.toString()}
-                            onCheckedChange={(checked) => setSelectedCategory(checked ? group.GroupID.toString() : "")}
+                            checked={pendingSelectedCategory === group.GroupID.toString()}
+                            onCheckedChange={(checked) => setPendingSelectedCategory(checked ? group.GroupID.toString() : "")}
                           />
                           <label htmlFor={`category-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             {group.GroupName}
