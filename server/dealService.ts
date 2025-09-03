@@ -444,7 +444,7 @@ class DealService {
       }
 
       await executeQuery(`
-        UPDATE deal_master SET StockStatus = 'inactive', deal_updated_at = CURRENT_TIMESTAMP WHERE TransID = ?
+        UPDATE deal_master SET StockStatus = 0, deal_updated_at = CURRENT_TIMESTAMP WHERE TransID = ?
       `, [dealId]);
 
       return {

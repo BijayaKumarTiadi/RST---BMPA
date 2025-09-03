@@ -108,15 +108,37 @@ export default function SellerDashboard() {
   const deals = dealsData?.deals || [];
   const orders = ordersData?.orders || [];
 
+  // Get status text from numeric code
+  const getStatusText = (stockStatus: number) => {
+    switch (stockStatus) {
+      case 0: return 'Inactive';
+      case 1: return 'Available';
+      case 2: return 'Sold';
+      default: return 'Available';
+    }
+  };
+
+  // Get status color from numeric code
+  const getStatusColor = (stockStatus: number) => {
+    switch (stockStatus) {
+      case 0: return 'bg-gray-100 text-gray-700'; // Inactive
+      case 1: return 'bg-green-100 text-green-700'; // Available
+      case 2: return 'bg-red-100 text-red-700'; // Sold
+      default: return 'bg-green-100 text-green-700';
+    }
+  };
+
   // Filter deals based on search and status
   const filteredDeals = deals.filter((deal: any) => {
     const matchesSearch = deal.Seller_comments?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          deal.GroupName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          deal.TransID.toString().includes(searchTerm);
     
+    const stockStatus = deal.StockStatus || 1; // Default to Available if null
     const matchesStatus = statusFilter === "all" || 
-                         (statusFilter === "active" && (!deal.StockStatus || deal.StockStatus === 'available')) ||
-                         (statusFilter === "sold" && deal.StockStatus === 'sold');
+                         (statusFilter === "active" && stockStatus === 1) ||
+                         (statusFilter === "sold" && stockStatus === 2) ||
+                         (statusFilter === "inactive" && stockStatus === 0);
     
     return matchesSearch && matchesStatus;
   });
@@ -259,8 +281,9 @@ export default function SellerDashboard() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="active">Available</SelectItem>
                         <SelectItem value="sold">Sold</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -343,11 +366,11 @@ export default function SellerDashboard() {
                           <TableCell>
                             <div className="flex flex-col gap-1">
                               <Badge 
-                                variant={deal.StockStatus === 'sold' ? 'secondary' : 'default'}
-                                className={deal.StockStatus === 'sold' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}
+                                variant="secondary"
+                                className={getStatusColor(deal.StockStatus || 1)}
                                 data-testid={`deal-status-${deal.TransID}`}
                               >
-                                {deal.StockStatus || 'Available'}
+                                {getStatusText(deal.StockStatus || 1)}
                               </Badge>
                               {deal.StockAge > 30 && (
                                 <Badge variant="destructive" className="text-xs">
@@ -382,24 +405,22 @@ export default function SellerDashboard() {
                                 className="h-8 w-8 p-0 hover:bg-green-100"
                                 data-testid={`button-edit-${deal.TransID}`}
                               >
-                                <Link href={`/edit-deal/${deal.TransID}`}>
+                                <Link href={`/edit-product/${deal.TransID}`}>
                                   <Edit2 className="h-4 w-4 text-green-600" />
                                 </Link>
                               </Button>
                               
-                              {(!deal.Status || deal.Status === 'active') && (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
-                                  disabled={markAsSoldMutation.isPending}
-                                  className="h-8 px-2 text-xs hover:bg-orange-100"
-                                  data-testid={`button-mark-sold-${deal.TransID}`}
-                                >
-                                  <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
-                                  Sold
-                                </Button>
-                              )}
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
+                                disabled={markAsSoldMutation.isPending || (deal.StockStatus || 1) === 2}
+                                className="h-8 px-2 text-xs hover:bg-orange-100 disabled:opacity-50"
+                                data-testid={`button-mark-sold-${deal.TransID}`}
+                              >
+                                <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
+                                Sold
+                              </Button>
                               
                               <Button 
                                 size="sm" 
@@ -409,8 +430,8 @@ export default function SellerDashboard() {
                                     deleteDealMutation.mutate(deal.TransID.toString());
                                   }
                                 }}
-                                disabled={deleteDealMutation.isPending}
-                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                disabled={deleteDealMutation.isPending || (deal.StockStatus || 1) === 0}
+                                className="h-8 w-8 p-0 hover:bg-red-100 disabled:opacity-50"
                                 data-testid={`button-delete-${deal.TransID}`}
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />

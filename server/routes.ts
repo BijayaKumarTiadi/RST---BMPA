@@ -662,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update deal status through direct database query
-      await executeQuery('UPDATE deal_master SET Status = "sold", UpdatedAt = NOW() WHERE DealID = ? AND SellerID = ?', [dealId, sellerId]);
+      await executeQuery('UPDATE deal_master SET StockStatus = 2, deal_updated_at = NOW() WHERE TransID = ? AND memberID = ?', [dealId, sellerId]);
       const result = { success: true, message: 'Deal marked as sold' };
       res.json(result);
     } catch (error) {
