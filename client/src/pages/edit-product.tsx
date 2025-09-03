@@ -39,6 +39,55 @@ export default function EditDeal() {
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
 
+  // Unit conversion state
+  const [deckleUnit, setDeckleUnit] = useState("mm");
+  const [grainUnit, setGrainUnit] = useState("mm");
+  const [deckleInputValue, setDeckleInputValue] = useState("");
+  const [grainInputValue, setGrainInputValue] = useState("");
+
+  // Unit conversion functions
+  const convertToMm = (value: number, unit: string): number => {
+    switch (unit) {
+      case "cm":
+        return value * 10;
+      case "inch":
+        return value * 25.4;
+      case "mm":
+      default:
+        return value;
+    }
+  };
+
+  // Handle unit conversion and form updates
+  const handleDeckleChange = (value: string, unit: string) => {
+    setDeckleInputValue(value);
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      const mmValue = convertToMm(numValue, unit);
+      form.setValue("Deckle_mm", mmValue);
+    }
+  };
+
+  const handleGrainChange = (value: string, unit: string) => {
+    setGrainInputValue(value);
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      const mmValue = convertToMm(numValue, unit);
+      form.setValue("grain_mm", mmValue);
+    }
+  };
+
+  // Get converted values for display
+  const getDeckleInMm = () => {
+    const inputVal = parseFloat(deckleInputValue);
+    return !isNaN(inputVal) ? convertToMm(inputVal, deckleUnit) : 0;
+  };
+
+  const getGrainInMm = () => {
+    const inputVal = parseFloat(grainInputValue);
+    return !isNaN(inputVal) ? convertToMm(inputVal, grainUnit) : 0;
+  };
+
   const form = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
     defaultValues: {
@@ -388,15 +437,39 @@ export default function EditDeal() {
                       name="Deckle_mm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Deckle (mm) *</FormLabel>
+                          <FormLabel>
+                            Deckle *
+                            {deckleInputValue && (
+                              <span className="text-xs text-blue-600 ml-2">
+                                = {getDeckleInMm().toFixed(1)} mm
+                              </span>
+                            )}
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="e.g., 650" 
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-deckle" 
-                            />
+                            <div className="flex gap-2">
+                              <Input 
+                                type="number" 
+                                placeholder="650" 
+                                value={deckleInputValue}
+                                onChange={(e) => handleDeckleChange(e.target.value, deckleUnit)}
+                                data-testid="input-deckle"
+                              />
+                              <Select value={deckleUnit} onValueChange={(value) => {
+                                setDeckleUnit(value);
+                                if (deckleInputValue) {
+                                  handleDeckleChange(deckleInputValue, value);
+                                }
+                              }}>
+                                <SelectTrigger className="w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="mm">mm</SelectItem>
+                                  <SelectItem value="cm">cm</SelectItem>
+                                  <SelectItem value="inch">inch</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -408,15 +481,39 @@ export default function EditDeal() {
                       name="grain_mm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grain (mm) *</FormLabel>
+                          <FormLabel>
+                            Grain *
+                            {grainInputValue && (
+                              <span className="text-xs text-blue-600 ml-2">
+                                = {getGrainInMm().toFixed(1)} mm
+                              </span>
+                            )}
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="e.g., 900" 
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-grain" 
-                            />
+                            <div className="flex gap-2">
+                              <Input 
+                                type="number" 
+                                placeholder="900" 
+                                value={grainInputValue}
+                                onChange={(e) => handleGrainChange(e.target.value, grainUnit)}
+                                data-testid="input-grain"
+                              />
+                              <Select value={grainUnit} onValueChange={(value) => {
+                                setGrainUnit(value);
+                                if (grainInputValue) {
+                                  handleGrainChange(grainInputValue, value);
+                                }
+                              }}>
+                                <SelectTrigger className="w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="mm">mm</SelectItem>
+                                  <SelectItem value="cm">cm</SelectItem>
+                                  <SelectItem value="inch">inch</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
