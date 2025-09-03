@@ -103,6 +103,15 @@ export default function SellerDashboard() {
   const deals = dealsData?.deals || [];
   const orders = ordersData?.orders || [];
 
+  // Debug logging
+  console.log('🔧 Dashboard Debug:', {
+    dealsLoading,
+    dealsData,
+    deals: deals?.length,
+    user: user?.id,
+    isAuthenticated
+  });
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
