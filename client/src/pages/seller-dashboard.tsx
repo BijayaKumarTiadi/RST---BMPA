@@ -233,8 +233,8 @@ export default function SellerDashboard() {
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-muted border-b">
+            <Card className="border-2 border-border shadow-lg bg-card">
+              <CardHeader className="bg-muted border-b-2 border-border">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground">Product Inventory</CardTitle>
