@@ -214,9 +214,11 @@ export default function AddDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {groups.map((group: any) => (
-                                  <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
-                                    {group.GroupName}
-                                  </SelectItem>
+                                  group.GroupID != null ? (
+                                    <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
+                                      {group.GroupName || `Group ${group.GroupID}`}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
@@ -244,9 +246,11 @@ export default function AddDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredMakes.map((make: any) => (
-                                  <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
-                                    {make.MakeName}
-                                  </SelectItem>
+                                  make.make_ID != null ? (
+                                    <SelectItem key={make.make_ID} value={make.make_ID.toString()}>
+                                      {make.make_Name || `Make ${make.make_ID}`}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
@@ -274,9 +278,11 @@ export default function AddDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredGrades.map((grade: any) => (
-                                  <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
-                                    {grade.GradeName}
-                                  </SelectItem>
+                                  grade.gradeID != null ? (
+                                    <SelectItem key={grade.gradeID} value={grade.gradeID.toString()}>
+                                      {grade.GradeName || `Grade ${grade.gradeID}`}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
@@ -304,9 +310,11 @@ export default function AddDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredBrands.map((brand: any) => (
-                                  <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
-                                    {brand.BrandName}
-                                  </SelectItem>
+                                  brand.brandID != null ? (
+                                    <SelectItem key={brand.brandID} value={brand.brandID.toString()}>
+                                      {brand.brandname || `Brand ${brand.brandID}`}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>

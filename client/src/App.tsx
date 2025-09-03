@@ -55,6 +55,7 @@ function Router() {
           <Route path="/add-product" component={AddProduct} />
           <Route path="/edit-deal/:id" component={EditProduct} />
           <Route path="/product/:id" component={ProductDetails} />
+          <Route path="/deal/:id" component={ProductDetails} />
           <Route path="/chat/:chatId" component={Chat} />
           <Route path="/messages" component={Messages} />
           <Route path="/api-docs" component={ApiDocs} />
