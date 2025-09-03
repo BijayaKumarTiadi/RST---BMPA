@@ -27,7 +27,6 @@ const dealSchema = z.object({
   unit: z.string().min(1, "Unit is required"),
   min_order_quantity: z.number().int().min(1, "Minimum order quantity must be at least 1").optional(),
   location: z.string().optional(),
-  expires_at: z.string().optional(),
 });
 
 type DealFormData = z.infer<typeof dealSchema>;
@@ -56,7 +55,6 @@ export default function EditDeal() {
       unit: "",
       min_order_quantity: 1,
       location: "",
-      expires_at: "",
     },
   });
 
@@ -154,7 +152,6 @@ export default function EditDeal() {
         make_id: parseInt(data.make_id),
         grade_id: parseInt(data.grade_id),
         brand_id: parseInt(data.brand_id),
-        expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : undefined,
       };
       return apiRequest("PUT", `/api/deals/${dealId}`, payload);
     },
@@ -531,10 +528,10 @@ export default function EditDeal() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
-                        Location & Expiry
+                        Location
                       </CardTitle>
                       <CardDescription>
-                        Optional location and expiry information
+                        Optional location information
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -556,23 +553,6 @@ export default function EditDeal() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="expires_at"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Expires At</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="date" 
-                                {...field} 
-                                data-testid="input-expires-at"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </CardContent>
                   </Card>
 

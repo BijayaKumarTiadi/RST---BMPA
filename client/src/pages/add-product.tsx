@@ -27,7 +27,6 @@ const dealSchema = z.object({
   unit: z.string().min(1, "Unit is required"),
   min_order_quantity: z.number().int().min(1, "Minimum order quantity must be at least 1").optional(),
   location: z.string().optional(),
-  expires_at: z.string().optional(),
 });
 
 type DealFormData = z.infer<typeof dealSchema>;
@@ -54,7 +53,6 @@ export default function AddDeal() {
       unit: "",
       min_order_quantity: 1,
       location: "",
-      expires_at: "",
     },
   });
 
@@ -115,7 +113,6 @@ export default function AddDeal() {
         make_id: parseInt(data.make_id),
         grade_id: parseInt(data.grade_id),
         brand_id: parseInt(data.brand_id),
-        expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : undefined,
       };
       return apiRequest("POST", "/api/deals", payload);
     },
@@ -495,23 +492,6 @@ export default function AddDeal() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="expiry_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Expiry Date</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                data-testid="input-expiry"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </CardContent>
                   </Card>
 
