@@ -143,12 +143,6 @@ export default function EditDeal() {
     selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
   );
 
-  console.log("🔍 Filter state:", { selectedGroup, selectedMake });
-  console.log("🔍 Filtered results:", { 
-    makes: filteredMakes.length, 
-    grades: filteredGrades.length, 
-    brands: filteredBrands.length 
-  });
 
   // Handle selection changes
   const handleGroupChange = (value: string) => {
@@ -168,17 +162,20 @@ export default function EditDeal() {
 
   // Update form when deal data is loaded
   useEffect(() => {
-    if (dealData && stockHierarchy) {
+    if (dealData) {
       const deal = dealData;
-      console.log("🔍 Setting form with deal data:", deal);
-      console.log("🔍 Available groups:", groups.length);
-      console.log("🔍 Available makes:", makes.length);
-      console.log("🔍 Available grades:", grades.length);
-      console.log("🔍 Available brands:", brands.length);
       
+      // Set selected values for cascading dropdowns FIRST
+      const groupId = deal.groupID?.toString() || "";
+      const makeId = deal.MakeID?.toString() || "";
+      
+      setSelectedGroup(groupId);
+      setSelectedMake(makeId);
+      
+      // Then set form values
       form.reset({
-        groupID: deal.groupID?.toString() || "",
-        MakeID: deal.MakeID?.toString() || "",
+        groupID: groupId,
+        MakeID: makeId,
         GradeID: deal.GradeID?.toString() || "",
         BrandID: deal.BrandID?.toString() || "",
         GSM: deal.GSM || 0,
@@ -188,16 +185,6 @@ export default function EditDeal() {
         OfferUnit: deal.OfferUnit || "",
         Seller_comments: deal.Seller_comments || "",
       });
-      
-      // Set selected values for cascading dropdowns
-      const groupId = deal.groupID?.toString() || "";
-      const makeId = deal.MakeID?.toString() || "";
-      
-      console.log("🔍 Setting selectedGroup to:", groupId);
-      console.log("🔍 Setting selectedMake to:", makeId);
-      
-      setSelectedGroup(groupId);
-      setSelectedMake(makeId);
 
       // Set unit conversion input values (assuming data is stored in mm)
       if (deal.Deckle_mm) {
@@ -207,7 +194,7 @@ export default function EditDeal() {
         setGrainInputValue(deal.grain_mm.toString());
       }
     }
-  }, [dealData, stockHierarchy, form]);
+  }, [dealData, form]);
 
   // Update deal mutation
   const updateDealMutation = useMutation({
@@ -351,9 +338,9 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredMakes.map((make: any) => (
-                                  make.MakeID != null ? (
-                                    <SelectItem key={make.MakeID} value={make.MakeID.toString()}>
-                                      {make.MakeName}
+                                  make.make_ID != null ? (
+                                    <SelectItem key={make.make_ID} value={make.make_ID.toString()}>
+                                      {make.make_Name || `Make ${make.make_ID}`}
                                     </SelectItem>
                                   ) : null
                                 ))}
@@ -383,9 +370,9 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredGrades.map((grade: any) => (
-                                  grade.GradeID != null ? (
-                                    <SelectItem key={grade.GradeID} value={grade.GradeID.toString()}>
-                                      {grade.GradeName}
+                                  grade.gradeID != null ? (
+                                    <SelectItem key={grade.gradeID} value={grade.gradeID.toString()}>
+                                      {grade.GradeName || `Grade ${grade.gradeID}`}
                                     </SelectItem>
                                   ) : null
                                 ))}
@@ -415,9 +402,9 @@ export default function EditDeal() {
                               </SelectTrigger>
                               <SelectContent>
                                 {filteredBrands.map((brand: any) => (
-                                  brand.BrandID != null ? (
-                                    <SelectItem key={brand.BrandID} value={brand.BrandID.toString()}>
-                                      {brand.BrandName}
+                                  brand.brandID != null ? (
+                                    <SelectItem key={brand.brandID} value={brand.brandID.toString()}>
+                                      {brand.brandname || `Brand ${brand.brandID}`}
                                     </SelectItem>
                                   ) : null
                                 ))}
