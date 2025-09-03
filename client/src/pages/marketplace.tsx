@@ -464,7 +464,7 @@ export default function Marketplace() {
           <div className="flex-1 min-w-0">
             {/* Results */}
             {dealsLoading || hierarchyLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <div className="h-48 bg-muted rounded-t-lg"></div>
@@ -503,13 +503,13 @@ export default function Marketplace() {
                   </p>
                 </div>
 
-                {/* Deal Cards Grid - 4 products per row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Deal Cards Grid - 3 products per row for better visibility */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
                       <div className="relative">
                         {/* Product Image Placeholder */}
-                        <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
+                        <div className="h-32 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
                           <Package className="h-16 w-16 text-blue-400" />
                         </div>
                           
