@@ -318,7 +318,7 @@ export default function SellerDashboard() {
                         <TableHead className="font-semibold text-foreground">Specifications</TableHead>
                         <TableHead className="font-semibold text-foreground">Price</TableHead>
                         <TableHead className="font-semibold text-foreground">Status</TableHead>
-                        <TableHead className="font-semibold text-foreground">Date</TableHead>
+                        <TableHead className="font-semibold text-foreground">Offer Age</TableHead>
                         <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -381,7 +381,13 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-foreground">
-                              {new Date(deal.uplaodDate || deal.deal_created_at).toLocaleDateString('en-IN')}
+                              {deal.deal_created_at ? 
+                                new Date(deal.deal_created_at).toLocaleDateString('en-US', {
+                                  month: '2-digit',
+                                  day: '2-digit', 
+                                  year: 'numeric'
+                                }) : 'N/A'
+                              }
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
