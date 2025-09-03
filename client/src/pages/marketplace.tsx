@@ -180,8 +180,9 @@ export default function Marketplace() {
 
   const handleSendWhatsApp = (deal: any) => {
     const buyerName = user?.name || user?.company_name || 'Buyer';
-    const productDetails = `${deal.DealTitle} (ID: ${deal.TransID})`;
-    const sellerPrice = `₹${deal.Price?.toLocaleString('en-IN')} per ${deal.Unit}`;
+    const productTitle = deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product';
+    const productDetails = `${productTitle} (ID: ${deal.TransID})`;
+    const sellerPrice = `₹${(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')} per ${deal.OfferUnit || deal.Unit || 'unit'}`;
     const additionalDetails = [];
     
     if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
@@ -565,16 +566,16 @@ export default function Marketplace() {
                           {/* Product Name First */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-semibold text-base line-clamp-2 mb-3 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.DealTitle}
+                              {deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product Details'}
                             </h3>
                           </Link>
 
                           {/* Price - More Prominent */}
                           <div className="flex items-baseline gap-1 mb-3">
                             <span className="text-xl font-bold text-primary" data-testid={`deal-price-${deal.TransID}`}>
-                              ₹{deal.Price?.toLocaleString('en-IN')}
+                              ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
                             </span>
-                            <span className="text-sm text-muted-foreground">/{deal.Unit}</span>
+                            <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'unit'}</span>
                           </div>
 
                           {/* Enhanced Product Details */}
@@ -591,7 +592,7 @@ export default function Marketplace() {
                           <div className="flex items-center gap-1 mb-2">
                             <span className="text-xs text-muted-foreground">by</span>
                             <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
-                              {deal.seller_name || deal.seller_company || 'Seller'}
+                              {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
                             </span>
                           </div>
 
@@ -613,7 +614,7 @@ export default function Marketplace() {
 
                           {/* Quantity Info */}
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                            <span>Qty: {deal.Quantity} {deal.Unit}</span>
+                            <span>Qty: {deal.Quantity || deal.StockAge || 'Available'} {deal.OfferUnit || deal.Unit || ''}</span>
                             {deal.MinOrderQuantity > 1 && (
                               <span>Min: {deal.MinOrderQuantity}</span>
                             )}
