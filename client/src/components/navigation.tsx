@@ -31,7 +31,7 @@ export default function Navigation() {
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
-  const unreadCount = unreadData?.unreadCount || 0;
+  const unreadCount = (unreadData as any)?.unreadCount || 0;
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
