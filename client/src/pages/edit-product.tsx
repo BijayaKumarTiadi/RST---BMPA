@@ -161,8 +161,8 @@ export default function EditDeal() {
 
   // Update form when deal data is loaded
   useEffect(() => {
-    if (dealData?.deal) {
-      const deal = dealData.deal;
+    if (dealData) {
+      const deal = dealData;
       form.reset({
         groupID: deal.groupID?.toString() || "",
         MakeID: deal.MakeID?.toString() || "",
@@ -179,6 +179,14 @@ export default function EditDeal() {
       // Set selected values for cascading dropdowns
       setSelectedGroup(deal.groupID?.toString() || "");
       setSelectedMake(deal.MakeID?.toString() || "");
+
+      // Set unit conversion input values (assuming data is stored in mm)
+      if (deal.Deckle_mm) {
+        setDeckleInputValue(deal.Deckle_mm.toString());
+      }
+      if (deal.grain_mm) {
+        setGrainInputValue(deal.grain_mm.toString());
+      }
     }
   }, [dealData, form]);
 
