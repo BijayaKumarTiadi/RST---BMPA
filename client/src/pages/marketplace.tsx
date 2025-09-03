@@ -129,6 +129,9 @@ export default function Marketplace() {
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
+  
+  // Extract unique GSM values from deals
+  const gsmOptions = [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b));
 
   // Reset to page 1 when filters change
   const resetPage = () => setCurrentPage(1);
@@ -450,6 +453,42 @@ export default function Marketplace() {
                           />
                           <label htmlFor={`brand-${brand.brandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             {brand.brandname || brand.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* GSM Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('gsm')}
+                  >
+                    GSM
+                    {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.gsm && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {gsmOptions.map((gsm: string) => (
+                        <div key={gsm} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`gsm-${gsm}`}
+                            checked={pendingGsm.includes(gsm)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setPendingGsm([...pendingGsm, gsm]);
+                              } else {
+                                setPendingGsm(pendingGsm.filter(val => val !== gsm));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`gsm-${gsm}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {gsm} GSM
                           </label>
                         </div>
                       ))}
