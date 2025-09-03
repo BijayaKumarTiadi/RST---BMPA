@@ -709,6 +709,8 @@ export default function Marketplace() {
         isOpen={isProductModalOpen} 
         onClose={() => setIsProductModalOpen(false)} 
         deal={selectedDeal} 
+        onSendInquiry={handleSendInquiry}
+        onSendWhatsApp={handleSendWhatsApp}
       />
       
       <InquiryFormModal 

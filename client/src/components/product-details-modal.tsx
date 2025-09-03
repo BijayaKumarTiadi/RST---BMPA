@@ -2,27 +2,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Package, MapPin, Calendar, User, Building, X } from "lucide-react";
+import { Package, MapPin, Calendar, User, Building, Mail, MessageSquare } from "lucide-react";
 
 interface ProductDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   deal: any;
+  onSendInquiry?: (deal: any) => void;
+  onSendWhatsApp?: (deal: any) => void;
 }
 
-export default function ProductDetailsModal({ isOpen, onClose, deal }: ProductDetailsModalProps) {
+export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInquiry, onSendWhatsApp }: ProductDetailsModalProps) {
   if (!deal) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold">Product Details</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-2xl font-bold">Product Details</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -162,6 +159,25 @@ export default function ProductDetailsModal({ isOpen, onClose, deal }: ProductDe
                 </div>
               </>
             )}
+            
+            {/* Action Buttons */}
+            <Separator />
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => onSendInquiry?.(deal)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Send Inquiry
+              </Button>
+              <Button
+                onClick={() => onSendWhatsApp?.(deal)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                WhatsApp
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
