@@ -20,7 +20,7 @@ export default function SellerDashboard() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
 
   // Fetch seller's deals (products)
   const { data: dealsData, isLoading: dealsLoading } = useQuery({

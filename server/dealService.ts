@@ -426,7 +426,7 @@ class DealService {
     try {
       // Verify the deal belongs to the user who created it
       const deal = await executeQuerySingle(`
-        SELECT created_by_member_id FROM deal_master WHERE TransID = ?
+        SELECT memberID FROM deal_master WHERE TransID = ?
       `, [dealId]);
 
       if (!deal) {
@@ -436,7 +436,7 @@ class DealService {
         };
       }
 
-      if (deal.created_by_member_id !== userId) {
+      if (deal.memberID !== userId) {
         return {
           success: false,
           message: 'Unauthorized to delete this deal'
