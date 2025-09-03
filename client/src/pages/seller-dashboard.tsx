@@ -321,11 +321,11 @@ export default function SellerDashboard() {
                               variant="destructive"
                               onClick={() => {
                                 if (confirm('Are you sure you want to delete this product?')) {
-                                  deleteProductMutation.mutate(product.id);
+                                  deleteDealMutation.mutate(deal.TransID.toString());
                                 }
                               }}
-                              disabled={deleteProductMutation.isPending}
-                              data-testid={`button-delete-${product.id}`}
+                              disabled={deleteDealMutation.isPending}
+                              data-testid={`button-delete-${deal.TransID}`}
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
                               Delete
