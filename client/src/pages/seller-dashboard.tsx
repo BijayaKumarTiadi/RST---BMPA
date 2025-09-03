@@ -289,7 +289,7 @@ export default function SellerDashboard() {
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted">
+                      <TableRow className="bg-muted border-b-2 border-border">
                         <TableHead className="font-semibold text-foreground">Product</TableHead>
                         <TableHead className="font-semibold text-foreground">Category</TableHead>
                         <TableHead className="font-semibold text-foreground">Specifications</TableHead>
@@ -445,7 +445,7 @@ export default function SellerDashboard() {
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted">
+                      <TableRow className="bg-muted border-b-2 border-border">
                         <TableHead className="font-semibold text-foreground">Order ID</TableHead>
                         <TableHead className="font-semibold text-foreground">Product</TableHead>
                         <TableHead className="font-semibold text-foreground">Customer</TableHead>
