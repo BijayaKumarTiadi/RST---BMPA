@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ export default function Marketplace() {
   const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
   const [selectedStockStatus, setSelectedStockStatus] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
     makes: false,
@@ -67,7 +69,8 @@ export default function Marketplace() {
       brands: selectedBrands,
       gsm: selectedGsm,
       units: selectedUnits,
-      stockStatus: selectedStockStatus
+      stockStatus: selectedStockStatus,
+      page: currentPage
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -80,6 +83,8 @@ export default function Marketplace() {
       if (selectedGsm.length > 0) params.append('gsm', selectedGsm.join(','));
       if (selectedUnits.length > 0) params.append('units', selectedUnits.join(','));
       if (selectedStockStatus.length > 0) params.append('stock_status', selectedStockStatus.join(','));
+      params.append('limit', itemsPerPage.toString());
+      params.append('page', currentPage.toString());
       
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
@@ -103,10 +108,20 @@ export default function Marketplace() {
   }
 
   const deals = dealsData?.deals || [];
+  const totalDeals = dealsData?.total || 0;
+  const totalPages = Math.ceil(totalDeals / itemsPerPage);
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
+
+  // Reset to page 1 when filters change
+  const resetPage = () => setCurrentPage(1);
+
+  // Reset page when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedMakes, selectedGrades, selectedBrands, selectedGsm, selectedUnits, selectedStockStatus]);
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -463,6 +478,7 @@ export default function Marketplace() {
                     setSelectedUnits([]);
                     setSelectedStockStatus([]);
                     setSelectedLocations([]);
+                    setCurrentPage(1);
                   }}
                 >
                   Clear All Filters
@@ -500,6 +516,7 @@ export default function Marketplace() {
                     setSearchTerm("");
                     setSelectedCategory("");
                     setSortBy("newest");
+                    setCurrentPage(1);
                   }}
                 >
                   Clear Filters
@@ -510,7 +527,7 @@ export default function Marketplace() {
                 {/* Results Header */}
                 <div className="flex items-center justify-between mb-6">
                   <p className="text-muted-foreground">
-                    Showing {deals.length} deal{deals.length !== 1 ? 's' : ''}
+                    Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
                   </p>
                 </div>
 
@@ -688,6 +705,50 @@ export default function Marketplace() {
                     </Card>
                   ))}
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center mt-8 space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    
+                    {/* Page Numbers */}
+                    <div className="flex space-x-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                        if (pageNum <= totalPages) {
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

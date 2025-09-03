@@ -169,9 +169,23 @@ class DealService {
       // }
 
       if (filters?.search) {
-        whereConditions.push('(d.Seller_comments LIKE ? OR g.GroupName LIKE ? OR m.make_Name LIKE ? OR gr.GradeName LIKE ? OR b.brandname LIKE ?)');
+        const searchConditions = [
+          'd.Seller_comments LIKE ?',
+          'g.GroupName LIKE ?', 
+          'm.make_Name LIKE ?',
+          'gr.GradeName LIKE ?',
+          'b.brandname LIKE ?',
+          'd.GSM LIKE ?',
+          'd.OfferUnit LIKE ?',
+          'mb.mname LIKE ?',
+          'mb.company_name LIKE ?'
+        ];
+        whereConditions.push(`(${searchConditions.join(' OR ')})`);
         const searchTerm = `%${filters.search}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        // Add search term for each condition
+        for (let i = 0; i < searchConditions.length; i++) {
+          params.push(searchTerm);
+        }
       }
 
       if (filters?.location) {
