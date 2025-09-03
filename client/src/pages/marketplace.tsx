@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, ShoppingCart, MessageCircle, MapPin, Star, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -21,19 +21,21 @@ export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [priceRange, setPriceRange] = useState("");
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(100000);
   const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedGsm, setSelectedGsm] = useState<string[]>([]);
+  const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
+  const [selectedStockStatus, setSelectedStockStatus] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
-    price: true,
     makes: false,
     grades: false,
     brands: false,
+    gsm: false,
+    units: false,
+    stockStatus: false,
     location: false
   });
   
@@ -57,15 +59,25 @@ export default function Marketplace() {
     queryKey: ["/api/deals", { 
       search: searchTerm, 
       group_id: selectedCategory, 
-      sort: sortBy, 
-      priceRange 
+      sort: sortBy,
+      makes: selectedMakes,
+      grades: selectedGrades,
+      brands: selectedBrands,
+      gsm: selectedGsm,
+      units: selectedUnits,
+      stockStatus: selectedStockStatus
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (selectedCategory && selectedCategory !== 'all') params.append('group_id', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
-      if (priceRange && priceRange !== 'all') params.append('price_range', priceRange);
+      if (selectedMakes.length > 0) params.append('makes', selectedMakes.join(','));
+      if (selectedGrades.length > 0) params.append('grades', selectedGrades.join(','));
+      if (selectedBrands.length > 0) params.append('brands', selectedBrands.join(','));
+      if (selectedGsm.length > 0) params.append('gsm', selectedGsm.join(','));
+      if (selectedUnits.length > 0) params.append('units', selectedUnits.join(','));
+      if (selectedStockStatus.length > 0) params.append('stock_status', selectedStockStatus.join(','));
       
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
@@ -90,6 +102,9 @@ export default function Marketplace() {
 
   const deals = dealsData?.deals || [];
   const groups = stockHierarchy?.groups || [];
+  const makes = stockHierarchy?.makes || [];
+  const grades = stockHierarchy?.grades || [];
+  const brands = stockHierarchy?.brands || [];
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -144,13 +159,22 @@ export default function Marketplace() {
   };
 
   const handleSendWhatsApp = (deal: any) => {
-    const buyerName = user?.name || 'Buyer';
+    const buyerName = user?.name || user?.company_name || 'Buyer';
     const productDetails = `${deal.DealTitle} (ID: ${deal.TransID})`;
-    const cost = `₹${deal.OfferPrice?.toLocaleString('en-IN')} per ${deal.OfferUnit}`;
-    const buyerPrice = 'Please specify your quoted price';
+    const sellerPrice = `₹${deal.Price?.toLocaleString('en-IN')} per ${deal.Unit}`;
+    const additionalDetails = [];
+    
+    if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
+    if (deal.GradeName) additionalDetails.push(`Grade: ${deal.GradeName}`);
+    if (deal.BrandName) additionalDetails.push(`Brand: ${deal.BrandName}`);
+    if (deal.GSM) additionalDetails.push(`GSM: ${deal.GSM}`);
+    
+    const productInfo = additionalDetails.length > 0 
+      ? `${productDetails} (${additionalDetails.join(', ')})` 
+      : productDetails;
     
     const message = encodeURIComponent(
-      `Hey, I am ${buyerName}. I am interested in ${productDetails}, your price is ${cost}, and my quotation price is ${buyerPrice}.`
+      `Hey, I am ${buyerName}. I am interested in ${productInfo}, your price is ${sellerPrice}, my quotation price is [Please specify your price].`
     );
     
     const whatsappUrl = `https://wa.me/918984222915?text=${message}`;
@@ -238,55 +262,149 @@ export default function Marketplace() {
                 
                 <Separator />
                 
-                {/* Price Range */}
+                {/* Makes Filter */}
                 <div>
                   <Button
                     variant="ghost"
                     className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('price')}
+                    onClick={() => toggleSection('makes')}
                   >
-                    Price Range
-                    {expandedSections.price ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    Makes
+                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
-                  {expandedSections.price && (
-                    <div className="mt-3 space-y-4">
-                      <div className="px-3">
-                        <Slider
-                          value={[minPrice, maxPrice]}
-                          onValueChange={([min, max]) => {
-                            setMinPrice(min);
-                            setMaxPrice(max);
-                          }}
-                          max={100000}
-                          min={0}
-                          step={1000}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                          <span>₹{minPrice.toLocaleString()}</span>
-                          <span>₹{maxPrice.toLocaleString()}</span>
+                  {expandedSections.makes && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {makes.map((make: any) => (
+                        <div key={make.MakeID} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`make-${make.MakeID}`}
+                            checked={selectedMakes.includes(make.MakeID.toString())}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedMakes([...selectedMakes, make.MakeID.toString()]);
+                              } else {
+                                setSelectedMakes(selectedMakes.filter(id => id !== make.MakeID.toString()));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`make-${make.MakeID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {make.MakeName}
+                          </label>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        {[
-                          { label: "Under ₹1,000", value: "0-1000" },
-                          { label: "₹1,000 - ₹5,000", value: "1000-5000" },
-                          { label: "₹5,000 - ₹25,000", value: "5000-25000" },
-                          { label: "₹25,000 - ₹1,00,000", value: "25000-100000" },
-                          { label: "Above ₹1,00,000", value: "100000+" }
-                        ].map((range) => (
-                          <div key={range.value} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`price-${range.value}`}
-                              checked={priceRange === range.value}
-                              onCheckedChange={(checked) => setPriceRange(checked ? range.value : "")}
-                            />
-                            <label htmlFor={`price-${range.value}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                              {range.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Grades Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('grades')}
+                  >
+                    Grades
+                    {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.grades && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {grades.map((grade: any) => (
+                        <div key={grade.GradeID} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`grade-${grade.GradeID}`}
+                            checked={selectedGrades.includes(grade.GradeID.toString())}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedGrades([...selectedGrades, grade.GradeID.toString()]);
+                              } else {
+                                setSelectedGrades(selectedGrades.filter(id => id !== grade.GradeID.toString()));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`grade-${grade.GradeID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {grade.GradeName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Brands Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('brands')}
+                  >
+                    Brands
+                    {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.brands && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {brands.map((brand: any) => (
+                        <div key={brand.BrandID} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`brand-${brand.BrandID}`}
+                            checked={selectedBrands.includes(brand.BrandID.toString())}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedBrands([...selectedBrands, brand.BrandID.toString()]);
+                              } else {
+                                setSelectedBrands(selectedBrands.filter(id => id !== brand.BrandID.toString()));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`brand-${brand.BrandID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {brand.BrandName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Stock Status Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('stockStatus')}
+                  >
+                    Stock Status
+                    {expandedSections.stockStatus ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.stockStatus && (
+                    <div className="mt-3 space-y-2">
+                      {[
+                        { label: "Available", value: "1" },
+                        { label: "Sold", value: "2" },
+                        { label: "Reserved", value: "3" },
+                        { label: "On Hold", value: "4" }
+                      ].map((status) => (
+                        <div key={status.value} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`status-${status.value}`}
+                            checked={selectedStockStatus.includes(status.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedStockStatus([...selectedStockStatus, status.value]);
+                              } else {
+                                setSelectedStockStatus(selectedStockStatus.filter(val => val !== status.value));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`status-${status.value}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {status.label}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -318,12 +436,12 @@ export default function Marketplace() {
                     setSearchTerm("");
                     setSelectedCategory("");
                     setSortBy("newest");
-                    setPriceRange("");
-                    setMinPrice(0);
-                    setMaxPrice(100000);
                     setSelectedMakes([]);
                     setSelectedGrades([]);
                     setSelectedBrands([]);
+                    setSelectedGsm([]);
+                    setSelectedUnits([]);
+                    setSelectedStockStatus([]);
                     setSelectedLocations([]);
                   }}
                 >
@@ -337,7 +455,7 @@ export default function Marketplace() {
           <div className="flex-1 min-w-0">
             {/* Results */}
             {dealsLoading || hierarchyLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <div className="h-48 bg-muted rounded-t-lg"></div>
@@ -362,9 +480,6 @@ export default function Marketplace() {
                     setSearchTerm("");
                     setSelectedCategory("");
                     setSortBy("newest");
-                    setPriceRange("");
-                    setMinPrice(0);
-                    setMaxPrice(100000);
                   }}
                 >
                   Clear Filters
@@ -379,8 +494,8 @@ export default function Marketplace() {
                   </p>
                 </div>
 
-                {/* Deal Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Deal Cards Grid - 4 products per row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden">
                       <div className="relative">
@@ -425,11 +540,14 @@ export default function Marketplace() {
                             </h3>
                           </Link>
 
-                          {/* Stock Hierarchy */}
+                          {/* Enhanced Product Details */}
                           <div className="text-xs text-muted-foreground mb-2 space-y-1">
-                            {deal.MakeName && <div>Make: {deal.MakeName}</div>}
-                            {deal.GradeName && <div>Grade: {deal.GradeName}</div>}
-                            {deal.BrandName && <div>Brand: {deal.BrandName}</div>}
+                            {deal.MakeName && <div><span className="font-medium">Make:</span> {deal.MakeName}</div>}
+                            {deal.GradeName && <div><span className="font-medium">Grade:</span> {deal.GradeName}</div>}
+                            {deal.BrandName && <div><span className="font-medium">Brand:</span> {deal.BrandName}</div>}
+                            {deal.GSM && <div><span className="font-medium">GSM:</span> {deal.GSM}</div>}
+                            {deal.Deckle && <div><span className="font-medium">Deckle:</span> {deal.Deckle}</div>}
+                            {deal.Grain && <div><span className="font-medium">Grain:</span> {deal.Grain}</div>}
                           </div>
 
                           {/* Price */}
@@ -456,13 +574,29 @@ export default function Marketplace() {
                             </div>
                           )}
 
+                          {/* Description */}
+                          {deal.Description && (
+                            <div className="text-xs text-muted-foreground mb-2">
+                              <span className="font-medium">Description:</span> 
+                              <span className="line-clamp-2">{deal.Description}</span>
+                            </div>
+                          )}
+
                           {/* Quantity Info */}
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                             <span>Qty: {deal.Quantity} {deal.Unit}</span>
                             {deal.MinOrderQuantity > 1 && (
                               <span>Min: {deal.MinOrderQuantity}</span>
                             )}
                           </div>
+
+                          {/* Deal Created Date */}
+                          {deal.deal_created_at && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                              <Calendar className="h-3 w-3" />
+                              <span>Listed: {new Date(deal.deal_created_at).toLocaleDateString('en-IN')}</span>
+                            </div>
+                          )}
 
                           {/* Action Buttons */}
                           <div className="space-y-2">
@@ -526,29 +660,10 @@ export default function Marketplace() {
                                   </Button>
                                 </div>
                                 
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/deal/${deal.TransID}`)}
-                                  data-testid={`button-buy-now-${deal.TransID}`}
-                                  className="w-full"
-                                >
-                                  <ShoppingCart className="h-3 w-3 mr-1" />
-                                  Buy Now
-                                </Button>
                               </div>
                             )}
                           </div>
 
-                          {/* Rating (placeholder) */}
-                          <div className="flex items-center gap-1 mt-2 pt-2 border-t">
-                            <div className="flex text-yellow-400">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="h-3 w-3 fill-current" />
-                              ))}
-                            </div>
-                            <span className="text-xs text-muted-foreground">(4.5)</span>
-                          </div>
                         </CardContent>
                     </Card>
                   ))}

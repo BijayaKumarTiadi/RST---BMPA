@@ -491,6 +491,36 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ User identification columns added to deal_master successfully');
     }
 
+    // Check if inquiries table exists
+    const inquiriesTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'inquiries'
+    `);
+
+    if (!inquiriesTableExists || inquiriesTableExists.count === 0) {
+      console.log('📧 Creating inquiries table...');
+      await executeQuery(`
+        CREATE TABLE inquiries (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          product_id INT NOT NULL,
+          buyer_name VARCHAR(255) NOT NULL,
+          buyer_email VARCHAR(255) NOT NULL,
+          buyer_company VARCHAR(255),
+          buyer_phone VARCHAR(20),
+          quoted_price VARCHAR(50),
+          quantity VARCHAR(100),
+          message TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_product_id (product_id),
+          INDEX idx_buyer_email (buyer_email),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Inquiries table created successfully');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
