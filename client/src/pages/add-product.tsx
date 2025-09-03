@@ -19,10 +19,10 @@ const dealSchema = z.object({
   MakeID: z.string().min(1, "Stock make is required"),
   GradeID: z.string().min(1, "Stock grade is required"),
   BrandID: z.string().min(1, "Stock brand is required"),
-  GSM: z.number().min(1, "GSM is required"),
-  Deckle_mm: z.number().min(1, "Deckle (mm) is required"),
-  grain_mm: z.number().min(1, "Grain (mm) is required"),
-  OfferPrice: z.number().min(0.01, "Offer price must be greater than 0"),
+  GSM: z.coerce.number().min(1, "GSM is required"),
+  Deckle_mm: z.coerce.number().min(1, "Deckle (mm) is required"),
+  grain_mm: z.coerce.number().min(1, "Grain (mm) is required"),
+  OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
   Seller_comments: z.string().optional(),
 });
@@ -44,10 +44,10 @@ export default function AddDeal() {
       MakeID: "",
       GradeID: "",
       BrandID: "",
-      GSM: 0,
-      Deckle_mm: 0,
-      grain_mm: 0,
-      OfferPrice: 0,
+      GSM: "" as any,
+      Deckle_mm: "" as any,
+      grain_mm: "" as any,
+      OfferPrice: "" as any,
       OfferUnit: "",
       Seller_comments: "",
     },
@@ -385,7 +385,6 @@ export default function AddDeal() {
                               type="number" 
                               placeholder="e.g., 80" 
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
                               data-testid="input-gsm"
                               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
@@ -406,7 +405,6 @@ export default function AddDeal() {
                               type="number" 
                               placeholder="e.g., 650" 
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
                               data-testid="input-deckle"
                               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
@@ -427,7 +425,6 @@ export default function AddDeal() {
                               type="number" 
                               placeholder="e.g., 900" 
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
                               data-testid="input-grain"
                               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
@@ -465,7 +462,6 @@ export default function AddDeal() {
                               step="0.01"
                               placeholder="e.g., 45.50" 
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
                               data-testid="input-price"
                               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                             />
