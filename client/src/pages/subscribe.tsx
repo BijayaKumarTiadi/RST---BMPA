@@ -11,10 +11,9 @@ import { Link } from "wouter";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 const CheckoutForm = () => {
   const stripe = useStripe();
@@ -96,6 +95,28 @@ export default function Subscribe() {
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Check if Stripe is available
+  if (!stripePromise) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+          <CreditCard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Payment Setup Required</h1>
+          <p className="text-muted-foreground mb-6">
+            Stripe payment integration is not configured. Contact the administrator to enable payment processing.
+          </p>
+          <Button asChild variant="outline">
+            <Link href="/register">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Registration
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     // Create subscription as soon as the page loads

@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info } from "lucide-react";
+import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info, LayoutDashboard, Store } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,12 +24,13 @@ export default function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const isMobile = useIsMobile();
 
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   const handleLogout = async () => {
     try {
@@ -54,18 +57,19 @@ export default function Navigation() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-border dark:border-gray-700 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-border dark:border-gray-700 sticky top-0 z-50">
+      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto">
+        <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3" data-testid="logo-link">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Printer className="h-6 w-6 text-primary-foreground" />
+          <Link href="/" className="flex items-center space-x-2 sm:space-x-3" data-testid="logo-link">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Printer className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
               <p className="text-xs text-muted-foreground">Professional Trading Platform</p>
             </div>
+            <h1 className="sm:hidden text-lg font-bold text-primary">Stock Laabh</h1>
           </Link>
 
           {/* Desktop Navigation */}
@@ -88,7 +92,21 @@ export default function Navigation() {
           </nav>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Theme Toggle for Mobile */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="md:hidden"
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+            </Button>
+            
             {!isAuthenticated ? (
               <>
                 <Button 
@@ -229,61 +247,193 @@ export default function Navigation() {
               </DropdownMenu>
             )}
             
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden" 
-              onClick={toggleMobileMenu}
-              data-testid="mobile-menu-toggle"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+            {/* Mobile Menu Button */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  data-testid="mobile-menu-toggle"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-0">
+                <SheetHeader className="border-b px-6 py-4">
+                  <SheetTitle className="text-left">Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col p-6">
+                  {isAuthenticated && user && (
+                    <div className="mb-6 pb-6 border-b">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.firstName || user.name || user.email}</span>
+                          <span className="text-xs text-muted-foreground">{user.role || 'Member'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-1">
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start" 
+                      onClick={() => {
+                        setLocation('/');
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Home
+                    </Button>
+                    
+                    {isAuthenticated && (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/marketplace');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <Store className="mr-2 h-4 w-4" />
+                          Marketplace
+                        </Button>
+                        
+                        {(user?.role === 'seller' || user?.role === 'both') && (
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setLocation('/seller-dashboard');
+                              setIsMobileMenuOpen(false);
+                            }}
+                          >
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            Seller Dashboard
+                          </Button>
+                        )}
+                        
+                        {(user?.role === 'buyer' || user?.role === 'both') && (
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setLocation('/buyer-dashboard');
+                              setIsMobileMenuOpen(false);
+                            }}
+                          >
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            Buyer Dashboard
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/profile');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          Profile
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/orders');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <Package className="mr-2 h-4 w-4" />
+                          Orders
+                        </Button>
+                      </>
+                    )}
+                    
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setLocation('/about');
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <Info className="mr-2 h-4 w-4" />
+                      About
+                    </Button>
+                    
+                    {/* Theme Toggle */}
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={toggleTheme}
+                    >
+                      {theme === "light" ? (
+                        <>
+                          <Moon className="mr-2 h-4 w-4" />
+                          Dark Mode
+                        </>
+                      ) : (
+                        <>
+                          <Sun className="mr-2 h-4 w-4" />
+                          Light Mode
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {isAuthenticated ? (
+                    <div className="mt-6 pt-6 border-t">
+                      <Button 
+                        variant="destructive" 
+                        className="w-full"
+                        onClick={() => {
+                          handleLogout();
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-6 pt-6 border-t space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          window.location.href = '/api/login';
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        Login
+                      </Button>
+                      <Button 
+                        className="w-full"
+                        onClick={() => {
+                          setLocation('/register');
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        Register
+                      </Button>
+                    </div>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border dark:border-gray-700 bg-white dark:bg-gray-900" data-testid="mobile-menu">
-          <div className="px-4 py-6 space-y-4">
-            <Link 
-              href="/" 
-              className="block text-foreground hover:text-primary py-2" 
-              onClick={() => setIsMobileMenuOpen(false)}
-              data-testid="mobile-nav-home"
-            >
-              Home
-            </Link>
-            {isAuthenticated && (
-              <>
-                <Link 
-                  href="/marketplace" 
-                  className="block text-foreground hover:text-primary py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  data-testid="mobile-nav-marketplace"
-                >
-                  Marketplace
-                </Link>
-              </>
-            )}
-            <Link 
-              href="/register" 
-              className="block text-foreground hover:text-primary py-2 font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-              data-testid="mobile-nav-membership"
-            >
-              Membership
-            </Link>
-            <a 
-              href="#about" 
-              className="block text-foreground hover:text-primary py-2"
-              data-testid="mobile-nav-about"
-            >
-              About Us
-            </a>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

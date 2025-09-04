@@ -186,13 +186,13 @@ export default function SellerDashboard() {
     <div className="min-h-screen bg-muted">
       <Navigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
             </div>
@@ -210,7 +210,7 @@ export default function SellerDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-100">Total Deals</CardTitle>
@@ -270,7 +270,7 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-400 bg-background border shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 bg-background border shadow-sm">
             <TabsTrigger value="products" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">My Products</TabsTrigger>
             <TabsTrigger value="orders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           </TabsList>
