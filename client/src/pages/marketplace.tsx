@@ -611,8 +611,293 @@ export default function Marketplace() {
                   <CardTitle className="text-lg">Filters</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* The filter content will be duplicated here for desktop - in production you'd extract this to a component */}
+              <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                {/* Search */}
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search deals..."
+                      value={pendingSearchTerm}
+                      onChange={(e) => setPendingSearchTerm(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-desktop"
+                    />
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                {/* Categories */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('categories')}
+                  >
+                    Categories
+                    {expandedSections.categories ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.categories && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="all-categories-desktop" 
+                          checked={pendingSelectedCategory === "" || pendingSelectedCategory === "all"}
+                          onCheckedChange={(checked) => setPendingSelectedCategory(checked ? "all" : "")}
+                        />
+                        <label htmlFor="all-categories-desktop" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          All Categories
+                        </label>
+                      </div>
+                      {groups.map((group: any) => (
+                        <div key={group.GroupID} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`category-desktop-${group.GroupID}`}
+                            checked={pendingSelectedCategory === group.GroupID.toString()}
+                            onCheckedChange={(checked) => setPendingSelectedCategory(checked ? group.GroupID.toString() : "")}
+                          />
+                          <label htmlFor={`category-desktop-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {group.GroupName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                {/* Makes Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('makes')}
+                  >
+                    Makes
+                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.makes && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {makes.map((make: any) => (
+                        <div key={make.make_ID || make.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`make-desktop-${make.make_ID || make.id}`}
+                            checked={pendingMakes.includes((make.make_ID || make.id)?.toString())}
+                            onCheckedChange={(checked) => {
+                              const makeId = (make.make_ID || make.id)?.toString();
+                              if (makeId) {
+                                if (checked) {
+                                  setPendingMakes([...pendingMakes, makeId]);
+                                } else {
+                                  setPendingMakes(pendingMakes.filter(id => id !== makeId));
+                                }
+                              }
+                            }}
+                          />
+                          <label htmlFor={`make-desktop-${make.make_ID || make.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {make.make_Name || make.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Grades Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('grades')}
+                  >
+                    Grades
+                    {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.grades && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {grades.map((grade: any) => (
+                        <div key={grade.gradeID || grade.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`grade-desktop-${grade.gradeID || grade.id}`}
+                            checked={pendingGrades.includes((grade.gradeID || grade.id)?.toString())}
+                            onCheckedChange={(checked) => {
+                              const gradeId = (grade.gradeID || grade.id)?.toString();
+                              if (gradeId) {
+                                if (checked) {
+                                  setPendingGrades([...pendingGrades, gradeId]);
+                                } else {
+                                  setPendingGrades(pendingGrades.filter(id => id !== gradeId));
+                                }
+                              }
+                            }}
+                          />
+                          <label htmlFor={`grade-desktop-${grade.gradeID || grade.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {grade.GradeName || grade.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Brands Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('brands')}
+                  >
+                    Brands
+                    {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.brands && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {brands.map((brand: any) => (
+                        <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`brand-desktop-${brand.brandID || brand.id}`}
+                            checked={pendingBrands.includes((brand.brandID || brand.id)?.toString())}
+                            onCheckedChange={(checked) => {
+                              const brandId = (brand.brandID || brand.id)?.toString();
+                              if (brandId) {
+                                if (checked) {
+                                  setPendingBrands([...pendingBrands, brandId]);
+                                } else {
+                                  setPendingBrands(pendingBrands.filter(id => id !== brandId));
+                                }
+                              }
+                            }}
+                          />
+                          <label htmlFor={`brand-desktop-${brand.brandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {brand.brandname || brand.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* GSM Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('gsm')}
+                  >
+                    GSM
+                    {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.gsm && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {gsmOptions.map((gsm: string) => (
+                        <div key={gsm} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`gsm-desktop-${gsm}`}
+                            checked={pendingGsm.includes(gsm)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setPendingGsm([...pendingGsm, gsm]);
+                              } else {
+                                setPendingGsm(pendingGsm.filter(val => val !== gsm));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`gsm-desktop-${gsm}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {gsm} GSM
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+
+                {/* Stock Status Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('stockStatus')}
+                  >
+                    Stock Status
+                    {expandedSections.stockStatus ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.stockStatus && (
+                    <div className="mt-3 space-y-2">
+                      {[
+                        { label: "Available", value: "1" },
+                        { label: "Sold", value: "2" },
+                        { label: "Reserved", value: "3" },
+                        { label: "On Hold", value: "4" }
+                      ].map((status) => (
+                        <div key={status.value} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`status-desktop-${status.value}`}
+                            checked={pendingStockStatus.includes(status.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setPendingStockStatus([...pendingStockStatus, status.value]);
+                              } else {
+                                setPendingStockStatus(pendingStockStatus.filter(val => val !== status.value));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`status-desktop-${status.value}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {status.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                {/* Sort Options */}
+                <div>
+                  <label className="text-sm font-semibold">Sort By</label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="mt-2" data-testid="select-sort-desktop">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="price_low">Price: Low to High</SelectItem>
+                      <SelectItem value="price_high">Price: High to Low</SelectItem>
+                      <SelectItem value="quantity">Quantity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Filter Action Buttons */}
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                    onClick={applyFilters}
+                    data-testid="button-apply-filters-desktop"
+                  >
+                    Apply Filters
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={clearAllFilters}
+                    data-testid="button-clear-filters-desktop"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
