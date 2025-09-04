@@ -83,8 +83,8 @@ export default function Navigation() {
                   Marketplace
                 </Link>
                 {(user?.role === 'seller' || user?.role === 'both') && (
-                  <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-seller-dashboard">
-                    Seller Dashboard
+                  <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-member-dashboard">
+                    Member Dashboard
                   </Link>
                 )}
               </>
@@ -314,7 +314,7 @@ export default function Navigation() {
                             }}
                           >
                             <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Seller Dashboard
+                            Member Dashboard
                           </Button>
                         )}
                         

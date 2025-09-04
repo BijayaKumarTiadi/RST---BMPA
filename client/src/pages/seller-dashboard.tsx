@@ -191,7 +191,7 @@ export default function SellerDashboard() {
         <div className="mb-4 sm:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Seller Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Member Dashboard</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
@@ -332,139 +332,295 @@ export default function SellerDashboard() {
                     )}
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted border-b-4 border-primary/20">
-                        <TableHead className="font-semibold text-foreground">Product</TableHead>
-                        <TableHead className="font-semibold text-foreground">Category</TableHead>
-                        <TableHead className="font-semibold text-foreground">Specifications</TableHead>
-                        <TableHead className="font-semibold text-foreground">Price</TableHead>
-                        <TableHead className="font-semibold text-foreground">Status</TableHead>
-                        <TableHead className="font-semibold text-foreground">Offer Age</TableHead>
-                        <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDeals.map((deal: any) => (
-                        <TableRow 
-                          key={deal.TransID} 
-                          className="hover:bg-muted/50 transition-colors"
-                          data-testid={`deal-row-${deal.TransID}`}
-                        >
-                          <TableCell className="py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Package className="h-5 w-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <div className="font-medium text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                                  {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted border-b-4 border-primary/20">
+                            <TableHead className="font-semibold text-foreground">Product</TableHead>
+                            <TableHead className="font-semibold text-foreground">Category</TableHead>
+                            <TableHead className="font-semibold text-foreground">Specifications</TableHead>
+                            <TableHead className="font-semibold text-foreground">Price</TableHead>
+                            <TableHead className="font-semibold text-foreground">Status</TableHead>
+                            <TableHead className="font-semibold text-foreground">Offer Age</TableHead>
+                            <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredDeals.map((deal: any) => (
+                            <TableRow 
+                              key={deal.TransID} 
+                              className="hover:bg-muted/50 transition-colors"
+                              data-testid={`deal-row-${deal.TransID}`}
+                            >
+                              <TableCell className="py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Package className="h-5 w-5 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-foreground" data-testid={`deal-title-${deal.TransID}`}>
+                                      {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      ID: {deal.TransID}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm font-medium text-foreground">
+                                  {deal.GroupName || 'No Category'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1 text-sm">
+                                  <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
+                                  <div><span className="text-muted-foreground">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
+                                  ₹{deal.OfferPrice?.toLocaleString('en-IN')}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  ID: {deal.TransID}
+                                  per {deal.OfferUnit || 'unit'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  <Badge 
+                                    variant="secondary"
+                                    className={getStatusColor(deal.StockStatus || 1)}
+                                    data-testid={`deal-status-${deal.TransID}`}
+                                  >
+                                    {getStatusText(deal.StockStatus || 1)}
+                                  </Badge>
+                                  {deal.StockAge > 30 && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Old Stock
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2 text-sm text-foreground">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  {getRelativeTime(deal.deal_created_at)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    asChild
+                                    className="h-8 w-8 p-0 hover:bg-blue-100"
+                                    data-testid={`button-view-${deal.TransID}`}
+                                  >
+                                    <Link href={`/deal/${deal.TransID}`}>
+                                      <Eye className="h-4 w-4 text-blue-600" />
+                                    </Link>
+                                  </Button>
+                                  
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    asChild
+                                    className="h-8 w-8 p-0 hover:bg-green-100"
+                                    data-testid={`button-edit-${deal.TransID}`}
+                                  >
+                                    <Link href={`/edit-product/${deal.TransID}`}>
+                                      <Edit2 className="h-4 w-4 text-green-600" />
+                                    </Link>
+                                  </Button>
+                                  
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
+                                    disabled={markAsSoldMutation.isPending || (deal.StockStatus || 1) === 2}
+                                    className="h-8 px-2 text-xs hover:bg-orange-100 disabled:opacity-50"
+                                    data-testid={`button-mark-sold-${deal.TransID}`}
+                                  >
+                                    <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
+                                    Sold
+                                  </Button>
+                                  
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      if (confirm('Are you sure you want to delete this product?')) {
+                                        deleteDealMutation.mutate(deal.TransID.toString());
+                                      }
+                                    }}
+                                    disabled={deleteDealMutation.isPending || (deal.StockStatus || 1) === 0}
+                                    className="h-8 w-8 p-0 hover:bg-red-100 disabled:opacity-50"
+                                    data-testid={`button-delete-${deal.TransID}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4 p-4">
+                      {filteredDeals.map((deal: any) => (
+                        <Card key={deal.TransID} className="border border-border hover:shadow-md transition-shadow" data-testid={`deal-card-${deal.TransID}`}>
+                          <CardContent className="p-4">
+                            {/* Header with Product Name and Status */}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <Package className="h-6 w-6 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-foreground text-sm leading-tight" data-testid={`deal-title-${deal.TransID}`}>
+                                    {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground mt-1">ID: {deal.TransID}</p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1 items-end">
+                                <Badge 
+                                  variant="secondary"
+                                  className={`text-xs ${getStatusColor(deal.StockStatus || 1)}`}
+                                  data-testid={`deal-status-${deal.TransID}`}
+                                >
+                                  {getStatusText(deal.StockStatus || 1)}
+                                </Badge>
+                                {deal.StockAge > 30 && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Old Stock
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Category */}
+                            <div className="mb-3">
+                              <p className="text-xs text-muted-foreground mb-1">Category</p>
+                              <p className="text-sm font-medium text-foreground">{deal.GroupName || 'No Category'}</p>
+                            </div>
+
+                            {/* Product Specifications */}
+                            <div className="mb-3">
+                              <p className="text-xs text-muted-foreground mb-2">Specifications</p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">GSM:</span>
+                                  <span className="font-medium text-foreground ml-1" data-testid={`deal-gsm-${deal.TransID}`}>
+                                    {deal.GSM || 'N/A'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Size:</span>
+                                  <span className="font-medium text-foreground ml-1">
+                                    {deal.Deckle_mm}×{deal.grain_mm}mm
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Grain:</span>
+                                  <span className="font-medium text-foreground ml-1">
+                                    {deal.grain_mm}mm
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Deckle:</span>
+                                  <span className="font-medium text-foreground ml-1">
+                                    {deal.Deckle_mm}mm
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm font-medium text-foreground">
-                              {deal.GroupName || 'No Category'}
+
+                            {/* Price and Age */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Price</p>
+                                <p className="font-bold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
+                                  ₹{deal.OfferPrice?.toLocaleString('en-IN')}
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    per {deal.OfferUnit || 'unit'}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Offer Age</p>
+                                <div className="flex items-center gap-1 text-xs text-foreground">
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
+                                  {getRelativeTime(deal.deal_created_at)}
+                                </div>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1 text-sm">
-                              <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
-                              <div><span className="text-muted-foreground">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-semibold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
-                              ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              per {deal.OfferUnit || 'unit'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <Badge 
-                                variant="secondary"
-                                className={getStatusColor(deal.StockStatus || 1)}
-                                data-testid={`deal-status-${deal.TransID}`}
-                              >
-                                {getStatusText(deal.StockStatus || 1)}
-                              </Badge>
-                              {deal.StockAge > 30 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Old Stock
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2 text-sm text-foreground">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              {getRelativeTime(deal.deal_created_at)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 pt-3 border-t border-border">
                               <Button 
                                 size="sm" 
-                                variant="ghost"
+                                variant="outline"
                                 asChild
-                                className="h-8 w-8 p-0 hover:bg-blue-100"
+                                className="flex-1 text-xs"
                                 data-testid={`button-view-${deal.TransID}`}
                               >
                                 <Link href={`/deal/${deal.TransID}`}>
-                                  <Eye className="h-4 w-4 text-blue-600" />
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  View
                                 </Link>
                               </Button>
                               
                               <Button 
                                 size="sm" 
-                                variant="ghost"
+                                variant="outline"
                                 asChild
-                                className="h-8 w-8 p-0 hover:bg-green-100"
+                                className="flex-1 text-xs"
                                 data-testid={`button-edit-${deal.TransID}`}
                               >
                                 <Link href={`/edit-product/${deal.TransID}`}>
-                                  <Edit2 className="h-4 w-4 text-green-600" />
+                                  <Edit2 className="h-3 w-3 mr-1" />
+                                  Edit
                                 </Link>
                               </Button>
                               
                               <Button 
                                 size="sm" 
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
                                 disabled={markAsSoldMutation.isPending || (deal.StockStatus || 1) === 2}
-                                className="h-8 px-2 text-xs hover:bg-orange-100 disabled:opacity-50"
+                                className="flex-1 text-xs disabled:opacity-50"
                                 data-testid={`button-mark-sold-${deal.TransID}`}
                               >
-                                <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
+                                <IndianRupee className="h-3 w-3 mr-1" />
                                 Sold
                               </Button>
                               
                               <Button 
                                 size="sm" 
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => {
                                   if (confirm('Are you sure you want to delete this product?')) {
                                     deleteDealMutation.mutate(deal.TransID.toString());
                                   }
                                 }}
                                 disabled={deleteDealMutation.isPending || (deal.StockStatus || 1) === 0}
-                                className="h-8 w-8 p-0 hover:bg-red-100 disabled:opacity-50"
+                                className="text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
                                 data-testid={`button-delete-${deal.TransID}`}
                               >
-                                <Trash2 className="h-4 w-4 text-red-600" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
