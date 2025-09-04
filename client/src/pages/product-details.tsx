@@ -122,7 +122,7 @@ export default function ProductDetails() {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
         {/* Back Button */}
         <Button 
           variant="ghost" 
@@ -134,7 +134,7 @@ export default function ProductDetails() {
           Back to Products
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Product Display */}
           <div className="space-y-4">
             <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden flex items-center justify-center">
@@ -164,12 +164,12 @@ export default function ProductDetails() {
                 </div>
               </div>
               
-              <h1 className="text-3xl font-bold text-foreground mb-4" data-testid="text-product-title">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4" data-testid="text-product-title">
                 {product.title}
               </h1>
               
               <div className="flex items-baseline gap-3 mb-4">
-                <span className="text-4xl font-bold text-primary" data-testid="text-product-price">
+                <span className="text-3xl sm:text-4xl font-bold text-primary" data-testid="text-product-price">
                   ₹{product.price?.toLocaleString('en-IN')}
                 </span>
                 <span className="text-lg text-muted-foreground">/{product.unit}</span>
@@ -325,7 +325,7 @@ export default function ProductDetails() {
         </div>
 
         {/* Product Description and Details */}
-        <div className="mt-12 grid lg:grid-cols-3 gap-8">
+        <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             <Card>
@@ -346,7 +346,7 @@ export default function ProductDetails() {
                   <CardTitle>Specifications</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {Object.entries(JSON.parse(product.specifications)).map(([key, value]: [string, any]) => (
                       <div key={key} className="flex justify-between">
                         <span className="text-muted-foreground capitalize">{key.replace('_', ' ')}:</span>

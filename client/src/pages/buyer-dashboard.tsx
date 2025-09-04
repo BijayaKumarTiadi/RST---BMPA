@@ -139,12 +139,12 @@ export default function BuyerDashboard() {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="buyer-dashboard-title">
+      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2" data-testid="buyer-dashboard-title">
             Buyer Dashboard
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Track your orders and discover new printing materials
           </p>
         </div>
@@ -181,7 +181,7 @@ export default function BuyerDashboard() {
         />
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button asChild className="h-auto p-4 flex-col" data-testid="quick-action-browse">
             <Link href="/marketplace">
               <Search className="h-8 w-8 mb-2" />
