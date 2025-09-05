@@ -948,7 +948,6 @@ export default function Marketplace() {
                       <div className="relative">
                         {/* Product Image Placeholder */}
                         <div className="h-24 sm:h-32 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
-                          <Package className="h-16 w-16 text-blue-400" />
                         </div>
                           
                           {/* Wishlist Button */}
