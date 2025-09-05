@@ -85,7 +85,7 @@ export default function Login() {
           description: "Welcome back to Stock Laabh!",
         });
         // Reload to refresh the app state
-        window.location.href = '/home';
+        window.location.href = '/';
       } else {
         // Check if it's a pending approval message
         if (data.message && data.message.toLowerCase().includes('pending') && data.message.toLowerCase().includes('approval')) {
@@ -169,16 +169,8 @@ export default function Login() {
           description: `Welcome back, ${data.member.company_name || 'User'}!`,
         });
         
-        // Redirect based on role
-        if (data.member.role === 'seller') {
-          window.location.href = '/seller-dashboard';
-        } else if (data.member.role === 'buyer') {
-          window.location.href = '/marketplace';
-        } else if (data.member.role === 'both') {
-          window.location.href = '/marketplace';
-        } else {
-          window.location.href = '/';
-        }
+        // Redirect all users to marketplace as landing page
+        window.location.href = '/';
       } else {
         toast({
           title: "Login Failed",
