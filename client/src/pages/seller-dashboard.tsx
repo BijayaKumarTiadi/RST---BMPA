@@ -72,15 +72,15 @@ export default function SellerDashboard() {
 
   // Fetch orders for seller
   const { data: ordersData } = useQuery({
-    queryKey: ["/api/seller/orders"],
+    queryKey: ["/api/orders", "seller"],
     queryFn: async () => {
-      const response = await fetch(`/api/orders?seller_id=${user?.member_id}`, {
+      const response = await fetch(`/api/orders?role=seller`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch orders');
       return response.json();
     },
-    enabled: isAuthenticated && !!user?.member_id,
+    enabled: isAuthenticated,
   });
 
   // Mark deal as sold mutation
