@@ -849,17 +849,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Orders
-  app.get('/api/orders', requireAuth, async (req: any, res) => {
+  // Orders - fetch from MySQL database based on member sessions
+  app.get('/api/orders', async (req: any, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      const role = req.query.role as 'buyer' | 'seller' || 'buyer';
+      // Check if user is authenticated via session (not Replit auth)
+      if (!req.session.memberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const memberId = req.session.memberId;
+      const role = req.query.role as 'buyer' | 'seller' || 'seller';
       
-      const orders = await storage.getOrdersByUser(userId, role);
+      console.log(`🔍 Fetching orders for member ${memberId} with role ${role}`);
+      
+      // For now, get inquiries as orders (since they represent seller activity)
+      let orders = [];
+      
+      if (role === 'seller') {
+        // Get inquiries for deals that belong to this seller
+        const sellerInquiries = await executeQuery(`
+          SELECT 
+            i.*,
+            d.TransID,
+            d.OfferPrice,
+            d.GSM,
+            d.Deckle_mm,
+            b.brand_name,
+            g.grade_name,
+            m.make_name
+          FROM inquiries i
+          JOIN deal_master d ON i.product_id = d.TransID
+          JOIN brands b ON d.BrandID = b.brand_id
+          JOIN grades g ON d.GradeID = g.grade_id  
+          JOIN makes m ON d.MakeID = m.make_id
+          WHERE d.memberID = ?
+          ORDER BY i.created_at DESC
+        `, [memberId]);
+        
+        // Transform inquiries into order format
+        orders = sellerInquiries.map((inquiry: any) => ({
+          id: `INQ-${inquiry.id}`,
+          product_title: `${inquiry.brand_name} ${inquiry.grade_name} - ${inquiry.GSM}GSM`,
+          customer_name: inquiry.buyer_name,
+          customer_email: inquiry.buyer_email,
+          total_amount: parseFloat(inquiry.quoted_price) || parseFloat(inquiry.OfferPrice) || 0,
+          status: 'inquiry', // inquiry status
+          created_at: inquiry.created_at,
+          type: 'inquiry'
+        }));
+      } else {
+        // For buyers, get their inquiries
+        const buyerInquiries = await executeQuery(`
+          SELECT 
+            i.*,
+            d.TransID,
+            d.OfferPrice,
+            d.GSM,
+            d.Deckle_mm,
+            b.brand_name,
+            g.grade_name,
+            m.make_name
+          FROM inquiries i
+          JOIN deal_master d ON i.product_id = d.TransID
+          JOIN brands b ON d.BrandID = b.brand_id
+          JOIN grades g ON d.GradeID = g.grade_id  
+          JOIN makes m ON d.MakeID = m.make_id
+          WHERE i.buyer_email = (SELECT email FROM bmpa_members WHERE member_id = ?)
+          ORDER BY i.created_at DESC
+        `, [memberId]);
+        
+        // Transform inquiries into order format  
+        orders = buyerInquiries.map((inquiry: any) => ({
+          id: `INQ-${inquiry.id}`,
+          product_title: `${inquiry.brand_name} ${inquiry.grade_name} - ${inquiry.GSM}GSM`,
+          seller_name: inquiry.buyer_company || 'N/A',
+          total_amount: parseFloat(inquiry.quoted_price) || parseFloat(inquiry.OfferPrice) || 0,
+          status: 'inquiry',
+          created_at: inquiry.created_at,
+          type: 'inquiry'
+        }));
+      }
+      
+      console.log(`📦 Found ${orders.length} orders/inquiries for member ${memberId}`);
       res.json(orders);
+      
     } catch (error) {
       console.error("Error fetching orders:", error);
-      res.status(500).json({ message: "Failed to fetch orders" });
+      res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+    }
+  });
+
+  // Debug endpoint to create sample inquiry data for testing
+  app.post('/api/debug/create-sample-inquiry', async (req, res) => {
+    try {
+      if (!req.session.memberId) {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
+      }
+
+      const memberId = req.session.memberId;
+      
+      // Get a deal that belongs to this member (seller)
+      const deals = await executeQuery(`
+        SELECT d.TransID, b.brand_name, g.grade_name, d.GSM, d.OfferPrice
+        FROM deal_master d
+        JOIN brands b ON d.BrandID = b.brand_id
+        JOIN grades g ON d.GradeID = g.grade_id
+        WHERE d.memberID = ?
+        LIMIT 1
+      `, [memberId]);
+
+      if (deals.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No deals found for this member to create inquiry against' 
+        });
+      }
+
+      const deal = deals[0];
+
+      // Create a sample inquiry
+      await executeQuery(`
+        INSERT INTO inquiries (
+          product_id, buyer_name, buyer_email, buyer_company, buyer_phone,
+          quoted_price, quantity, message, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [
+        deal.TransID,
+        'John Smith',
+        'buyer@example.com',
+        'ABC Trading Co.',
+        '+91-9876543210',
+        deal.OfferPrice,
+        '1000 KG',
+        'Interested in bulk purchase. Please provide best rates.'
+      ]);
+
+      res.json({
+        success: true,
+        message: 'Sample inquiry created successfully',
+        deal: {
+          id: deal.TransID,
+          title: `${deal.brand_name} ${deal.grade_name} - ${deal.GSM}GSM`,
+          price: deal.OfferPrice
+        }
+      });
+
+    } catch (error) {
+      console.error('Error creating sample inquiry:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create sample inquiry',
+        error: error.message 
+      });
     }
   });
 
