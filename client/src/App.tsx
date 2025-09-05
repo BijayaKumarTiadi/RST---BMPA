@@ -42,12 +42,14 @@ function Router() {
       <Route path="/admin" component={AdminLogin} />
       <Route path="/register" component={Register} />
       
-      {/* All other routes require authentication */}
+      {/* Marketplace is now the landing page for everyone */}
+      <Route path="/" component={Marketplace} />
+      <Route path="/marketplace" component={Marketplace} />
+      
+      {/* Routes that require authentication */}
       {isAuthenticated ? (
         <>
-          <Route path="/" component={Home} />
           <Route path="/home" component={Home} />
-          <Route path="/marketplace" component={Marketplace} />
           <Route path="/admin-dashboard" component={AdminDashboard} />
           <Route path="/buyer-dashboard" component={BuyerDashboard} />
           <Route path="/seller-dashboard" component={SellerDashboard} />
@@ -65,9 +67,13 @@ function Router() {
         </>
       ) : (
         <>
-          {/* Redirect all unauthenticated users to login */}
-          <Route path="/" component={Login} />
-          <Route component={Login} />
+          {/* Other routes for unauthenticated users redirect to login */}
+          <Route path="/home" component={Login} />
+          <Route path="/admin-dashboard" component={Login} />
+          <Route path="/buyer-dashboard" component={Login} />
+          <Route path="/seller-dashboard" component={Login} />
+          <Route path="/add-product" component={Login} />
+          <Route component={NotFound} />
         </>
       )}
     </Switch>
