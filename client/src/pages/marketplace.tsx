@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/useAuth";
+// Removed useAuth import since marketplace is public
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
 import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal } from "lucide-react";
@@ -19,7 +19,7 @@ import InquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
 
 export default function Marketplace() {
-  const { user, isAuthenticated } = useAuth();
+  // Marketplace is now public - no auth required
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
