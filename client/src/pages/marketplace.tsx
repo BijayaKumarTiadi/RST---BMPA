@@ -134,6 +134,17 @@ export default function Marketplace() {
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
   
+  // Filter makes, grades, and brands based on selections (hierarchical filtering)
+  const filteredMakes = makes.filter((make: any) => 
+    pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : makes
+  );
+  const filteredGrades = grades.filter((grade: any) => 
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : grades
+  );
+  const filteredBrands = brands.filter((brand: any) => 
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : brands
+  );
+  
   // Extract unique GSM values from deals
   const gsmOptions = [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b));
 
@@ -159,6 +170,33 @@ export default function Marketplace() {
     setCurrentPage(1);
   };
   
+  // Handle hierarchical filter changes
+  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    if (checked) {
+      setPendingSelectedCategory(categoryId);
+    } else {
+      setPendingSelectedCategory("");
+    }
+    // Reset dependent filters when category changes
+    setPendingMakes([]);
+    setPendingGrades([]);
+    setPendingBrands([]);
+  };
+
+  const handleMakeChange = (makeId: string, checked: boolean) => {
+    if (checked) {
+      setPendingMakes([...pendingMakes, makeId]);
+    } else {
+      setPendingMakes(pendingMakes.filter(id => id !== makeId));
+      // Reset dependent filters when a make is unchecked
+      const remainingMakes = pendingMakes.filter(id => id !== makeId);
+      if (remainingMakes.length === 0) {
+        setPendingGrades([]);
+        setPendingBrands([]);
+      }
+    }
+  };
+
   // Clear all filters
   const clearAllFilters = () => {
     // Clear both pending and applied filters
@@ -352,7 +390,7 @@ export default function Marketplace() {
                           <Checkbox 
                             id={`category-${group.GroupID}`}
                             checked={pendingSelectedCategory === group.GroupID.toString()}
-                            onCheckedChange={(checked) => setPendingSelectedCategory(checked ? group.GroupID.toString() : "")}
+                            onCheckedChange={(checked) => handleCategoryChange(group.GroupID.toString(), checked)}
                           />
                           <label htmlFor={`category-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             {group.GroupName}
@@ -377,7 +415,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {makes.map((make: any) => (
+                      {filteredMakes.map((make: any) => (
                         <div key={make.make_ID || make.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`make-${make.make_ID || make.id}`}
@@ -385,11 +423,7 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => {
                               const makeId = (make.make_ID || make.id)?.toString();
                               if (makeId) {
-                                if (checked) {
-                                  setPendingMakes([...pendingMakes, makeId]);
-                                } else {
-                                  setPendingMakes(pendingMakes.filter(id => id !== makeId));
-                                }
+                                handleMakeChange(makeId, checked);
                               }
                             }}
                           />
@@ -398,6 +432,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredMakes.length === 0 && pendingSelectedCategory && (
+                        <p className="text-sm text-muted-foreground italic">No makes available for selected category</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -416,7 +453,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {grades.map((grade: any) => (
+                      {filteredGrades.map((grade: any) => (
                         <div key={grade.gradeID || grade.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`grade-${grade.gradeID || grade.id}`}
@@ -437,6 +474,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredGrades.length === 0 && pendingMakes.length > 0 && (
+                        <p className="text-sm text-muted-foreground italic">No grades available for selected makes</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -455,7 +495,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {brands.map((brand: any) => (
+                      {filteredBrands.map((brand: any) => (
                         <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`brand-${brand.brandID || brand.id}`}
@@ -476,6 +516,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredBrands.length === 0 && pendingMakes.length > 0 && (
+                        <p className="text-sm text-muted-foreground italic">No brands available for selected makes</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -655,7 +698,7 @@ export default function Marketplace() {
                           <Checkbox 
                             id={`category-desktop-${group.GroupID}`}
                             checked={pendingSelectedCategory === group.GroupID.toString()}
-                            onCheckedChange={(checked) => setPendingSelectedCategory(checked ? group.GroupID.toString() : "")}
+                            onCheckedChange={(checked) => handleCategoryChange(group.GroupID.toString(), checked)}
                           />
                           <label htmlFor={`category-desktop-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             {group.GroupName}
@@ -680,7 +723,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {makes.map((make: any) => (
+                      {filteredMakes.map((make: any) => (
                         <div key={make.make_ID || make.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`make-desktop-${make.make_ID || make.id}`}
@@ -688,11 +731,7 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => {
                               const makeId = (make.make_ID || make.id)?.toString();
                               if (makeId) {
-                                if (checked) {
-                                  setPendingMakes([...pendingMakes, makeId]);
-                                } else {
-                                  setPendingMakes(pendingMakes.filter(id => id !== makeId));
-                                }
+                                handleMakeChange(makeId, checked);
                               }
                             }}
                           />
@@ -701,6 +740,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredMakes.length === 0 && pendingSelectedCategory && (
+                        <p className="text-sm text-muted-foreground italic">No makes available for selected category</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -719,7 +761,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {grades.map((grade: any) => (
+                      {filteredGrades.map((grade: any) => (
                         <div key={grade.gradeID || grade.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`grade-desktop-${grade.gradeID || grade.id}`}
@@ -740,6 +782,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredGrades.length === 0 && pendingMakes.length > 0 && (
+                        <p className="text-sm text-muted-foreground italic">No grades available for selected makes</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -758,7 +803,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {brands.map((brand: any) => (
+                      {filteredBrands.map((brand: any) => (
                         <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`brand-desktop-${brand.brandID || brand.id}`}
@@ -779,6 +824,9 @@ export default function Marketplace() {
                           </label>
                         </div>
                       ))}
+                      {filteredBrands.length === 0 && pendingMakes.length > 0 && (
+                        <p className="text-sm text-muted-foreground italic">No brands available for selected makes</p>
+                      )}
                     </div>
                   )}
                 </div>
