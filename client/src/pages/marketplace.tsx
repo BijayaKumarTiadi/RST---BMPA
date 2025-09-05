@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -1004,101 +1004,102 @@ export default function Marketplace() {
                 {/* Deal Cards Grid - Responsive */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {deals.map((deal: any) => (
-                    <Card key={deal.TransID} className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
-                      <div className="relative">
-                        {/* Product Image Placeholder */}
-                        <div className="h-24 sm:h-32 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
-                        </div>
+                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
+                      <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
+                        {/* Header with badges */}
+                        <div className="flex items-center justify-between mb-2">
+                          {/* Group Badge */}
+                          <Badge variant="secondary" className="bg-blue-600 text-white text-xs font-medium">
+                            {deal.GroupName}
+                          </Badge>
                           
                           {/* Wishlist Button */}
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
                             data-testid={`button-wishlist-${deal.TransID}`}
                           >
-                            <Heart className="h-4 w-4" />
+                            <Heart className="h-3 w-3" />
                           </Button>
-
-                          {/* Group Badge */}
-                          <div className="absolute top-2 left-2">
-                            <Badge variant="secondary" className="bg-blue-600 text-white text-xs">
-                              {deal.GroupName}
-                            </Badge>
-                          </div>
-
-                          {/* Status Badge */}
-                          <div className="absolute bottom-2 left-2">
-                            <Badge 
-                              variant={deal.Status === 'active' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {deal.Status === 'active' ? 'Available' : deal.Status}
-                            </Badge>
-                          </div>
                         </div>
 
-                        <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
-                          {/* Product Name First */}
+                        {/* Status Badge */}
+                        <div className="flex justify-start">
+                          <Badge 
+                            variant={deal.Status === 'active' ? 'default' : 'secondary'}
+                            className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          >
+                            {deal.Status === 'active' ? 'Available' : deal.Status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                        <CardContent className="p-4 flex-1 flex flex-col">
+                          {/* Product Name - More Prominent */}
                           <Link href={`/deal/${deal.TransID}`}>
-                            <h3 className="font-semibold text-sm sm:text-base line-clamp-2 mb-2 sm:mb-3 hover:text-primary transition-colors" data-testid={`deal-title-${deal.TransID}`}>
+                            <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-3 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
                               {deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product Details'}
                             </h3>
                           </Link>
 
-                          {/* Price - More Prominent */}
-                          <div className="flex items-baseline gap-1 mb-2 sm:mb-3">
-                            <span className="text-lg sm:text-xl font-bold text-primary" data-testid={`deal-price-${deal.TransID}`}>
-                              ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
-                            </span>
-                            <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'unit'}</span>
-                          </div>
-
-                          {/* Enhanced Product Details */}
-                          <div className="text-xs text-muted-foreground mb-2 space-y-1">
-                            {deal.MakeName && <div><span className="font-medium">Make:</span> {deal.MakeName}</div>}
-                            {deal.GradeName && <div><span className="font-medium">Grade:</span> {deal.GradeName}</div>}
-                            {deal.BrandName && <div><span className="font-medium">Brand:</span> {deal.BrandName}</div>}
-                            {deal.GSM && <div><span className="font-medium">GSM:</span> {deal.GSM}</div>}
-                            {deal.Deckle && <div><span className="font-medium">Deckle:</span> {deal.Deckle}</div>}
-                            {deal.Grain && <div><span className="font-medium">Grain:</span> {deal.Grain}</div>}
-                          </div>
-
-                          {/* Seller Info */}
-                          <div className="flex items-center gap-1 mb-2">
-                            <span className="text-xs text-muted-foreground">by</span>
-                            <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
-                              {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
-                            </span>
-                          </div>
-
-                          {/* Location */}
-                          {deal.Location && (
-                            <div className="flex items-center gap-1 mb-3">
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">{deal.Location}</span>
+                          {/* Price - Standout Design */}
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 mb-4 border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
+                                ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'sheets'}</span>
                             </div>
-                          )}
+                          </div>
 
-                          {/* Description */}
-                          {deal.Description && (
-                            <div className="text-xs text-muted-foreground mb-2">
-                              <span className="font-medium">Description:</span> 
-                              <span className="line-clamp-2">{deal.Description}</span>
-                            </div>
-                          )}
-
-                          {/* Quantity Info */}
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                            <span>Qty: {deal.Quantity || deal.StockAge || 'Available'} {deal.OfferUnit || deal.Unit || ''}</span>
-                            {deal.MinOrderQuantity > 1 && (
-                              <span>Min: {deal.MinOrderQuantity}</span>
+                          {/* Enhanced Product Details in Grid */}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
+                            {deal.MakeName && (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-muted-foreground">Make:</span>
+                                <span className="font-semibold text-foreground">{deal.MakeName}</span>
+                              </div>
+                            )}
+                            {deal.GradeName && (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-muted-foreground">Grade:</span>
+                                <span className="font-semibold text-foreground">{deal.GradeName}</span>
+                              </div>
+                            )}
+                            {deal.BrandName && (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-muted-foreground">Brand:</span>
+                                <span className="font-semibold text-foreground">{deal.BrandName}</span>
+                              </div>
+                            )}
+                            {deal.GSM && (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-muted-foreground">GSM:</span>
+                                <span className="font-semibold text-foreground">{deal.GSM}</span>
+                              </div>
                             )}
                           </div>
 
-                          {/* Deal Age - Relative Time */}
+                          {/* Seller Info with Icon */}
+                          <div className="flex items-center gap-2 mb-3 p-2 bg-muted/30 rounded-md">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <span className="text-xs text-muted-foreground">by </span>
+                              <span className="text-sm font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
+                                {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Quantity Info */}
+                          <div className="flex items-center justify-between text-sm mb-3">
+                            <span className="text-muted-foreground">Qty: <span className="font-medium text-foreground">{deal.Quantity || deal.StockAge || 'Available'} {deal.OfferUnit || deal.Unit || ''}</span></span>
+                          </div>
+
+                          {/* Deal Age */}
                           {deal.deal_created_at && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
                               <Calendar className="h-3 w-3" />
                               <span>{getRelativeTime(deal.deal_created_at)}</span>
                             </div>
@@ -1108,13 +1109,12 @@ export default function Marketplace() {
                           <div className="space-y-2 mt-auto">
                             <Button
                               size="sm"
-                              className="w-full text-xs sm:text-sm"
+                              className="w-full text-sm bg-blue-600 hover:bg-blue-700 text-white"
                               onClick={() => handleViewDetails(deal)}
                               data-testid={`button-view-details-${deal.TransID}`}
                             >
-                              <Eye className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">View Details</span>
-                              <span className="sm:hidden">Details</span>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
                             </Button>
                             
                             {/* Show edit button only for deals created by current user */}
