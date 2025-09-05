@@ -136,13 +136,13 @@ export default function Marketplace() {
   
   // Filter makes, grades, and brands based on selections (hierarchical filtering)
   const filteredMakes = makes.filter((make: any) => 
-    pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : makes
+    pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : true
   );
   const filteredGrades = grades.filter((grade: any) => 
-    pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : grades
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : true
   );
   const filteredBrands = brands.filter((brand: any) => 
-    pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : brands
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : true
   );
   
   // Extract unique GSM values from deals
@@ -173,7 +173,7 @@ export default function Marketplace() {
   // Handle hierarchical filter changes
   const handleCategoryChange = (categoryId: string, checked: boolean) => {
     if (checked) {
-      setPendingSelectedCategory(categoryId);
+      setPendingSelectedCategory(categoryId === "all" ? "" : categoryId);
     } else {
       setPendingSelectedCategory("");
     }
@@ -188,11 +188,23 @@ export default function Marketplace() {
       setPendingMakes([...pendingMakes, makeId]);
     } else {
       setPendingMakes(pendingMakes.filter(id => id !== makeId));
-      // Reset dependent filters when a make is unchecked
+      // Filter out any grades and brands that only belong to the unchecked make
       const remainingMakes = pendingMakes.filter(id => id !== makeId);
       if (remainingMakes.length === 0) {
         setPendingGrades([]);
         setPendingBrands([]);
+      } else {
+        // Keep only grades and brands that belong to remaining makes
+        const validGrades = grades.filter((grade: any) => 
+          remainingMakes.some(rmakeId => grade.Make_ID != null ? grade.Make_ID.toString() === rmakeId : false)
+        ).map((grade: any) => grade.gradeID?.toString()).filter(Boolean);
+        
+        const validBrands = brands.filter((brand: any) => 
+          remainingMakes.some(rmakeId => brand.make_ID != null ? brand.make_ID.toString() === rmakeId : false)
+        ).map((brand: any) => brand.brandID?.toString()).filter(Boolean);
+        
+        setPendingGrades(pendingGrades.filter(gradeId => validGrades.includes(gradeId)));
+        setPendingBrands(pendingBrands.filter(brandId => validBrands.includes(brandId)));
       }
     }
   };
