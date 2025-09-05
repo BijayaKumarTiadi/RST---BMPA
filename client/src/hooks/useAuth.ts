@@ -5,6 +5,10 @@ export function useAuth() {
   const { data: response, isLoading } = useQuery({
     queryKey: ["/api/auth/current-member"],
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const user = response?.success ? response.member : null;
