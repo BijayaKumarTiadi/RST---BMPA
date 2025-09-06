@@ -223,14 +223,19 @@ export class SimpleSearchService {
         SELECT CONCAT(Make, ' ', Brand, ' ', Grade) as suggestion, 'product' as type 
         FROM deal_master 
         WHERE CONCAT(Make, ' ', Brand, ' ', Grade) LIKE ? AND StockStatus = 1
+        UNION ALL
+        SELECT DISTINCT LEFT(stock_description, 50) as suggestion, 'description' as type 
+        FROM deal_master 
+        WHERE stock_description LIKE ? AND StockStatus = 1
+        LIMIT 5
       ) as suggestions
-      WHERE suggestion IS NOT NULL AND suggestion != ''
+      WHERE suggestion IS NOT NULL AND suggestion != '' AND suggestion != 'None'
       GROUP BY suggestion, type
       ORDER BY frequency DESC
-      LIMIT 10
+      LIMIT 15
     `;
 
-    const results = await executeQuery(suggestionsQuery, [searchTerm, searchTerm, searchTerm, searchTerm]);
+    const results = await executeQuery(suggestionsQuery, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]);
     
     return results.map((row: any) => ({
       text: row.suggestion,
