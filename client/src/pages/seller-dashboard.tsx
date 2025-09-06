@@ -266,7 +266,7 @@ export default function SellerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold" data-testid="stat-total-revenue">
-                ₹{orders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
+                ₹{allOrders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
               </div>
               <p className="text-xs text-purple-100 mt-1">
                 Gross sales
