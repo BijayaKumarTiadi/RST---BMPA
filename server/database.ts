@@ -305,6 +305,24 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Quantity column added to deal_master');
     }
 
+    // Add stock_description column to deal_master if it doesn't exist
+    const stockDescriptionColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'deal_master' 
+      AND column_name = 'stock_description'
+    `);
+
+    if (!stockDescriptionColumnExists || stockDescriptionColumnExists.count === 0) {
+      console.log('🔧 Adding stock_description column to deal_master...');
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN stock_description TEXT DEFAULT ''
+      `);
+      console.log('✅ Stock description column added to deal_master');
+    }
+
     // Check if bmpa_products table exists, if not create it
     const productsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
