@@ -26,6 +26,7 @@ const dealSchema = z.object({
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
+  stockType: z.string().min(1, "Stock type is required"),
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
@@ -40,9 +41,9 @@ export default function AddDeal() {
   const [selectedMake, setSelectedMake] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
 
-  // Unit conversion state
-  const [deckleUnit, setDeckleUnit] = useState("mm");
-  const [grainUnit, setGrainUnit] = useState("mm");
+  // Unit conversion state - only cm and inch
+  const [deckleUnit, setDeckleUnit] = useState("cm");
+  const [grainUnit, setGrainUnit] = useState("cm");
   const [deckleInputValue, setDeckleInputValue] = useState("");
   const [grainInputValue, setGrainInputValue] = useState("");
 
@@ -101,6 +102,7 @@ export default function AddDeal() {
       grain_mm: "" as any,
       OfferPrice: "" as any,
       OfferUnit: "",
+      stockType: "",
       quantity: 1000,
       Seller_comments: "",
     },
@@ -268,7 +270,7 @@ export default function AddDeal() {
               </Button>
             </Link>
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Add New Stock Deal</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Add Stock</h1>
               <p className="text-muted-foreground">
                 Add your stock inventory to the marketplace. Fill in the details below to create a new deal that buyers can discover.
               </p>
@@ -282,10 +284,9 @@ export default function AddDeal() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <Package className="h-5 w-5" />
-                    Stock Selection
+                    Stock Details
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Select the stock hierarchy for your deal
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -296,7 +297,7 @@ export default function AddDeal() {
                       name="groupID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Stock Group *</FormLabel>
+                          <FormLabel className="text-foreground">Stock Group <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -331,7 +332,7 @@ export default function AddDeal() {
                       name="MakeID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Stock Make *</FormLabel>
+                          <FormLabel className="text-foreground">Stock Make <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -371,7 +372,7 @@ export default function AddDeal() {
                       name="GradeID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Grade *</FormLabel>
+                          <FormLabel className="text-foreground">Grade <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -407,7 +408,7 @@ export default function AddDeal() {
                       name="BrandID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Brand *</FormLabel>
+                          <FormLabel className="text-foreground">Brand <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Select 
                               value={field.value} 
@@ -438,6 +439,39 @@ export default function AddDeal() {
                       )}
                     />
                   </div>
+
+                  {/* Third Row: Stock Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="stockType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Stock Type <span className="text-red-500">*</span></FormLabel>
+                          <FormControl>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={field.onChange}
+                              data-testid="select-stock-type"
+                            >
+                              <SelectTrigger className="bg-popover border-border text-foreground">
+                                <SelectValue placeholder="Select reel or sheet" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border-border">
+                                <SelectItem value="reel" className="text-foreground hover:bg-accent">
+                                  Reel
+                                </SelectItem>
+                                <SelectItem value="sheet" className="text-foreground hover:bg-accent">
+                                  Sheet
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -459,7 +493,7 @@ export default function AddDeal() {
                       name="GSM"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">GSM *</FormLabel>
+                          <FormLabel className="text-foreground">GSM <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -480,10 +514,10 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Deckle *
+                            Deckle <span className="text-red-500">*</span> (cm and inch)
                             {deckleInputValue && (
                               <span className="text-xs text-blue-600 ml-2">
-                                = {getDeckleInMm().toFixed(1)} mm
+                                = {(getDeckleInMm()/10).toFixed(1)} cm | {(getDeckleInMm()/25.4).toFixed(2)}"
                               </span>
                             )}
                           </FormLabel>
@@ -507,7 +541,6 @@ export default function AddDeal() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-popover border-border">
-                                  <SelectItem value="mm">mm</SelectItem>
                                   <SelectItem value="cm">cm</SelectItem>
                                   <SelectItem value="inch">inch</SelectItem>
                                 </SelectContent>
@@ -525,10 +558,10 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Grain *
+                            Grain <span className="text-red-500">*</span> (cm and inch)
                             {grainInputValue && (
                               <span className="text-xs text-blue-600 ml-2">
-                                = {getGrainInMm().toFixed(1)} mm
+                                = {(getGrainInMm()/10).toFixed(1)} cm | {(getGrainInMm()/25.4).toFixed(2)}"
                               </span>
                             )}
                           </FormLabel>
@@ -552,7 +585,6 @@ export default function AddDeal() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-popover border-border">
-                                  <SelectItem value="mm">mm</SelectItem>
                                   <SelectItem value="cm">cm</SelectItem>
                                   <SelectItem value="inch">inch</SelectItem>
                                 </SelectContent>
@@ -608,7 +640,7 @@ export default function AddDeal() {
                       name="OfferPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Offer Price *</FormLabel>
+                          <FormLabel className="text-foreground">Offer Price <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -629,7 +661,7 @@ export default function AddDeal() {
                       name="OfferUnit"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Unit *</FormLabel>
+                          <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Select value={field.value} onValueChange={field.onChange} data-testid="select-unit">
                               <SelectTrigger className="bg-popover border-border text-foreground">
@@ -654,7 +686,7 @@ export default function AddDeal() {
                       name="quantity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Quantity *</FormLabel>
+                          <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
