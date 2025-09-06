@@ -1006,11 +1006,14 @@ export default function Marketplace() {
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
-                        {/* Header with badges */}
+                        {/* Header with badges - No Board/Reel */}
                         <div className="flex items-center justify-between mb-2">
-                          {/* Group Badge */}
-                          <Badge variant="secondary" className="bg-blue-600 text-white text-xs font-medium">
-                            {deal.GroupName}
+                          {/* Status Badge */}
+                          <Badge 
+                            variant={deal.Status === 'active' ? 'default' : 'secondary'}
+                            className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          >
+                            {deal.Status === 'active' ? 'Available' : deal.Status}
                           </Badge>
                           
                           {/* Wishlist Button */}
@@ -1023,81 +1026,65 @@ export default function Marketplace() {
                             <Heart className="h-3 w-3" />
                           </Button>
                         </div>
-
-                        {/* Status Badge */}
-                        <div className="flex justify-start">
-                          <Badge 
-                            variant={deal.Status === 'active' ? 'default' : 'secondary'}
-                            className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          >
-                            {deal.Status === 'active' ? 'Available' : deal.Status}
-                          </Badge>
-                        </div>
                       </div>
 
                         <CardContent className="p-3 flex-1 flex flex-col">
-                          {/* Product Name - More Prominent */}
+                          {/* 1. Description (Deal Title/Comments) */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-3 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product Details'}
+                              {deal.DealTitle || deal.Seller_comments || deal.stock_description || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
                             </h3>
                           </Link>
 
-                          {/* Price - Standout Design */}
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 mb-4 border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
-                                ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
-                              </span>
-                              <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'sheets'}</span>
-                            </div>
-                          </div>
-
-                          {/* Enhanced Product Details in Grid */}
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
-                            {deal.MakeName && (
-                              <div className="flex flex-col">
-                                <span className="font-medium text-muted-foreground">Make:</span>
-                                <span className="font-semibold text-foreground">{deal.MakeName}</span>
-                              </div>
-                            )}
-                            {deal.GradeName && (
-                              <div className="flex flex-col">
-                                <span className="font-medium text-muted-foreground">Grade:</span>
-                                <span className="font-semibold text-foreground">{deal.GradeName}</span>
-                              </div>
-                            )}
+                          {/* 2. Brand and Grade on same line */}
+                          <div className="flex items-center gap-4 mb-3 text-sm">
                             {deal.BrandName && (
-                              <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
                                 <span className="font-medium text-muted-foreground">Brand:</span>
                                 <span className="font-semibold text-foreground">{deal.BrandName}</span>
                               </div>
                             )}
-                            {deal.GSM && (
-                              <div className="flex flex-col">
-                                <span className="font-medium text-muted-foreground">GSM:</span>
-                                <span className="font-semibold text-foreground">{deal.GSM}</span>
+                            {deal.GradeName && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-muted-foreground">Grade:</span>
+                                <span className="font-semibold text-foreground">{deal.GradeName}</span>
                               </div>
                             )}
                           </div>
 
-                            {/* Dimensions - Added to product details grid */}
+                          {/* 3. GSM and Dimensions on same line */}
+                          <div className="flex items-center gap-4 mb-3 text-sm">
+                            {deal.GSM && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-muted-foreground">GSM:</span>
+                                <span className="font-semibold text-foreground">{deal.GSM}</span>
+                              </div>
+                            )}
                             {(deal.Deckle_mm && deal.grain_mm) && (
-                              <div className="col-span-2 flex flex-col">
+                              <div className="flex items-center gap-1">
                                 <span className="font-medium text-muted-foreground">Dimensions:</span>
                                 <span className="font-semibold text-foreground text-xs">
                                   {(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm | {(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"
                                 </span>
                               </div>
                             )}
+                          </div>
 
-                          {/* Stock Description */}
-                          {deal.stock_description && (
-                            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-700">
-                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Stock Details:</span>
-                              <p className="text-sm text-foreground leading-relaxed">{deal.stock_description}</p>
+                          {/* 4. Quantity and Price on same line */}
+                          <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-muted-foreground">Qty:</span>
+                              <span className="font-semibold text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || ''}</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-muted-foreground">Price:</span>
+                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
+                                ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'sheets'}</span>
+                            </div>
+                          </div>
+
 
 
                           {/* Seller Info with Icon */}
@@ -1111,10 +1098,6 @@ export default function Marketplace() {
                             </div>
                           </div>
 
-                          {/* Quantity Info */}
-                          <div className="flex items-center justify-between text-sm mb-3">
-                            <span className="text-muted-foreground">Qty: <span className="font-medium text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || ''}</span></span>
-                          </div>
 
                           {/* Deal Age */}
                           {deal.deal_created_at && (

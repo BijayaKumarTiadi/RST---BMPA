@@ -279,8 +279,8 @@ export default function Navigation() {
                     {isAuthenticated && (
                       <>
                         <Button 
-                          variant="ghost" 
-                          className="w-full justify-start"
+                          variant={location === '/marketplace' ? 'default' : 'ghost'}
+                          className={`w-full justify-start ${location === '/marketplace' ? 'bg-primary text-primary-foreground' : ''}`}
                           onClick={() => {
                             setLocation('/marketplace');
                             setIsMobileMenuOpen(false);
