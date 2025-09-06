@@ -45,19 +45,29 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
             <div>
               <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
               
-              {/* Stock Description */}
+              {/* Product Description Section */}
               {deal.stock_description && (
-                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h5 className="text-sm font-medium text-muted-foreground mb-1">Stock Details:</h5>
-                  <p className="text-sm text-foreground leading-relaxed">{deal.stock_description}</p>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-blue-600" />
+                    <h5 className="text-base font-semibold text-foreground">Product Description</h5>
+                  </div>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{deal.stock_description}</p>
+                  </div>
                 </div>
               )}
               
-              {/* Seller Comments */}
+              {/* Seller Notes Section */}
               {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
-                <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-                  <h5 className="text-sm font-medium text-muted-foreground mb-1">Seller Notes:</h5>
-                  <p className="text-sm text-foreground leading-relaxed">{deal.Seller_comments}</p>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="h-4 w-4 text-orange-600" />
+                    <h5 className="text-base font-semibold text-foreground">Seller Notes</h5>
+                  </div>
+                  <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg border border-orange-200 dark:border-orange-700">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap italic">{deal.Seller_comments}</p>
+                  </div>
                 </div>
               )}
             </div>
