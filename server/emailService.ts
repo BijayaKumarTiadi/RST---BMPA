@@ -1,11 +1,17 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration using your Gmail credentials
+// Email configuration using Gmail credentials
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Use TLS
   auth: {
     user: 'bktiadi1@gmail.com',
     pass: 'jtqq rzdz ecma djoe'
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -18,16 +24,23 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    await transporter.sendMail({
+    console.log('Attempting to send email to:', options.to);
+    const result = await transporter.sendMail({
       from: '"Stock Laabh" <bktiadi1@gmail.com>',
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text
     });
+    console.log('Email sent successfully:', result.messageId);
     return true;
   } catch (error) {
     console.error('Email sending failed:', error);
+    console.error('Error details:', {
+      code: (error as any)?.code,
+      command: (error as any)?.command,
+      message: (error as any)?.message
+    });
     return false;
   }
 }
