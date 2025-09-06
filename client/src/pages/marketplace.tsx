@@ -1036,17 +1036,22 @@ export default function Marketplace() {
                             </h3>
                           </Link>
 
-                          {/* 2. GSM and Dimensions on separate lines like the image */}
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-sm">
+                          {/* 2. GSM and Dimensions with better alignment */}
+                          <div className="flex gap-8 mb-4 text-sm">
+                            <div className="flex items-center">
                               <span className="font-medium text-gray-500 mr-2">GSM:</span>
-                              <span className="font-semibold text-foreground">{deal.GSM || 'N/A'}</span>
-                              <span className="font-medium text-gray-500 ml-6 mr-2">Dimensions:</span>
-                              <span className="font-semibold text-foreground text-xs">
+                              <span className="font-bold text-foreground">{deal.GSM || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="font-medium text-gray-500 mr-2">Dimensions:</span>
+                              <div className="text-xs font-semibold text-foreground">
                                 {(deal.Deckle_mm && deal.grain_mm) ? (
-                                  `${(deal.Deckle_mm/10).toFixed(1)} × ${(deal.grain_mm/10).toFixed(1)} cm | ${(deal.Deckle_mm/25.4).toFixed(2)}" × ${(deal.grain_mm/25.4).toFixed(2)}"`
+                                  <>
+                                    <div>{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm</div>
+                                    <div>{(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
+                                  </>
                                 ) : 'N/A'}
-                              </span>
+                              </div>
                             </div>
                           </div>
 
