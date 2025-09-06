@@ -25,6 +25,7 @@ const dealSchema = z.object({
   grain_mm: z.coerce.number().min(1, "Grain (mm) is required"),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
+  quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
 
@@ -99,6 +100,7 @@ export default function AddDeal() {
       grain_mm: "" as any,
       OfferPrice: "" as any,
       OfferUnit: "",
+      quantity: 1000,
       Seller_comments: "",
     },
   });
@@ -550,7 +552,7 @@ export default function AddDeal() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
                       name="OfferPrice"
@@ -591,6 +593,26 @@ export default function AddDeal() {
                                 <SelectItem value="bundle" className="text-foreground hover:bg-accent">Bundle</SelectItem>
                               </SelectContent>
                             </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Quantity *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="e.g., 1000" 
+                              {...field}
+                              data-testid="input-quantity"
+                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
