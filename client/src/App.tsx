@@ -40,6 +40,7 @@ function Router() {
       {/* Public routes - accessible without authentication */}
       <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/register" component={Register} />
       
       {/* Routes that require authentication */}
@@ -48,7 +49,6 @@ function Router() {
           <Route path="/" component={Marketplace} />
           <Route path="/home" component={Home} />
           <Route path="/marketplace" component={Marketplace} />
-          <Route path="/admin-dashboard" component={AdminDashboard} />
           <Route path="/buyer-dashboard" component={BuyerDashboard} />
           <Route path="/seller-dashboard" component={SellerDashboard} />
           <Route path="/add-product" component={AddProduct} />
