@@ -890,8 +890,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               d.OfferPrice,
               d.GSM,
               d.Deckle_mm,
-              d.BrandID,
-              d.GradeID,
+              d.Brand,
+              d.Grade,
               d.Make
             FROM inquiries i
             JOIN deal_master d ON i.product_id = d.TransID
@@ -907,8 +907,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               OfferPrice,
               GSM,
               Deckle_mm,
-              BrandID,
-              GradeID,
+              Brand,
+              Grade,
               Make,
               deal_created_at
             FROM deal_master 

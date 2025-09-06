@@ -45,8 +45,8 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
             <div>
               <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
               
-              {/* Product Description Section - Show deal_description, stock_description, or DealTitle as description */}
-              {(deal.deal_description || deal.stock_description || deal.DealTitle) && (
+              {/* Product Description Section - Show deal_description or DealTitle as description */}
+              {(deal.deal_description || deal.DealTitle) && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Package className="h-4 w-4 text-blue-600" />
@@ -54,7 +54,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                   </div>
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-700">
                     <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                      {deal.deal_description || deal.stock_description || `Product: ${deal.DealTitle}`}
+                      {deal.deal_description || `Product: ${deal.DealTitle}`}
                     </p>
                   </div>
                 </div>

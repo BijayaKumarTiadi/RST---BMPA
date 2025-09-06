@@ -263,7 +263,9 @@ class DealService {
           ...deal,
           DealSpecifications: specifications,
           deal_description,
-          deal_comments
+          deal_comments,
+          // Remove stock_description to avoid duplication with deal_description
+          stock_description: undefined
         };
       });
 
@@ -323,7 +325,9 @@ class DealService {
         ...deal,
         DealSpecifications: specifications,
         deal_description,
-        deal_comments
+        deal_comments,
+        // Remove stock_description to avoid duplication with deal_description
+        stock_description: undefined
       };
     } catch (error) {
       console.error('Error getting deal by ID:', error);

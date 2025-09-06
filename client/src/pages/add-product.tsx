@@ -185,7 +185,6 @@ export default function AddDeal() {
         brand_id: data.BrandID ? parseInt(data.BrandID) : 0,
         deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
         deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
-        stock_description: generateStockDescription(), // Auto-generated description
         price: data.OfferPrice,
         quantity: data.quantity, // Use form quantity value
         unit: data.OfferUnit,
