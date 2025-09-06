@@ -24,11 +24,20 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        {/* Full Description at the top */}
+        {deal.stock_description && (
+          <div className="mb-6">
+            <p className="text-lg text-foreground leading-relaxed">
+              {deal.stock_description}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Product Image */}
           <div className="space-y-4">
-            <div className="h-64 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 rounded-lg flex items-center justify-center">
-              <Package className="h-20 w-20 text-blue-400" />
+            <div className="h-64 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 rounded-lg">
+              {/* Removed cube icon as requested */}
             </div>
             
             {/* Status and Category */}
@@ -47,20 +56,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
             <div>
               <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
               
-              {/* Product Description Section - Show deal_description or DealTitle as description */}
-              {(deal.deal_description || deal.DealTitle) && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Package className="h-4 w-4 text-blue-600" />
-                    <h5 className="text-base font-semibold text-foreground">Product Description</h5>
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                      {deal.deal_description || `Product: ${deal.DealTitle}`}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Removed duplicate description section since it's now at the top */}
               
             </div>
 
