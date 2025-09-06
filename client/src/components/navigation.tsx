@@ -131,9 +131,6 @@ export default function Navigation() {
                       <span className="text-sm font-medium text-foreground">
                         {user?.firstName || user?.name || 'User'}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user?.role || 'Member'}
-                      </span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -264,7 +261,6 @@ export default function Navigation() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">{user.firstName || user.name || user.email}</span>
-                          <span className="text-xs text-muted-foreground">{user.role || 'Member'}</span>
                         </div>
                       </div>
                     </div>
