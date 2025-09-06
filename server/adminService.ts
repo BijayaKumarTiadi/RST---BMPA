@@ -246,50 +246,6 @@ export class AdminService {
     }
   }
 
-  // Update member profile
-  async updateMemberProfile(memberId: number, updateData: any): Promise<{ success: boolean; message: string }> {
-    try {
-      const allowedFields = [
-        'mname', 'email', 'phone', 'company_name', 'city', 'state',
-        'membership_paid', 'membership_valid_till', 'mstatus'
-      ];
-      
-      const updateFields = [];
-      const updateValues = [];
-      
-      for (const field of allowedFields) {
-        if (updateData[field] !== undefined) {
-          updateFields.push(`${field} = ?`);
-          updateValues.push(updateData[field]);
-        }
-      }
-      
-      if (updateFields.length === 0) {
-        return {
-          success: false,
-          message: 'No valid fields to update'
-        };
-      }
-      
-      updateValues.push(memberId);
-      
-      await executeQuery(
-        `UPDATE bmpa_members SET ${updateFields.join(', ')} WHERE member_id = ?`,
-        updateValues
-      );
-
-      return {
-        success: true,
-        message: 'Member profile updated successfully'
-      };
-    } catch (error) {
-      console.error('Error updating member profile:', error);
-      return {
-        success: false,
-        message: 'Failed to update member profile'
-      };
-    }
-  }
 
   // Get single member details
   async getMemberById(memberId: number): Promise<any> {
@@ -374,8 +330,8 @@ export class AdminService {
     state?: string;
   }): Promise<{ success: boolean; message: string; member?: any }> {
     try {
-      const updateFields = [];
-      const updateValues = [];
+      const updateFields: string[] = [];
+      const updateValues: any[] = [];
       
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
