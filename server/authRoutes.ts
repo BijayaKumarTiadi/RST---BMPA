@@ -42,12 +42,13 @@ authRouter.post('/send-login-otp', async (req, res) => {
 // Verify OTP and login
 authRouter.post('/verify-login-otp', async (req, res) => {
   try {
+    console.log('=== NEW CODE RUNNING ===', req.body);
     const { email, otp } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Email and OTP are required'
+        message: 'OBVIOUSLY NEW CODE - EMAIL AND OTP ONLY REQUIRED'
       });
     }
 
@@ -76,7 +77,7 @@ authRouter.post('/verify-login-otp', async (req, res) => {
 
     // Implement single device login - invalidate other sessions for this user
     // In a production system, this would clear all other sessions for this member
-    console.log(`Single device login: Member ${loginResult.member!.member_id} logging in, session: ${req.sessionID}`);
+    console.log(`Single device login: Member ${member.member_id} logging in, session: ${req.sessionID}`);
     
     // Store member in session
     req.session.memberId = member.member_id;
