@@ -1032,13 +1032,7 @@ export default function Marketplace() {
                           {/* 1. Description - Extract from Seller_comments after newline */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-bold text-lg line-clamp-2 mb-4 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {(() => {
-                                if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
-                                  const parts = deal.Seller_comments.split('\n');
-                                  return parts[1] || parts[0]; // Use description part after newline, fallback to title
-                                }
-                                return deal.Seller_comments || deal.DealTitle || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details';
-                              })()}
+                              {deal.deal_description || deal.deal_title || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
                             </h3>
                           </Link>
 

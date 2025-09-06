@@ -238,7 +238,7 @@ class DealService {
 
       const deals = await executeQuery(dealsQuery, [...params, limit, offset]);
 
-      // Parse JSON fields safely
+      // Parse JSON fields safely and extract deal_description from Seller_comments
       const parsedDeals = deals.map((deal: any) => {
         let specifications = null;
         
@@ -255,9 +255,24 @@ class DealService {
           }
         }
         
+        // Extract deal_title and deal_description from Seller_comments
+        let deal_title = '';
+        let deal_description = '';
+        
+        if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
+          const parts = deal.Seller_comments.split('\n');
+          deal_title = parts[0] || '';
+          deal_description = parts[1] || '';
+        } else {
+          deal_title = deal.Seller_comments || '';
+          deal_description = '';
+        }
+        
         return {
           ...deal,
-          DealSpecifications: specifications
+          DealSpecifications: specifications,
+          deal_title,
+          deal_description
         };
       });
 
@@ -309,9 +324,24 @@ class DealService {
         }
       }
       
+      // Extract deal_title and deal_description from Seller_comments
+      let deal_title = '';
+      let deal_description = '';
+      
+      if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
+        const parts = deal.Seller_comments.split('\n');
+        deal_title = parts[0] || '';
+        deal_description = parts[1] || '';
+      } else {
+        deal_title = deal.Seller_comments || '';
+        deal_description = '';
+      }
+      
       return {
         ...deal,
-        DealSpecifications: specifications
+        DealSpecifications: specifications,
+        deal_title,
+        deal_description
       };
     } catch (error) {
       console.error('Error getting deal by ID:', error);

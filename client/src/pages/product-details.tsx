@@ -165,7 +165,7 @@ export default function ProductDetails() {
               </div>
               
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4" data-testid="text-product-title">
-                {product.title}
+                {product.deal_description || product.deal_title || product.title || `${product.MakeName} ${product.GradeName}`.trim() || 'Product Details'}
               </h1>
               
               <div className="flex items-baseline gap-3 mb-4">
@@ -334,7 +334,7 @@ export default function ProductDetails() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed" data-testid="text-description">
-                  {product.description}
+                  {product.deal_description || product.description || product.Seller_comments || 'No description available'}
                 </p>
               </CardContent>
             </Card>
