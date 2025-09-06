@@ -80,7 +80,7 @@ export default function Navigation() {
                   Marketplace
                 </Link>
                 {(user?.role === 'seller' || user?.role === 'both') && (
-                  <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-member-dashboard">
+                  <Link href="/seller-dashboard" className={`${location === '/seller-dashboard' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-member-dashboard">
                     Member Dashboard
                   </Link>
                 )}
@@ -292,8 +292,8 @@ export default function Navigation() {
                         
                         {(user?.role === 'seller' || user?.role === 'both') && (
                           <Button 
-                            variant="ghost" 
-                            className="w-full justify-start"
+                            variant={location === '/seller-dashboard' ? 'default' : 'ghost'}
+                            className={`w-full justify-start ${location === '/seller-dashboard' ? 'bg-primary text-primary-foreground' : ''}`}
                             onClick={() => {
                               setLocation('/seller-dashboard');
                               setIsMobileMenuOpen(false);
