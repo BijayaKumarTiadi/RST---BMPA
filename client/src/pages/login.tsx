@@ -219,6 +219,9 @@ export default function Login() {
                       Register here
                     </Button>
                   </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Note: You can only login with emails that are already registered
+                  </p>
                 </div>
               </form>
             ) : (

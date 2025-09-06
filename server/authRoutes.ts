@@ -22,7 +22,7 @@ authRouter.post('/send-login-otp', async (req, res) => {
     if (!emailExists) {
       return res.status(400).json({
         success: false,
-        message: 'Email not found. Please register first.'
+        message: 'Email not found. Please register first or check your email spelling.'
       });
     }
 
