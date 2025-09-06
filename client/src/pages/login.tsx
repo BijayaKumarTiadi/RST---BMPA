@@ -144,50 +144,6 @@ export default function Login() {
     }
   };
 
-  const handleSimpleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await apiRequest("POST", "/api/auth/simple-login", { 
-        email: email.trim(), 
-        password: password.trim() 
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.member.company_name || 'User'}!`,
-        });
-        
-        // Redirect all users to marketplace as landing page
-        window.location.href = '/';
-      } else {
-        toast({
-          title: "Login Failed",
-          description: data.message || "Invalid credentials",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Login failed. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
@@ -393,61 +349,6 @@ export default function Login() {
         </Card>
 
         {/* Simple Login for Testing */}
-        <Card className="mt-6 border-dashed border-2 border-yellow-300 bg-yellow-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-yellow-800 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Testing Mode - Simple Login
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSimpleLogin} className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="test-email" className="text-sm">Email</Label>
-                <Input
-                  id="test-email"
-                  type="email"
-                  placeholder="test@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="text-sm"
-                  data-testid="input-test-email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="test-password" className="text-sm">Password</Label>
-                <Input
-                  id="test-password"
-                  type="password"
-                  placeholder="admin123"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="text-sm"
-                  data-testid="input-test-password"
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full text-sm" 
-                disabled={loading}
-                size="sm"
-                data-testid="button-simple-login"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Logging in...
-                  </>
-                ) : (
-                  'Quick Login (Testing)'
-                )}
-              </Button>
-              <p className="text-xs text-yellow-700">
-                Use password "admin123" for any registered email
-              </p>
-            </form>
-          </CardContent>
-        </Card>
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
