@@ -257,17 +257,13 @@ class DealService {
           }
         }
         
-        // Mapping: deal_description from stock_description with Seller_comments fallback, deal_comments from Seller_comments
-        const deal_description = deal.stock_description || deal.Seller_comments || '';
+        // Only map deal_comments from Seller_comments, keep stock_description as is
         const deal_comments = deal.Seller_comments || '';
         
         return {
           ...deal,
           DealSpecifications: specifications,
-          deal_description,
-          deal_comments,
-          // Remove stock_description to avoid duplication with deal_description
-          stock_description: undefined
+          deal_comments
         };
       });
 
@@ -321,17 +317,13 @@ class DealService {
         }
       }
       
-      // Mapping: deal_description from stock_description with Seller_comments fallback, deal_comments from Seller_comments
-      const deal_description = deal.stock_description || deal.Seller_comments || '';
+      // Only map deal_comments from Seller_comments, keep stock_description as is
       const deal_comments = deal.Seller_comments || '';
       
       return {
         ...deal,
         DealSpecifications: specifications,
-        deal_description,
-        deal_comments,
-        // Remove stock_description to avoid duplication with deal_description
-        stock_description: undefined
+        deal_comments
       };
     } catch (error) {
       console.error('Error getting deal by ID:', error);
