@@ -27,7 +27,7 @@ export class SimpleSearchService {
       pageSize = 20 
     } = params;
 
-    let whereConditions = ['dm.StockStatus = "active"'];
+    let whereConditions = [];
     const queryParams: any[] = [];
 
     // Full-text search across multiple fields with fuzzy matching
