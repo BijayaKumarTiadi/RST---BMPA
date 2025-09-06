@@ -257,28 +257,12 @@ class DealService {
           }
         }
         
-        // Generate stock_description if empty, using available deal data
-        let stock_description = deal.stock_description;
-        if (!stock_description || stock_description.trim() === '') {
-          // Generate description from available fields
-          const parts = [];
-          if (deal.Make) parts.push(deal.Make);
-          if (deal.Brand) parts.push(deal.Brand);
-          if (deal.Grade) parts.push(deal.Grade);
-          if (deal.GSM) parts.push(`${deal.GSM} GSM`);
-          if (deal.Deckle_mm && deal.grain_mm) parts.push(`${deal.Deckle_mm}x${deal.grain_mm}mm`);
-          if (deal.quantity) parts.push(`${deal.quantity} ${deal.OfferUnit || 'units'} available`);
-          if (deal.OfferPrice) parts.push(`at ₹${deal.OfferPrice} per ${deal.OfferUnit || 'unit'}`);
-          
-          stock_description = parts.join(', ');
-        }
-        
+        // Use ONLY the exact database value for stock_description - NO auto-generation
         const deal_comments = deal.Seller_comments || '';
         
         return {
           ...deal,
           DealSpecifications: specifications,
-          stock_description,
           deal_comments
         };
       });
@@ -333,28 +317,12 @@ class DealService {
         }
       }
       
-      // Generate stock_description if empty, using available deal data
-      let stock_description = deal.stock_description;
-      if (!stock_description || stock_description.trim() === '') {
-        // Generate description from available fields
-        const parts = [];
-        if (deal.Make) parts.push(deal.Make);
-        if (deal.Brand) parts.push(deal.Brand);
-        if (deal.Grade) parts.push(deal.Grade);
-        if (deal.GSM) parts.push(`${deal.GSM} GSM`);
-        if (deal.Deckle_mm && deal.grain_mm) parts.push(`${deal.Deckle_mm}x${deal.grain_mm}mm`);
-        if (deal.quantity) parts.push(`${deal.quantity} ${deal.OfferUnit || 'units'} available`);
-        if (deal.OfferPrice) parts.push(`at ₹${deal.OfferPrice} per ${deal.OfferUnit || 'unit'}`);
-        
-        stock_description = parts.join(', ');
-      }
-      
+      // Use ONLY the exact database value for stock_description - NO auto-generation
       const deal_comments = deal.Seller_comments || '';
       
       return {
         ...deal,
         DealSpecifications: specifications,
-        stock_description,
         deal_comments
       };
     } catch (error) {
