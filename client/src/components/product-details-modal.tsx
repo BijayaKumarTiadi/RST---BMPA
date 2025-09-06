@@ -44,8 +44,21 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
-              {deal.Seller_comments && (
-                <p className="text-muted-foreground">{deal.Seller_comments}</p>
+              
+              {/* Stock Description */}
+              {deal.stock_description && (
+                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h5 className="text-sm font-medium text-muted-foreground mb-1">Stock Details:</h5>
+                  <p className="text-sm text-foreground leading-relaxed">{deal.stock_description}</p>
+                </div>
+              )}
+              
+              {/* Seller Comments */}
+              {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
+                <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <h5 className="text-sm font-medium text-muted-foreground mb-1">Seller Notes:</h5>
+                  <p className="text-sm text-foreground leading-relaxed">{deal.Seller_comments}</p>
+                </div>
               )}
             </div>
 
