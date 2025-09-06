@@ -76,7 +76,7 @@ export default function Navigation() {
           <nav className="hidden md:flex items-center space-x-8">
             {isAuthenticated && (
               <>
-                <Link href="/marketplace" className={`${location === '/marketplace' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-marketplace">
+                <Link href="/marketplace" className={`${location === '/marketplace' || location === '/' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-marketplace">
                   Marketplace
                 </Link>
                 {(user?.role === 'seller' || user?.role === 'both') && (
