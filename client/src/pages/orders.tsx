@@ -11,14 +11,27 @@ export default function Orders() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Fetch seller orders - same as Member Dashboard Orders tab
-  const { data: ordersData, isLoading } = useQuery({
+  // Fetch inquiries received as seller
+  const { data: receivedOrders } = useQuery({
     queryKey: ["/api/orders", "seller"],
     queryFn: async () => {
       const response = await fetch(`/api/orders?role=seller`, {
         credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to fetch orders');
+      if (!response.ok) throw new Error('Failed to fetch seller orders');
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Fetch inquiries sent as buyer
+  const { data: sentOrders, isLoading } = useQuery({
+    queryKey: ["/api/orders", "buyer"], 
+    queryFn: async () => {
+      const response = await fetch(`/api/orders?role=buyer`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch buyer orders');
       return response.json();
     },
     enabled: isAuthenticated,
@@ -39,7 +52,13 @@ export default function Orders() {
     );
   }
 
-  const orders = ordersData || [];
+  // Combine both received and sent orders
+  const receivedOrdersArray = receivedOrders || [];
+  const sentOrdersArray = sentOrders || [];
+  const allOrders = [...receivedOrdersArray, ...sentOrdersArray];
+  
+  // Sort by created_at date (newest first)
+  allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,7 +78,7 @@ export default function Orders() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : orders.length === 0 ? (
+        ) : allOrders.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
@@ -88,7 +107,7 @@ export default function Orders() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order: any) => (
+                    {allOrders.map((order: any) => (
                       <tr 
                         key={order.id} 
                         className="hover:bg-muted/50 transition-colors border-b"

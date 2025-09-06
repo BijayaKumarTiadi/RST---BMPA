@@ -983,17 +983,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: inquiry.id ? 'inquiry' : 'deal'
         }));
       } else {
-        // For buyers, since no inquiries table exists yet, show their recent marketplace activity
-        console.log('📝 Buyer orders not implemented yet - showing sample message');
-        orders = [{
-          id: 'BUYER-INFO',
-          product_title: 'Order History Coming Soon',
-          customer_name: 'System',
-          total_amount: 0,
-          status: 'info',
-          created_at: new Date(),
-          type: 'info'
-        }];
+        // For buyers, get inquiries THEY have sent
+        console.log('📝 Fetching inquiries sent by buyer');
+        
+        // Get the member's email to match against buyer_email in inquiries
+        const member = await executeQuerySingle(`
+          SELECT email, mname, company_name 
+          FROM bmpa_members 
+          WHERE member_id = ?
+        `, [memberId]);
+        
+        if (!member) {
+          console.log('❌ Member not found');
+          return res.status(404).json({ success: false, message: 'Member not found' });
+        }
+        
+        // Check if inquiries table exists
+        const inquiriesExist = await executeQuerySingle(`
+          SELECT COUNT(*) as count 
+          FROM information_schema.tables 
+          WHERE table_schema = 'trade_bmpa25' 
+          AND table_name = 'inquiries'
+        `);
+        
+        let buyerInquiries = [];
+        
+        if (inquiriesExist && inquiriesExist.count > 0) {
+          // Get inquiries sent by this buyer (using their email)
+          buyerInquiries = await executeQuery(`
+            SELECT 
+              i.*,
+              d.TransID,
+              d.OfferPrice,
+              d.OfferUnit,
+              d.GSM,
+              d.Deckle_mm,
+              d.Brand,
+              d.Grade,
+              d.Make,
+              d.created_by_name as seller_name,
+              d.created_by_company as seller_company
+            FROM inquiries i
+            JOIN deal_master d ON i.product_id = d.TransID
+            WHERE i.buyer_email = ?
+            ORDER BY i.created_at DESC
+          `, [member.email]);
+          
+          // Get additional product details for each inquiry
+          for (let inquiry of buyerInquiries) {
+            try {
+              const productDetails = await executeQuerySingle(`
+                SELECT 
+                  g.GroupName,
+                  m.make_Name as MakeName,
+                  gr.GradeName,
+                  b.brandname as BrandName
+                FROM deal_master d
+                LEFT JOIN stock_groups g ON d.groupID = g.GroupID
+                LEFT JOIN stock_make_master m ON d.Make = m.make_ID
+                LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
+                LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+                WHERE d.TransID = ?
+              `, [inquiry.TransID]);
+              
+              if (productDetails) {
+                inquiry.BrandName = productDetails.BrandName || 'Unknown Brand';
+                inquiry.GradeName = productDetails.GradeName || 'Unknown Grade';
+                inquiry.MakeName = productDetails.MakeName || 'Unknown Make';
+                inquiry.GroupName = productDetails.GroupName || 'Unknown Group';
+              }
+            } catch (error) {
+              console.error(`Error fetching product details for inquiry ${inquiry.id}:`, error);
+            }
+          }
+          
+          // Transform buyer inquiries into order format
+          orders = buyerInquiries.map((inquiry: any) => ({
+            id: `INQ-${inquiry.id}`,
+            product_title: `${inquiry.BrandName || 'Product'} ${inquiry.GradeName || 'Grade'} - ${inquiry.GSM}GSM`,
+            customer_name: inquiry.seller_name || 'Seller',
+            customer_email: inquiry.seller_company || 'N/A', 
+            total_amount: parseFloat(inquiry.quoted_price) || parseFloat(inquiry.OfferPrice) || 0,
+            status: 'sent',
+            created_at: inquiry.created_at,
+            type: 'inquiry_sent',
+            seller_name: inquiry.seller_name,
+            seller_company: inquiry.seller_company,
+            product_id: inquiry.product_id,
+            buyer_message: inquiry.message,
+            buyer_quantity: inquiry.quantity
+          }));
+        } else {
+          console.log('📝 No inquiries table found');
+          orders = [{
+            id: 'NO-INQUIRIES',
+            product_title: 'No Inquiries Sent Yet',
+            customer_name: 'Start browsing the marketplace to send inquiries',
+            total_amount: 0,
+            status: 'info',
+            created_at: new Date(),
+            type: 'info'
+          }];
+        }
       }
       
       console.log(`📦 Found ${orders.length} orders/inquiries for member ${memberId}`);
