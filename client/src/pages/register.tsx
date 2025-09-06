@@ -32,10 +32,8 @@ export default function Register() {
     address1: '',
     address2: '',
     city: '',
-    state: '',
-    password: ''
+    state: ''
   });
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
 
@@ -105,19 +103,8 @@ export default function Register() {
     }
     
     if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
-        !formData.address1.trim() || !formData.city.trim() || !formData.state.trim() || 
-        !formData.password.trim()) {
+        !formData.address1.trim() || !formData.city.trim() || !formData.state.trim()) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
-      return;
-    }
-
-    if (formData.password !== confirmPassword) {
-      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
 
@@ -410,40 +397,15 @@ export default function Register() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Choose a strong password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        className="pl-10"
-                        data-testid="input-password"
-                        required
-                      />
-                    </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Secure OTP-Based Access</span>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="Confirm your password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="pl-10"
-                        data-testid="input-confirm-password"
-                        required
-                      />
-                    </div>
-                  </div>
+                  <p className="text-sm text-blue-700">
+                    Your account will use OTP (One-Time Password) verification for secure login. 
+                    No password required - we'll send a verification code to your email whenever you log in.
+                  </p>
                 </div>
 
                 <Button 

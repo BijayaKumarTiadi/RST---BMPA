@@ -228,7 +228,22 @@ export default function Membership() {
     );
   }
 
-  const membership = membershipData!;
+  if (!membershipData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Unable to load membership data</h3>
+            <p className="text-muted-foreground">Please try refreshing the page</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const membership = membershipData;
   const currentPlan = membership.current_plan;
 
   return (

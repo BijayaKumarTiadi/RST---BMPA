@@ -54,11 +54,6 @@ export default function Settings() {
     auto_respond_inquiries: false,
   });
 
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: '',
-  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -108,30 +103,6 @@ export default function Settings() {
     },
   });
 
-  // Change password mutation
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: { current_password: string; new_password: string; confirm_password: string }) => {
-      return apiRequest('PUT', '/api/auth/change-password', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Password changed successfully!",
-      });
-      setPasswordData({
-        current_password: '',
-        new_password: '',
-        confirm_password: '',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to change password",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleSettingChange = (key: keyof UserSettings, value: any) => {
     const newSettings = { ...settings, [key]: value };
@@ -139,25 +110,6 @@ export default function Settings() {
     updateSettingsMutation.mutate({ [key]: value });
   };
 
-  const handlePasswordChange = () => {
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (passwordData.new_password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-    changePasswordMutation.mutate(passwordData);
-  };
 
   if (!isAuthenticated) {
     return null;
@@ -424,66 +376,16 @@ export default function Settings() {
 
                 <Separator />
 
-                <div>
-                  <Label className="text-base mb-3">Change Password</Label>
-                  <div className="space-y-4 max-w-md">
-                    <div>
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={passwordData.current_password}
-                        onChange={(e) => setPasswordData(prev => ({
-                          ...prev, current_password: e.target.value
-                        }))}
-                        placeholder="Enter current password"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={passwordData.new_password}
-                        onChange={(e) => setPasswordData(prev => ({
-                          ...prev, new_password: e.target.value
-                        }))}
-                        placeholder="Enter new password"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={passwordData.confirm_password}
-                        onChange={(e) => setPasswordData(prev => ({
-                          ...prev, confirm_password: e.target.value
-                        }))}
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-                    <Button
-                      onClick={handlePasswordChange}
-                      disabled={changePasswordMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
-                    </Button>
-                  </div>
-                </div>
 
-                <Separator />
-
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <Shield className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-yellow-800">Account Security</h4>
-                      <p className="text-sm text-yellow-700 mt-1">
-                        For your security, we recommend using a strong password and enabling 
-                        email notifications for account activities.
+                      <h4 className="font-medium text-green-800">OTP-Based Security</h4>
+                      <p className="text-sm text-green-700 mt-1">
+                        Your account uses secure OTP (One-Time Password) authentication. Each time you log in, 
+                        we'll send a verification code to your email. No password needed - your account is more 
+                        secure with this modern authentication method.
                       </p>
                     </div>
                   </div>
