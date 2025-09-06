@@ -198,10 +198,10 @@ export default function Navigation() {
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
-                    <a href="#about" className="flex items-center space-x-2 w-full">
+                    <Link href="/about" className="flex items-center space-x-2 w-full">
                       <Info className="h-4 w-4" />
                       <span>About Us</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
