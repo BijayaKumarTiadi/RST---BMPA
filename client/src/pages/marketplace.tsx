@@ -1028,70 +1028,56 @@ export default function Marketplace() {
                         </div>
                       </div>
 
-                        <CardContent className="p-3 flex-1 flex flex-col">
-                          {/* 1. Description (Deal Title/Comments) */}
+                        <CardContent className="p-4 flex-1 flex flex-col">
+                          {/* 1. Description - Extract from Seller_comments after newline */}
                           <Link href={`/deal/${deal.TransID}`}>
-                            <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-3 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.deal_description || deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
+                            <h3 className="font-bold text-lg line-clamp-2 mb-4 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
+                              {(() => {
+                                if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
+                                  const parts = deal.Seller_comments.split('\n');
+                                  return parts[1] || parts[0]; // Use description part after newline, fallback to title
+                                }
+                                return deal.Seller_comments || deal.DealTitle || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details';
+                              })()}
                             </h3>
                           </Link>
 
-                          {/* 2. Brand and Grade on same line */}
-                          <div className="flex items-center gap-4 mb-3 text-sm">
-                            {deal.BrandName && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-muted-foreground">Brand:</span>
-                                <span className="font-semibold text-foreground">{deal.BrandName}</span>
-                              </div>
-                            )}
-                            {deal.GradeName && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-muted-foreground">Grade:</span>
-                                <span className="font-semibold text-foreground">{deal.GradeName}</span>
-                              </div>
-                            )}
+                          {/* 2. GSM and Dimensions on separate lines like the image */}
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center text-sm">
+                              <span className="font-medium text-gray-500 mr-2">GSM:</span>
+                              <span className="font-semibold text-foreground">{deal.GSM || 'N/A'}</span>
+                              <span className="font-medium text-gray-500 ml-6 mr-2">Dimensions:</span>
+                              <span className="font-semibold text-foreground text-xs">
+                                {(deal.Deckle_mm && deal.grain_mm) ? (
+                                  `${(deal.Deckle_mm/10).toFixed(1)} × ${(deal.grain_mm/10).toFixed(1)} cm | ${(deal.Deckle_mm/25.4).toFixed(2)}" × ${(deal.grain_mm/25.4).toFixed(2)}"`
+                                ) : 'N/A'}
+                              </span>
+                            </div>
                           </div>
 
-                          {/* 3. GSM and Dimensions on same line */}
-                          <div className="flex items-center gap-4 mb-3 text-sm">
-                            {deal.GSM && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-muted-foreground">GSM:</span>
-                                <span className="font-semibold text-foreground">{deal.GSM}</span>
-                              </div>
-                            )}
-                            {(deal.Deckle_mm && deal.grain_mm) && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-muted-foreground">Dimensions:</span>
-                                <span className="font-semibold text-foreground text-xs">
-                                  {(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm | {(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* 4. Quantity and Price on same line */}
+                          {/* 3. Quantity and Price in highlighted box */}
                           <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                             <div className="flex items-center gap-1">
-                              <span className="font-medium text-muted-foreground">Qty:</span>
-                              <span className="font-semibold text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || ''}</span>
+                              <span className="font-medium text-gray-500">Qty:</span>
+                              <span className="font-bold text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <span className="font-medium text-muted-foreground">Price:</span>
+                              <span className="font-medium text-gray-500">Price:</span>
                               <span className="text-xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
                                 ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
                               </span>
-                              <span className="text-sm text-muted-foreground">/{deal.OfferUnit || deal.Unit || 'sheets'}</span>
+                              <span className="text-sm text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
                           </div>
 
 
 
                           {/* Seller Info with Icon */}
-                          <div className="flex items-center gap-2 mb-3 p-2 bg-muted/30 rounded-md">
-                            <Building className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                            <Building className="h-4 w-4 text-gray-500" />
                             <div>
-                              <span className="text-xs text-muted-foreground">by </span>
+                              <span className="text-xs text-gray-500">by </span>
                               <span className="text-sm font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
                                 {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
                               </span>
@@ -1100,10 +1086,10 @@ export default function Marketplace() {
 
 
                           {/* Deal Age */}
-                          {deal.deal_created_at && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
+                          {deal.uplaodDate && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
                               <Calendar className="h-3 w-3" />
-                              <span>{getRelativeTime(deal.deal_created_at)}</span>
+                              <span>{getRelativeTime(deal.uplaodDate)}</span>
                             </div>
                           )}
 
