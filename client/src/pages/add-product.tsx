@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -147,7 +147,7 @@ export default function AddDeal() {
   };
 
   // Auto-populate deal description when form values change
-  React.useEffect(() => {
+  useEffect(() => {
     const subscription = form.watch((values) => {
       const description = generateStockDescription();
       if (description && description !== form.getValues('deal_description')) {
@@ -580,7 +580,6 @@ export default function AddDeal() {
                               rows={3}
                               className="w-full px-3 py-2 border border-border rounded-md bg-popover text-foreground placeholder:text-muted-foreground resize-none"
                               data-testid="textarea-deal-description"
-                              readOnly
                             />
                           </FormControl>
                           <FormMessage />
