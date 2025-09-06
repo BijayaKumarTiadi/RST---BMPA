@@ -1055,15 +1055,15 @@ export default function Marketplace() {
                             </div>
                           </div>
 
-                          {/* 3. Quantity and Price in highlighted box */}
-                          <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-center gap-1">
+                          {/* 3. Quantity and Price */}
+                          <div className="flex items-center justify-between mb-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-sm">
                               <span className="font-medium text-gray-500">Qty:</span>
-                              <span className="font-bold text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
+                              <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="text-sm">
                               <span className="font-medium text-gray-500">Price:</span>
-                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
+                              <span className="font-bold text-foreground ml-1" data-testid={`deal-price-${deal.TransID}`}>
                                 ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
                               </span>
                               <span className="text-sm text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
