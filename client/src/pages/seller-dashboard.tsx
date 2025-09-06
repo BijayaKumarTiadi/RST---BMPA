@@ -22,7 +22,7 @@ export default function SellerDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Helper function to calculate relative time
