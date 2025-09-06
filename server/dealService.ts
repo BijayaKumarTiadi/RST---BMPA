@@ -255,33 +255,15 @@ class DealService {
           }
         }
         
-        // Extract deal_title and deal_description from Seller_comments
-        let deal_title = '';
-        let deal_description = '';
-        
-        // Debug log to see what's in Seller_comments
-        if (deal.TransID === deals[0]?.TransID) {
-          console.log('=== DEBUG DEAL DATA ===');
-          console.log('Seller_comments:', deal.Seller_comments);
-          console.log('stock_description:', deal.stock_description);
-          console.log('DealTitle:', deal.DealTitle);
-          console.log('Type of Seller_comments:', typeof deal.Seller_comments);
-        }
-        
-        if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
-          const parts = deal.Seller_comments.split('\n');
-          deal_title = parts[0] || '';
-          deal_description = parts[1] || '';
-        } else {
-          deal_title = deal.Seller_comments || '';
-          deal_description = '';
-        }
+        // Use stock_description as main description and Seller_comments as deal_comments
+        const deal_description = deal.stock_description || '';
+        const deal_comments = deal.Seller_comments || '';
         
         return {
           ...deal,
           DealSpecifications: specifications,
-          deal_title,
-          deal_description
+          deal_description,
+          deal_comments
         };
       });
 
@@ -333,24 +315,15 @@ class DealService {
         }
       }
       
-      // Extract deal_title and deal_description from Seller_comments
-      let deal_title = '';
-      let deal_description = '';
-      
-      if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
-        const parts = deal.Seller_comments.split('\n');
-        deal_title = parts[0] || '';
-        deal_description = parts[1] || '';
-      } else {
-        deal_title = deal.Seller_comments || '';
-        deal_description = '';
-      }
+      // Use stock_description as main description and Seller_comments as deal_comments
+      const deal_description = deal.stock_description || '';
+      const deal_comments = deal.Seller_comments || '';
       
       return {
         ...deal,
         DealSpecifications: specifications,
-        deal_title,
-        deal_description
+        deal_description,
+        deal_comments
       };
     } catch (error) {
       console.error('Error getting deal by ID:', error);
