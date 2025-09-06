@@ -1081,22 +1081,15 @@ export default function Marketplace() {
                             )}
                           </div>
 
-                          {/* Dimensions Display */}
-                          {(deal.Deckle_mm || deal.grain_mm) && (
-                            <div className="mb-4 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-md border border-slate-200 dark:border-slate-700">
-                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Dimensions:</span>
-                              <div className="text-sm text-foreground">
-                                {deal.Deckle_mm && deal.grain_mm ? (
-                                  <>
-                                    <div>{deal.Deckle_mm} × {deal.grain_mm} mm</div>
-                                    <div className="text-muted-foreground text-xs">{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm | {(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
-                                  </>
-                                ) : (
-                                  <span>Custom size</span>
-                                )}
+                            {/* Dimensions - Added to product details grid */}
+                            {(deal.Deckle_mm && deal.grain_mm) && (
+                              <div className="col-span-2 flex flex-col">
+                                <span className="font-medium text-muted-foreground">Dimensions:</span>
+                                <span className="font-semibold text-foreground text-xs">
+                                  {(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm | {(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"
+                                </span>
                               </div>
-                            </div>
-                          )}
+                            )}
 
                           {/* Stock Description */}
                           {deal.stock_description && (
