@@ -1,4 +1,4 @@
-import { executeQuery } from '../db';
+import { executeQuery } from '../database';
 
 // Simple but powerful search service without external dependencies
 export class SimpleSearchService {

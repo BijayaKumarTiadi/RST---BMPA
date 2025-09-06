@@ -18,7 +18,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
 import debounce from 'lodash/debounce';
 
 interface PowerSearchProps {
@@ -60,7 +59,7 @@ export default function PowerSearch({ onSearch, onLoading, className }: PowerSea
       }
 
       try {
-        const response = await apiRequest('GET', `/api/search/suggestions?q=${encodeURIComponent(searchText)}`);
+        const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(searchText)}`);
         const data = await response.json();
         if (data.success) {
           setSuggestions(data.suggestions);
@@ -94,14 +93,20 @@ export default function PowerSearch({ onSearch, onLoading, className }: PowerSea
       localStorage.setItem('recentSearches', JSON.stringify(updatedRecent));
 
       // Perform the search
-      const response = await apiRequest('POST', '/api/search/search', {
-        query: searchQuery,
-        page: 1,
-        pageSize: 20
+      const response = await fetch('/api/search/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: searchQuery,
+          page: 1,
+          pageSize: 20
+        })
       });
       const data = await response.json();
 
-      if (data.success) {
+      if (data) {
         onSearch(data);
       }
     } catch (error) {
