@@ -61,10 +61,10 @@ export default function Login() {
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp.trim() || !password.trim()) {
+    if (!otp.trim()) {
       toast({
         title: "Error",
-        description: "Please enter both OTP and password",
+        description: "Please enter the verification code",
         variant: "destructive",
       });
       return;
@@ -74,8 +74,7 @@ export default function Login() {
     try {
       const response = await apiRequest("POST", "/api/auth/verify-login-otp", {
         email,
-        otp,
-        password
+        otp
       });
       const data = await response.json();
 
@@ -166,7 +165,7 @@ export default function Login() {
             <p className="text-sm text-gray-600 mt-2">
               {step === 'email' 
                 ? 'Enter your email to receive a verification code'
-                : 'Enter the OTP sent to your email and your password'
+                : 'Enter the OTP sent to your email'
               }
             </p>
           </CardHeader>
@@ -268,22 +267,6 @@ export default function Login() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-password"
-                      required
-                    />
-                  </div>
-                </div>
 
                 {!showPendingApproval && (
                   <Button 
@@ -298,7 +281,7 @@ export default function Login() {
                         Verifying...
                       </>
                     ) : (
-                      'Verify & Login'
+                      'Verify OTP & Login'
                     )}
                   </Button>
                 )}
