@@ -24,6 +24,8 @@ export default function Marketplace() {
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   // Pending filters (UI state, not applied yet)
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
@@ -127,8 +129,9 @@ export default function Marketplace() {
     );
   }
 
-  const deals = dealsData?.deals || [];
-  const totalDeals = dealsData?.total || 0;
+  // Use search results if available, otherwise use regular deals
+  const deals = searchResults?.data || dealsData?.deals || [];
+  const totalDeals = searchResults?.total || dealsData?.total || 0;
   const totalPages = Math.ceil(totalDeals / itemsPerPage);
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
@@ -328,14 +331,12 @@ export default function Marketplace() {
         <div className="mb-6">
           <PowerSearch 
             onSearch={(results) => {
-              console.log('Search results:', results);
-              // Update deals with search results
-              if (results && results.data) {
-                // Handle search results
+              if (results && results.success) {
+                setSearchResults(results);
                 setCurrentPage(1);
               }
             }}
-            onLoading={(loading) => console.log('Searching:', loading)}
+            onLoading={(loading) => setIsSearching(loading)}
             className="w-full"
           />
         </div>
