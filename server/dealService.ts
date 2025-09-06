@@ -259,6 +259,15 @@ class DealService {
         let deal_title = '';
         let deal_description = '';
         
+        // Debug log to see what's in Seller_comments
+        if (deal.TransID === deals[0]?.TransID) {
+          console.log('=== DEBUG DEAL DATA ===');
+          console.log('Seller_comments:', deal.Seller_comments);
+          console.log('stock_description:', deal.stock_description);
+          console.log('DealTitle:', deal.DealTitle);
+          console.log('Type of Seller_comments:', typeof deal.Seller_comments);
+        }
+        
         if (deal.Seller_comments && deal.Seller_comments.includes('\n')) {
           const parts = deal.Seller_comments.split('\n');
           deal_title = parts[0] || '';
