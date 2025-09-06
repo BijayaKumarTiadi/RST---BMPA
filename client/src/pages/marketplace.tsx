@@ -1030,11 +1030,9 @@ export default function Marketplace() {
 
                         <CardContent className="p-4 flex-1 flex flex-col">
                           {/* 1. Description - Extract from Seller_comments after newline */}
-                          <Link href={`/deal/${deal.TransID}`}>
-                            <h3 className="font-bold text-lg line-clamp-2 mb-4 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
+                            <h3 className="font-bold text-lg line-clamp-2 mb-4 text-foreground" data-testid={`deal-title-${deal.TransID}`}>
                               {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
                             </h3>
-                          </Link>
 
                           {/* 2. GSM and Dimensions properly aligned */}
                           <div className="space-y-2 mb-4">
@@ -1118,15 +1116,6 @@ export default function Marketplace() {
                                   Edit
                                 </Button>
                                 
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/deal/${deal.TransID}`)}
-                                  data-testid={`button-view-own-deal-${deal.TransID}`}
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Button>
                               </div>
                             ) : (
                               <div className="space-y-2">
