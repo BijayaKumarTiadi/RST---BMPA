@@ -173,6 +173,21 @@ export async function initializeDatabase(): Promise<void> {
         `);
         console.log('✅ Role column added successfully');
       }
+
+      // Update existing users to have 'both' role if they have 'buyer' or 'seller'
+      console.log('🔧 Updating existing users to have "both" role...');
+      const updateResult = await executeQuery(`
+        UPDATE bmpa_members 
+        SET role = 'both' 
+        WHERE role IN ('buyer', 'seller')
+      `);
+      const updateInfo = updateResult as any;
+      const affectedRows = updateInfo.affectedRows || 0;
+      if (affectedRows > 0) {
+        console.log(`✅ Updated ${affectedRows} users to have "both" role`);
+      } else {
+        console.log('ℹ️ No users needed role update');
+      }
       
       // Check if admin table exists, if not create it
       const adminTableExists = await executeQuerySingle(`

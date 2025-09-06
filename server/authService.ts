@@ -80,8 +80,8 @@ export class AuthService {
       const result = await executeQuery(
         `INSERT INTO bmpa_members (
           mname, email, phone, company_name, address1, address2, 
-          city, state, password_hash, mstatus, bmpa_approval_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          city, state, password_hash, role, mstatus, bmpa_approval_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.mname,
           data.email,
@@ -92,6 +92,7 @@ export class AuthService {
           data.city,
           data.state,
           passwordHash,
+          'both', // role: explicitly set to 'both' for all new users
           0, // mstatus: 0 = pending approval
           0  // bmpa_approval_id: 0 = not approved yet
         ]
