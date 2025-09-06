@@ -79,11 +79,9 @@ export default function Navigation() {
                 <Link href="/marketplace" className={`${location === '/marketplace' || location === '/' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-marketplace">
                   Marketplace
                 </Link>
-                {(user?.role === 'seller' || user?.role === 'both') && (
-                  <Link href="/seller-dashboard" className={`${location === '/seller-dashboard' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-member-dashboard">
-                    Member Dashboard
-                  </Link>
-                )}
+                <Link href="/seller-dashboard" className={`${location === '/seller-dashboard' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-member-dashboard">
+                  Member Dashboard
+                </Link>
               </>
             )}
           </nav>
@@ -174,14 +172,12 @@ export default function Navigation() {
                     </Link>
                   </DropdownMenuItem>
                   
-                  {(user?.role === 'seller' || user?.role === 'both') && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/add-product" className="flex items-center space-x-2 w-full">
-                        <Package className="h-4 w-4" />
-                        <span>Add Product</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-product" className="flex items-center space-x-2 w-full">
+                      <Package className="h-4 w-4" />
+                      <span>Add Product</span>
+                    </Link>
+                  </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center space-x-2 w-full">
@@ -290,33 +286,18 @@ export default function Navigation() {
                           Marketplace
                         </Button>
                         
-                        {(user?.role === 'seller' || user?.role === 'both') && (
-                          <Button 
-                            variant={location === '/seller-dashboard' ? 'default' : 'ghost'}
-                            className={`w-full justify-start ${location === '/seller-dashboard' ? 'bg-primary text-primary-foreground' : ''}`}
-                            onClick={() => {
-                              setLocation('/seller-dashboard');
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Member Dashboard
-                          </Button>
-                        )}
+                        <Button 
+                          variant={location === '/seller-dashboard' ? 'default' : 'ghost'}
+                          className={`w-full justify-start ${location === '/seller-dashboard' ? 'bg-primary text-primary-foreground' : ''}`}
+                          onClick={() => {
+                            setLocation('/seller-dashboard');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Member Dashboard
+                        </Button>
                         
-                        {(user?.role === 'buyer' || user?.role === 'both') && (
-                          <Button 
-                            variant="ghost" 
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setLocation('/buyer-dashboard');
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <ShoppingBag className="mr-2 h-4 w-4" />
-                            Buyer Dashboard
-                          </Button>
-                        )}
                         
                         <Button 
                           variant="ghost" 
