@@ -45,8 +45,21 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
             <div>
               <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
               
-              {/* Product Description Section */}
-              {deal.stock_description && (
+              {/* Product Description Section - Show deal_description first */}
+              {deal.deal_description && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-blue-600" />
+                    <h5 className="text-base font-semibold text-foreground">Product Description</h5>
+                  </div>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{deal.deal_description}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Stock Description Section - fallback if deal_description is empty */}
+              {!deal.deal_description && deal.stock_description && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Package className="h-4 w-4 text-blue-600" />
