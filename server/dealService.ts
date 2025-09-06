@@ -217,6 +217,8 @@ class DealService {
       const dealsQuery = `
         SELECT 
           d.*,
+          d.stock_description,
+          d.Seller_comments,
           g.GroupName,
           m.make_Name as MakeName,
           gr.GradeName,
@@ -255,14 +257,12 @@ class DealService {
           }
         }
         
-        // Use stock_description as main description and Seller_comments as deal_comments
-        const deal_description = deal.stock_description || '';
+        // Use ONLY the exact database value for stock_description - NO auto-generation
         const deal_comments = deal.Seller_comments || '';
         
         return {
           ...deal,
           DealSpecifications: specifications,
-          deal_description,
           deal_comments
         };
       });
@@ -280,6 +280,8 @@ class DealService {
       const deal = await executeQuerySingle(`
         SELECT 
           d.*,
+          d.stock_description,
+          d.Seller_comments,
           g.GroupName,
           m.make_Name as MakeName,
           gr.GradeName,
@@ -315,14 +317,12 @@ class DealService {
         }
       }
       
-      // Use stock_description as main description and Seller_comments as deal_comments
-      const deal_description = deal.stock_description || '';
+      // Use ONLY the exact database value for stock_description - NO auto-generation
       const deal_comments = deal.Seller_comments || '';
       
       return {
         ...deal,
         DealSpecifications: specifications,
-        deal_description,
         deal_comments
       };
     } catch (error) {

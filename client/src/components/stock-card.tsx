@@ -64,9 +64,9 @@ export default function StockCard({ listing, viewMode = 'grid' }: StockCardProps
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground truncate" data-testid={`title-${listing.id}`}>
-                    {listing.title}
+                    {listing.Make} {listing.Brand} {listing.Grade}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{listing.description}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{listing.stock_description || `${listing.GSM} GSM, ${listing.Deckle_mm}x${listing.grain_mm}mm`}</p>
                 </div>
                 <Badge variant={getStatusColor(listing.status)} className="ml-2">
                   {getStatusText(listing.status)}

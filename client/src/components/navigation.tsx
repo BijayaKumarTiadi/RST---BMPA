@@ -76,14 +76,12 @@ export default function Navigation() {
           <nav className="hidden md:flex items-center space-x-8">
             {isAuthenticated && (
               <>
-                <Link href="/marketplace" className={`${location === '/marketplace' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-marketplace">
+                <Link href="/marketplace" className={`${location === '/marketplace' || location === '/' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-marketplace">
                   Marketplace
                 </Link>
-                {(user?.role === 'seller' || user?.role === 'both') && (
-                  <Link href="/seller-dashboard" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-member-dashboard">
-                    Member Dashboard
-                  </Link>
-                )}
+                <Link href="/seller-dashboard" className={`${location === '/seller-dashboard' ? 'text-primary font-bold border-b-2 border-primary' : 'text-foreground hover:text-primary'} transition-colors font-medium`} data-testid="nav-member-dashboard">
+                  Member Dashboard
+                </Link>
               </>
             )}
           </nav>
@@ -133,9 +131,6 @@ export default function Navigation() {
                       <span className="text-sm font-medium text-foreground">
                         {user?.firstName || user?.name || 'User'}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user?.role || 'Member'}
-                      </span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -174,14 +169,12 @@ export default function Navigation() {
                     </Link>
                   </DropdownMenuItem>
                   
-                  {(user?.role === 'seller' || user?.role === 'both') && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/add-product" className="flex items-center space-x-2 w-full">
-                        <Package className="h-4 w-4" />
-                        <span>Add Product</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-product" className="flex items-center space-x-2 w-full">
+                      <Package className="h-4 w-4" />
+                      <span>Add Product</span>
+                    </Link>
+                  </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center space-x-2 w-full">
@@ -198,17 +191,17 @@ export default function Navigation() {
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
-                    <Link href="/register" className="flex items-center space-x-2 w-full">
+                    <Link href="/membership" className="flex items-center space-x-2 w-full">
                       <CreditCard className="h-4 w-4" />
                       <span>Membership</span>
                     </Link>
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
-                    <a href="#about" className="flex items-center space-x-2 w-full">
+                    <Link href="/about" className="flex items-center space-x-2 w-full">
                       <Info className="h-4 w-4" />
                       <span>About Us</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
@@ -268,7 +261,6 @@ export default function Navigation() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">{user.firstName || user.name || user.email}</span>
-                          <span className="text-xs text-muted-foreground">{user.role || 'Member'}</span>
                         </div>
                       </div>
                     </div>
@@ -290,33 +282,18 @@ export default function Navigation() {
                           Marketplace
                         </Button>
                         
-                        {(user?.role === 'seller' || user?.role === 'both') && (
-                          <Button 
-                            variant="ghost" 
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setLocation('/seller-dashboard');
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Member Dashboard
-                          </Button>
-                        )}
+                        <Button 
+                          variant={location === '/seller-dashboard' ? 'default' : 'ghost'}
+                          className={`w-full justify-start ${location === '/seller-dashboard' ? 'bg-primary text-primary-foreground' : ''}`}
+                          onClick={() => {
+                            setLocation('/seller-dashboard');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Member Dashboard
+                        </Button>
                         
-                        {(user?.role === 'buyer' || user?.role === 'both') && (
-                          <Button 
-                            variant="ghost" 
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setLocation('/buyer-dashboard');
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <ShoppingBag className="mr-2 h-4 w-4" />
-                            Buyer Dashboard
-                          </Button>
-                        )}
                         
                         <Button 
                           variant="ghost" 

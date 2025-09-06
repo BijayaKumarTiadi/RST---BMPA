@@ -97,7 +97,7 @@ export async function initializeDatabase(): Promise<void> {
           membership_paid int(1) DEFAULT '0',
           membership_valid_till date DEFAULT '1900-01-01',
           mstatus int(1) DEFAULT '0',
-          role varchar(20) DEFAULT 'buyer',
+          role varchar(20) DEFAULT 'both',
           created_at datetime DEFAULT CURRENT_TIMESTAMP,
           bmpa_approval_id int(10) DEFAULT '0',
           approval_datetime datetime DEFAULT CURRENT_TIMESTAMP,
@@ -168,10 +168,25 @@ export async function initializeDatabase(): Promise<void> {
         console.log('🔧 Adding role column to bmpa_members table...');
         await executeQuery(`
           ALTER TABLE bmpa_members 
-          ADD COLUMN role varchar(20) DEFAULT 'buyer' 
+          ADD COLUMN role varchar(20) DEFAULT 'both' 
           AFTER mstatus
         `);
         console.log('✅ Role column added successfully');
+      }
+
+      // Update existing users to have 'both' role if they have 'buyer' or 'seller'
+      console.log('🔧 Updating existing users to have "both" role...');
+      const updateResult = await executeQuery(`
+        UPDATE bmpa_members 
+        SET role = 'both' 
+        WHERE role IN ('buyer', 'seller')
+      `);
+      const updateInfo = updateResult as any;
+      const affectedRows = updateInfo.affectedRows || 0;
+      if (affectedRows > 0) {
+        console.log(`✅ Updated ${affectedRows} users to have "both" role`);
+      } else {
+        console.log('ℹ️ No users needed role update');
       }
       
       // Check if admin table exists, if not create it

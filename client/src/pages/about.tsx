@@ -16,7 +16,8 @@ export default function About() {
             About Stock Laabh
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            A comprehensive B2B ecommerce marketplace for the trading industry, connecting print providers, 
+            A comprehensive B2B ecommerce marketplace for the printing and paper industry, developed in 
+            association with BMPA (Bombay Master Printers Association), connecting print providers, 
             suppliers, and allied businesses in a unified platform.
           </p>
         </div>
@@ -189,7 +190,7 @@ export default function About() {
         </div>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          Powered by Renuka Print ERP Solutions
+          Developed in association with BMPA (Bombay Master Printers Association)
         </div>
       </div>
     </div>

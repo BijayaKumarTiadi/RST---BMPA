@@ -32,7 +32,6 @@ export interface RegistrationData {
   address2: string;
   city: string;
   state: string;
-  password: string;
 }
 
 export class AuthService {
@@ -73,14 +72,13 @@ export class AuthService {
         };
       }
 
-      // Hash password
-      const passwordHash = await this.hashPassword(data.password);
+      // No password needed for OTP-based authentication
 
       // Insert new member
       const result = await executeQuery(
         `INSERT INTO bmpa_members (
           mname, email, phone, company_name, address1, address2, 
-          city, state, password_hash, mstatus, bmpa_approval_id
+          city, state, role, mstatus, bmpa_approval_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.mname,
@@ -91,7 +89,7 @@ export class AuthService {
           data.address2,
           data.city,
           data.state,
-          passwordHash,
+          'both', // role: explicitly set to 'both' for all new users
           0, // mstatus: 0 = pending approval
           0  // bmpa_approval_id: 0 = not approved yet
         ]

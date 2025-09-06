@@ -5,6 +5,64 @@ import { adminService } from './adminService';
 
 export const authRouter = express.Router();
 
+// Test login for development (password only)
+authRouter.post('/test-login', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (password !== 'admin123') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid test password'
+      });
+    }
+
+    // Get test member (member ID 7 from your logs)
+    const testMember = await authService.getMemberById(7);
+    if (!testMember) {
+      return res.status(400).json({
+        success: false,
+        message: 'Test member not found'
+      });
+    }
+
+    // Store member in session (same as OTP login)
+    req.session.memberId = testMember.member_id;
+    req.session.memberEmail = testMember.email;
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Test login failed - session error'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Test login successful',
+        member: {
+          id: testMember.member_id,
+          name: testMember.mname,
+          email: testMember.email,
+          phone: testMember.phone,
+          company: testMember.company_name,
+          membershipPaid: testMember.membership_paid,
+          membershipValidTill: testMember.membership_valid_till,
+          status: testMember.mstatus
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Test login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Send OTP for login
 authRouter.post('/send-login-otp', async (req, res) => {
   try {

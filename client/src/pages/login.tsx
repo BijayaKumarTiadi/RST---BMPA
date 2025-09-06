@@ -16,6 +16,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [showPendingApproval, setShowPendingApproval] = useState(false);
+  const [showTestLogin, setShowTestLogin] = useState(false);
   const { toast } = useToast();
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -107,6 +108,46 @@ export default function Login() {
       toast({
         title: "Error",
         description: "Login failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== 'admin123') {
+      toast({
+        title: "Invalid Password",
+        description: "Test password is 'admin123'",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/test-login", { password });
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Test Login Successful",
+          description: "Logged in as test user",
+        });
+        window.location.href = '/';
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Test login failed. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -334,7 +375,55 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        {/* Simple Login for Testing */}
+        {/* Test Login for Development */}
+        <Card className="shadow-lg border-0 mt-4 bg-yellow-50 border-yellow-200">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="flex items-center justify-center text-lg text-yellow-800">
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Test Login (Development Only)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!showTestLogin ? (
+              <Button 
+                onClick={() => setShowTestLogin(true)}
+                variant="outline"
+                className="w-full border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+              >
+                Show Test Login
+              </Button>
+            ) : (
+              <form onSubmit={handleTestLogin} className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="test-password" className="text-yellow-800">Test Password</Label>
+                  <Input
+                    id="test-password"
+                    type="password"
+                    placeholder="admin123"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="border-yellow-300"
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-yellow-600 hover:bg-yellow-700" 
+                  disabled={loading}
+                >
+                  {loading ? 'Logging in...' : 'Test Login'}
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={() => setShowTestLogin(false)}
+                  variant="ghost"
+                  className="w-full text-yellow-800"
+                >
+                  Hide Test Login
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">

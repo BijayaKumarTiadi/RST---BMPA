@@ -17,12 +17,15 @@ import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
+import PowerSearch from "@/components/power-search";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   // Pending filters (UI state, not applied yet)
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
@@ -126,8 +129,9 @@ export default function Marketplace() {
     );
   }
 
-  const deals = dealsData?.deals || [];
-  const totalDeals = dealsData?.total || 0;
+  // Use search results if available, otherwise use regular deals
+  const deals = searchResults?.data || dealsData?.deals || [];
+  const totalDeals = searchResults?.total || dealsData?.total || 0;
   const totalPages = Math.ceil(totalDeals / itemsPerPage);
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
@@ -323,6 +327,20 @@ export default function Marketplace() {
       <Navigation />
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
+        {/* Powerful Search Bar */}
+        <div className="mb-6">
+          <PowerSearch 
+            onSearch={(results) => {
+              if (results && results.success) {
+                setSearchResults(results);
+                setCurrentPage(1);
+              }
+            }}
+            onLoading={(loading) => setIsSearching(loading)}
+            className="w-full"
+          />
+        </div>
+        
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Marketplace</h1>
@@ -667,21 +685,6 @@ export default function Marketplace() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
-                {/* Search */}
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search offers..."
-                      value={pendingSearchTerm}
-                      onChange={(e) => setPendingSearchTerm(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search-desktop"
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
                 
                 {/* Categories */}
                 <div>
@@ -1002,7 +1005,7 @@ export default function Marketplace() {
                 </div>
 
                 {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
@@ -1030,35 +1033,38 @@ export default function Marketplace() {
 
                         <CardContent className="p-4 flex-1 flex flex-col">
                           {/* 1. Description - Extract from Seller_comments after newline */}
-                          <Link href={`/deal/${deal.TransID}`}>
-                            <h3 className="font-bold text-lg line-clamp-2 mb-4 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.deal_description || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
+                            <h3 className="font-bold text-lg line-clamp-2 mb-4 text-foreground" data-testid={`deal-title-${deal.TransID}`}>
+                              {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
                             </h3>
-                          </Link>
 
-                          {/* 2. GSM and Dimensions on separate lines like the image */}
+                          {/* 2. GSM and Dimensions properly aligned */}
                           <div className="space-y-2 mb-4">
                             <div className="flex items-center text-sm">
-                              <span className="font-medium text-gray-500 mr-2">GSM:</span>
-                              <span className="font-semibold text-foreground">{deal.GSM || 'N/A'}</span>
-                              <span className="font-medium text-gray-500 ml-6 mr-2">Dimensions:</span>
-                              <span className="font-semibold text-foreground text-xs">
+                              <span className="font-medium text-gray-500">GSM:</span>
+                              <span className="font-bold text-foreground ml-2">{deal.GSM || 'N/A'}</span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-500">Dimensions:</span>
+                              <div className="text-xs font-semibold text-foreground mt-1">
                                 {(deal.Deckle_mm && deal.grain_mm) ? (
-                                  `${(deal.Deckle_mm/10).toFixed(1)} × ${(deal.grain_mm/10).toFixed(1)} cm | ${(deal.Deckle_mm/25.4).toFixed(2)}" × ${(deal.grain_mm/25.4).toFixed(2)}"`
+                                  <>
+                                    <div>{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm</div>
+                                    <div>{(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
+                                  </>
                                 ) : 'N/A'}
-                              </span>
+                              </div>
                             </div>
                           </div>
 
-                          {/* 3. Quantity and Price in highlighted box */}
-                          <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-center gap-1">
+                          {/* 3. Quantity and Price */}
+                          <div className="flex items-center justify-between mb-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-sm">
                               <span className="font-medium text-gray-500">Qty:</span>
-                              <span className="font-bold text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
+                              <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="text-sm">
                               <span className="font-medium text-gray-500">Price:</span>
-                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400" data-testid={`deal-price-${deal.TransID}`}>
+                              <span className="font-bold text-foreground ml-1" data-testid={`deal-price-${deal.TransID}`}>
                                 ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
                               </span>
                               <span className="text-sm text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
@@ -1113,15 +1119,6 @@ export default function Marketplace() {
                                   Edit
                                 </Button>
                                 
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/deal/${deal.TransID}`)}
-                                  data-testid={`button-view-own-deal-${deal.TransID}`}
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Button>
                               </div>
                             ) : (
                               <div className="space-y-2">

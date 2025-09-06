@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,8 @@ export default function SellerDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
@@ -70,14 +73,27 @@ export default function SellerDashboard() {
     enabled: isAuthenticated,
   });
 
-  // Fetch orders for seller
-  const { data: ordersData } = useQuery({
+  // Fetch orders for seller (received inquiries)
+  const { data: receivedOrders } = useQuery({
     queryKey: ["/api/orders", "seller"],
     queryFn: async () => {
       const response = await fetch(`/api/orders?role=seller`, {
         credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to fetch orders');
+      if (!response.ok) throw new Error('Failed to fetch seller orders');
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Fetch orders for buyer (sent inquiries)
+  const { data: sentOrders } = useQuery({
+    queryKey: ["/api/orders", "buyer"],
+    queryFn: async () => {
+      const response = await fetch(`/api/orders?role=buyer`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch buyer orders');
       return response.json();
     },
     enabled: isAuthenticated,
@@ -128,7 +144,13 @@ export default function SellerDashboard() {
   });
 
   const deals = dealsData?.deals || [];
-  const orders = ordersData?.orders || [];
+  // Combine both received and sent orders
+  const receivedOrdersArray = receivedOrders || [];
+  const sentOrdersArray = sentOrders || [];
+  const allOrders = [...receivedOrdersArray, ...sentOrdersArray];
+  
+  // Sort by created_at date (newest first)
+  allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Get status text from numeric code
   const getStatusText = (stockStatus: number) => {
@@ -230,7 +252,7 @@ export default function SellerDashboard() {
               <TrendingUp className="h-5 w-5 text-green-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" data-testid="stat-total-orders">{orders.length}</div>
+              <div className="text-3xl font-bold" data-testid="stat-total-orders">{allOrders.length}</div>
               <p className="text-xs text-green-100 mt-1">
                 Orders received
               </p>
@@ -244,7 +266,7 @@ export default function SellerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold" data-testid="stat-total-revenue">
-                ₹{orders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
+                ₹{allOrders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
               </div>
               <p className="text-xs text-purple-100 mt-1">
                 Gross sales
@@ -636,7 +658,7 @@ export default function SellerDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                {orders.length === 0 ? (
+                {allOrders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
@@ -656,7 +678,7 @@ export default function SellerDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orders.map((order: any) => (
+                      {allOrders.map((order: any) => (
                         <TableRow 
                           key={order.id} 
                           className="hover:bg-muted/50 transition-colors"
@@ -700,15 +722,32 @@ export default function SellerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="hover:bg-blue-50"
-                              data-testid={`button-contact-buyer-${order.id}`}
-                            >
-                              <MessageCircle className="h-4 w-4 mr-1" />
-                              Contact
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setIsOrderModalOpen(true);
+                                }}
+                                data-testid={`button-view-${order.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              
+                              {order.customer_email && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  onClick={() => window.location.href = `mailto:${order.customer_email}?subject=Regarding your inquiry for ${order.product_title}&body=Dear ${order.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${order.product_title}.%0D%0A%0D%0ABest regards`}
+                                  data-testid={`button-contact-${order.id}`}
+                                >
+                                  <MessageCircle className="h-4 w-4 mr-1" />
+                                  Contact
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -719,6 +758,173 @@ export default function SellerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Order Details Modal */}
+        <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Order Details
+              </DialogTitle>
+              <DialogDescription>
+                Complete information about this inquiry/order
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedOrder && (
+              <div className="space-y-6">
+                {/* Order Basic Info */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Order ID</p>
+                    <p className="font-semibold">{selectedOrder.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <Badge className={
+                      selectedOrder.status === 'inquiry' ? 'bg-blue-100 text-blue-700' :
+                      selectedOrder.status === 'sent' ? 'bg-purple-100 text-purple-700' :
+                      'bg-gray-100 text-gray-700'
+                    }>
+                      {selectedOrder.status === 'inquiry' ? 'Received Inquiry' : 
+                       selectedOrder.status === 'sent' ? 'Sent Inquiry' :
+                       selectedOrder.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Date</p>
+                    <p>{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString('en-IN') : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Time</p>
+                    <p>{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Product Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Product Information</h3>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-lg mb-2">{selectedOrder.product_title}</h4>
+                    
+                    {/* Product Details */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Make:</span>
+                        <span className="ml-2 font-medium">{selectedOrder.MakeName || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Grade:</span>
+                        <span className="ml-2 font-medium">{selectedOrder.GradeName || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Brand:</span>
+                        <span className="ml-2 font-medium">{selectedOrder.BrandName || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">GSM:</span>
+                        <span className="ml-2 font-medium">{selectedOrder.gsm || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Dimensions:</span>
+                        <span className="ml-2 font-medium">
+                          {selectedOrder.deckle && selectedOrder.grain 
+                            ? `${selectedOrder.deckle}×${selectedOrder.grain}mm` 
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Seller Price:</span>
+                        <span className="ml-2 font-medium text-green-600">
+                          ₹{selectedOrder.seller_price?.toLocaleString('en-IN') || '0'} per {selectedOrder.unit || 'unit'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Name</p>
+                      <p className="font-semibold">{selectedOrder.customer_name || 'Anonymous'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Company</p>
+                      <p>{selectedOrder.customer_company || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Email</p>
+                      <p className="text-blue-600">{selectedOrder.customer_email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                      <p>{selectedOrder.customer_phone || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inquiry Details */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Inquiry Details</h3>
+                  <div className="p-4 border rounded-lg space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Quoted Price</p>
+                        <p className="font-semibold text-orange-600">
+                          {selectedOrder.buyer_quoted_price 
+                            ? `₹${Number(selectedOrder.buyer_quoted_price).toLocaleString('en-IN')}` 
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Quantity</p>
+                        <p className="font-semibold">{selectedOrder.buyer_quantity || 'Not specified'}</p>
+                      </div>
+                    </div>
+                    
+                    {selectedOrder.buyer_message && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Message</p>
+                        <div className="p-3 bg-slate-50 rounded border-l-4 border-blue-500">
+                          <p className="text-sm">{selectedOrder.buyer_message}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  {selectedOrder.customer_email && (
+                    <Button 
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        const subject = `Regarding your inquiry for ${selectedOrder.product_title}`;
+                        const body = `Dear ${selectedOrder.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${selectedOrder.product_title}.%0D%0A%0D%0ABest regards`;
+                        window.location.href = `mailto:${selectedOrder.customer_email}?subject=${subject}&body=${body}`;
+                        setIsOrderModalOpen(false);
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Reply via Email
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsOrderModalOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
