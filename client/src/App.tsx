@@ -21,6 +21,9 @@ import AddProduct from "@/pages/add-product";
 import EditProduct from "@/pages/edit-product";
 import ProductDetails from "@/pages/product-details";
 import Orders from "@/pages/orders";
+import Profile from "@/pages/profile";
+import Settings from "@/pages/settings";
+import Membership from "@/pages/membership";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -57,6 +60,9 @@ function Router() {
           <Route path="/product/:id" component={ProductDetails} />
           <Route path="/deal/:id" component={ProductDetails} />
           <Route path="/orders" component={Orders} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/membership" component={Membership} />
           <Route path="/api-docs" component={ApiDocs} />
           <Route path="/welcome" component={Landing} />
           <Route path="/subscribe" component={Subscribe} />

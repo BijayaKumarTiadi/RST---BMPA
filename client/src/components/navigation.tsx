@@ -191,7 +191,7 @@ export default function Navigation() {
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
-                    <Link href="/register" className="flex items-center space-x-2 w-full">
+                    <Link href="/membership" className="flex items-center space-x-2 w-full">
                       <CreditCard className="h-4 w-4" />
                       <span>Membership</span>
                     </Link>
