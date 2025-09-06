@@ -23,6 +23,7 @@ const dealSchema = z.object({
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle (mm) is required"),
   grain_mm: z.coerce.number().min(1, "Grain (mm) is required"),
+  deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
   quantity: z.coerce.number().min(1, "Quantity is required"),
@@ -546,6 +547,30 @@ export default function AddDeal() {
                                 </SelectContent>
                               </Select>
                             </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Deal Description - Full Width */}
+                  <div className="mt-6">
+                    <FormField
+                      control={form.control}
+                      name="deal_description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Deal Description</FormLabel>
+                          <FormControl>
+                            <textarea
+                              {...field}
+                              placeholder="Description will be auto-generated based on your selections above..."
+                              rows={3}
+                              className="w-full px-3 py-2 border border-border rounded-md bg-popover text-foreground placeholder:text-muted-foreground resize-none"
+                              data-testid="textarea-deal-description"
+                              readOnly
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
