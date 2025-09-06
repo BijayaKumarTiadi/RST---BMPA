@@ -1002,7 +1002,7 @@ export default function Marketplace() {
                 </div>
 
                 {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
@@ -1036,20 +1036,22 @@ export default function Marketplace() {
                             </h3>
                           </Link>
 
-                          {/* 2. GSM and Dimensions on single line */}
-                          <div className="space-y-1 mb-4 text-sm">
-                            <div className="flex items-center">
-                              <span className="font-medium text-gray-500 min-w-[80px]">GSM:</span>
-                              <span className="font-bold text-foreground">{deal.GSM || 'N/A'}</span>
+                          {/* 2. GSM and Dimensions properly aligned */}
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center text-sm">
+                              <span className="font-medium text-gray-500">GSM:</span>
+                              <span className="font-bold text-foreground ml-2">{deal.GSM || 'N/A'}</span>
                             </div>
-                            <div className="flex items-start">
-                              <span className="font-medium text-gray-500 min-w-[80px]">Dimensions:</span>
-                              <span className="text-xs font-semibold text-foreground">
-                                {(deal.Deckle_mm && deal.grain_mm) ? 
-                                  `${(deal.Deckle_mm/10).toFixed(1)} × ${(deal.grain_mm/10).toFixed(1)} cm | ${(deal.Deckle_mm/25.4).toFixed(2)}" × ${(deal.grain_mm/25.4).toFixed(2)}"` 
-                                  : 'N/A'
-                                }
-                              </span>
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-500">Dimensions:</span>
+                              <div className="text-xs font-semibold text-foreground mt-1">
+                                {(deal.Deckle_mm && deal.grain_mm) ? (
+                                  <>
+                                    <div>{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm</div>
+                                    <div>{(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
+                                  </>
+                                ) : 'N/A'}
+                              </div>
                             </div>
                           </div>
 
