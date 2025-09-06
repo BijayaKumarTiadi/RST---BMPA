@@ -1081,6 +1081,22 @@ export default function Marketplace() {
                             )}
                           </div>
 
+                          {/* Stock Description */}
+                          {deal.stock_description && (
+                            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-700">
+                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Stock Details:</span>
+                              <p className="text-sm text-foreground leading-relaxed">{deal.stock_description}</p>
+                            </div>
+                          )}
+
+                          {/* Seller Comments */}
+                          {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
+                            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-200 dark:border-blue-700">
+                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Seller Notes:</span>
+                              <p className="text-sm text-foreground leading-relaxed">{deal.Seller_comments}</p>
+                            </div>
+                          )}
+
                           {/* Seller Info with Icon */}
                           <div className="flex items-center gap-2 mb-3 p-2 bg-muted/30 rounded-md">
                             <Building className="h-4 w-4 text-muted-foreground" />
