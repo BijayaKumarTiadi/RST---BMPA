@@ -17,209 +17,192 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {deal.stock_description || `${deal.Make} ${deal.Brand} ${deal.Grade}`.trim() || 'Product Details'}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Full Description at the top */}
+        {/* Product Description - Large text below title */}
         {deal.stock_description && (
-          <div className="mb-6">
-            <p className="text-lg text-foreground leading-relaxed">
+          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+            <p className="text-xl text-foreground leading-relaxed font-medium">
               {deal.stock_description}
             </p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Product Image */}
-          <div className="space-y-4">
-            <div className="h-64 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 rounded-lg">
-              {/* Removed cube icon as requested */}
-            </div>
-            
-            {/* Status and Category */}
-            <div className="flex gap-2">
-              <Badge variant={deal.Status === 'active' ? 'default' : 'secondary'}>
-                {deal.Status === 'active' ? 'Available' : deal.Status}
-              </Badge>
-              <Badge variant="secondary" className="bg-blue-600 text-white">
-                {deal.GroupName}
-              </Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Status and Category */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border shadow-sm">
+              <h4 className="font-semibold mb-4 text-lg">Product Status</h4>
+              <div className="space-y-3">
+                <Badge variant={deal.Status === 'active' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
+                  {deal.Status === 'active' ? 'Available' : deal.Status}
+                </Badge>
+                <Badge variant="secondary" className="bg-blue-600 text-white text-sm px-3 py-1">
+                  {deal.GroupName}
+                </Badge>
+              </div>
             </div>
           </div>
 
-          {/* Product Information */}
+          {/* Center Column - Price and Quantity */}
           <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold mb-2">{deal.DealTitle}</h3>
-              
-              {/* Removed duplicate description section since it's now at the top */}
-              
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border shadow-sm">
+              <h4 className="font-semibold mb-4 text-lg">Pricing & Quantity</h4>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <span className="text-4xl font-bold text-primary block">
+                    ₹{deal.OfferPrice?.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-muted-foreground text-lg">per {deal.OfferUnit}</span>
+                </div>
+                <div className="text-center pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Available Quantity</span>
+                  <div className="text-2xl font-semibold text-foreground">
+                    {deal.quantity || '1000'} {deal.OfferUnit || 'KG'}
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Price */}
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-primary">
-                ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-              </span>
-              <span className="text-muted-foreground">per {deal.OfferUnit}</span>
-            </div>
-
-            {/* Product Specifications */}
-            <div>
-              <h4 className="font-semibold mb-3">Product Specifications</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {deal.MakeName && (
-                  <div>
+          {/* Right Column - Product Specifications */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border shadow-sm">
+              <h4 className="font-semibold mb-4 text-lg">Product Specifications</h4>
+              <div className="space-y-3">
+                {deal.Make && (
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Make:</span>
-                    <span className="ml-2 font-medium">{deal.MakeName}</span>
+                    <span className="font-medium">{deal.Make}</span>
                   </div>
                 )}
-                {deal.GradeName && (
-                  <div>
+                {deal.Grade && (
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Grade:</span>
-                    <span className="ml-2 font-medium">{deal.GradeName}</span>
+                    <span className="font-medium">{deal.Grade}</span>
                   </div>
                 )}
-                {deal.BrandName && (
-                  <div>
+                {deal.Brand && (
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Brand:</span>
-                    <span className="ml-2 font-medium">{deal.BrandName}</span>
+                    <span className="font-medium">{deal.Brand}</span>
                   </div>
                 )}
                 {deal.GSM && (
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">GSM:</span>
-                    <span className="ml-2 font-medium">{deal.GSM}</span>
+                    <span className="font-medium">{deal.GSM}</span>
                   </div>
                 )}
                 {deal.Deckle_mm && (
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Deckle:</span>
-                    <span className="ml-2 font-medium">{deal.Deckle_mm}mm</span>
+                    <span className="font-medium">{deal.Deckle_mm}mm</span>
                   </div>
                 )}
                 {deal.grain_mm && (
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Grain:</span>
-                    <span className="ml-2 font-medium">{deal.grain_mm}mm</span>
+                    <span className="font-medium">{deal.grain_mm}mm</span>
                   </div>
                 )}
               </div>
             </div>
+          </div>
+        </div>
 
-            <Separator />
+        <Separator className="my-8" />
 
-            {/* Seller Information */}
-            <div>
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Seller Information
-              </h4>
-              <div className="space-y-2 text-sm">
+        {/* Bottom Section - Seller Information and Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border shadow-sm">
+            <h4 className="font-semibold mb-4 text-lg flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Seller Information
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">
+                  {deal.created_by_company || deal.seller_company || 'Company Name'}
+                </span>
+              </div>
+              
+              {deal.created_by_name && (
                 <div className="flex items-center gap-2">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">
-                    {deal.created_by_company || deal.seller_company || 'Company Name'}
-                  </span>
+                  <span className="text-muted-foreground text-sm">Contact Person:</span>
+                  <span className="font-medium text-sm">{deal.created_by_name}</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Contact Person:</span>
-                  <span className="ml-2 font-medium">
-                    {deal.created_by_name || deal.seller_name || 'Seller'}
-                  </span>
+              )}
+              
+              {deal.created_by_email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-blue-600">{deal.created_by_email}</span>
                 </div>
-                {(deal.seller_email || deal.email) && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a href={`mailto:${deal.seller_email || deal.email}`} className="text-primary hover:underline">
-                      {deal.seller_email || deal.email}
-                    </a>
-                  </div>
-                )}
-                {(deal.seller_phone || deal.phone) && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${deal.seller_phone || deal.phone}`} className="text-primary hover:underline">
-                      {deal.seller_phone || deal.phone}
-                    </a>
-                  </div>
-                )}
-                {deal.Location && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{deal.Location}</span>
-                  </div>
-                )}
-                {deal.deal_created_at && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Listed on {new Date(deal.deal_created_at).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
+              )}
+              
+              {deal.created_by_phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{deal.created_by_phone}</span>
+                </div>
+              )}
+              
+              {deal.uplaodDate && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Listed on {new Date(deal.uplaodDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
 
-            {/* Additional Details */}
-            {(deal.StockAge || deal.MinOrderQuantity) && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-semibold mb-3">Additional Information</h4>
-                  <div className="space-y-2 text-sm">
-                    {deal.StockAge && (
-                      <div>
-                        <span className="text-muted-foreground">Stock Age:</span>
-                        <span className="ml-2 font-medium">{deal.StockAge} days</span>
-                      </div>
-                    )}
-                    {deal.MinOrderQuantity && (
-                      <div>
-                        <span className="text-muted-foreground">Minimum Order:</span>
-                        <span className="ml-2 font-medium">{deal.MinOrderQuantity} {deal.OfferUnit}</span>
-                      </div>
-                    )}
-                  </div>
+            {/* Seller Notes */}
+            {deal.Seller_comments && (
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="h-4 w-4 text-orange-600" />
+                  <span className="font-semibold text-orange-600">Seller Notes</span>
                 </div>
-              </>
-            )}
-            
-            {/* Seller Notes Section - Moved to end */}
-            {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
-              <>
-                <Separator />
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <MessageSquare className="h-4 w-4 text-orange-600" />
-                    <h4 className="text-base font-semibold text-foreground">Seller Notes</h4>
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg border border-orange-200 dark:border-orange-700">
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap italic">{deal.Seller_comments}</p>
-                  </div>
+                <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <p className="text-sm text-foreground italic whitespace-pre-wrap">
+                    {deal.Seller_comments}
+                  </p>
                 </div>
-              </>
+              </div>
             )}
-            
-            {/* Action Buttons */}
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => onSendInquiry?.(deal)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Send Inquiry
-              </Button>
-              <Button
-                onClick={() => onSendWhatsApp?.(deal)}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                WhatsApp
-              </Button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border shadow-sm">
+            <h4 className="font-semibold mb-4 text-lg">Contact Seller</h4>
+            <div className="space-y-3">
+              {onSendInquiry && (
+                <Button 
+                  onClick={() => onSendInquiry(deal)} 
+                  className="w-full"
+                  size="lg"
+                >
+                  <Mail className="mr-2 h-5 w-5" />
+                  Send Inquiry
+                </Button>
+              )}
+              {onSendWhatsApp && (
+                <Button 
+                  onClick={() => onSendWhatsApp(deal)} 
+                  variant="secondary" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  WhatsApp
+                </Button>
+              )}
             </div>
           </div>
         </div>
