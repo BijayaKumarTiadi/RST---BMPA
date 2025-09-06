@@ -142,6 +142,9 @@ export class SimpleSearchService {
     }
     searchParams.push(pageSize, offset);
 
+    console.log('Executing search query:', searchQuery);
+    console.log('With params:', searchParams);
+    
     const results = await executeQuery(searchQuery, searchParams);
 
     // Get aggregations for filters
