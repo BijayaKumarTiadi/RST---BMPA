@@ -74,9 +74,6 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-home">
-              Home
-            </Link>
             {isAuthenticated && (
               <>
                 <Link href="/marketplace" className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-marketplace">
@@ -278,17 +275,6 @@ export default function Navigation() {
                   )}
                   
                   <div className="space-y-1">
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start" 
-                      onClick={() => {
-                        setLocation('/');
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4" />
-                      Home
-                    </Button>
                     
                     {isAuthenticated && (
                       <>
