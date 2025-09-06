@@ -42,12 +42,12 @@ authRouter.post('/send-login-otp', async (req, res) => {
 // Verify OTP and login
 authRouter.post('/verify-login-otp', async (req, res) => {
   try {
-    const { email, otp, password } = req.body;
+    const { email, otp } = req.body;
 
-    if (!email || !otp || !password) {
+    if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Email, OTP, and password are required'
+        message: 'Email and OTP are required'
       });
     }
 
@@ -57,10 +57,21 @@ authRouter.post('/verify-login-otp', async (req, res) => {
       return res.status(400).json(otpResult);
     }
 
-    // Then verify login credentials
-    const loginResult = await authService.loginMember(email, password);
-    if (!loginResult.success) {
-      return res.status(400).json(loginResult);
+    // Get member by email for OTP-only login
+    const member = await authService.getMemberByEmail(email);
+    if (!member) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member not found'
+      });
+    }
+
+    // Check member status
+    if (member.mstatus === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your membership is pending approval from the admin team'
+      });
     }
 
     // Implement single device login - invalidate other sessions for this user
@@ -68,8 +79,8 @@ authRouter.post('/verify-login-otp', async (req, res) => {
     console.log(`Single device login: Member ${loginResult.member!.member_id} logging in, session: ${req.sessionID}`);
     
     // Store member in session
-    req.session.memberId = loginResult.member!.member_id;
-    req.session.memberEmail = loginResult.member!.email;
+    req.session.memberId = member.member_id;
+    req.session.memberEmail = member.email;
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
@@ -83,14 +94,14 @@ authRouter.post('/verify-login-otp', async (req, res) => {
         success: true,
         message: 'Login successful',
         member: {
-          id: loginResult.member!.member_id,
-          name: loginResult.member!.mname,
-          email: loginResult.member!.email,
-          phone: loginResult.member!.phone,
-          company: loginResult.member!.company_name,
-          membershipPaid: loginResult.member!.membership_paid,
-          membershipValidTill: loginResult.member!.membership_valid_till,
-          status: loginResult.member!.mstatus
+          id: member.member_id,
+          name: member.mname,
+          email: member.email,
+          phone: member.phone,
+          company: member.company_name,
+          membershipPaid: member.membership_paid,
+          membershipValidTill: member.membership_valid_till,
+          status: member.mstatus
         }
       });
     });
