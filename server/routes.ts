@@ -951,8 +951,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               FROM deal_master d
               LEFT JOIN stock_groups g ON d.groupID = g.GroupID
               LEFT JOIN stock_make_master m ON d.Make = m.make_ID
-              LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
-              LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+              LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
+              LEFT JOIN stock_brand b ON d.Brand = b.brandID
               WHERE d.TransID = ?
             `, [inquiry.TransID || inquiry.product_id]);
             
@@ -1041,8 +1041,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 FROM deal_master d
                 LEFT JOIN stock_groups g ON d.groupID = g.GroupID
                 LEFT JOIN stock_make_master m ON d.Make = m.make_ID
-                LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
-                LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+                LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
+                LEFT JOIN stock_brand b ON d.Brand = b.brandID
                 WHERE d.TransID = ?
               `, [inquiry.TransID]);
               
