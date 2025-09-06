@@ -146,6 +146,17 @@ export default function AddDeal() {
     return '';
   };
 
+  // Auto-populate deal description when form values change
+  React.useEffect(() => {
+    const subscription = form.watch((values) => {
+      const description = generateStockDescription();
+      if (description && description !== form.getValues('deal_description')) {
+        form.setValue('deal_description', description);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, groups, makes, grades, brands]);
+
   // Handle selection changes to reset dependent fields
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
