@@ -80,8 +80,8 @@ authRouter.post('/verify-login-otp', async (req, res) => {
     console.log(`Single device login: Member ${member.member_id} logging in, session: ${req.sessionID}`);
     
     // Store member in session
-    req.session.memberId = member.member_id;
-    req.session.memberEmail = member.email;
+    (req.session as any).memberId = member.member_id;
+    (req.session as any).memberEmail = member.email;
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
@@ -188,14 +188,14 @@ authRouter.post('/complete-registration', async (req, res) => {
 // Get current logged-in member
 authRouter.get('/current-member', async (req, res) => {
   try {
-    if (!req.session.memberId) {
+    if (!(req.session as any).memberId) {
       return res.status(401).json({
         success: false,
         message: 'Not authenticated'
       });
     }
 
-    const member = await authService.getMemberById(req.session.memberId);
+    const member = await authService.getMemberById((req.session as any).memberId);
     if (!member) {
       return res.status(404).json({
         success: false,
@@ -251,6 +251,60 @@ authRouter.post('/logout', (req, res) => {
   });
 });
 
+// Test login with email/password (for development only)
+authRouter.post('/test-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Use direct login method from AuthService
+    const result = await authService.loginMember(email, password);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Store member in session
+    (req.session as any).memberId = result.member!.member_id;
+    (req.session as any).memberEmail = result.member!.email;
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Login failed - session error'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Test login successful',
+        member: {
+          id: result.member!.member_id,
+          name: result.member!.mname,
+          firstName: result.member!.mname,
+          email: result.member!.email,
+          phone: result.member!.phone,
+          company: result.member!.company_name,
+          role: result.member!.role || 'buyer'
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Test login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Send admin OTP
 authRouter.post('/admin-send-otp', async (req, res) => {
   try {
@@ -293,9 +347,9 @@ authRouter.post('/admin-login', async (req, res) => {
     }
 
     // Store admin in session
-    req.session.adminId = loginResult.admin!.admin_id;
-    req.session.adminUsername = loginResult.admin!.username;
-    req.session.adminRole = loginResult.admin!.role;
+    (req.session as any).adminId = loginResult.admin!.admin_id;
+    (req.session as any).adminUsername = loginResult.admin!.username;
+    (req.session as any).adminRole = loginResult.admin!.role;
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
@@ -330,14 +384,14 @@ authRouter.post('/admin-login', async (req, res) => {
 // Check admin session
 authRouter.get('/admin-user', async (req, res) => {
   try {
-    if (!req.session.adminId) {
+    if (!(req.session as any).adminId) {
       return res.status(401).json({
         success: false,
         message: 'Not authenticated'
       });
     }
 
-    const admin = await adminService.getAdminById(req.session.adminId);
+    const admin = await adminService.getAdminById((req.session as any).adminId);
     if (!admin) {
       // Clear invalid session
       req.session.destroy(() => {});

@@ -239,6 +239,36 @@ export async function initializeDatabase(): Promise<void> {
       }
     }
 
+    // Create test member for development (email with admin123 password)
+    try {
+      const bcrypt = await import('bcryptjs');
+      const testPassword = await bcrypt.hash('admin123', 12);
+      
+      await executeQuery(`
+        INSERT IGNORE INTO bmpa_members (
+          mname, email, phone, company_name, address1, city, state, 
+          password_hash, mstatus, role, membership_paid, bmpa_approval_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        'Test User',
+        'test@test.com', 
+        '1234567890',
+        'Test Company',
+        '123 Test Street',
+        'Test City',
+        'Test State',
+        testPassword,
+        1, // mstatus: 1 = approved
+        'buyer',
+        1, // membership_paid: 1 = paid
+        1  // bmpa_approval_id: 1 = approved
+      ]);
+      
+      console.log('✅ Test member created (email: test@test.com, password: admin123)');
+    } catch (error) {
+      console.log('ℹ️ Test member already exists');
+    }
+
     // Check if bmpa_categories table exists, if not create it
     const categoriesTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
