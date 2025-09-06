@@ -1002,7 +1002,7 @@ export default function Marketplace() {
                 </div>
 
                 {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
@@ -1081,6 +1081,23 @@ export default function Marketplace() {
                             )}
                           </div>
 
+                          {/* Dimensions Display */}
+                          {(deal.Deckle_mm || deal.grain_mm) && (
+                            <div className="mb-4 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-md border border-slate-200 dark:border-slate-700">
+                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Dimensions:</span>
+                              <div className="text-sm text-foreground">
+                                {deal.Deckle_mm && deal.grain_mm ? (
+                                  <>
+                                    <div>{deal.Deckle_mm} × {deal.grain_mm} mm</div>
+                                    <div className="text-muted-foreground text-xs">{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm | {(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
+                                  </>
+                                ) : (
+                                  <span>Custom size</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Stock Description */}
                           {deal.stock_description && (
                             <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-700">
@@ -1089,13 +1106,6 @@ export default function Marketplace() {
                             </div>
                           )}
 
-                          {/* Seller Comments */}
-                          {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
-                            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-200 dark:border-blue-700">
-                              <span className="text-xs font-medium text-muted-foreground mb-1 block">Seller Notes:</span>
-                              <p className="text-sm text-foreground leading-relaxed">{deal.Seller_comments}</p>
-                            </div>
-                          )}
 
                           {/* Seller Info with Icon */}
                           <div className="flex items-center gap-2 mb-3 p-2 bg-muted/30 rounded-md">
