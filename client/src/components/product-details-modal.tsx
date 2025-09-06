@@ -60,18 +60,6 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                 </div>
               )}
               
-              {/* Seller Notes Section */}
-              {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="h-4 w-4 text-orange-600" />
-                    <h5 className="text-base font-semibold text-foreground">Seller Notes</h5>
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg border border-orange-200 dark:border-orange-700">
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap italic">{deal.Seller_comments}</p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Price */}
@@ -196,6 +184,22 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                         <span className="ml-2 font-medium">{deal.MinOrderQuantity} {deal.OfferUnit}</span>
                       </div>
                     )}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Seller Notes Section - Moved to end */}
+            {deal.Seller_comments && deal.Seller_comments !== deal.DealTitle && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="h-4 w-4 text-orange-600" />
+                    <h4 className="text-base font-semibold text-foreground">Seller Notes</h4>
+                  </div>
+                  <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg border border-orange-200 dark:border-orange-700">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap italic">{deal.Seller_comments}</p>
                   </div>
                 </div>
               </>
