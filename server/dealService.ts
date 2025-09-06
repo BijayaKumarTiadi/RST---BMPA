@@ -4,7 +4,7 @@ import crypto from 'crypto';
 export interface Deal {
   DealID: number;
   GroupID: number;
-  MakeID: number;
+  Make: number;
   GradeID: number;
   BrandID: number;
   SellerID: number;
@@ -103,7 +103,7 @@ class DealService {
       }
 
       if (filters?.make_id) {
-        whereConditions.push('d.MakeID = ?');
+        whereConditions.push('d.Make = ?');
         params.push(filters.make_id);
       }
 
@@ -121,7 +121,7 @@ class DealService {
       if (filters?.makes) {
         const makesArray = filters.makes.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
         if (makesArray.length > 0) {
-          whereConditions.push(`d.MakeID IN (${makesArray.map(() => '?').join(',')})`);
+          whereConditions.push(`d.Make IN (${makesArray.map(() => '?').join(',')})`);
           params.push(...makesArray);
         }
       }
@@ -201,9 +201,9 @@ class DealService {
         SELECT COUNT(*) as total 
         FROM deal_master d 
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
-        LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
-        LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+        LEFT JOIN stock_make_master m ON d.Make = m.make_ID
+        LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
+        LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         ${whereClause}
       `;
@@ -227,9 +227,9 @@ class DealService {
           mb.phone as seller_phone
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
-        LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
-        LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+        LEFT JOIN stock_make_master m ON d.Make = m.make_ID
+        LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
+        LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         ${whereClause}
         ORDER BY d.uplaodDate DESC
@@ -284,9 +284,9 @@ class DealService {
           mb.phone as seller_phone
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
-        LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
-        LEFT JOIN stock_brand b ON d.BrandID = b.brandID
+        LEFT JOIN stock_make_master m ON d.Make = m.make_ID
+        LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
+        LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         WHERE d.TransID = ?
       `, [dealId]);
@@ -344,7 +344,7 @@ class DealService {
       const hierarchyCheck = await executeQuerySingle(`
         SELECT 
           g.GroupID,
-          m.make_ID as MakeID,
+          m.make_ID as Make,
           gr.gradeID as GradeID,
           b.brandID as BrandID
         FROM stock_groups g
@@ -354,7 +354,7 @@ class DealService {
         WHERE g.GroupID = ?
       `, [make_id, grade_id, brand_id, group_id]);
 
-      if (!hierarchyCheck || !hierarchyCheck.MakeID || !hierarchyCheck.GradeID || !hierarchyCheck.BrandID) {
+      if (!hierarchyCheck || !hierarchyCheck.Make || !hierarchyCheck.GradeID || !hierarchyCheck.BrandID) {
         return {
           success: false,
           message: 'Invalid stock hierarchy combination. Please check your Group, Make, Grade, and Brand selections.'
@@ -368,7 +368,7 @@ class DealService {
 
       const result = await executeQuery(`
         INSERT INTO deal_master (
-          groupID, MakeID, GradeID, BrandID, memberID, 
+          groupID, Make, Grade, Brand, memberID, 
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
           GSM, Deckle_mm, grain_mm,
           created_by_member_id, created_by_name, created_by_company
@@ -540,7 +540,7 @@ class DealService {
           b.BrandName
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.GroupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
+        LEFT JOIN stock_make_master m ON d.Make = m.make_ID
         LEFT JOIN stock_grade gr ON d.GradeID = gr.GradeID
         LEFT JOIN stock_brand b ON d.BrandID = b.BrandID
         WHERE d.SellerID = ?

@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const demoDeals = [
         {
           groupID: 1,
-          MakeID: 1,
+          Make: 1,
           GradeID: 1,
           BrandID: 1,
           memberID: 1,
@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           groupID: 1,
-          MakeID: 1,
+          Make: 1,
           GradeID: 2,
           BrandID: 2,
           memberID: 1,
@@ -196,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           deal.groupID,
-          deal.MakeID,
+          deal.Make,
           deal.GradeID,
           deal.BrandID,
           deal.memberID,
@@ -892,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               d.Deckle_mm,
               d.BrandID,
               d.GradeID,
-              d.MakeID
+              d.Make
             FROM inquiries i
             JOIN deal_master d ON i.product_id = d.TransID
             WHERE d.memberID = ?
@@ -909,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               Deckle_mm,
               BrandID,
               GradeID,
-              MakeID,
+              Make,
               deal_created_at
             FROM deal_master 
             WHERE memberID = ?
@@ -935,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             Deckle_mm: deal.Deckle_mm,
             BrandID: deal.BrandID,
             GradeID: deal.GradeID,
-            MakeID: deal.MakeID
+            Make: deal.Make
           }));
         }
         
@@ -950,7 +950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 b.brandname as BrandName
               FROM deal_master d
               LEFT JOIN stock_groups g ON d.groupID = g.GroupID
-              LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
+              LEFT JOIN stock_make_master m ON d.Make = m.make_ID
               LEFT JOIN stock_grade gr ON d.GradeID = gr.gradeID
               LEFT JOIN stock_brand b ON d.BrandID = b.brandID
               WHERE d.TransID = ?
@@ -1454,7 +1454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN deal_master d ON i.product_id = d.TransID
         LEFT JOIN bmpa_members m ON d.memberID = m.member_id
         LEFT JOIN stock_groups groups ON d.groupID = groups.GroupID
-        LEFT JOIN stock_make_master makes ON d.MakeID = makes.make_ID
+        LEFT JOIN stock_make_master makes ON d.Make = makes.make_ID
         LEFT JOIN stock_grade grades ON d.GradeID = grades.gradeID
         LEFT JOIN stock_brand brands ON d.BrandID = brands.brandID
         WHERE i.buyer_email = ?
