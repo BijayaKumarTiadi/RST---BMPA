@@ -131,6 +131,20 @@ export default function AddDeal() {
     selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
   );
 
+  // Generate stock description based on selected values
+  const generateStockDescription = () => {
+    const formValues = form.getValues();
+    const selectedGroupObj = groups.find((g: any) => g.GroupID.toString() === formValues.groupID);
+    const selectedMakeObj = makes.find((m: any) => m.make_ID.toString() === formValues.MakeID);
+    const selectedGradeObj = grades.find((g: any) => g.gradeID.toString() === formValues.GradeID);
+    const selectedBrandObj = brands.find((b: any) => b.brandID.toString() === formValues.BrandID);
+
+    if (selectedGroupObj && selectedMakeObj && selectedGradeObj && selectedBrandObj && formValues.GSM) {
+      return `${selectedBrandObj.brandname} ${selectedGradeObj.GradeName} ${selectedGroupObj.GroupName} - ${formValues.GSM}GSM, ${formValues.Deckle_mm}x${formValues.grain_mm}mm, ${formValues.quantity} ${formValues.OfferUnit} available`;
+    }
+    return '';
+  };
+
   // Handle selection changes to reset dependent fields
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
@@ -157,6 +171,7 @@ export default function AddDeal() {
         brand_id: data.BrandID ? parseInt(data.BrandID) : 0,
         deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
         deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+        stock_description: generateStockDescription(), // Auto-generated description
         price: data.OfferPrice,
         quantity: data.quantity, // Use form quantity value
         unit: data.OfferUnit,

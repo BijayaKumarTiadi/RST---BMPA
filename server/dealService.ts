@@ -39,6 +39,7 @@ export interface CreateDealData {
   seller_id: number;
   deal_title: string;
   deal_description?: string;
+  stock_description?: string;
   price: number;
   quantity: number;
   unit: string;
@@ -329,6 +330,7 @@ class DealService {
         seller_id,
         deal_title,
         deal_description,
+        stock_description,
         price,
         quantity,
         unit,
@@ -367,10 +369,10 @@ class DealService {
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, MakeID, GradeID, BrandID, memberID, 
-          Seller_comments, OfferPrice, OfferUnit, quantity,
+          Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
           GSM, Deckle_mm, grain_mm,
           created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
@@ -381,6 +383,7 @@ class DealService {
         price,
         unit,
         quantity,
+        stock_description || '',
         gsm,
         deckle_mm,
         grain_mm,
