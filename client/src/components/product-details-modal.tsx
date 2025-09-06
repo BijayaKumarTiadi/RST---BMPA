@@ -17,28 +17,16 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {deal.stock_description || `${deal.Make} ${deal.Brand} ${deal.Grade}`.trim() || 'Product Details'}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Full Description at the top */}
-        {deal.stock_description && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-lg text-foreground leading-relaxed">
-              {deal.stock_description}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Status and Category */}
           <div className="flex gap-2 justify-center">
-            <Badge variant={deal.Status === 'active' ? 'default' : 'secondary'}>
-              {deal.Status === 'active' ? 'Available' : deal.Status}
-            </Badge>
             <Badge variant="secondary" className="bg-blue-600 text-white">
               {deal.GroupName}
             </Badge>
@@ -46,16 +34,16 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
           {/* Price */}
           <div className="text-center">
-            <span className="text-4xl font-bold text-primary">
+            <span className="text-2xl font-bold text-primary">
               ₹{deal.OfferPrice?.toLocaleString('en-IN')}
             </span>
-            <span className="text-xl text-muted-foreground ml-2">per {deal.OfferUnit}</span>
+            <span className="text-lg text-muted-foreground ml-2">per {deal.OfferUnit}</span>
           </div>
 
           {/* Product Specifications */}
           <div>
-            <h4 className="font-semibold mb-4 text-center">Product Specifications</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <h4 className="font-semibold mb-3 text-center">Product Specifications</h4>
+            <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
               {deal.Make && (
                 <div>
                   <span className="text-muted-foreground">Make:</span>
@@ -107,16 +95,14 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
             </div>
           </div>
 
-          <Separator />
-
           {/* Seller Information */}
           <div>
-            <h4 className="font-semibold mb-4 flex items-center justify-center gap-2">
+            <h4 className="font-semibold mb-3 flex items-center justify-center gap-2">
               <User className="h-4 w-4" />
               Seller Information
             </h4>
-            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <div className="space-y-3 text-sm">
+            <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+              <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Building className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">
@@ -157,11 +143,11 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
           {/* Seller Notes */}
           {deal.Seller_comments && (
             <div>
-              <h4 className="font-semibold mb-3 flex items-center justify-center gap-2">
+              <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Seller Notes
               </h4>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
                 <p className="text-sm text-foreground italic">
                   {deal.Seller_comments}
                 </p>
@@ -170,7 +156,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-3 mt-4">
             {onSendInquiry && (
               <Button 
                 onClick={() => onSendInquiry(deal)}
