@@ -255,8 +255,8 @@ class DealService {
           }
         }
         
-        // Use Seller_comments as main description since stock_description is often empty
-        const deal_description = deal.Seller_comments || deal.stock_description || '';
+        // Correct mapping: deal_description from stock_description, deal_comments from Seller_comments
+        const deal_description = deal.stock_description || '';
         const deal_comments = deal.Seller_comments || '';
         
         return {
@@ -317,8 +317,8 @@ class DealService {
         }
       }
       
-      // Use Seller_comments as main description since stock_description is often empty
-      const deal_description = deal.Seller_comments || deal.stock_description || '';
+      // Correct mapping: deal_description from stock_description, deal_comments from Seller_comments
+      const deal_description = deal.stock_description || '';
       const deal_comments = deal.Seller_comments || '';
       
       return {
