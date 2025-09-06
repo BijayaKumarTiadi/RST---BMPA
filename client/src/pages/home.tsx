@@ -35,8 +35,8 @@ export default function Home() {
     },
   });
 
-  // Check if user has permission to add products (sellers, admins, or both)
-  const canAddProducts = isAuthenticated && (user?.role === 'seller' || user?.role === 'both' || user?.role === 'admin');
+  // All authenticated users can add products
+  const canAddProducts = isAuthenticated;
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,18 +111,16 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {(user?.role === 'seller' || user?.role === 'both') && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="quick-action-list">
-              <CardContent className="p-6 text-center">
-                <Plus className="h-12 w-12 text-chart-2 mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">List Stock</h3>
-                <p className="text-sm text-muted-foreground mb-4">Add your inventory to the marketplace</p>
-                <Button asChild className="w-full" variant="outline">
-                  <Link href="/seller-dashboard">Add Listing</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="quick-action-list">
+            <CardContent className="p-6 text-center">
+              <Plus className="h-12 w-12 text-chart-2 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">List Stock</h3>
+              <p className="text-sm text-muted-foreground mb-4">Add your inventory to the marketplace</p>
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/seller-dashboard">Add Listing</Link>
+              </Button>
+            </CardContent>
+          </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="quick-action-orders">
             <CardContent className="p-6 text-center">
@@ -130,7 +128,7 @@ export default function Home() {
               <h3 className="font-semibold mb-2">My Orders</h3>
               <p className="text-sm text-muted-foreground mb-4">Track your purchases and sales</p>
               <Button asChild className="w-full" variant="outline">
-                <Link href={user?.role === 'seller' ? '/seller-dashboard' : '/buyer-dashboard'}>
+                <Link href='/seller-dashboard'>
                   View Orders
                 </Link>
               </Button>
@@ -258,39 +256,35 @@ export default function Home() {
         {/* User Dashboard Links */}
         {isAuthenticated && (
           <div className="grid md:grid-cols-2 gap-6">
-            {(user?.role === 'buyer' || user?.role === 'both') && (
-              <Card data-testid="buyer-dashboard-link">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    My Orders
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">Track orders and manage purchases</p>
-                  <Button asChild className="w-full" variant="outline">
-                    <Link href="/buyer-dashboard">View Orders</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <Card data-testid="buyer-dashboard-link">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  My Orders
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Track orders and manage purchases</p>
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/seller-dashboard">View Orders</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-            {(user?.role === 'seller' || user?.role === 'both') && (
-              <Card data-testid="seller-dashboard-link">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Package className="mr-2 h-5 w-5" />
-                    My Products
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">Manage inventory and sales</p>
-                  <Button asChild className="w-full" variant="outline">
-                    <Link href="/seller-dashboard">Manage Products</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <Card data-testid="seller-dashboard-link">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="mr-2 h-5 w-5" />
+                  My Products
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Manage inventory and sales</p>
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/seller-dashboard">Manage Products</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
 
