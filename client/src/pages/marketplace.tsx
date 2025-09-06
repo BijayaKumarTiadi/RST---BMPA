@@ -1094,7 +1094,7 @@ export default function Marketplace() {
 
                           {/* Quantity Info */}
                           <div className="flex items-center justify-between text-sm mb-3">
-                            <span className="text-muted-foreground">Qty: <span className="font-medium text-foreground">{deal.Quantity || deal.StockAge || 'Available'} {deal.OfferUnit || deal.Unit || ''}</span></span>
+                            <span className="text-muted-foreground">Qty: <span className="font-medium text-foreground">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || ''}</span></span>
                           </div>
 
                           {/* Deal Age */}

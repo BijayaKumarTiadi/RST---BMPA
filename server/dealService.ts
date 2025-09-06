@@ -367,10 +367,10 @@ class DealService {
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, MakeID, GradeID, BrandID, memberID, 
-          Seller_comments, OfferPrice, OfferUnit,
+          Seller_comments, OfferPrice, OfferUnit, quantity,
           GSM, Deckle_mm, grain_mm,
           created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
@@ -380,6 +380,7 @@ class DealService {
         `${deal_title}\n${deal_description || ''}`,
         price,
         unit,
+        quantity,
         gsm,
         deckle_mm,
         grain_mm,

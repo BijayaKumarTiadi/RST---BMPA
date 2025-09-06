@@ -158,7 +158,7 @@ export default function AddDeal() {
         deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
         deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
         price: data.OfferPrice,
-        quantity: 1000, // Default quantity
+        quantity: data.quantity, // Use form quantity value
         unit: data.OfferUnit,
         min_order_quantity: 100, // Default min order quantity
         deal_specifications: {
