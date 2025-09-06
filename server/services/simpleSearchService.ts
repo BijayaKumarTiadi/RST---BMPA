@@ -27,7 +27,7 @@ export class SimpleSearchService {
       pageSize = 20 
     } = params;
 
-    let whereConditions = [];
+    let whereConditions = ['dm.StockStatus = 1']; // 1 = active
     const queryParams: any[] = [];
 
     // Full-text search across multiple fields with fuzzy matching
@@ -156,7 +156,7 @@ export class SimpleSearchService {
         MAX(dm.OfferPrice) as max_price,
         COUNT(*) as count
       FROM deal_master dm
-      WHERE dm.StockStatus = 'active'
+      WHERE dm.StockStatus = 1
       GROUP BY dm.Make, dm.Brand, dm.Grade
     `;
     
@@ -214,15 +214,15 @@ export class SimpleSearchService {
         type,
         COUNT(*) as frequency
       FROM (
-        SELECT Make as suggestion, 'make' as type FROM deal_master WHERE Make LIKE ? AND StockStatus = 'active'
+        SELECT Make as suggestion, 'make' as type FROM deal_master WHERE Make LIKE ? AND StockStatus = 1
         UNION ALL
-        SELECT Brand as suggestion, 'brand' as type FROM deal_master WHERE Brand LIKE ? AND StockStatus = 'active'
+        SELECT Brand as suggestion, 'brand' as type FROM deal_master WHERE Brand LIKE ? AND StockStatus = 1
         UNION ALL
-        SELECT Grade as suggestion, 'grade' as type FROM deal_master WHERE Grade LIKE ? AND StockStatus = 'active'
+        SELECT Grade as suggestion, 'grade' as type FROM deal_master WHERE Grade LIKE ? AND StockStatus = 1
         UNION ALL
         SELECT CONCAT(Make, ' ', Brand, ' ', Grade) as suggestion, 'product' as type 
         FROM deal_master 
-        WHERE CONCAT(Make, ' ', Brand, ' ', Grade) LIKE ? AND StockStatus = 'active'
+        WHERE CONCAT(Make, ' ', Brand, ' ', Grade) LIKE ? AND StockStatus = 1
       ) as suggestions
       WHERE suggestion IS NOT NULL AND suggestion != ''
       GROUP BY suggestion, type
