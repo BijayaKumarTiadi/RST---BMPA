@@ -217,6 +217,8 @@ class DealService {
       const dealsQuery = `
         SELECT 
           d.*,
+          d.stock_description,
+          d.Seller_comments,
           g.GroupName,
           m.make_Name as MakeName,
           gr.GradeName,
@@ -255,8 +257,8 @@ class DealService {
           }
         }
         
-        // Correct mapping: deal_description from stock_description, deal_comments from Seller_comments
-        const deal_description = deal.stock_description || '';
+        // Mapping: deal_description from stock_description with Seller_comments fallback, deal_comments from Seller_comments
+        const deal_description = deal.stock_description || deal.Seller_comments || '';
         const deal_comments = deal.Seller_comments || '';
         
         return {
@@ -282,6 +284,8 @@ class DealService {
       const deal = await executeQuerySingle(`
         SELECT 
           d.*,
+          d.stock_description,
+          d.Seller_comments,
           g.GroupName,
           m.make_Name as MakeName,
           gr.GradeName,
@@ -317,8 +321,8 @@ class DealService {
         }
       }
       
-      // Correct mapping: deal_description from stock_description, deal_comments from Seller_comments
-      const deal_description = deal.stock_description || '';
+      // Mapping: deal_description from stock_description with Seller_comments fallback, deal_comments from Seller_comments
+      const deal_description = deal.stock_description || deal.Seller_comments || '';
       const deal_comments = deal.Seller_comments || '';
       
       return {
