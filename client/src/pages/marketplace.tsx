@@ -1032,7 +1032,7 @@ export default function Marketplace() {
                           {/* 1. Description (Deal Title/Comments) */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-3 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.DealTitle || deal.Seller_comments || deal.stock_description || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
+                              {deal.deal_description || deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName}`.trim() || 'Product Details'}
                             </h3>
                           </Link>
 
