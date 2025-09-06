@@ -1002,9 +1002,9 @@ export default function Marketplace() {
                 </div>
 
                 {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {deals.map((deal: any) => (
-                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
+                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col border-l-4 border-l-blue-500 max-h-[350px]">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
                         {/* Header with badges */}
                         <div className="flex items-center justify-between mb-2">
@@ -1035,7 +1035,7 @@ export default function Marketplace() {
                         </div>
                       </div>
 
-                        <CardContent className="p-4 flex-1 flex flex-col">
+                        <CardContent className="p-3 flex-1 flex flex-col">
                           {/* Product Name - More Prominent */}
                           <Link href={`/deal/${deal.TransID}`}>
                             <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-3 hover:text-primary transition-colors text-foreground" data-testid={`deal-title-${deal.TransID}`}>
