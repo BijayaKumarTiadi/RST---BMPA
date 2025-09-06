@@ -17,6 +17,7 @@ import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
+import PowerSearch from "@/components/power-search";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
@@ -323,6 +324,22 @@ export default function Marketplace() {
       <Navigation />
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
+        {/* Powerful Search Bar */}
+        <div className="mb-6">
+          <PowerSearch 
+            onSearch={(results) => {
+              console.log('Search results:', results);
+              // Update deals with search results
+              if (results && results.data) {
+                // Handle search results
+                setCurrentPage(1);
+              }
+            }}
+            onLoading={(loading) => console.log('Searching:', loading)}
+            className="w-full"
+          />
+        </div>
+        
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Marketplace</h1>
@@ -667,21 +684,6 @@ export default function Marketplace() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
-                {/* Search */}
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search offers..."
-                      value={pendingSearchTerm}
-                      onChange={(e) => setPendingSearchTerm(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search-desktop"
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
                 
                 {/* Categories */}
                 <div>

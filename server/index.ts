@@ -4,6 +4,7 @@ import MySQLStore from 'express-mysql-session';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./database";
+import searchRouter from "./searchRoutes";
 
 const app = express();
 
