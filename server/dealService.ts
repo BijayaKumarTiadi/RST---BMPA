@@ -540,7 +540,7 @@ class DealService {
           b.BrandName
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.GroupID = g.GroupID
-        LEFT JOIN stock_make_master m ON d.MakeID = m.MakeID
+        LEFT JOIN stock_make_master m ON d.MakeID = m.make_ID
         LEFT JOIN stock_grade gr ON d.GradeID = gr.GradeID
         LEFT JOIN stock_brand b ON d.BrandID = b.BrandID
         WHERE d.SellerID = ?
