@@ -287,6 +287,24 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Member information columns added to deal_master');
     }
 
+    // Add quantity column to deal_master if it doesn't exist
+    const quantityColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'deal_master' 
+      AND column_name = 'quantity'
+    `);
+
+    if (!quantityColumnExists || quantityColumnExists.count === 0) {
+      console.log('🔧 Adding quantity column to deal_master...');
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN quantity INT DEFAULT 1000
+      `);
+      console.log('✅ Quantity column added to deal_master');
+    }
+
     // Check if bmpa_products table exists, if not create it
     const productsTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
