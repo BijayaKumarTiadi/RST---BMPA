@@ -60,14 +60,67 @@ class DealService {
   // Get stock hierarchy data for form dropdowns
   async getStockHierarchy(): Promise<StockHierarchy> {
     try {
-      const [groups, makes, grades, brands] = await Promise.all([
+      const [groups, makes, grades, brands, dealMakes, dealGrades, dealBrands] = await Promise.all([
         executeQuery('SELECT GroupID, GroupName FROM stock_groups WHERE IsActive = 1 ORDER BY GroupName'),
         executeQuery('SELECT make_ID, GroupID, make_Name FROM stock_make_master WHERE IsActive = 1 ORDER BY make_Name'),
         executeQuery('SELECT gradeID, Make_ID, GradeName FROM stock_grade WHERE IsActive = 1 ORDER BY GradeName'),
-        executeQuery('SELECT brandID, make_ID, brandname FROM stock_brand WHERE IsActive = 1 ORDER BY brandname')
+        executeQuery('SELECT brandID, make_ID, brandname FROM stock_brand WHERE IsActive = 1 ORDER BY brandname'),
+        // Also fetch unique custom values from deal_master
+        executeQuery(`SELECT DISTINCT Make as make_Name, groupID as GroupID FROM deal_master 
+                      WHERE Make IS NOT NULL AND Make != '' AND Make NOT IN (SELECT make_ID FROM stock_make_master)
+                      ORDER BY Make`),
+        executeQuery(`SELECT DISTINCT Grade as GradeName FROM deal_master 
+                      WHERE Grade IS NOT NULL AND Grade != '' AND Grade NOT IN (SELECT gradeID FROM stock_grade)
+                      ORDER BY Grade`),
+        executeQuery(`SELECT DISTINCT Brand as brandname FROM deal_master 
+                      WHERE Brand IS NOT NULL AND Brand != '' AND Brand NOT IN (SELECT brandID FROM stock_brand)
+                      ORDER BY Brand`)
       ]);
 
-      return { groups, makes, grades, brands };
+      // Merge custom values from deal_master with master data
+      const allMakes = [...makes as any[]];
+      const allGrades = [...grades as any[]];
+      const allBrands = [...brands as any[]];
+      
+      // Add custom makes from deal_master
+      (dealMakes as any[]).forEach(dm => {
+        if (dm.make_Name && !allMakes.find(m => m.make_Name === dm.make_Name)) {
+          allMakes.push({
+            make_ID: dm.make_Name, // Use the text as ID for custom entries
+            GroupID: dm.GroupID,
+            make_Name: dm.make_Name
+          });
+        }
+      });
+      
+      // Add custom grades from deal_master
+      (dealGrades as any[]).forEach(dg => {
+        if (dg.GradeName && !allGrades.find(g => g.GradeName === dg.GradeName)) {
+          allGrades.push({
+            gradeID: dg.GradeName, // Use the text as ID for custom entries
+            Make_ID: null,
+            GradeName: dg.GradeName
+          });
+        }
+      });
+      
+      // Add custom brands from deal_master
+      (dealBrands as any[]).forEach(db => {
+        if (db.brandname && !allBrands.find(b => b.brandname === db.brandname)) {
+          allBrands.push({
+            brandID: db.brandname, // Use the text as ID for custom entries
+            make_ID: null,
+            brandname: db.brandname
+          });
+        }
+      });
+
+      return { 
+        groups, 
+        makes: allMakes.sort((a, b) => a.make_Name.localeCompare(b.make_Name)),
+        grades: allGrades.sort((a, b) => a.GradeName.localeCompare(b.GradeName)),
+        brands: allBrands.sort((a, b) => a.brandname.localeCompare(b.brandname))
+      };
     } catch (error) {
       console.error('Error fetching stock hierarchy:', error);
       return { groups: [], makes: [], grades: [], brands: [] };
