@@ -673,8 +673,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const {
         group_id,
         make_id,
+        make_text,
         grade_id,
+        grade_text,
         brand_id,
+        brand_text,
         deal_title,
         deal_description,
         stock_description,
@@ -687,7 +690,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires_at
       } = req.body;
 
-      if (!group_id || !make_id || !grade_id || !brand_id || !deal_title || !price || !quantity || !unit) {
+      // Validate that we have either ID or text for make, grade, and brand
+      const hasMake = make_id || make_text;
+      const hasGrade = grade_id || grade_text;
+      const hasBrand = brand_id || brand_text;
+      
+      if (!group_id || !hasMake || !hasGrade || !hasBrand || !deal_title || !price || !quantity || !unit) {
         return res.status(400).json({
           success: false,
           message: 'Required fields are missing: group_id, make_id, grade_id, brand_id, deal_title, price, quantity, unit'
@@ -705,9 +713,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await dealService.createDeal({
         group_id: parseInt(group_id),
-        make_id: parseInt(make_id),
-        grade_id: parseInt(grade_id),
-        brand_id: parseInt(brand_id),
+        make_id: make_id,
+        make_text: make_text,
+        grade_id: grade_id,
+        grade_text: grade_text,
+        brand_id: brand_id,
+        brand_text: brand_text,
         seller_id: sellerId,
         deal_title,
         deal_description,
