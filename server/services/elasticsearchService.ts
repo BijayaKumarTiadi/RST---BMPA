@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { executeQuery } from '../database';
+import { executeQuery } from '../db';
 
 // Initialize Elasticsearch client
 const esClient = new Client({
@@ -66,15 +66,9 @@ const dealsMapping = {
       type: 'text',
       analyzer: 'standard',
       fields: {
-        keyword: { type: 'keyword' },
         autocomplete: { 
           type: 'search_as_you_type',
           max_shingle_size: 4
-        },
-        // Specialized analyzer for stock descriptions
-        components: {
-          type: 'text',
-          analyzer: 'stock_analyzer'
         }
       }
     },
@@ -132,21 +126,6 @@ export class ElasticsearchService {
                   },
                   autocomplete_search: {
                     tokenizer: 'lowercase'
-                  },
-                  // Specialized analyzer for stock descriptions
-                  stock_analyzer: {
-                    tokenizer: 'standard',
-                    filter: ['lowercase', 'stop', 'stock_synonyms']
-                  }
-                },
-                filter: {
-                  stock_synonyms: {
-                    type: 'synonym',
-                    synonyms: [
-                      'gsm,gram,grams',
-                      'mm,millimeter,millimeters',
-                      'cm,centimeter,centimeters'
-                    ]
                   }
                 },
                 tokenizer: {
@@ -240,8 +219,8 @@ export class ElasticsearchService {
       });
 
       if (bulkResponse.errors) {
-        const erroredDocuments: any[] = [];
-        bulkResponse.items.forEach((action: any, i: number) => {
+        const erroredDocuments = [];
+        bulkResponse.items.forEach((action, i) => {
           const operation = Object.keys(action)[0];
           if (action[operation].error) {
             erroredDocuments.push({
@@ -281,66 +260,33 @@ export class ElasticsearchService {
     const { searchText, filters = {}, sort, from = 0, size = 20 } = query;
 
     // Build the query
-    const must: any[] = [];
+    const must = [];
     const filter = [];
     const should = [];
 
-    // Text search with stock_description priority and flexible matching
+    // Text search with fuzzy matching and boosting
     if (searchText) {
-      const cleanSearchText = searchText.trim();
-      
       should.push(
-        // Highest priority: exact match in stock_description
-        { match_phrase: { stock_description: { query: cleanSearchText, boost: 5 } } },
-        // High priority: stock_description with components analyzer
-        { match: { 'stock_description.components': { query: cleanSearchText, boost: 4, fuzziness: 'AUTO' } } },
-        // Partial matches in stock_description
-        { match: { stock_description: { query: cleanSearchText, boost: 3.5, fuzziness: 'AUTO' } } },
-        
-        // Individual component matches (Make, Grade, Brand)
-        { match: { Make: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
-        { match: { Grade: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
-        { match: { Brand: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
-        
-        // GSM-specific search (handles "400 gsm", "400", etc.)
-        ...(cleanSearchText.match(/\d+/g) ? [
-          { 
-            bool: {
-              should: [
-                { term: { GSM: { value: parseInt(cleanSearchText.match(/\d+/)[0]), boost: 4 } } },
-                { range: { GSM: { 
-                  gte: parseInt(cleanSearchText.match(/\d+/)[0]) - 5,
-                  lte: parseInt(cleanSearchText.match(/\d+/)[0]) + 5,
-                  boost: 2
-                }}}
-              ]
-            }
-          }
-        ] : []),
-        
-        // Multi-field search for flexible word order
+        // Exact match gets highest boost
+        { match_phrase: { full_description: { query: searchText, boost: 3 } } },
+        // Field-specific matches
+        { match: { Make: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
+        { match: { Brand: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
+        { match: { Grade: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
+        { match: { stock_description: { query: searchText, boost: 2, fuzziness: 'AUTO' } } },
+        // General text search
+        { match: { full_description: { query: searchText, fuzziness: 'AUTO' } } },
+        // Search as you type for autocomplete
         { multi_match: {
-          query: cleanSearchText,
-          type: 'cross_fields',
-          fields: ['Make^2', 'Grade^2', 'Brand^2', 'stock_description^3'],
-          operator: 'or',
-          minimum_should_match: '50%'
-        }},
-        
-        // Autocomplete for partial matches
-        { multi_match: {
-          query: cleanSearchText,
+          query: searchText,
           type: 'bool_prefix',
           fields: [
-            'stock_description.autocomplete^3',
-            'Make.autocomplete^2',
-            'Brand.autocomplete^2',
-            'Grade.autocomplete^2'
+            'Make.autocomplete',
+            'Brand.autocomplete',
+            'Grade.autocomplete',
+            'stock_description.autocomplete'
           ]
-        }},
-        
-        // Fallback: full description search
-        { match: { full_description: { query: cleanSearchText, fuzziness: 'AUTO', boost: 1 } } }
+        }}
       );
     }
 
@@ -360,8 +306,8 @@ export class ElasticsearchService {
       filter.push({
         range: {
           GSM: {
-            ...(filters.gsmMin !== undefined && { gte: filters.gsmMin }),
-            ...(filters.gsmMax !== undefined && { lte: filters.gsmMax })
+            ...(filters.gsmMin && { gte: filters.gsmMin }),
+            ...(filters.gsmMax && { lte: filters.gsmMax })
           }
         }
       });
@@ -396,8 +342,8 @@ export class ElasticsearchService {
       filter.push({
         range: {
           OfferPrice: {
-            ...(filters.priceMin !== undefined && { gte: filters.priceMin }),
-            ...(filters.priceMax !== undefined && { lte: filters.priceMax })
+            ...(filters.priceMin && { gte: filters.priceMin }),
+            ...(filters.priceMax && { lte: filters.priceMax })
           }
         }
       });
@@ -459,7 +405,7 @@ export class ElasticsearchService {
       });
 
       return {
-        hits: response.hits.hits.map((hit: any) => ({
+        hits: response.hits.hits.map(hit => ({
           ...hit._source,
           _score: hit._score,
           _highlights: hit.highlight
@@ -500,7 +446,7 @@ export class ElasticsearchService {
         body
       });
 
-      return response.suggest.deal_suggest[0].options.map((option: any) => ({
+      return response.suggest.deal_suggest[0].options.map(option => ({
         text: option.text,
         score: option._score,
         source: option._source

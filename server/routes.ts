@@ -7,7 +7,7 @@ import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
-import elasticsearchRouter from "./searchRoutes";
+import searchRouter from "./simpleSearchRoutes";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -41,32 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRouter);
   
   // Search routes (Elasticsearch)
-  app.use('/api/search', elasticsearchRouter);
-  
-  // Initialize Elasticsearch and sync data endpoint
-  app.post('/api/elasticsearch/init-and-sync', async (req, res) => {
-    try {
-      const { elasticsearchService } = await import('./services/elasticsearchService');
-      
-      // Initialize the index
-      await elasticsearchService.initializeIndex();
-      
-      // Sync data from MySQL to Elasticsearch  
-      await elasticsearchService.syncDealsToElasticsearch();
-      
-      res.json({
-        success: true,
-        message: 'Elasticsearch initialized and data synced successfully'
-      });
-    } catch (error) {
-      console.error('Elasticsearch init/sync error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to initialize Elasticsearch',
-        error: (error as Error).message
-      });
-    }
-  });
+  app.use('/api/search', searchRouter);
 
 
   // Create test data endpoint

@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { hybridSearchService } from './services/hybridSearchService';
+import { elasticsearchService } from './services/elasticsearchService';
 
 const searchRouter = Router();
 
-// Hybrid search service is ready to use (MySQL-based with Elasticsearch-inspired features)
+// Initialize Elasticsearch index on startup
+elasticsearchService.initializeIndex().catch(console.error);
 
 // Main search endpoint
 searchRouter.post('/search', async (req, res) => {
@@ -18,21 +19,29 @@ searchRouter.post('/search', async (req, res) => {
 
     const from = (page - 1) * pageSize;
 
-    const results = await hybridSearchService.searchDeals({
-      query,
+    const results = await elasticsearchService.searchDeals({
+      searchText: query,
       filters,
       sort,
-      page,
-      pageSize
+      from,
+      size: pageSize
     });
 
-    res.json(results);
+    res.json({
+      success: true,
+      data: results.hits,
+      total: results.total,
+      aggregations: results.aggregations,
+      page,
+      pageSize,
+      totalPages: Math.ceil(results.total / pageSize)
+    });
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({
       success: false,
       message: 'Search failed',
-      error: (error as Error).message
+      error: error.message
     });
   }
 });
@@ -46,7 +55,7 @@ searchRouter.get('/suggestions', async (req, res) => {
       return res.json({ suggestions: [] });
     }
 
-    const suggestions = await hybridSearchService.getSuggestions(q);
+    const suggestions = await elasticsearchService.getSuggestions(q, category as string);
     
     res.json({
       success: true,
@@ -71,7 +80,7 @@ searchRouter.post('/sync', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Data sync failed',
-      error: (error as Error).message
+      error: error.message
     });
   }
 });
@@ -94,7 +103,7 @@ searchRouter.get('/health', async (req, res) => {
     res.status(503).json({
       success: false,
       message: 'Elasticsearch is not available',
-      error: (error as Error).message
+      error: error.message
     });
   }
 });
