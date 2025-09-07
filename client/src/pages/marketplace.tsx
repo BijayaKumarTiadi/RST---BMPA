@@ -139,23 +139,7 @@ export default function Marketplace() {
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
   
-  // Filter makes, grades, and brands based on selections (hierarchical filtering)
-  const filteredMakes = dynamicMakes || makes.filter((make: any) => 
-    pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : true
-  );
-  const filteredGrades = dynamicGrades || grades.filter((grade: any) => 
-    pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : true
-  );
-  const filteredBrands = dynamicBrands || brands.filter((brand: any) => 
-    pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : true
-  );
-  
-  // Extract unique GSM values from deals
-  // Dynamic filter options based on search results or all deals
-  const gsmOptions = searchAggregations?.gsm 
-    ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
-    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
-  
+  // Define dynamic filter options first based on search results
   const dynamicMakes = searchAggregations?.makes 
     ? searchAggregations.makes.map((item: any) => ({ name: item.Make, count: item.count }))
     : null;
@@ -171,6 +155,22 @@ export default function Marketplace() {
   const dynamicUnits = searchAggregations?.units 
     ? searchAggregations.units.map((item: any) => ({ name: item.OfferUnit, count: item.count }))
     : null;
+
+  // Dynamic GSM options based on search results or all deals
+  const gsmOptions = searchAggregations?.gsm 
+    ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
+    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
+  
+  // Filter makes, grades, and brands based on selections (hierarchical filtering)
+  const filteredMakes = dynamicMakes || makes.filter((make: any) => 
+    pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : true
+  );
+  const filteredGrades = dynamicGrades || grades.filter((grade: any) => 
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : true
+  );
+  const filteredBrands = dynamicBrands || brands.filter((brand: any) => 
+    pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : true
+  );
 
   // Reset to page 1 when filters change
   const resetPage = () => setCurrentPage(1);
