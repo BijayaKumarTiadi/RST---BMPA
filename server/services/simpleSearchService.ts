@@ -63,7 +63,7 @@ export class SimpleSearchService {
     
     return this.getCachedResult(cacheKey, async () => {
       let whereConditions = ['dm.StockStatus = 1']; // 1 = active
-    const queryParams: any[] = [];
+      const queryParams: any[] = [];
 
     // SUPER POWERFUL DESCRIPTION-BASED SEARCH
     // Optimized for "Make - Grade - Brand - Dimensions - GSM" format
@@ -243,7 +243,7 @@ export class SimpleSearchService {
     const searchParams = [...queryParams];
     if (query) {
       const searchTerm = `%${query.toLowerCase()}%`;
-      const gsmValue = gsmValues?.[0] || 0; // Use first detected GSM value for scoring
+      const gsmValue = gsmValues.length > 0 ? gsmValues[0] : 0; // Use first detected GSM value for scoring
       searchParams.push(searchTerm, gsmValue, searchTerm, searchTerm, searchTerm, searchTerm);
     }
     searchParams.push(pageSize, offset);
