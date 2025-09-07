@@ -22,12 +22,26 @@ export class PowerSearchService {
     let whereConditions = ['dm.StockStatus = 1'];
     
     if (query && query.trim()) {
-      // Normalize the user's search query the same way as stored search_keys
-      const normalizedQuery = normalizeSearchText(query.trim());
+      // Split the query into individual terms for flexible matching
+      const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
       
-      // Super fast search using normalized search_key
-      queryParams.push(`%${normalizedQuery}%`);
-      whereConditions.push('dm.search_key LIKE ?');
+      if (searchTerms.length > 0) {
+        const termConditions = [];
+        
+        searchTerms.forEach(term => {
+          // Normalize each term (remove spaces and dots)
+          const normalizedTerm = term.replace(/[\s.]/g, '');
+          if (normalizedTerm.length > 0) {
+            queryParams.push(`%${normalizedTerm}%`);
+            termConditions.push('dm.search_key LIKE ?');
+          }
+        });
+        
+        if (termConditions.length > 0) {
+          // All terms must be present (AND logic) for best matching
+          whereConditions.push('(' + termConditions.join(' AND ') + ')');
+        }
+      }
     }
     
     const whereClause = whereConditions.join(' AND ');
@@ -43,35 +57,21 @@ export class PowerSearchService {
     const countResult = await executeQuery(countQuery, queryParams);
     const total = countResult[0]?.total || 0;
     
-    // Get results with relevance scoring for better matches
+    // Get results with simple ordering (remove complex relevance scoring for now)
     const searchQueryText = `
       SELECT 
         dm.*,
         m.mname as created_by_name,
-        m.company_name as created_by_company,
-        ${query ? `
-          CASE 
-            WHEN dm.search_key = ? THEN 1000
-            WHEN dm.search_key LIKE ? THEN 500
-            WHEN dm.search_key LIKE ? THEN 100
-            ELSE 1
-          END as relevance_score
-        ` : '1 as relevance_score'}
+        m.company_name as created_by_company
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       WHERE ${whereClause}
-      ORDER BY ${query ? 'relevance_score DESC, ' : ''}dm.TransID DESC
+      ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?
     `;
     
-    // Add relevance scoring parameters for better matching
+    // Simple parameter passing - just the search terms and pagination
     const searchParams = [...queryParams];
-    if (query) {
-      const normalizedQuery = normalizeSearchText(query.trim());
-      searchParams.push(normalizedQuery); // Exact match
-      searchParams.push(`${normalizedQuery}%`); // Starts with
-      searchParams.push(`%${normalizedQuery}%`); // Contains
-    }
     searchParams.push(pageSize, offset);
     
     const results = await executeQuery(searchQueryText, searchParams);
