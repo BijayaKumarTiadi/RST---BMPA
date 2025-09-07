@@ -32,8 +32,26 @@ export class PowerSearchService {
           // Normalize each term (remove spaces and dots)
           const normalizedTerm = term.replace(/[\s.]/g, '');
           if (normalizedTerm.length > 0) {
-            queryParams.push(`%${normalizedTerm}%`);
-            termConditions.push('dm.search_key LIKE ?');
+            
+            // Check if this is a GSM pattern (number + gsm)
+            const gsmMatch = normalizedTerm.match(/^(\d+)gsm?$/i);
+            if (gsmMatch) {
+              // For GSM terms, use exact matching with word boundaries
+              const gsmValue = gsmMatch[1];
+              queryParams.push(`%${gsmValue}gsm%`);
+              // Use REGEXP for exact GSM matching to avoid 40gsm matching 340gsm
+              queryParams.push(`[^0-9]${gsmValue}gsm`);
+              termConditions.push('(dm.search_key LIKE ? OR dm.search_key REGEXP ?)');
+            } else if (/^\d+$/.test(normalizedTerm)) {
+              // If it's just a number, treat it as potential GSM too
+              queryParams.push(`%${normalizedTerm}gsm%`);
+              queryParams.push(`[^0-9]${normalizedTerm}gsm`);
+              termConditions.push('(dm.search_key LIKE ? OR dm.search_key REGEXP ?)');
+            } else {
+              // For other terms, use flexible substring matching
+              queryParams.push(`%${normalizedTerm}%`);
+              termConditions.push('dm.search_key LIKE ?');
+            }
           }
         });
         
