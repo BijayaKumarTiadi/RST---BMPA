@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { executeQuery } from '../db';
+import { executeQuery } from '../database';
 
 // Initialize Elasticsearch client
 const esClient = new Client({

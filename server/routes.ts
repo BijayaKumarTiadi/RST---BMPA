@@ -7,7 +7,7 @@ import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
-import searchRouter from "./simpleSearchRoutes";
+import searchRouter from "./searchRoutes";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
