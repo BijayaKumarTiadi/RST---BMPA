@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { elasticsearchService } from './services/elasticsearchService';
 import { simpleSearchService } from './services/simpleSearchService';
+import { powerSearchService } from './services/powerSearchService';
 
 const searchRouter = Router();
 
@@ -60,12 +61,9 @@ searchRouter.post('/search', async (req, res) => {
       }
     }
 
-    // Fallback to simple search
-    const results = await simpleSearchService.searchDeals(req.body);
-    res.json({
-      ...results,
-      searchProvider: 'mysql'
-    });
+    // Use new power search
+    const results = await powerSearchService.searchDeals(req.body);
+    res.json(results);
 
   } catch (error) {
     console.error('Search error:', error);
@@ -100,12 +98,12 @@ searchRouter.get('/suggestions', async (req, res) => {
       }
     }
 
-    // Fallback to simple search suggestions
-    const suggestions = await simpleSearchService.getSuggestions(q);
+    // Use new power search suggestions
+    const suggestions = await powerSearchService.getSuggestions(q);
     res.json({
       success: true,
       suggestions,
-      searchProvider: 'mysql'
+      searchProvider: 'power-search'
     });
 
   } catch (error) {

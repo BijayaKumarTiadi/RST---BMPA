@@ -64,6 +64,9 @@ export class SimpleSearchService {
     return this.getCachedResult(cacheKey, async () => {
       let whereConditions = ['dm.StockStatus = 1']; // 1 = active
       const queryParams: any[] = [];
+      
+      // Initialize these outside to fix scoping
+      const gsmValues: number[] = [];
 
     // SUPER POWERFUL DESCRIPTION-BASED SEARCH
     // Optimized for "Make - Grade - Brand - Dimensions - GSM" format
@@ -72,7 +75,6 @@ export class SimpleSearchService {
       const searchTerms = searchQuery.split(/\s+/);
       
       // Advanced pattern detection for description format
-      const gsmValues: number[] = [];
       const brandTerms: string[] = [];
       const makeTerms: string[] = [];
       const dimensionTerms: string[] = [];
