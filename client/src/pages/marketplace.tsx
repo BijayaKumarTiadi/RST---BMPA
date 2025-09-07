@@ -909,24 +909,35 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {gsmOptions.map((gsm: string) => (
-                        <div key={gsm} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`gsm-desktop-${gsm}`}
-                            checked={pendingGsm.includes(gsm)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setPendingGsm([...pendingGsm, gsm]);
-                              } else {
-                                setPendingGsm(pendingGsm.filter(val => val !== gsm));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`gsm-desktop-${gsm}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {gsm} GSM
-                          </label>
-                        </div>
-                      ))}
+                      {gsmOptions.map((gsmOption: any) => {
+                        const gsmValue = typeof gsmOption === 'string' ? gsmOption : gsmOption.value;
+                        const gsmCount = typeof gsmOption === 'object' ? gsmOption.count : 0;
+                        return (
+                          <div key={gsmValue} className="flex items-center justify-between space-x-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`gsm-desktop-${gsmValue}`}
+                                checked={pendingGsm.includes(gsmValue)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setPendingGsm([...pendingGsm, gsmValue]);
+                                  } else {
+                                    setPendingGsm(pendingGsm.filter(val => val !== gsmValue));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={`gsm-desktop-${gsmValue}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {gsmValue} GSM
+                              </label>
+                            </div>
+                            {gsmCount > 0 && (
+                              <Badge variant="secondary" className="text-xs px-2 py-0">
+                                {gsmCount}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
