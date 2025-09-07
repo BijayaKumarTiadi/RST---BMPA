@@ -422,20 +422,36 @@ class DealService {
       } = dealData;
 
       // Use text values if IDs are not provided (for free text entry)
-      let finalMake: any = make_id;
-      let finalGrade: any = grade_id;
-      let finalBrand: any = brand_id;
+      let finalMake: any;
+      let finalGrade: any;
+      let finalBrand: any;
       
-      // If numeric IDs are not provided, use the text values directly
-      if (!make_id || isNaN(Number(make_id))) {
-        finalMake = make_text || make_id;
+      // Check if make_id is a valid numeric ID or use text
+      if (make_id && !isNaN(Number(make_id)) && Number(make_id) > 0) {
+        finalMake = Number(make_id);
+      } else {
+        finalMake = make_text || make_id || '';
       }
-      if (!grade_id || isNaN(Number(grade_id))) {
-        finalGrade = grade_text || grade_id;
+      
+      // Check if grade_id is a valid numeric ID or use text
+      if (grade_id && !isNaN(Number(grade_id)) && Number(grade_id) > 0) {
+        finalGrade = Number(grade_id);
+      } else {
+        finalGrade = grade_text || grade_id || '';
       }
-      if (!brand_id || isNaN(Number(brand_id))) {
-        finalBrand = brand_text || brand_id;
+      
+      // Check if brand_id is a valid numeric ID or use text
+      if (brand_id && !isNaN(Number(brand_id)) && Number(brand_id) > 0) {
+        finalBrand = Number(brand_id);
+      } else {
+        finalBrand = brand_text || brand_id || '';
       }
+      
+      console.log('Creating deal with values:', { 
+        make_id, make_text, finalMake,
+        grade_id, grade_text, finalGrade,
+        brand_id, brand_text, finalBrand 
+      });
 
       // Extract GSM, Deckle_mm, grain_mm from deal_specifications
       const gsm = deal_specifications?.GSM || 0;
