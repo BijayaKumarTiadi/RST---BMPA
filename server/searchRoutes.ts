@@ -41,7 +41,7 @@ searchRouter.post('/search', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Search failed',
-      error: error.message
+      error: (error as Error).message
     });
   }
 });
@@ -80,7 +80,7 @@ searchRouter.post('/sync', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Data sync failed',
-      error: error.message
+      error: (error as Error).message
     });
   }
 });
@@ -103,7 +103,7 @@ searchRouter.get('/health', async (req, res) => {
     res.status(503).json({
       success: false,
       message: 'Elasticsearch is not available',
-      error: error.message
+      error: (error as Error).message
     });
   }
 });

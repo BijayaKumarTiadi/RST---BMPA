@@ -240,8 +240,8 @@ export class ElasticsearchService {
       });
 
       if (bulkResponse.errors) {
-        const erroredDocuments = [];
-        bulkResponse.items.forEach((action, i) => {
+        const erroredDocuments: any[] = [];
+        bulkResponse.items.forEach((action: any, i: number) => {
           const operation = Object.keys(action)[0];
           if (action[operation].error) {
             erroredDocuments.push({
@@ -281,7 +281,7 @@ export class ElasticsearchService {
     const { searchText, filters = {}, sort, from = 0, size = 20 } = query;
 
     // Build the query
-    const must = [];
+    const must: any[] = [];
     const filter = [];
     const should = [];
 
@@ -360,8 +360,8 @@ export class ElasticsearchService {
       filter.push({
         range: {
           GSM: {
-            ...(filters.gsmMin && { gte: filters.gsmMin }),
-            ...(filters.gsmMax && { lte: filters.gsmMax })
+            ...(filters.gsmMin !== undefined && { gte: filters.gsmMin }),
+            ...(filters.gsmMax !== undefined && { lte: filters.gsmMax })
           }
         }
       });
@@ -396,8 +396,8 @@ export class ElasticsearchService {
       filter.push({
         range: {
           OfferPrice: {
-            ...(filters.priceMin && { gte: filters.priceMin }),
-            ...(filters.priceMax && { lte: filters.priceMax })
+            ...(filters.priceMin !== undefined && { gte: filters.priceMin }),
+            ...(filters.priceMax !== undefined && { lte: filters.priceMax })
           }
         }
       });
@@ -459,7 +459,7 @@ export class ElasticsearchService {
       });
 
       return {
-        hits: response.hits.hits.map(hit => ({
+        hits: response.hits.hits.map((hit: any) => ({
           ...hit._source,
           _score: hit._score,
           _highlights: hit.highlight
@@ -500,7 +500,7 @@ export class ElasticsearchService {
         body
       });
 
-      return response.suggest.deal_suggest[0].options.map(option => ({
+      return response.suggest.deal_suggest[0].options.map((option: any) => ({
         text: option.text,
         score: option._score,
         source: option._source
