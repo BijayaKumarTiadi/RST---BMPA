@@ -17,45 +17,61 @@ export class PowerSearchService {
     let whereConditions = ['dm.StockStatus = 1'];
     
     if (query && query.trim()) {
-      const searchQuery = query.trim().toLowerCase();
+      const searchQuery = query.trim();
+      const searchLower = searchQuery.toLowerCase();
       
-      // Extract GSM if present
-      let exactGsm: number | null = null;
+      // Parse search query for components
+      let gsmValue: number | null = null;
+      let searchTerms: string[] = [];
+      
+      // Extract GSM value if present
       const gsmMatch = searchQuery.match(/(\d+)\s*gsm/i);
       if (gsmMatch) {
-        exactGsm = parseInt(gsmMatch[1]);
+        gsmValue = parseInt(gsmMatch[1]);
+        // Remove GSM from search terms
+        searchTerms = searchLower.replace(/\d+\s*gsm/gi, '').trim().split(/\s+/).filter(t => t);
+      } else {
+        searchTerms = searchLower.split(/\s+/).filter(t => t);
       }
       
-      // Build search conditions
-      const conditions = [];
+      // Build AND conditions for precise matching
+      const andConditions = [];
       
-      // 1. Exact GSM match (highest priority)
-      if (exactGsm) {
-        queryParams.push(exactGsm);
-        conditions.push('dm.GSM = ?');
+      // GSM must match exactly if specified
+      if (gsmValue !== null) {
+        queryParams.push(gsmValue);
+        andConditions.push('dm.GSM = ?');
       }
       
-      // 2. Full phrase search in description
-      queryParams.push(`%${searchQuery}%`);
-      conditions.push('LOWER(dm.stock_description) LIKE ?');
+      // Only require terms to match if there are any
+      if (searchTerms.length > 0) {
+        searchTerms.forEach(term => {
+          if (term && term.length >= 1) {
+            // Each term can match in Make, Brand, Grade, or description
+            const termConditions = [];
+            
+            queryParams.push(`%${term}%`);
+            termConditions.push('LOWER(dm.Make) LIKE ?');
+            
+            queryParams.push(`%${term}%`);
+            termConditions.push('LOWER(dm.Brand) LIKE ?');
+            
+            queryParams.push(`%${term}%`);
+            termConditions.push('LOWER(dm.Grade) LIKE ?');
+            
+            queryParams.push(`%${term}%`);
+            termConditions.push('LOWER(dm.stock_description) LIKE ?');
+            
+            if (termConditions.length > 0) {
+              andConditions.push(`(${termConditions.join(' OR ')})`);
+            }
+          }
+        });
+      }
       
-      // 3. Individual word search
-      const words = searchQuery.split(/\s+/).filter(w => w.length > 1);
-      words.forEach(word => {
-        if (!word.match(/^\d+$/) && word !== 'gsm') {
-          queryParams.push(`%${word}%`);
-          conditions.push('LOWER(dm.stock_description) LIKE ?');
-          
-          queryParams.push(`%${word}%`);
-          conditions.push('LOWER(dm.Make) LIKE ?');
-          
-          queryParams.push(`%${word}%`);
-          conditions.push('LOWER(dm.Brand) LIKE ?');
-        }
-      });
-      
-      if (conditions.length > 0) {
-        whereConditions.push(`(${conditions.join(' OR ')})`);
+      // Combine with AND logic for better precision
+      if (andConditions.length > 0) {
+        whereConditions.push('(' + andConditions.join(' AND ') + ')');
       }
     }
     

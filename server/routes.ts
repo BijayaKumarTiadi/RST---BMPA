@@ -66,13 +66,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create test data endpoint
   app.post('/api/create-test-data', async (req, res) => {
     try {
-      // Insert test deals with ITC and Bible paper
+      // Insert test deals with proper description format: Make Grade Brand Dimensions GSM
       await executeQuery(`
         INSERT INTO deal_master (Make, Grade, Brand, GSM, stock_description, StockStatus, OfferPrice, OfferUnit, created_by_member_id, quantity, Deckle_mm, grain_mm, groupID)
         VALUES 
-        ('ITC', 'BIBLE PAPER', 'ITC Limited', 45, 'ITC BIBLE PAPER ITC Limited 45 gsm - Premium thin paper for religious texts', 1, 125.50, 'KG', 8, 500, 700, 1000, 1),
-        ('ITC', 'ART PAPER', 'ITC Limited', 130, 'ITC ART PAPER 130 gsm - High quality glossy paper', 1, 85.00, 'KG', 8, 1000, 635, 965, 1),
-        ('BILT', 'BIBLE PAPER', 'BILT Papers', 40, 'BILT BIBLE PAPER 40 gsm - Ultra thin religious book paper', 1, 135.00, 'KG', 8, 300, 700, 1000, 1)
+        ('ITC', 'CYBERXLPAC', 'None', 40, 'ITC CYBERXLPAC None 70.00 X 100.00 40 gsm', 1, 125.50, 'KG', 8, 500, 700, 1000, 1),
+        ('ITC', 'CYBERXLPAC', 'None', 220, 'ITC CYBERXLPAC None 93.98 X 55.88 220 gsm', 1, 185.00, 'KG', 8, 1000, 939.8, 558.8, 1),
+        ('ITC', 'ART PAPER', 'ITC Limited', 130, 'ITC ART PAPER ITC Limited 63.50 X 96.50 130 gsm', 1, 85.00, 'KG', 8, 1000, 635, 965, 1),
+        ('BILT', 'BIBLE PAPER', 'BILT Papers', 40, 'BILT BIBLE PAPER BILT Papers 70.00 X 100.00 40 gsm', 1, 135.00, 'KG', 8, 300, 700, 1000, 1)
       `);
       
       res.json({ success: true, message: 'Test data created successfully' });
