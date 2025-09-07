@@ -332,17 +332,27 @@ class DealService {
   }
 
   // Create a new deal
-  async createDeal(dealData: CreateDealData, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
+  async createDeal(dealData: CreateDealData & { 
+    make_text?: string; 
+    grade_text?: string; 
+    brand_text?: string;
+    search_key?: string;
+    stock_type?: string;
+  }, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
         group_id,
         make_id,
         grade_id,
         brand_id,
+        make_text,
+        grade_text,
+        brand_text,
         seller_id,
         deal_title,
         deal_description,
         stock_description,
+        search_key,
         price,
         quantity,
         unit,
@@ -352,25 +362,20 @@ class DealService {
         expires_at
       } = dealData;
 
-      // Verify stock hierarchy relationships
-      const hierarchyCheck = await executeQuerySingle(`
-        SELECT 
-          g.GroupID,
-          m.make_ID as Make,
-          gr.gradeID as GradeID,
-          b.brandID as BrandID
-        FROM stock_groups g
-        LEFT JOIN stock_make_master m ON g.GroupID = m.GroupID AND m.make_ID = ?
-        LEFT JOIN stock_grade gr ON m.make_ID = gr.Make_ID AND gr.gradeID = ?
-        LEFT JOIN stock_brand b ON m.make_ID = b.make_ID AND b.brandID = ?
-        WHERE g.GroupID = ?
-      `, [make_id, grade_id, brand_id, group_id]);
-
-      if (!hierarchyCheck || !hierarchyCheck.Make || !hierarchyCheck.GradeID || !hierarchyCheck.BrandID) {
-        return {
-          success: false,
-          message: 'Invalid stock hierarchy combination. Please check your Group, Make, Grade, and Brand selections.'
-        };
+      // Use text values if IDs are not provided (for free text entry)
+      let finalMake: any = make_id;
+      let finalGrade: any = grade_id;
+      let finalBrand: any = brand_id;
+      
+      // If numeric IDs are not provided, use the text values directly
+      if (!make_id || isNaN(Number(make_id))) {
+        finalMake = make_text || make_id;
+      }
+      if (!grade_id || isNaN(Number(grade_id))) {
+        finalGrade = grade_text || grade_id;
+      }
+      if (!brand_id || isNaN(Number(brand_id))) {
+        finalBrand = brand_text || brand_id;
       }
 
       // Extract GSM, Deckle_mm, grain_mm from deal_specifications
@@ -378,8 +383,8 @@ class DealService {
       const deckle_mm = deal_specifications?.Deckle_mm || 0;
       const grain_mm = deal_specifications?.grain_mm || 0;
 
-      // Generate search_key for fast normalization-based search
-      const search_key = (stock_description || '').toLowerCase().replace(/[\s.]/g, '');
+      // Use provided search_key or generate it
+      const final_search_key = search_key || (stock_description || '').toLowerCase().replace(/[\s.]/g, '');
 
       const result = await executeQuery(`
         INSERT INTO deal_master (
@@ -390,9 +395,9 @@ class DealService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
-        make_id,
-        grade_id,
-        brand_id,
+        finalMake,
+        finalGrade,
+        finalBrand,
         seller_id,
         `${deal_title}\n${deal_description || ''}`,
         price,
@@ -402,7 +407,7 @@ class DealService {
         gsm,
         deckle_mm,
         grain_mm,
-        search_key,
+        final_search_key,
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || ''

@@ -202,10 +202,13 @@ export default function AddDeal() {
 
   // Auto-populate deal description when form values change
   useEffect(() => {
-    const subscription = form.watch((values) => {
+    const subscription = form.watch((values, { name }) => {
+      // Skip if the change was to deal_description itself to avoid infinite loop
+      if (name === 'deal_description') return;
+      
       const description = generateStockDescription();
-      if (description) {
-        form.setValue('deal_description', description);
+      if (description && description !== form.getValues('deal_description')) {
+        form.setValue('deal_description', description, { shouldValidate: false });
       }
     });
     return () => subscription.unsubscribe();
@@ -245,19 +248,23 @@ export default function AddDeal() {
   // Create deal mutation
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
-      // Use text values directly - backend will handle as text
+      // Generate descriptions and search key
+      const stockDescription = generateStockDescription();
+      const searchKey = generateNormalizationKey();
+      
+      // Use text values directly - backend will handle as text or IDs
       const payload = {
         group_id: data.groupID ? parseInt(data.groupID) : 0,
         make_text: data.makeText,
         grade_text: data.gradeText,
         brand_text: data.brandText,
-        make_id: data.MakeID ? parseInt(data.MakeID) : null,
-        grade_id: data.GradeID ? parseInt(data.GradeID) : null,
-        brand_id: data.BrandID ? parseInt(data.BrandID) : null,
+        make_id: data.MakeID || data.makeText,
+        grade_id: data.GradeID || data.gradeText,
+        brand_id: data.BrandID || data.brandText,
         deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
-        deal_description: generateStockDescription(),
-        normalization_key: generateNormalizationKey(),
-        seller_comments: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+        stock_description: stockDescription,
+        search_key: searchKey,
+        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
         price: data.OfferPrice,
         quantity: data.quantity,
         unit: data.OfferUnit,
@@ -268,6 +275,7 @@ export default function AddDeal() {
           grain_mm: data.grain_mm,
         },
         location: 'India',
+        stock_type: data.stockType,
       };
       return apiRequest("POST", "/api/deals", payload);
     },
