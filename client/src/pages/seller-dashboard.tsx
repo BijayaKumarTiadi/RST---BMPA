@@ -24,6 +24,8 @@ export default function SellerDashboard() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
 
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
@@ -437,13 +439,14 @@ export default function SellerDashboard() {
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
-                                    asChild
+                                    onClick={() => {
+                                      setSelectedDeal(deal);
+                                      setViewModalOpen(true);
+                                    }}
                                     className="h-8 w-8 p-0 hover:bg-blue-100"
                                     data-testid={`button-view-${deal.TransID}`}
                                   >
-                                    <Link href={`/deal/${deal.TransID}`}>
-                                      <Eye className="h-4 w-4 text-blue-600" />
-                                    </Link>
+                                    <Eye className="h-4 w-4 text-blue-600" />
                                   </Button>
                                   
                                   <Button 
@@ -917,6 +920,155 @@ export default function SellerDashboard() {
                   <Button 
                     variant="outline" 
                     onClick={() => setIsOrderModalOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Product Details Modal */}
+        <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Product Details</DialogTitle>
+              <DialogDescription>
+                View complete details of your product listing
+              </DialogDescription>
+            </DialogHeader>
+            {selectedDeal && (
+              <div className="space-y-4">
+                {/* Basic Information */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Deal ID</p>
+                      <p className="font-semibold">#{selectedDeal.TransID}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Status</p>
+                      <Badge className={getStatusColor(selectedDeal.StockStatus || 1)}>
+                        {getStatusText(selectedDeal.StockStatus || 1)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Created</p>
+                      <p className="font-semibold">{getRelativeTime(selectedDeal.deal_created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Stock Age</p>
+                      <p className="font-semibold">{selectedDeal.StockAge || 0} days</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Details */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Product Details</h3>
+                  <div className="p-4 border rounded-lg space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Description</p>
+                      <p className="font-semibold">{selectedDeal.stock_description || selectedDeal.Seller_comments || 'N/A'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Category</p>
+                        <p className="font-semibold">{selectedDeal.GroupName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Make</p>
+                        <p className="font-semibold">{selectedDeal.MakeName || selectedDeal.Make || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Grade</p>
+                        <p className="font-semibold">{selectedDeal.GradeName || selectedDeal.Grade || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Brand</p>
+                        <p className="font-semibold">{selectedDeal.BrandName || selectedDeal.Brand || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Technical Specifications */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Technical Specifications</h3>
+                  <div className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">GSM</p>
+                      <p className="font-semibold">{selectedDeal.GSM || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Deckle</p>
+                      <p className="font-semibold">
+                        {selectedDeal.Deckle_mm}mm
+                        {selectedDeal.Deckle_mm && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({(selectedDeal.Deckle_mm / 10).toFixed(1)}cm / {(selectedDeal.Deckle_mm / 25.4).toFixed(2)}in)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Grain</p>
+                      <p className="font-semibold">
+                        {selectedDeal.grain_mm}mm
+                        {selectedDeal.grain_mm && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({(selectedDeal.grain_mm / 10).toFixed(1)}cm / {(selectedDeal.grain_mm / 25.4).toFixed(2)}in)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing & Quantity */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Pricing & Quantity</h3>
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Price</p>
+                      <p className="font-semibold text-green-600">
+                        ₹{selectedDeal.OfferPrice?.toLocaleString('en-IN')} per {selectedDeal.OfferUnit || 'unit'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Available Quantity</p>
+                      <p className="font-semibold">{selectedDeal.quantity || 'N/A'} {selectedDeal.OfferUnit || 'units'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seller Comments */}
+                {selectedDeal.Seller_comments && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">Additional Comments</h3>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm whitespace-pre-wrap">{selectedDeal.Seller_comments}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    asChild
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Link href={`/edit-product/${selectedDeal.TransID}`}>
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit Product
+                    </Link>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setViewModalOpen(false)}
                   >
                     Close
                   </Button>
