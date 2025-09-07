@@ -30,25 +30,63 @@ export class SimpleSearchService {
     let whereConditions = ['dm.StockStatus = 1']; // 1 = active
     const queryParams: any[] = [];
 
-    // Full-text search across multiple fields with fuzzy matching
+    // Enhanced search with smart pattern matching for GSM, Make, Brand combinations
     if (query && query.trim()) {
-      const searchTerms = query.trim().split(/\s+/);
-      const searchConditions = searchTerms.map(term => {
-        // Add wildcards for partial matching
-        const fuzzyTerm = `%${term}%`;
-        queryParams.push(fuzzyTerm, fuzzyTerm, fuzzyTerm, fuzzyTerm, fuzzyTerm, fuzzyTerm);
-        
-        return `(
-          dm.Make LIKE ? OR 
-          dm.Brand LIKE ? OR 
-          dm.Grade LIKE ? OR 
-          dm.stock_description LIKE ? OR 
-          dm.Seller_comments LIKE ? OR
-          CONCAT(dm.GSM, ' GSM') LIKE ?
-        )`;
-      });
+      const searchQuery = query.trim().toLowerCase();
+      const searchTerms = searchQuery.split(/\s+/);
       
-      whereConditions.push(`(${searchConditions.join(' AND ')})`);
+      // Detect GSM patterns (numbers followed by gsm or just numbers)
+      const gsmPatterns = searchQuery.match(/(\d+)\s*gsm?/gi) || searchQuery.match(/\b(\d{2,4})\b/g);
+      const gsmValues = gsmPatterns ? gsmPatterns.map(p => parseInt(p.replace(/\D/g, ''))) : [];
+      
+      // Build comprehensive search conditions
+      const searchConditions = [];
+      
+      // 1. Exact phrase match in stock_description (highest priority)
+      const exactPhrase = `%${searchQuery}%`;
+      queryParams.push(exactPhrase);
+      searchConditions.push('dm.stock_description LIKE ?');
+      
+      // 2. GSM-specific searches if GSM values detected
+      if (gsmValues.length > 0) {
+        gsmValues.forEach(gsm => {
+          queryParams.push(gsm, `%${gsm} GSM%`, `%${gsm}GSM%`);
+          searchConditions.push('(dm.GSM = ? OR dm.stock_description LIKE ? OR dm.stock_description LIKE ?)');
+        });
+      }
+      
+      // 3. Individual term matching across all fields
+      const nonGsmTerms = searchTerms.filter(term => !term.match(/^\d+$/) && !term.match(/gsm?/i));
+      if (nonGsmTerms.length > 0) {
+        nonGsmTerms.forEach(term => {
+          const fuzzyTerm = `%${term}%`;
+          queryParams.push(fuzzyTerm, fuzzyTerm, fuzzyTerm, fuzzyTerm, fuzzyTerm);
+          searchConditions.push(`(
+            dm.Make LIKE ? OR 
+            dm.Brand LIKE ? OR 
+            dm.Grade LIKE ? OR 
+            dm.stock_description LIKE ? OR 
+            dm.Seller_comments LIKE ?
+          )`);
+        });
+      }
+      
+      // 4. Combined field searches for brand+gsm patterns
+      if (gsmValues.length > 0 && nonGsmTerms.length > 0) {
+        nonGsmTerms.forEach(brand => {
+          gsmValues.forEach(gsm => {
+            const brandGsmPattern1 = `%${brand}%${gsm}%`;
+            const brandGsmPattern2 = `%${gsm}%${brand}%`;
+            queryParams.push(brandGsmPattern1, brandGsmPattern2);
+            searchConditions.push('(dm.stock_description LIKE ? OR dm.stock_description LIKE ?)');
+          });
+        });
+      }
+      
+      // Combine all conditions with OR for maximum flexibility
+      if (searchConditions.length > 0) {
+        whereConditions.push(`(${searchConditions.join(' OR ')})`);
+      }
     }
 
     // Apply filters
@@ -118,10 +156,11 @@ export class SimpleSearchService {
         m.email as seller_email,
         ${query ? `
           (
-            CASE WHEN dm.Make LIKE ? THEN 10 ELSE 0 END +
-            CASE WHEN dm.Brand LIKE ? THEN 8 ELSE 0 END +
-            CASE WHEN dm.Grade LIKE ? THEN 8 ELSE 0 END +
-            CASE WHEN dm.stock_description LIKE ? THEN 5 ELSE 0 END +
+            CASE WHEN dm.stock_description LIKE ? THEN 20 ELSE 0 END +
+            CASE WHEN dm.Make LIKE ? THEN 15 ELSE 0 END +
+            CASE WHEN dm.Brand LIKE ? THEN 12 ELSE 0 END +
+            CASE WHEN dm.Grade LIKE ? THEN 10 ELSE 0 END +
+            CASE WHEN CONCAT(dm.GSM, ' GSM') LIKE ? THEN 8 ELSE 0 END +
             CASE WHEN dm.Seller_comments LIKE ? THEN 3 ELSE 0 END
           ) as relevance_score
         ` : '0 as relevance_score'}
@@ -137,8 +176,8 @@ export class SimpleSearchService {
     // Add relevance scoring parameters if query exists
     const searchParams = [...queryParams];
     if (query) {
-      const searchTerm = `%${query}%`;
-      searchParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      const searchTerm = `%${query.toLowerCase()}%`;
+      searchParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
     searchParams.push(pageSize, offset);
 

@@ -44,6 +44,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/search', searchRouter);
 
 
+  // Debug endpoint to check sample deal data
+  app.get('/api/debug/sample-deals', async (req, res) => {
+    try {
+      const deals = await executeQuery(`
+        SELECT TransID, Make, Grade, Brand, GSM, stock_description, 
+               CONCAT(Deckle_mm/10, ' x ', grain_mm/10, ' cm') as dimensions,
+               Seller_comments
+        FROM deal_master 
+        WHERE StockStatus = 1 
+        AND (Make LIKE '%ITC%' OR stock_description LIKE '%ITC%' OR GSM = 40 OR GSM = 400)
+        LIMIT 15
+      `);
+      
+      res.json({ success: true, deals });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create test data endpoint
   app.post('/api/create-test-data', async (req, res) => {
     try {
