@@ -585,7 +585,7 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">
                             Deckle ({dimensionUnit}) <span className="text-red-500">*</span>
                             {deckleInputValue && (
-                              <span className="text-xs text-muted-foreground block">
+                              <span className="text-xs text-muted-foreground ml-2">
                                 = {getDeckleDimensions()}
                               </span>
                             )}
@@ -613,7 +613,7 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">
                             Grain ({dimensionUnit}) <span className="text-red-500">*</span>
                             {grainInputValue && (
-                              <span className="text-xs text-muted-foreground block">
+                              <span className="text-xs text-muted-foreground ml-2">
                                 = {getGrainDimensions()}
                               </span>
                             )}
