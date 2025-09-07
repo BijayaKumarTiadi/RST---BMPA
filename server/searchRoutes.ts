@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { elasticsearchService } from './services/elasticsearchService';
+import { hybridSearchService } from './services/hybridSearchService';
 
 const searchRouter = Router();
 
-// Initialize Elasticsearch index on startup
-elasticsearchService.initializeIndex().catch(console.error);
+// Hybrid search service is ready to use (MySQL-based with Elasticsearch-inspired features)
 
 // Main search endpoint
 searchRouter.post('/search', async (req, res) => {
@@ -19,23 +18,15 @@ searchRouter.post('/search', async (req, res) => {
 
     const from = (page - 1) * pageSize;
 
-    const results = await elasticsearchService.searchDeals({
-      searchText: query,
+    const results = await hybridSearchService.searchDeals({
+      query,
       filters,
       sort,
-      from,
-      size: pageSize
+      page,
+      pageSize
     });
 
-    res.json({
-      success: true,
-      data: results.hits,
-      total: results.total,
-      aggregations: results.aggregations,
-      page,
-      pageSize,
-      totalPages: Math.ceil(results.total / pageSize)
-    });
+    res.json(results);
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({
@@ -55,7 +46,7 @@ searchRouter.get('/suggestions', async (req, res) => {
       return res.json({ suggestions: [] });
     }
 
-    const suggestions = await elasticsearchService.getSuggestions(q, category as string);
+    const suggestions = await hybridSearchService.getSuggestions(q);
     
     res.json({
       success: true,
