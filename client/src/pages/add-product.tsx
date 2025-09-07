@@ -279,15 +279,25 @@ export default function AddDeal() {
       const stockDescription = generateStockDescription();
       const searchKey = generateNormalizationKey();
       
+      // Debug log the form data
+      console.log('Form data before submission:', {
+        makeText: data.makeText,
+        gradeText: data.gradeText,
+        brandText: data.brandText,
+        MakeID: data.MakeID,
+        GradeID: data.GradeID,
+        BrandID: data.BrandID
+      });
+      
       // Use text values directly - backend will handle as text or IDs
       const payload = {
         group_id: data.groupID ? parseInt(data.groupID) : 0,
-        make_text: data.makeText,
-        grade_text: data.gradeText,
-        brand_text: data.brandText,
-        make_id: data.MakeID || data.makeText,
-        grade_id: data.GradeID || data.gradeText,
-        brand_id: data.BrandID || data.brandText,
+        make_text: data.makeText || makeText || "",
+        grade_text: data.gradeText || gradeText || "",
+        brand_text: data.brandText || brandText || "",
+        make_id: data.MakeID || data.makeText || makeText || "",
+        grade_id: data.GradeID || data.gradeText || gradeText || "",
+        brand_id: data.BrandID || data.brandText || brandText || "",
         deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
         stock_description: stockDescription,
         search_key: searchKey,
@@ -304,6 +314,7 @@ export default function AddDeal() {
         location: 'India',
         stock_type: data.stockType,
       };
+      console.log('Payload being sent to backend:', payload);
       return apiRequest("POST", "/api/deals", payload);
     },
     onSuccess: () => {
