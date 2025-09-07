@@ -35,9 +35,24 @@ export class SimpleSearchService {
       const searchQuery = query.trim().toLowerCase();
       const searchTerms = searchQuery.split(/\s+/);
       
-      // Detect GSM patterns (numbers followed by gsm or just numbers)
-      const gsmPatterns = searchQuery.match(/(\d+)\s*gsm?/gi) || searchQuery.match(/\b(\d{2,4})\b/g);
-      const gsmValues = gsmPatterns ? gsmPatterns.map(p => parseInt(p.replace(/\D/g, ''))) : [];
+      // Detect GSM patterns - prioritize explicit GSM mentions
+      let gsmValues: number[] = [];
+      
+      // First, look for explicit GSM patterns like "40 gsm", "400gsm"
+      const explicitGsmMatches = searchQuery.match(/(\d+)\s*gsm/gi);
+      if (explicitGsmMatches) {
+        gsmValues = explicitGsmMatches.map(match => parseInt(match.replace(/\D/g, '')));
+      } 
+      // If no explicit GSM found, look for standalone numbers (but be more selective)
+      else {
+        const numberMatches = searchQuery.match(/\b(\d{2,4})\b/g);
+        if (numberMatches) {
+          // Only treat as GSM if it's a reasonable GSM value (20-2000)
+          gsmValues = numberMatches
+            .map(num => parseInt(num))
+            .filter(num => num >= 20 && num <= 2000);
+        }
+      }
       
       // Build comprehensive search conditions
       const searchConditions = [];
@@ -47,11 +62,17 @@ export class SimpleSearchService {
       queryParams.push(exactPhrase);
       searchConditions.push('dm.stock_description LIKE ?');
       
-      // 2. GSM-specific searches if GSM values detected
+      // 2. GSM-specific searches with exact matching
       if (gsmValues.length > 0) {
         gsmValues.forEach(gsm => {
-          queryParams.push(gsm, `%${gsm} GSM%`, `%${gsm}GSM%`);
-          searchConditions.push('(dm.GSM = ? OR dm.stock_description LIKE ? OR dm.stock_description LIKE ?)');
+          // Exact GSM column match gets highest priority
+          queryParams.push(gsm);
+          searchConditions.push('dm.GSM = ?');
+          
+          // Word boundary matching in descriptions for exact GSM values
+          queryParams.push(`% ${gsm} GSM%`, `% ${gsm}GSM%`, `%${gsm} GSM %`, `%${gsm}GSM %`);
+          queryParams.push(`% ${gsm} %`);
+          searchConditions.push('(dm.stock_description LIKE ? OR dm.stock_description LIKE ? OR dm.stock_description LIKE ? OR dm.stock_description LIKE ? OR dm.stock_description LIKE ?)');
         });
       }
       
