@@ -378,13 +378,16 @@ class DealService {
       const deckle_mm = deal_specifications?.Deckle_mm || 0;
       const grain_mm = deal_specifications?.grain_mm || 0;
 
+      // Generate search_key for fast normalization-based search
+      const search_key = (stock_description || '').toLowerCase().replace(/[\s.]/g, '');
+
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, Make, Grade, Brand, memberID, 
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
-          GSM, Deckle_mm, grain_mm,
+          GSM, Deckle_mm, grain_mm, search_key,
           created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         make_id,
@@ -399,6 +402,7 @@ class DealService {
         gsm,
         deckle_mm,
         grain_mm,
+        search_key,
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || ''
@@ -444,15 +448,20 @@ class DealService {
 
       const allowedFields = [
         'deal_title', 'deal_description', 'price', 'quantity', 'unit',
-        'min_order_quantity', 'location', 'deal_specifications', 'expires_at'
+        'min_order_quantity', 'location', 'deal_specifications', 'expires_at', 'stock_description'
       ];
       
       const updateFields = [];
       const updateValues = [];
+      let updateStockDescription = false;
       
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
-          if (field === 'deal_specifications') {
+          if (field === 'stock_description') {
+            updateFields.push(`stock_description = ?`);
+            updateValues.push(updateData[field]);
+            updateStockDescription = true;
+          } else if (field === 'deal_specifications') {
             updateFields.push(`DealSpecifications = ?`);
             updateValues.push(JSON.stringify(updateData[field]));
           } else if (field === 'deal_title') {
@@ -472,6 +481,13 @@ class DealService {
             updateValues.push(updateData[field]);
           }
         }
+      }
+
+      // If stock_description is updated, also update search_key
+      if (updateStockDescription && updateData.stock_description) {
+        const search_key = updateData.stock_description.toLowerCase().replace(/[\s.]/g, '');
+        updateFields.push(`search_key = ?`);
+        updateValues.push(search_key);
       }
       
       if (updateFields.length === 0) {

@@ -1,7 +1,12 @@
 import { executeQuery } from '../database';
 
+// Normalize search text - remove spaces and dots, convert to lowercase
+function normalizeSearchText(text: string): string {
+  return text.toLowerCase().replace(/[\s.]/g, '');
+}
+
 export class PowerSearchService {
-  // Lightning-fast description-based search
+  // Lightning-fast normalization-based search using search_key
   async searchDeals(params: {
     query?: string;
     page?: number;
@@ -17,62 +22,12 @@ export class PowerSearchService {
     let whereConditions = ['dm.StockStatus = 1'];
     
     if (query && query.trim()) {
-      const searchQuery = query.trim();
-      const searchLower = searchQuery.toLowerCase();
+      // Normalize the user's search query the same way as stored search_keys
+      const normalizedQuery = normalizeSearchText(query.trim());
       
-      // Parse search query for components
-      let gsmValue: number | null = null;
-      let searchTerms: string[] = [];
-      
-      // Extract GSM value if present
-      const gsmMatch = searchQuery.match(/(\d+)\s*gsm/i);
-      if (gsmMatch) {
-        gsmValue = parseInt(gsmMatch[1]);
-        // Remove GSM from search terms
-        searchTerms = searchLower.replace(/\d+\s*gsm/gi, '').trim().split(/\s+/).filter(t => t);
-      } else {
-        searchTerms = searchLower.split(/\s+/).filter(t => t);
-      }
-      
-      // Build AND conditions for precise matching
-      const andConditions = [];
-      
-      // GSM must match exactly if specified
-      if (gsmValue !== null) {
-        queryParams.push(gsmValue);
-        andConditions.push('dm.GSM = ?');
-      }
-      
-      // Only require terms to match if there are any
-      if (searchTerms.length > 0) {
-        searchTerms.forEach(term => {
-          if (term && term.length >= 1) {
-            // Each term can match in Make, Brand, Grade, or description
-            const termConditions = [];
-            
-            queryParams.push(`%${term}%`);
-            termConditions.push('LOWER(dm.Make) LIKE ?');
-            
-            queryParams.push(`%${term}%`);
-            termConditions.push('LOWER(dm.Brand) LIKE ?');
-            
-            queryParams.push(`%${term}%`);
-            termConditions.push('LOWER(dm.Grade) LIKE ?');
-            
-            queryParams.push(`%${term}%`);
-            termConditions.push('LOWER(dm.stock_description) LIKE ?');
-            
-            if (termConditions.length > 0) {
-              andConditions.push(`(${termConditions.join(' OR ')})`);
-            }
-          }
-        });
-      }
-      
-      // Combine with AND logic for better precision
-      if (andConditions.length > 0) {
-        whereConditions.push('(' + andConditions.join(' AND ') + ')');
-      }
+      // Super fast search using normalized search_key
+      queryParams.push(`%${normalizedQuery}%`);
+      whereConditions.push('dm.search_key LIKE ?');
     }
     
     const whereClause = whereConditions.join(' AND ');
@@ -88,37 +43,21 @@ export class PowerSearchService {
     const countResult = await executeQuery(countQuery, queryParams);
     const total = countResult[0]?.total || 0;
     
-    // Get results with smart ordering
+    // Get results with simple, fast ordering
     const searchQueryText = `
       SELECT 
         dm.*,
         m.mname as created_by_name,
-        m.company_name as created_by_company,
-        ${query ? `
-          CASE 
-            WHEN dm.GSM = ? THEN 1000
-            WHEN LOWER(dm.stock_description) LIKE ? THEN 100
-            WHEN LOWER(dm.Make) LIKE ? THEN 50
-            WHEN LOWER(dm.Brand) LIKE ? THEN 40
-            ELSE 1
-          END as relevance
-        ` : '1 as relevance'}
+        m.company_name as created_by_company
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       WHERE ${whereClause}
-      ORDER BY relevance DESC, dm.TransID DESC
+      ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?
     `;
     
-    // Add scoring parameters
+    // Simple parameter passing - just pagination params added
     const searchParams = [...queryParams];
-    if (query) {
-      const searchTerm = `%${query.toLowerCase()}%`;
-      const gsmMatch = query.match(/(\d+)\s*gsm/i);
-      const gsmValue = gsmMatch ? parseInt(gsmMatch[1]) : 0;
-      
-      searchParams.push(gsmValue, searchTerm, searchTerm, searchTerm);
-    }
     searchParams.push(pageSize, offset);
     
     const results = await executeQuery(searchQueryText, searchParams);
@@ -130,34 +69,29 @@ export class PowerSearchService {
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize),
-      searchProvider: 'power-search'
+      searchProvider: 'normalization-search'
     };
   }
   
-  // Fast autocomplete suggestions
+  // Fast autocomplete suggestions using search_key
   async getSuggestions(query: string): Promise<any[]> {
     if (!query || query.length < 2) return [];
     
-    const searchTerm = `${query.toLowerCase()}%`;
+    // Normalize the query for search_key matching
+    const normalizedQuery = normalizeSearchText(query);
+    const searchTerm = `%${normalizedQuery}%`;
     
     const suggestQuery = `
       SELECT DISTINCT 
-        CONCAT(Make, ' ', Brand, ' ', GSM, ' GSM') as text,
+        CONCAT(Make, ' ', Grade, ' ', GSM, ' GSM') as text,
         'product' as type
       FROM deal_master 
       WHERE StockStatus = 1 
-      AND (
-        LOWER(Make) LIKE ? OR 
-        LOWER(Brand) LIKE ? OR 
-        LOWER(stock_description) LIKE ? OR
-        CAST(GSM AS CHAR) LIKE ?
-      )
+      AND search_key LIKE ?
       LIMIT 10
     `;
     
-    const results = await executeQuery(suggestQuery, [
-      searchTerm, searchTerm, searchTerm, searchTerm
-    ]);
+    const results = await executeQuery(suggestQuery, [searchTerm]);
     
     return results;
   }
