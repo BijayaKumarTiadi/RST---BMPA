@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Package, IndianRupee, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -21,8 +22,8 @@ const dealSchema = z.object({
   GradeID: z.string().min(1, "Stock grade is required"),
   BrandID: z.string().min(1, "Stock brand is required"),
   GSM: z.coerce.number().min(1, "GSM is required"),
-  Deckle_mm: z.coerce.number().min(1, "Deckle (mm) is required"),
-  grain_mm: z.coerce.number().min(1, "Grain (mm) is required"),
+  Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
+  grain_mm: z.coerce.number().min(1, "Grain is required"),
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -41,9 +42,8 @@ export default function AddDeal() {
   const [selectedMake, setSelectedMake] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
 
-  // Unit conversion state - only cm and inch
-  const [deckleUnit, setDeckleUnit] = useState("cm");
-  const [grainUnit, setGrainUnit] = useState("cm");
+  // Unit state - single unit selector for both Deckle and Grain
+  const [dimensionUnit, setDimensionUnit] = useState("cm");
   const [deckleInputValue, setDeckleInputValue] = useState("");
   const [grainInputValue, setGrainInputValue] = useState("");
 
@@ -54,40 +54,82 @@ export default function AddDeal() {
         return value * 10;
       case "inch":
         return value * 25.4;
-      case "mm":
       default:
         return value;
     }
   };
 
-  // Handle unit conversion and form updates
-  const handleDeckleChange = (value: string, unit: string) => {
+  const convertFromMm = (mmValue: number, unit: string): number => {
+    switch (unit) {
+      case "cm":
+        return mmValue / 10;
+      case "inch":
+        return mmValue / 25.4;
+      default:
+        return mmValue;
+    }
+  };
+
+  // Handle dimension changes
+  const handleDeckleChange = (value: string) => {
     setDeckleInputValue(value);
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      const mmValue = convertToMm(numValue, unit);
+      const mmValue = convertToMm(numValue, dimensionUnit);
       form.setValue("Deckle_mm", mmValue);
     }
   };
 
-  const handleGrainChange = (value: string, unit: string) => {
+  const handleGrainChange = (value: string) => {
     setGrainInputValue(value);
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      const mmValue = convertToMm(numValue, unit);
+      const mmValue = convertToMm(numValue, dimensionUnit);
       form.setValue("grain_mm", mmValue);
     }
   };
 
-  // Get converted values for display
-  const getDeckleInMm = () => {
+  // Get converted display values
+  const getDeckleDimensions = () => {
     const inputVal = parseFloat(deckleInputValue);
-    return !isNaN(inputVal) ? convertToMm(inputVal, deckleUnit) : 0;
+    if (!isNaN(inputVal)) {
+      const mmValue = convertToMm(inputVal, dimensionUnit);
+      if (dimensionUnit === "cm") {
+        return `${(mmValue / 25.4).toFixed(2)}" (inch)`;
+      } else {
+        return `${(mmValue / 10).toFixed(1)} cm`;
+      }
+    }
+    return "";
   };
 
-  const getGrainInMm = () => {
+  const getGrainDimensions = () => {
     const inputVal = parseFloat(grainInputValue);
-    return !isNaN(inputVal) ? convertToMm(inputVal, grainUnit) : 0;
+    if (!isNaN(inputVal)) {
+      const mmValue = convertToMm(inputVal, dimensionUnit);
+      if (dimensionUnit === "cm") {
+        return `${(mmValue / 25.4).toFixed(2)}" (inch)`;
+      } else {
+        return `${(mmValue / 10).toFixed(1)} cm`;
+      }
+    }
+    return "";
+  };
+
+  // Handle unit change for dimensions
+  const handleUnitChange = (newUnit: string) => {
+    // Convert existing values to new unit
+    if (deckleInputValue) {
+      const mmValue = convertToMm(parseFloat(deckleInputValue), dimensionUnit);
+      const newValue = convertFromMm(mmValue, newUnit);
+      setDeckleInputValue(newValue.toFixed(2));
+    }
+    if (grainInputValue) {
+      const mmValue = convertToMm(parseFloat(grainInputValue), dimensionUnit);
+      const newValue = convertFromMm(mmValue, newUnit);
+      setGrainInputValue(newValue.toFixed(2));
+    }
+    setDimensionUnit(newUnit);
   };
 
   const form = useForm<DealFormData>({
@@ -103,7 +145,7 @@ export default function AddDeal() {
       OfferPrice: "" as any,
       OfferUnit: "",
       stockType: "",
-      quantity: 1000,
+      quantity: "" as any, // No default value
       Seller_comments: "",
     },
   });
@@ -134,16 +176,21 @@ export default function AddDeal() {
     selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
   );
 
-  // Generate stock description based on selected values
+  // Generate stock description based on selected values (removing spaces and dots)
   const generateStockDescription = () => {
     const formValues = form.getValues();
-    const selectedGroupObj = groups.find((g: any) => g.GroupID.toString() === formValues.groupID);
-    const selectedMakeObj = makes.find((m: any) => m.make_ID.toString() === formValues.MakeID);
-    const selectedGradeObj = grades.find((g: any) => g.gradeID.toString() === formValues.GradeID);
-    const selectedBrandObj = brands.find((b: any) => b.brandID.toString() === formValues.BrandID);
+    const selectedMakeObj = makes.find((m: any) => m.make_ID?.toString() === formValues.MakeID);
+    const selectedGradeObj = grades.find((g: any) => g.gradeID?.toString() === formValues.GradeID);
+    const selectedBrandObj = brands.find((b: any) => b.brandID?.toString() === formValues.BrandID);
 
-    if (selectedGroupObj && selectedMakeObj && selectedGradeObj && selectedBrandObj && formValues.GSM) {
-      return `${selectedBrandObj.brandname} ${selectedGradeObj.GradeName} ${selectedGroupObj.GroupName} - ${formValues.GSM}GSM, ${formValues.Deckle_mm}x${formValues.grain_mm}mm, ${formValues.quantity} ${formValues.OfferUnit} available`;
+    if (selectedMakeObj && selectedGradeObj && selectedBrandObj && formValues.GSM) {
+      // Remove spaces and dots from each component before joining
+      const make = (selectedMakeObj.make_Name || "").replace(/[\s.]/g, '');
+      const grade = (selectedGradeObj.GradeName || "").replace(/[\s.]/g, '');
+      const brand = (selectedBrandObj.brandname || "").replace(/[\s.]/g, '');
+      const gsm = formValues.GSM;
+      
+      return `${make}+${grade}+${brand}+${gsm}gsm`;
     }
     return '';
   };
@@ -157,7 +204,7 @@ export default function AddDeal() {
       }
     });
     return () => subscription.unsubscribe();
-  }, [form, groups, makes, grades, brands]);
+  }, [form, makes, grades, brands]);
 
   // Handle selection changes to reset dependent fields
   const handleGroupChange = (value: string) => {
@@ -169,9 +216,10 @@ export default function AddDeal() {
     form.setValue("BrandID", "");
   };
 
-  const handleMakeChange = (value: string) => {
+  const handleMakeChange = (value: string, item: any) => {
     setSelectedMake(value);
     form.setValue("MakeID", value);
+    form.setValue("GradeID", "");
     form.setValue("BrandID", "");
   };
 
@@ -186,15 +234,15 @@ export default function AddDeal() {
         deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
         deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
         price: data.OfferPrice,
-        quantity: data.quantity, // Use form quantity value
+        quantity: data.quantity,
         unit: data.OfferUnit,
-        min_order_quantity: 100, // Default min order quantity
+        min_order_quantity: 100,
         deal_specifications: {
           GSM: data.GSM,
           Deckle_mm: data.Deckle_mm,
           grain_mm: data.grain_mm,
         },
-        location: 'India', // Default location
+        location: 'India',
       };
       return apiRequest("POST", "/api/deals", payload);
     },
@@ -207,19 +255,25 @@ export default function AddDeal() {
           title: "Success",
           description: "Deal added successfully! Add another deal below.",
         });
-        // Reset form for next entry, but keep the selected group and make for convenience
+        // Reset form for next entry
         form.reset({
-          groupID: selectedGroup,
-          MakeID: selectedMake,
+          groupID: "",
+          MakeID: "",
           GradeID: "",
           BrandID: "",
-          GSM: 0,
-          Deckle_mm: 0,
-          grain_mm: 0,
-          OfferPrice: 0,
+          GSM: "" as any,
+          Deckle_mm: "" as any,
+          grain_mm: "" as any,
+          OfferPrice: "" as any,
           OfferUnit: "",
+          stockType: "",
+          quantity: "" as any,
           Seller_comments: "",
         });
+        setSelectedGroup("");
+        setSelectedMake("");
+        setDeckleInputValue("");
+        setGrainInputValue("");
         setSaveAndAddAnother(false);
       } else {
         toast({
@@ -298,28 +352,15 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Stock Group <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={handleGroupChange}
-                              data-testid="select-group"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select group" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                {groups.map((group: any) => (
-                                  group.GroupID != null ? (
-                                    <SelectItem 
-                                      key={group.GroupID} 
-                                      value={group.GroupID.toString()}
-                                      className="text-foreground hover:bg-accent"
-                                    >
-                                      {group.GroupName || `Group ${group.GroupID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <AutocompleteInput
+                              value={field.value}
+                              onChange={handleGroupChange}
+                              placeholder="Type to search groups..."
+                              suggestions={groups}
+                              displayField="GroupName"
+                              valueField="GroupID"
+                              testId="input-group"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -333,35 +374,22 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Stock Make <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={handleMakeChange}
+                            <AutocompleteInput
+                              value={field.value}
+                              onChange={(value) => form.setValue("MakeID", value)}
+                              onSelect={handleMakeChange}
+                              placeholder="Type to search makes..."
+                              suggestions={filteredMakes}
+                              displayField="make_Name"
+                              valueField="make_ID"
                               disabled={!selectedGroup}
-                              data-testid="select-make"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select make" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                {filteredMakes.map((make: any) => (
-                                  make.make_ID != null ? (
-                                    <SelectItem 
-                                      key={make.make_ID} 
-                                      value={make.make_ID.toString()}
-                                      className="text-foreground hover:bg-accent"
-                                    >
-                                      {make.make_Name || `Make ${make.make_ID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              testId="input-make"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                   </div>
 
                   {/* Second Row: Grade and Brand */}
@@ -373,29 +401,16 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Grade <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={field.onChange}
+                            <AutocompleteInput
+                              value={field.value}
+                              onChange={(value) => form.setValue("GradeID", value)}
+                              placeholder="Type to search grades..."
+                              suggestions={filteredGrades}
+                              displayField="GradeName"
+                              valueField="gradeID"
                               disabled={!selectedMake}
-                              data-testid="select-grade"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select grade" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                {filteredGrades.map((grade: any) => (
-                                  grade.gradeID != null ? (
-                                    <SelectItem 
-                                      key={grade.gradeID} 
-                                      value={grade.gradeID.toString()}
-                                      className="text-foreground hover:bg-accent"
-                                    >
-                                      {grade.GradeName || `Grade ${grade.gradeID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              testId="input-grade"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -409,29 +424,16 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Brand <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={field.onChange}
+                            <AutocompleteInput
+                              value={field.value}
+                              onChange={(value) => form.setValue("BrandID", value)}
+                              placeholder="Type to search brands..."
+                              suggestions={filteredBrands}
+                              displayField="brandname"
+                              valueField="brandID"
                               disabled={!selectedMake}
-                              data-testid="select-brand"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select brand" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                {filteredBrands.map((brand: any) => (
-                                  brand.brandID != null ? (
-                                    <SelectItem 
-                                      key={brand.brandID} 
-                                      value={brand.brandID.toString()}
-                                      className="text-foreground hover:bg-accent"
-                                    >
-                                      {brand.brandname || `Brand ${brand.brandID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              testId="input-brand"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -439,7 +441,7 @@ export default function AddDeal() {
                     />
                   </div>
 
-                  {/* Third Row: Stock Type */}
+                  {/* Third Row: Stock Type and Description */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -448,23 +450,38 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Stock Type <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={field.onChange}
-                              data-testid="select-stock-type"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select reel or sheet" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                <SelectItem value="reel" className="text-foreground hover:bg-accent">
-                                  Reel
-                                </SelectItem>
-                                <SelectItem value="sheet" className="text-foreground hover:bg-accent">
-                                  Sheet
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <AutocompleteInput
+                              value={field.value}
+                              onChange={(value) => form.setValue("stockType", value)}
+                              placeholder="Type reel or sheet..."
+                              suggestions={[
+                                { value: "reel", label: "Reel" },
+                                { value: "sheet", label: "Sheet" }
+                              ]}
+                              displayField="label"
+                              valueField="value"
+                              testId="input-stock-type"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="deal_description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Description (Auto-generated)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field}
+                              readOnly
+                              className="bg-muted border-border text-foreground cursor-not-allowed"
+                              placeholder="Auto-generated from selections"
+                              data-testid="input-description"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -486,6 +503,20 @@ export default function AddDeal() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Unit selector for dimensions */}
+                  <div className="mb-4">
+                    <FormLabel className="text-foreground mb-2 block">Dimension Unit</FormLabel>
+                    <Select value={dimensionUnit} onValueChange={handleUnitChange}>
+                      <SelectTrigger className="w-32 bg-popover border-border text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border">
+                        <SelectItem value="cm" className="text-foreground hover:bg-accent">cm</SelectItem>
+                        <SelectItem value="inch" className="text-foreground hover:bg-accent">inch</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
@@ -496,7 +527,7 @@ export default function AddDeal() {
                           <FormControl>
                             <Input 
                               type="number" 
-                              placeholder="e.g., 80" 
+                              placeholder="e.g., 180" 
                               {...field}
                               data-testid="input-gsm"
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -513,38 +544,22 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Deckle <span className="text-red-500">*</span> (cm and inch)
+                            Deckle ({dimensionUnit}) <span className="text-red-500">*</span>
                             {deckleInputValue && (
-                              <span className="text-xs text-blue-600 ml-2">
-                                = {(getDeckleInMm()/10).toFixed(1)} cm | {(getDeckleInMm()/25.4).toFixed(2)}"
+                              <span className="text-xs text-muted-foreground ml-2">
+                                = {getDeckleDimensions()}
                               </span>
                             )}
                           </FormLabel>
                           <FormControl>
-                            <div className="flex gap-2">
-                              <Input 
-                                type="number" 
-                                placeholder="650" 
-                                value={deckleInputValue}
-                                onChange={(e) => handleDeckleChange(e.target.value, deckleUnit)}
-                                data-testid="input-deckle"
-                                className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                              />
-                              <Select value={deckleUnit} onValueChange={(value) => {
-                                setDeckleUnit(value);
-                                if (deckleInputValue) {
-                                  handleDeckleChange(deckleInputValue, value);
-                                }
-                              }}>
-                                <SelectTrigger className="w-20 bg-popover border-border">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-popover border-border">
-                                  <SelectItem value="cm">cm</SelectItem>
-                                  <SelectItem value="inch">inch</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <Input 
+                              type="number" 
+                              placeholder={dimensionUnit === "cm" ? "65" : "25.59"} 
+                              value={deckleInputValue}
+                              onChange={(e) => handleDeckleChange(e.target.value)}
+                              data-testid="input-deckle"
+                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -557,60 +572,21 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Grain <span className="text-red-500">*</span> (cm and inch)
+                            Grain ({dimensionUnit}) <span className="text-red-500">*</span>
                             {grainInputValue && (
-                              <span className="text-xs text-blue-600 ml-2">
-                                = {(getGrainInMm()/10).toFixed(1)} cm | {(getGrainInMm()/25.4).toFixed(2)}"
+                              <span className="text-xs text-muted-foreground ml-2">
+                                = {getGrainDimensions()}
                               </span>
                             )}
                           </FormLabel>
                           <FormControl>
-                            <div className="flex gap-2">
-                              <Input 
-                                type="number" 
-                                placeholder="900" 
-                                value={grainInputValue}
-                                onChange={(e) => handleGrainChange(e.target.value, grainUnit)}
-                                data-testid="input-grain"
-                                className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                              />
-                              <Select value={grainUnit} onValueChange={(value) => {
-                                setGrainUnit(value);
-                                if (grainInputValue) {
-                                  handleGrainChange(grainInputValue, value);
-                                }
-                              }}>
-                                <SelectTrigger className="w-20 bg-popover border-border">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-popover border-border">
-                                  <SelectItem value="cm">cm</SelectItem>
-                                  <SelectItem value="inch">inch</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Deal Description - Full Width */}
-                  <div className="mt-6">
-                    <FormField
-                      control={form.control}
-                      name="deal_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Deal Description</FormLabel>
-                          <FormControl>
-                            <textarea
-                              {...field}
-                              placeholder="Description will be auto-generated based on your selections above..."
-                              rows={3}
-                              className="w-full px-3 py-2 border border-border rounded-md bg-popover text-foreground placeholder:text-muted-foreground resize-none"
-                              data-testid="textarea-deal-description"
+                            <Input 
+                              type="number" 
+                              placeholder={dimensionUnit === "cm" ? "100" : "39.37"} 
+                              value={grainInputValue}
+                              onChange={(e) => handleGrainChange(e.target.value)}
+                              data-testid="input-grain"
+                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                             />
                           </FormControl>
                           <FormMessage />
@@ -621,30 +597,30 @@ export default function AddDeal() {
                 </CardContent>
               </Card>
 
-              {/* Pricing & Details */}
+              {/* Pricing and Inventory */}
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <IndianRupee className="h-5 w-5" />
-                    Pricing & Details
+                    Pricing and Inventory
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Set your offer price and add any seller comments
+                    Set your pricing and available quantity
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
                       name="OfferPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Offer Price <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               step="0.01"
-                              placeholder="e.g., 45.50" 
+                              placeholder="Enter price" 
                               {...field}
                               data-testid="input-price"
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -662,16 +638,17 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select value={field.value} onValueChange={field.onChange} data-testid="select-unit">
+                            <Select 
+                              value={field.value} 
+                              onValueChange={field.onChange}
+                              data-testid="select-unit"
+                            >
                               <SelectTrigger className="bg-popover border-border text-foreground">
                                 <SelectValue placeholder="Select unit" />
                               </SelectTrigger>
                               <SelectContent className="bg-popover border-border">
-                                <SelectItem value="kg" className="text-foreground hover:bg-accent">Kg</SelectItem>
-                                <SelectItem value="ton" className="text-foreground hover:bg-accent">Ton</SelectItem>
-                                <SelectItem value="ream" className="text-foreground hover:bg-accent">Ream</SelectItem>
-                                <SelectItem value="sheet" className="text-foreground hover:bg-accent">Sheet</SelectItem>
-                                <SelectItem value="bundle" className="text-foreground hover:bg-accent">Bundle</SelectItem>
+                                <SelectItem value="Kg" className="text-foreground hover:bg-accent">Kg</SelectItem>
+                                <SelectItem value="Sheet" className="text-foreground hover:bg-accent">Sheet</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -689,7 +666,7 @@ export default function AddDeal() {
                           <FormControl>
                             <Input 
                               type="number" 
-                              placeholder="e.g., 1000" 
+                              placeholder="Enter quantity" 
                               {...field}
                               data-testid="input-quantity"
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -700,7 +677,20 @@ export default function AddDeal() {
                       )}
                     />
                   </div>
+                </CardContent>
+              </Card>
 
+              {/* Additional Information */}
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">
+                    Additional Information
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Add any additional comments or details about the stock
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <FormField
                     control={form.control}
                     name="Seller_comments"
@@ -709,10 +699,10 @@ export default function AddDeal() {
                         <FormLabel className="text-foreground">Seller Comments</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Add any additional details about the stock..."
+                            placeholder="Add any special notes, delivery terms, or additional specifications..."
+                            className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
                             {...field}
-                            data-testid="input-comments"
-                            className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                            data-testid="textarea-comments"
                           />
                         </FormControl>
                         <FormMessage />
@@ -724,46 +714,42 @@ export default function AddDeal() {
 
               {/* Submit Buttons */}
               <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground">Save Options</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Choose how you want to proceed after saving this deal
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button
-                      type="submit"
-                      className="h-12 bg-blue-600 hover:bg-blue-700 text-foreground"
-                      disabled={createDealMutation.isPending}
-                      data-testid="button-submit"
-                    >
-                      <Package className="mr-2 h-4 w-4" />
-                      {createDealMutation.isPending ? "Saving..." : "Save & Go to Dashboard"}
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="h-12 bg-popover hover:bg-accent text-foreground border-border"
-                      disabled={createDealMutation.isPending}
-                      onClick={() => form.handleSubmit(onSubmitAndAddAnother)()}
-                      data-testid="button-submit-add-another"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {createDealMutation.isPending ? "Saving..." : "Save & Add Another"}
-                    </Button>
-                  </div>
-                  
-                  <div className="mt-4">
+                <CardContent className="pt-6">
+                  <div className="flex gap-4 justify-end">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full bg-popover border-border text-foreground hover:bg-accent"
                       onClick={() => setLocation("/seller-dashboard")}
+                      className="border-border text-foreground hover:bg-secondary"
                       data-testid="button-cancel"
                     >
                       Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={form.handleSubmit(onSubmitAndAddAnother)}
+                      disabled={createDealMutation.isPending}
+                      className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      data-testid="button-save-add"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Save & Add Another
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createDealMutation.isPending}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      data-testid="button-save"
+                    >
+                      {createDealMutation.isPending ? (
+                        <>
+                          <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Deal"
+                      )}
                     </Button>
                   </div>
                 </CardContent>
