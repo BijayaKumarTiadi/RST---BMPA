@@ -18,9 +18,12 @@ import Navigation from "@/components/navigation";
 
 const dealSchema = z.object({
   groupID: z.string().min(1, "Stock group is required"),
-  MakeID: z.string().min(1, "Stock make is required"),
-  GradeID: z.string().min(1, "Stock grade is required"),
-  BrandID: z.string().min(1, "Stock brand is required"),
+  MakeID: z.string().optional(),
+  GradeID: z.string().optional(),
+  BrandID: z.string().optional(),
+  makeText: z.string().min(1, "Stock make is required"),
+  gradeText: z.string().min(1, "Stock grade is required"),
+  brandText: z.string().min(1, "Stock brand is required"),
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
   grain_mm: z.coerce.number().min(1, "Grain is required"),
@@ -40,6 +43,9 @@ export default function AddDeal() {
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
+  const [makeText, setMakeText] = useState("");
+  const [gradeText, setGradeText] = useState("");
+  const [brandText, setBrandText] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
 
   // Unit state - single unit selector for both Deckle and Grain
@@ -139,6 +145,9 @@ export default function AddDeal() {
       MakeID: "",
       GradeID: "",
       BrandID: "",
+      makeText: "",
+      gradeText: "",
+      brandText: "",
       GSM: "" as any,
       Deckle_mm: "" as any,
       grain_mm: "" as any,
@@ -170,23 +179,25 @@ export default function AddDeal() {
   const filteredGrades = grades;
   const filteredBrands = brands;
 
-  // Generate stock description based on selected values (removing spaces and dots)
+  // Generate stock description based on selected values
   const generateStockDescription = () => {
     const formValues = form.getValues();
-    const selectedMakeObj = makes.find((m: any) => m.make_ID?.toString() === formValues.MakeID);
-    const selectedGradeObj = grades.find((g: any) => g.gradeID?.toString() === formValues.GradeID);
-    const selectedBrandObj = brands.find((b: any) => b.brandID?.toString() === formValues.BrandID);
+    const makeValue = formValues.makeText || makeText || "";
+    const gradeValue = formValues.gradeText || gradeText || "";
+    const brandValue = formValues.brandText || brandText || "";
+    const gsmValue = formValues.GSM;
 
-    if (selectedMakeObj && selectedGradeObj && selectedBrandObj && formValues.GSM) {
-      // Remove spaces and dots from each component before joining
-      const make = (selectedMakeObj.make_Name || "").replace(/[\s.]/g, '');
-      const grade = (selectedGradeObj.GradeName || "").replace(/[\s.]/g, '');
-      const brand = (selectedBrandObj.brandname || "").replace(/[\s.]/g, '');
-      const gsm = formValues.GSM;
-      
-      return `${make}+${grade}+${brand}+${gsm}gsm`;
+    if (makeValue && gradeValue && brandValue && gsmValue) {
+      // Use spaces between components
+      return `${makeValue} ${gradeValue} ${brandValue} ${gsmValue}gsm`;
     }
     return '';
+  };
+
+  // Generate normalization key (lowercase, no spaces, no dots)
+  const generateNormalizationKey = () => {
+    const description = generateStockDescription();
+    return description.toLowerCase().replace(/[\s.]/g, '');
   };
 
   // Auto-populate deal description when form values change
@@ -207,20 +218,46 @@ export default function AddDeal() {
   };
 
   const handleMakeChange = (value: string, item: any) => {
-    setSelectedMake(value);
-    form.setValue("MakeID", value);
+    if (item) {
+      setSelectedMake(value);
+      form.setValue("MakeID", value);
+      form.setValue("makeText", item.make_Name || "");
+      setMakeText(item.make_Name || "");
+    }
+  };
+
+  const handleGradeChange = (value: string, item: any) => {
+    if (item) {
+      form.setValue("GradeID", value);
+      form.setValue("gradeText", item.GradeName || "");
+      setGradeText(item.GradeName || "");
+    }
+  };
+
+  const handleBrandChange = (value: string, item: any) => {
+    if (item) {
+      form.setValue("BrandID", value);
+      form.setValue("brandText", item.brandname || "");
+      setBrandText(item.brandname || "");
+    }
   };
 
   // Create deal mutation
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
+      // Use text values directly - backend will handle as text
       const payload = {
         group_id: data.groupID ? parseInt(data.groupID) : 0,
-        make_id: data.MakeID ? parseInt(data.MakeID) : 0,
-        grade_id: data.GradeID ? parseInt(data.GradeID) : 0,
-        brand_id: data.BrandID ? parseInt(data.BrandID) : 0,
-        deal_title: `${brands.find((b: any) => b.brandID == data.BrandID)?.brandname || 'Stock'} - ${data.GSM}GSM`,
-        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+        make_text: data.makeText,
+        grade_text: data.gradeText,
+        brand_text: data.brandText,
+        make_id: data.MakeID ? parseInt(data.MakeID) : null,
+        grade_id: data.GradeID ? parseInt(data.GradeID) : null,
+        brand_id: data.BrandID ? parseInt(data.BrandID) : null,
+        deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
+        deal_description: generateStockDescription(),
+        normalization_key: generateNormalizationKey(),
+        seller_comments: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
         price: data.OfferPrice,
         quantity: data.quantity,
         unit: data.OfferUnit,
@@ -249,6 +286,9 @@ export default function AddDeal() {
           MakeID: "",
           GradeID: "",
           BrandID: "",
+          makeText: "",
+          gradeText: "",
+          brandText: "",
           GSM: "" as any,
           Deckle_mm: "" as any,
           grain_mm: "" as any,
@@ -260,6 +300,9 @@ export default function AddDeal() {
         });
         setSelectedGroup("");
         setSelectedMake("");
+        setMakeText("");
+        setGradeText("");
+        setBrandText("");
         setDeckleInputValue("");
         setGrainInputValue("");
         setSaveAndAddAnother(false);
@@ -357,20 +400,25 @@ export default function AddDeal() {
 
                     <FormField
                       control={form.control}
-                      name="MakeID"
+                      name="makeText"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">Stock Make <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={field.value}
+                              value={form.getValues("MakeID") || ""}
                               onChange={(value) => form.setValue("MakeID", value)}
                               onSelect={handleMakeChange}
-                              placeholder="Type to search makes..."
+                              onTextChange={(text) => {
+                                form.setValue("makeText", text);
+                                setMakeText(text);
+                              }}
+                              placeholder="Type to search or enter make..."
                               suggestions={filteredMakes}
                               displayField="make_Name"
                               valueField="make_ID"
                               testId="input-make"
+                              allowFreeText={true}
                             />
                           </FormControl>
                           <FormMessage />
@@ -383,20 +431,25 @@ export default function AddDeal() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="GradeID"
+                      name="gradeText"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">Grade <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={field.value}
+                              value={form.getValues("GradeID") || ""}
                               onChange={(value) => form.setValue("GradeID", value)}
-                              placeholder="Type to search grades..."
+                              onSelect={handleGradeChange}
+                              onTextChange={(text) => {
+                                form.setValue("gradeText", text);
+                                setGradeText(text);
+                              }}
+                              placeholder="Type to search or enter grade..."
                               suggestions={filteredGrades}
                               displayField="GradeName"
                               valueField="gradeID"
-
                               testId="input-grade"
+                              allowFreeText={true}
                             />
                           </FormControl>
                           <FormMessage />
@@ -406,20 +459,25 @@ export default function AddDeal() {
 
                     <FormField
                       control={form.control}
-                      name="BrandID"
+                      name="brandText"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">Brand <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={field.value}
+                              value={form.getValues("BrandID") || ""}
                               onChange={(value) => form.setValue("BrandID", value)}
-                              placeholder="Type to search brands..."
+                              onSelect={handleBrandChange}
+                              onTextChange={(text) => {
+                                form.setValue("brandText", text);
+                                setBrandText(text);
+                              }}
+                              placeholder="Type to search or enter brand..."
                               suggestions={filteredBrands}
                               displayField="brandname"
                               valueField="brandID"
-
                               testId="input-brand"
+                              allowFreeText={true}
                             />
                           </FormControl>
                           <FormMessage />

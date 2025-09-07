@@ -9,6 +9,7 @@ interface AutocompleteInputProps {
   value: string;
   onChange: (value: string) => void;
   onSelect?: (value: string, item: any) => void;
+  onTextChange?: (text: string) => void;
   placeholder?: string;
   suggestions: any[];
   displayField: string;
@@ -16,12 +17,14 @@ interface AutocompleteInputProps {
   disabled?: boolean;
   className?: string;
   testId?: string;
+  allowFreeText?: boolean;
 }
 
 export function AutocompleteInput({
   value,
   onChange,
   onSelect,
+  onTextChange,
   placeholder,
   suggestions,
   displayField,
@@ -29,6 +32,7 @@ export function AutocompleteInput({
   disabled = false,
   className,
   testId,
+  allowFreeText = true,
 }: AutocompleteInputProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -36,8 +40,13 @@ export function AutocompleteInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Initialize input value from selected value
+  // Initialize input value from selected value or keep the text
   useEffect(() => {
+    // Don't reset if we already have input
+    if (inputValue && allowFreeText) {
+      return;
+    }
+    
     if (value) {
       const selected = suggestions.find(
         (item) => item[valueField]?.toString() === value
@@ -45,10 +54,8 @@ export function AutocompleteInput({
       if (selected) {
         setInputValue(selected[displayField] || "");
       }
-    } else {
-      setInputValue("");
     }
-  }, [value, suggestions, valueField, displayField]);
+  }, [value, suggestions, valueField, displayField, allowFreeText]);
 
   // Filter suggestions based on input and remove duplicates
   useEffect(() => {
@@ -74,6 +81,11 @@ export function AutocompleteInput({
     setInputValue(newValue);
     setOpen(true);
     
+    // Always call onTextChange with the current text
+    if (onTextChange) {
+      onTextChange(newValue);
+    }
+    
     // Check if input matches any suggestion exactly
     const exactMatch = suggestions.find(
       (item) => (item[displayField] || "").toLowerCase() === newValue.toLowerCase()
@@ -85,6 +97,9 @@ export function AutocompleteInput({
       if (onSelect) {
         onSelect(selectedValue, exactMatch);
       }
+    } else if (allowFreeText) {
+      // For free text, just pass the text as the value
+      onChange("");
     } else {
       onChange("");
     }
