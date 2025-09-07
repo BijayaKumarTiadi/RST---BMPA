@@ -82,6 +82,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ success: false, error: error.message });
     }
   });
+
+  // Database management endpoints for search_key
+  app.post('/api/database/add-search-key', async (req, res) => {
+    try {
+      // Check if search_key column exists
+      const columnExists = await executeQuery(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.columns 
+        WHERE table_schema = 'trade_bmpa25' 
+        AND table_name = 'deal_master' 
+        AND column_name = 'search_key'
+      `);
+
+      if (columnExists[0]?.count === 0) {
+        await executeQuery('ALTER TABLE deal_master ADD COLUMN search_key TEXT');
+        console.log('✅ search_key column added to deal_master table');
+      }
+
+      res.json({ success: true, message: 'Search key column ready' });
+    } catch (error) {
+      console.error('Error adding search_key column:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create normalization function and backfill data
+  app.post('/api/database/backfill-search-keys', async (req, res) => {
+    try {
+      // Update all existing records with search_key
+      await executeQuery(`
+        UPDATE deal_master 
+        SET search_key = LOWER(REPLACE(REPLACE(stock_description, ' ', ''), '.', ''))
+        WHERE search_key IS NULL OR search_key = ''
+      `);
+
+      const updatedCount = await executeQuery(`
+        SELECT COUNT(*) as count FROM deal_master WHERE search_key IS NOT NULL AND search_key != ''
+      `);
+
+      res.json({ 
+        success: true, 
+        message: 'Search keys backfilled successfully',
+        updatedRecords: updatedCount[0]?.count || 0
+      });
+    } catch (error) {
+      console.error('Error backfilling search keys:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Add index for performance
+  app.post('/api/database/add-search-index', async (req, res) => {
+    try {
+      await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key)');
+      res.json({ success: true, message: 'Search key index created' });
+    } catch (error) {
+      // Index might already exist, that's OK
+      console.log('Index may already exist:', error.message);
+      res.json({ success: true, message: 'Search key index ready' });
+    }
+  });
   
   // Create test accounts endpoint
   app.post('/api/create-test-accounts', async (req, res) => {
