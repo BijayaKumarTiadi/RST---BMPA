@@ -65,15 +65,15 @@ class DealService {
         executeQuery('SELECT make_ID, GroupID, make_Name FROM stock_make_master WHERE IsActive = 1 ORDER BY make_Name'),
         executeQuery('SELECT gradeID, Make_ID, GradeName FROM stock_grade WHERE IsActive = 1 ORDER BY GradeName'),
         executeQuery('SELECT brandID, make_ID, brandname FROM stock_brand WHERE IsActive = 1 ORDER BY brandname'),
-        // Also fetch unique custom values from deal_master
+        // Fetch all unique text values from deal_master
         executeQuery(`SELECT DISTINCT Make as make_Name, groupID as GroupID FROM deal_master 
-                      WHERE Make IS NOT NULL AND Make != '' AND NOT Make REGEXP '^[0-9]+$'
+                      WHERE Make IS NOT NULL AND Make != '' AND Make != '0'
                       ORDER BY Make`),
         executeQuery(`SELECT DISTINCT Grade as GradeName FROM deal_master 
-                      WHERE Grade IS NOT NULL AND Grade != '' AND NOT Grade REGEXP '^[0-9]+$'
+                      WHERE Grade IS NOT NULL AND Grade != '' AND Grade != '0'
                       ORDER BY Grade`),
         executeQuery(`SELECT DISTINCT Brand as brandname FROM deal_master 
-                      WHERE Brand IS NOT NULL AND Brand != '' AND NOT Brand REGEXP '^[0-9]+$'
+                      WHERE Brand IS NOT NULL AND Brand != '' AND Brand != '0'
                       ORDER BY Brand`)
       ]);
 
@@ -421,36 +421,15 @@ class DealService {
         expires_at
       } = dealData;
 
-      // Use text values if IDs are not provided (for free text entry)
-      let finalMake: any;
-      let finalGrade: any;
-      let finalBrand: any;
+      // Always use text values for make, grade, and brand
+      const finalMake = make_text || make_id || '';
+      const finalGrade = grade_text || grade_id || '';
+      const finalBrand = brand_text || brand_id || '';
       
-      // Check if make_id is a valid numeric ID or use text
-      if (make_id && !isNaN(Number(make_id)) && Number(make_id) > 0) {
-        finalMake = Number(make_id);
-      } else {
-        finalMake = make_text || make_id || '';
-      }
-      
-      // Check if grade_id is a valid numeric ID or use text
-      if (grade_id && !isNaN(Number(grade_id)) && Number(grade_id) > 0) {
-        finalGrade = Number(grade_id);
-      } else {
-        finalGrade = grade_text || grade_id || '';
-      }
-      
-      // Check if brand_id is a valid numeric ID or use text
-      if (brand_id && !isNaN(Number(brand_id)) && Number(brand_id) > 0) {
-        finalBrand = Number(brand_id);
-      } else {
-        finalBrand = brand_text || brand_id || '';
-      }
-      
-      console.log('Creating deal with values:', { 
-        make_id, make_text, finalMake,
-        grade_id, grade_text, finalGrade,
-        brand_id, brand_text, finalBrand 
+      console.log('Creating deal with text values:', { 
+        finalMake,
+        finalGrade,
+        finalBrand 
       });
 
       // Extract GSM, Deckle_mm, grain_mm from deal_specifications
