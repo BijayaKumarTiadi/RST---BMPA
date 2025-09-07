@@ -461,6 +461,41 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Inquiries table created successfully');
     }
 
+    // Add search_key column to deal_master if it doesn't exist
+    const searchKeyColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'deal_master' 
+      AND column_name = 'search_key'
+    `);
+
+    if (!searchKeyColumnExists || searchKeyColumnExists.count === 0) {
+      console.log('🔍 Adding search_key column to deal_master table...');
+      await executeQuery(`
+        ALTER TABLE deal_master ADD COLUMN search_key TEXT
+      `);
+      console.log('✅ search_key column added to deal_master table');
+    }
+
+    // Backfill search_key for existing records
+    console.log('🔄 Backfilling search_key for existing records...');
+    await executeQuery(`
+      UPDATE deal_master 
+      SET search_key = LOWER(REPLACE(REPLACE(stock_description, ' ', ''), '.', ''))
+      WHERE search_key IS NULL OR search_key = ''
+    `);
+    console.log('✅ Backfilled search_key for existing records');
+
+    // Add index for performance
+    try {
+      await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key)');
+      console.log('✅ Search key index created');
+    } catch (indexError) {
+      // Index might already exist, that's OK
+      console.log('ℹ️ Search key index may already exist');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
