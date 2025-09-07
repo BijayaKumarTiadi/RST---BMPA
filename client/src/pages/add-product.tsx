@@ -442,11 +442,16 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Stock Make <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={form.getValues("MakeID") || ""}
-                              onChange={(value) => form.setValue("MakeID", value)}
+                              value={makeText}
+                              onChange={(value) => {
+                                form.setValue("MakeID", value);
+                                form.setValue("makeText", value);
+                                setMakeText(value);
+                              }}
                               onSelect={handleMakeChange}
                               onTextChange={(text) => {
                                 form.setValue("makeText", text);
+                                form.setValue("MakeID", "");
                                 setMakeText(text);
                               }}
                               placeholder="Type to search or enter make..."
@@ -473,11 +478,16 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Grade <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={form.getValues("GradeID") || ""}
-                              onChange={(value) => form.setValue("GradeID", value)}
+                              value={gradeText}
+                              onChange={(value) => {
+                                form.setValue("GradeID", value);
+                                form.setValue("gradeText", value);
+                                setGradeText(value);
+                              }}
                               onSelect={handleGradeChange}
                               onTextChange={(text) => {
                                 form.setValue("gradeText", text);
+                                form.setValue("GradeID", "");
                                 setGradeText(text);
                               }}
                               placeholder="Type to search or enter grade..."
@@ -501,11 +511,16 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Brand <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
-                              value={form.getValues("BrandID") || ""}
-                              onChange={(value) => form.setValue("BrandID", value)}
+                              value={brandText}
+                              onChange={(value) => {
+                                form.setValue("BrandID", value);
+                                form.setValue("brandText", value);
+                                setBrandText(value);
+                              }}
                               onSelect={handleBrandChange}
                               onTextChange={(text) => {
                                 form.setValue("brandText", text);
+                                form.setValue("BrandID", "");
                                 setBrandText(text);
                               }}
                               placeholder="Type to search or enter brand..."
