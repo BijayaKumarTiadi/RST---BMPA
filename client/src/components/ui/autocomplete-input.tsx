@@ -98,8 +98,12 @@ export function AutocompleteInput({
         onSelect(selectedValue, exactMatch);
       }
     } else if (allowFreeText) {
-      // For free text, just pass the text as the value
-      onChange("");
+      // For free text, pass the text itself as the value
+      onChange(newValue);
+      // Also trigger onSelect with the text value
+      if (onSelect) {
+        onSelect(newValue, { [valueField]: newValue, [displayField]: newValue });
+      }
     } else {
       onChange("");
     }

@@ -223,25 +223,52 @@ export default function AddDeal() {
   const handleMakeChange = (value: string, item: any) => {
     if (item) {
       setSelectedMake(value);
-      form.setValue("MakeID", value);
-      form.setValue("makeText", item.make_Name || "");
-      setMakeText(item.make_Name || "");
+      // Check if it's a custom text entry (when value equals the display text)
+      if (value === item.make_Name) {
+        // This is custom text, not an ID
+        form.setValue("MakeID", "");
+        form.setValue("makeText", value);
+        setMakeText(value);
+      } else {
+        // This is a selection from dropdown
+        form.setValue("MakeID", value);
+        form.setValue("makeText", item.make_Name || "");
+        setMakeText(item.make_Name || "");
+      }
     }
   };
 
   const handleGradeChange = (value: string, item: any) => {
     if (item) {
-      form.setValue("GradeID", value);
-      form.setValue("gradeText", item.GradeName || "");
-      setGradeText(item.GradeName || "");
+      // Check if it's a custom text entry (when value equals the display text)
+      if (value === item.GradeName) {
+        // This is custom text, not an ID
+        form.setValue("GradeID", "");
+        form.setValue("gradeText", value);
+        setGradeText(value);
+      } else {
+        // This is a selection from dropdown
+        form.setValue("GradeID", value);
+        form.setValue("gradeText", item.GradeName || "");
+        setGradeText(item.GradeName || "");
+      }
     }
   };
 
   const handleBrandChange = (value: string, item: any) => {
     if (item) {
-      form.setValue("BrandID", value);
-      form.setValue("brandText", item.brandname || "");
-      setBrandText(item.brandname || "");
+      // Check if it's a custom text entry (when value equals the display text)
+      if (value === item.brandname) {
+        // This is custom text, not an ID
+        form.setValue("BrandID", "");
+        form.setValue("brandText", value);
+        setBrandText(value);
+      } else {
+        // This is a selection from dropdown
+        form.setValue("BrandID", value);
+        form.setValue("brandText", item.brandname || "");
+        setBrandText(item.brandname || "");
+      }
     }
   };
 
@@ -282,6 +309,7 @@ export default function AddDeal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/hierarchy"] });
       
       if (saveAndAddAnother) {
         toast({
