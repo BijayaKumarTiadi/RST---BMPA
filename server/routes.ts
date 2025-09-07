@@ -113,8 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update all existing records with search_key
       await executeQuery(`
         UPDATE deal_master 
-        SET search_key = LOWER(REPLACE(REPLACE(stock_description, ' ', ''), '.', ''))
-        WHERE search_key IS NULL OR search_key = ''
+        SET search_key = LOWER(REPLACE(REPLACE(IFNULL(stock_description, ''), ' ', ''), '.', ''))
       `);
 
       const updatedCount = await executeQuery(`

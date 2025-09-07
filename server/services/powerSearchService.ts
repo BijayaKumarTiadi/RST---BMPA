@@ -43,21 +43,35 @@ export class PowerSearchService {
     const countResult = await executeQuery(countQuery, queryParams);
     const total = countResult[0]?.total || 0;
     
-    // Get results with simple, fast ordering
+    // Get results with relevance scoring for better matches
     const searchQueryText = `
       SELECT 
         dm.*,
         m.mname as created_by_name,
-        m.company_name as created_by_company
+        m.company_name as created_by_company,
+        ${query ? `
+          CASE 
+            WHEN dm.search_key = ? THEN 1000
+            WHEN dm.search_key LIKE ? THEN 500
+            WHEN dm.search_key LIKE ? THEN 100
+            ELSE 1
+          END as relevance_score
+        ` : '1 as relevance_score'}
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       WHERE ${whereClause}
-      ORDER BY dm.TransID DESC
+      ORDER BY ${query ? 'relevance_score DESC, ' : ''}dm.TransID DESC
       LIMIT ? OFFSET ?
     `;
     
-    // Simple parameter passing - just pagination params added
+    // Add relevance scoring parameters for better matching
     const searchParams = [...queryParams];
+    if (query) {
+      const normalizedQuery = normalizeSearchText(query.trim());
+      searchParams.push(normalizedQuery); // Exact match
+      searchParams.push(`${normalizedQuery}%`); // Starts with
+      searchParams.push(`%${normalizedQuery}%`); // Contains
+    }
     searchParams.push(pageSize, offset);
     
     const results = await executeQuery(searchQueryText, searchParams);
