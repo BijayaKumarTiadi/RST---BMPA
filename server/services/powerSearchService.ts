@@ -6,6 +6,68 @@ function normalizeSearchText(text: string): string {
 }
 
 export class PowerSearchService {
+  // Get filter aggregations based on search results
+  async getFilterAggregations(whereClause: string, queryParams: any[]): Promise<any> {
+    const aggregations = {};
+    
+    // GSM aggregations
+    const gsmQuery = `
+      SELECT GSM, COUNT(*) as count 
+      FROM deal_master dm 
+      WHERE ${whereClause}
+      GROUP BY GSM 
+      ORDER BY GSM ASC
+    `;
+    const gsmResults = await executeQuery(gsmQuery, queryParams);
+    aggregations['gsm'] = gsmResults;
+    
+    // Make aggregations  
+    const makeQuery = `
+      SELECT Make, COUNT(*) as count 
+      FROM deal_master dm 
+      WHERE ${whereClause}
+      GROUP BY Make 
+      ORDER BY Make ASC
+    `;
+    const makeResults = await executeQuery(makeQuery, queryParams);
+    aggregations['makes'] = makeResults;
+    
+    // Grade aggregations
+    const gradeQuery = `
+      SELECT Grade, COUNT(*) as count 
+      FROM deal_master dm 
+      WHERE ${whereClause}
+      GROUP BY Grade 
+      ORDER BY Grade ASC
+    `;
+    const gradeResults = await executeQuery(gradeQuery, queryParams);
+    aggregations['grades'] = gradeResults;
+    
+    // Brand aggregations
+    const brandQuery = `
+      SELECT Brand, COUNT(*) as count 
+      FROM deal_master dm 
+      WHERE ${whereClause}
+      GROUP BY Brand 
+      ORDER BY Brand ASC
+    `;
+    const brandResults = await executeQuery(brandQuery, queryParams);
+    aggregations['brands'] = brandResults;
+    
+    // Unit aggregations
+    const unitQuery = `
+      SELECT OfferUnit, COUNT(*) as count 
+      FROM deal_master dm 
+      WHERE ${whereClause}
+      GROUP BY OfferUnit 
+      ORDER BY OfferUnit ASC
+    `;
+    const unitResults = await executeQuery(unitQuery, queryParams);
+    aggregations['units'] = unitResults;
+    
+    return aggregations;
+  }
+
   // Lightning-fast normalization-based search using search_key
   async searchDeals(params: {
     query?: string;
@@ -94,6 +156,9 @@ export class PowerSearchService {
     
     const results = await executeQuery(searchQueryText, searchParams);
     
+    // Get filter aggregations for the current search
+    const aggregations = await this.getFilterAggregations(whereClause, queryParams);
+    
     return {
       success: true,
       data: results,
@@ -101,7 +166,8 @@ export class PowerSearchService {
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize),
-      searchProvider: 'normalization-search'
+      searchProvider: 'normalization-search',
+      aggregations: aggregations
     };
   }
   
