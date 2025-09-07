@@ -26,6 +26,7 @@ export default function Marketplace() {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchAggregations, setSearchAggregations] = useState<any>(null);
   // Pending filters (UI state, not applied yet)
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
@@ -139,18 +140,37 @@ export default function Marketplace() {
   const brands = stockHierarchy?.brands || [];
   
   // Filter makes, grades, and brands based on selections (hierarchical filtering)
-  const filteredMakes = makes.filter((make: any) => 
+  const filteredMakes = dynamicMakes || makes.filter((make: any) => 
     pendingSelectedCategory ? (make.GroupID != null ? make.GroupID.toString() === pendingSelectedCategory : false) : true
   );
-  const filteredGrades = grades.filter((grade: any) => 
+  const filteredGrades = dynamicGrades || grades.filter((grade: any) => 
     pendingMakes.length > 0 ? pendingMakes.some(makeId => grade.Make_ID != null ? grade.Make_ID.toString() === makeId : false) : true
   );
-  const filteredBrands = brands.filter((brand: any) => 
+  const filteredBrands = dynamicBrands || brands.filter((brand: any) => 
     pendingMakes.length > 0 ? pendingMakes.some(makeId => brand.make_ID != null ? brand.make_ID.toString() === makeId : false) : true
   );
   
   // Extract unique GSM values from deals
-  const gsmOptions = [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b));
+  // Dynamic filter options based on search results or all deals
+  const gsmOptions = searchAggregations?.gsm 
+    ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
+    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
+  
+  const dynamicMakes = searchAggregations?.makes 
+    ? searchAggregations.makes.map((item: any) => ({ name: item.Make, count: item.count }))
+    : null;
+    
+  const dynamicGrades = searchAggregations?.grades 
+    ? searchAggregations.grades.map((item: any) => ({ name: item.Grade, count: item.count }))
+    : null;
+    
+  const dynamicBrands = searchAggregations?.brands 
+    ? searchAggregations.brands.map((item: any) => ({ name: item.Brand, count: item.count }))
+    : null;
+    
+  const dynamicUnits = searchAggregations?.units 
+    ? searchAggregations.units.map((item: any) => ({ name: item.OfferUnit, count: item.count }))
+    : null;
 
   // Reset to page 1 when filters change
   const resetPage = () => setCurrentPage(1);
@@ -236,6 +256,9 @@ export default function Marketplace() {
     setSelectedLocations([]);
     setSortBy("newest");
     setCurrentPage(1);
+    // Clear search results and aggregations
+    setSearchResults(null);
+    setSearchAggregations(null);
   };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
@@ -333,6 +356,7 @@ export default function Marketplace() {
             onSearch={(results) => {
               if (results && results.success) {
                 setSearchResults(results);
+                setSearchAggregations(results.aggregations || null);
                 setCurrentPage(1);
               }
             }}
@@ -446,20 +470,27 @@ export default function Marketplace() {
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {filteredMakes.map((make: any) => (
-                        <div key={make.make_ID || make.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`make-${make.make_ID || make.id}`}
-                            checked={pendingMakes.includes((make.make_ID || make.id)?.toString())}
-                            onCheckedChange={(checked) => {
-                              const makeId = (make.make_ID || make.id)?.toString();
-                              if (makeId) {
-                                handleMakeChange(makeId, checked);
-                              }
-                            }}
-                          />
-                          <label htmlFor={`make-${make.make_ID || make.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {make.make_Name || make.name}
-                          </label>
+                        <div key={make.make_ID || make.id || make.name} className="flex items-center justify-between space-x-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`make-${make.make_ID || make.id || make.name}`}
+                              checked={pendingMakes.includes((make.make_ID || make.id || make.name)?.toString())}
+                              onCheckedChange={(checked) => {
+                                const makeId = (make.make_ID || make.id || make.name)?.toString();
+                                if (makeId) {
+                                  handleMakeChange(makeId, checked);
+                                }
+                              }}
+                            />
+                            <label htmlFor={`make-${make.make_ID || make.id || make.name}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              {make.make_Name || make.name}
+                            </label>
+                          </div>
+                          {make.count > 0 && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {make.count}
+                            </Badge>
+                          )}
                         </div>
                       ))}
                       {filteredMakes.length === 0 && pendingSelectedCategory && (
@@ -526,24 +557,31 @@ export default function Marketplace() {
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                       {filteredBrands.map((brand: any) => (
-                        <div key={brand.brandID || brand.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`brand-${brand.brandID || brand.id}`}
-                            checked={pendingBrands.includes((brand.brandID || brand.id)?.toString())}
-                            onCheckedChange={(checked) => {
-                              const brandId = (brand.brandID || brand.id)?.toString();
-                              if (brandId) {
-                                if (checked) {
-                                  setPendingBrands([...pendingBrands, brandId]);
-                                } else {
-                                  setPendingBrands(pendingBrands.filter(id => id !== brandId));
+                        <div key={brand.brandID || brand.id || brand.name} className="flex items-center justify-between space-x-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`brand-${brand.brandID || brand.id || brand.name}`}
+                              checked={pendingBrands.includes((brand.brandID || brand.id || brand.name)?.toString())}
+                              onCheckedChange={(checked) => {
+                                const brandId = (brand.brandID || brand.id || brand.name)?.toString();
+                                if (brandId) {
+                                  if (checked) {
+                                    setPendingBrands([...pendingBrands, brandId]);
+                                  } else {
+                                    setPendingBrands(pendingBrands.filter(id => id !== brandId));
+                                  }
                                 }
-                              }
-                            }}
-                          />
-                          <label htmlFor={`brand-${brand.brandID || brand.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {brand.brandname || brand.name}
-                          </label>
+                              }}
+                            />
+                            <label htmlFor={`brand-${brand.brandID || brand.id || brand.name}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              {brand.brandname || brand.name}
+                            </label>
+                          </div>
+                          {brand.count > 0 && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {brand.count}
+                            </Badge>
+                          )}
                         </div>
                       ))}
                       {filteredBrands.length === 0 && pendingMakes.length > 0 && (
@@ -567,24 +605,35 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {gsmOptions.map((gsm: string) => (
-                        <div key={gsm} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`gsm-${gsm}`}
-                            checked={pendingGsm.includes(gsm)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setPendingGsm([...pendingGsm, gsm]);
-                              } else {
-                                setPendingGsm(pendingGsm.filter(val => val !== gsm));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`gsm-${gsm}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {gsm} GSM
-                          </label>
-                        </div>
-                      ))}
+                      {gsmOptions.map((gsmOption: any) => {
+                        const gsmValue = typeof gsmOption === 'string' ? gsmOption : gsmOption.value;
+                        const gsmCount = typeof gsmOption === 'object' ? gsmOption.count : 0;
+                        return (
+                          <div key={gsmValue} className="flex items-center justify-between space-x-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`gsm-${gsmValue}`}
+                                checked={pendingGsm.includes(gsmValue)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setPendingGsm([...pendingGsm, gsmValue]);
+                                  } else {
+                                    setPendingGsm(pendingGsm.filter(val => val !== gsmValue));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={`gsm-${gsmValue}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {gsmValue} GSM
+                              </label>
+                            </div>
+                            {gsmCount > 0 && (
+                              <Badge variant="secondary" className="text-xs px-2 py-0">
+                                {gsmCount}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
