@@ -165,16 +165,10 @@ export default function AddDeal() {
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
 
-  // Filter makes, grades, and brands based on selections
-  const filteredMakes = makes.filter((make: any) => 
-    selectedGroup ? (make.GroupID != null ? make.GroupID.toString() === selectedGroup : false) : true
-  );
-  const filteredGrades = grades.filter((grade: any) => 
-    selectedMake ? (grade.Make_ID != null ? grade.Make_ID.toString() === selectedMake : false) : true
-  );
-  const filteredBrands = brands.filter((brand: any) => 
-    selectedMake ? (brand.make_ID != null ? brand.make_ID.toString() === selectedMake : false) : true
-  );
+  // Show all options without filtering
+  const filteredMakes = makes;
+  const filteredGrades = grades;
+  const filteredBrands = brands;
 
   // Generate stock description based on selected values (removing spaces and dots)
   const generateStockDescription = () => {
@@ -206,21 +200,15 @@ export default function AddDeal() {
     return () => subscription.unsubscribe();
   }, [form, makes, grades, brands]);
 
-  // Handle selection changes to reset dependent fields
+  // Handle selection changes
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
-    setSelectedMake("");
     form.setValue("groupID", value);
-    form.setValue("MakeID", "");
-    form.setValue("GradeID", "");
-    form.setValue("BrandID", "");
   };
 
   const handleMakeChange = (value: string, item: any) => {
     setSelectedMake(value);
     form.setValue("MakeID", value);
-    form.setValue("GradeID", "");
-    form.setValue("BrandID", "");
   };
 
   // Create deal mutation
@@ -382,7 +370,6 @@ export default function AddDeal() {
                               suggestions={filteredMakes}
                               displayField="make_Name"
                               valueField="make_ID"
-                              disabled={!selectedGroup}
                               testId="input-make"
                             />
                           </FormControl>
@@ -408,7 +395,7 @@ export default function AddDeal() {
                               suggestions={filteredGrades}
                               displayField="GradeName"
                               valueField="gradeID"
-                              disabled={!selectedMake}
+
                               testId="input-grade"
                             />
                           </FormControl>
@@ -431,7 +418,7 @@ export default function AddDeal() {
                               suggestions={filteredBrands}
                               displayField="brandname"
                               valueField="brandID"
-                              disabled={!selectedMake}
+
                               testId="input-brand"
                             />
                           </FormControl>
@@ -504,7 +491,7 @@ export default function AddDeal() {
                 </CardHeader>
                 <CardContent>
                   {/* Unit selector for dimensions */}
-                  <div className="mb-4">
+                  <div className="mb-6">
                     <FormLabel className="text-foreground mb-2 block">Dimension Unit</FormLabel>
                     <Select value={dimensionUnit} onValueChange={handleUnitChange}>
                       <SelectTrigger className="w-32 bg-popover border-border text-foreground">
