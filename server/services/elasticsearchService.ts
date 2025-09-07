@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { executeQuery } from '../db';
+import { executeQuery } from '../database';
 
 // Initialize Elasticsearch client
 const esClient = new Client({
@@ -66,9 +66,15 @@ const dealsMapping = {
       type: 'text',
       analyzer: 'standard',
       fields: {
+        keyword: { type: 'keyword' },
         autocomplete: { 
           type: 'search_as_you_type',
           max_shingle_size: 4
+        },
+        // Specialized analyzer for stock descriptions
+        components: {
+          type: 'text',
+          analyzer: 'stock_analyzer'
         }
       }
     },
@@ -126,6 +132,21 @@ export class ElasticsearchService {
                   },
                   autocomplete_search: {
                     tokenizer: 'lowercase'
+                  },
+                  // Specialized analyzer for stock descriptions
+                  stock_analyzer: {
+                    tokenizer: 'standard',
+                    filter: ['lowercase', 'stop', 'stock_synonyms']
+                  }
+                },
+                filter: {
+                  stock_synonyms: {
+                    type: 'synonym',
+                    synonyms: [
+                      'gsm,gram,grams',
+                      'mm,millimeter,millimeters',
+                      'cm,centimeter,centimeters'
+                    ]
                   }
                 },
                 tokenizer: {
@@ -264,29 +285,62 @@ export class ElasticsearchService {
     const filter = [];
     const should = [];
 
-    // Text search with fuzzy matching and boosting
+    // Text search with stock_description priority and flexible matching
     if (searchText) {
+      const cleanSearchText = searchText.trim();
+      
       should.push(
-        // Exact match gets highest boost
-        { match_phrase: { full_description: { query: searchText, boost: 3 } } },
-        // Field-specific matches
-        { match: { Make: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
-        { match: { Brand: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
-        { match: { Grade: { query: searchText, boost: 2.5, fuzziness: 'AUTO' } } },
-        { match: { stock_description: { query: searchText, boost: 2, fuzziness: 'AUTO' } } },
-        // General text search
-        { match: { full_description: { query: searchText, fuzziness: 'AUTO' } } },
-        // Search as you type for autocomplete
+        // Highest priority: exact match in stock_description
+        { match_phrase: { stock_description: { query: cleanSearchText, boost: 5 } } },
+        // High priority: stock_description with components analyzer
+        { match: { 'stock_description.components': { query: cleanSearchText, boost: 4, fuzziness: 'AUTO' } } },
+        // Partial matches in stock_description
+        { match: { stock_description: { query: cleanSearchText, boost: 3.5, fuzziness: 'AUTO' } } },
+        
+        // Individual component matches (Make, Grade, Brand)
+        { match: { Make: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
+        { match: { Grade: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
+        { match: { Brand: { query: cleanSearchText, boost: 3, fuzziness: 'AUTO' } } },
+        
+        // GSM-specific search (handles "400 gsm", "400", etc.)
+        ...(cleanSearchText.match(/\d+/g) ? [
+          { 
+            bool: {
+              should: [
+                { term: { GSM: { value: parseInt(cleanSearchText.match(/\d+/)[0]), boost: 4 } } },
+                { range: { GSM: { 
+                  gte: parseInt(cleanSearchText.match(/\d+/)[0]) - 5,
+                  lte: parseInt(cleanSearchText.match(/\d+/)[0]) + 5,
+                  boost: 2
+                }}}
+              ]
+            }
+          }
+        ] : []),
+        
+        // Multi-field search for flexible word order
         { multi_match: {
-          query: searchText,
+          query: cleanSearchText,
+          type: 'cross_fields',
+          fields: ['Make^2', 'Grade^2', 'Brand^2', 'stock_description^3'],
+          operator: 'or',
+          minimum_should_match: '50%'
+        }},
+        
+        // Autocomplete for partial matches
+        { multi_match: {
+          query: cleanSearchText,
           type: 'bool_prefix',
           fields: [
-            'Make.autocomplete',
-            'Brand.autocomplete',
-            'Grade.autocomplete',
-            'stock_description.autocomplete'
+            'stock_description.autocomplete^3',
+            'Make.autocomplete^2',
+            'Brand.autocomplete^2',
+            'Grade.autocomplete^2'
           ]
-        }}
+        }},
+        
+        // Fallback: full description search
+        { match: { full_description: { query: cleanSearchText, fuzziness: 'AUTO', boost: 1 } } }
       );
     }
 

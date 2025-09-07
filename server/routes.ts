@@ -7,7 +7,7 @@ import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
-import searchRouter from "./simpleSearchRoutes";
+import elasticsearchRouter from "./searchRoutes";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRouter);
   
   // Search routes (Elasticsearch)
-  app.use('/api/search', searchRouter);
+  app.use('/api/search', elasticsearchRouter);
 
 
   // Create test data endpoint
