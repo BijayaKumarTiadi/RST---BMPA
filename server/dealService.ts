@@ -67,13 +67,13 @@ class DealService {
         executeQuery('SELECT brandID, make_ID, brandname FROM stock_brand WHERE IsActive = 1 ORDER BY brandname'),
         // Also fetch unique custom values from deal_master
         executeQuery(`SELECT DISTINCT Make as make_Name, groupID as GroupID FROM deal_master 
-                      WHERE Make IS NOT NULL AND Make != '' AND Make NOT IN (SELECT make_ID FROM stock_make_master)
+                      WHERE Make IS NOT NULL AND Make != '' AND NOT Make REGEXP '^[0-9]+$'
                       ORDER BY Make`),
         executeQuery(`SELECT DISTINCT Grade as GradeName FROM deal_master 
-                      WHERE Grade IS NOT NULL AND Grade != '' AND Grade NOT IN (SELECT gradeID FROM stock_grade)
+                      WHERE Grade IS NOT NULL AND Grade != '' AND NOT Grade REGEXP '^[0-9]+$'
                       ORDER BY Grade`),
         executeQuery(`SELECT DISTINCT Brand as brandname FROM deal_master 
-                      WHERE Brand IS NOT NULL AND Brand != '' AND Brand NOT IN (SELECT brandID FROM stock_brand)
+                      WHERE Brand IS NOT NULL AND Brand != '' AND NOT Brand REGEXP '^[0-9]+$'
                       ORDER BY Brand`)
       ]);
 
