@@ -50,12 +50,18 @@ export function AutocompleteInput({
     }
   }, [value, suggestions, valueField, displayField]);
 
-  // Filter suggestions based on input
+  // Filter suggestions based on input and remove duplicates
   useEffect(() => {
+    const uniqueSuggestions = suggestions.filter((item, index, self) => {
+      const displayValue = item[displayField] || "";
+      // Remove duplicates based on display field
+      return self.findIndex((i) => (i[displayField] || "") === displayValue) === index;
+    });
+
     if (!inputValue) {
-      setFilteredSuggestions(suggestions);
+      setFilteredSuggestions(uniqueSuggestions);
     } else {
-      const filtered = suggestions.filter((item) => {
+      const filtered = uniqueSuggestions.filter((item) => {
         const displayValue = item[displayField] || "";
         return displayValue.toLowerCase().includes(inputValue.toLowerCase());
       });

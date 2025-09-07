@@ -193,7 +193,7 @@ export default function AddDeal() {
   useEffect(() => {
     const subscription = form.watch((values) => {
       const description = generateStockDescription();
-      if (description && description !== form.getValues('deal_description')) {
+      if (description) {
         form.setValue('deal_description', description);
       }
     });
@@ -463,7 +463,7 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Description (Auto-generated)</FormLabel>
                           <FormControl>
                             <Input 
-                              {...field}
+                              value={field.value || generateStockDescription()}
                               readOnly
                               className="bg-muted border-border text-foreground cursor-not-allowed"
                               placeholder="Auto-generated from selections"
@@ -490,21 +490,7 @@ export default function AddDeal() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Unit selector for dimensions */}
-                  <div className="mb-6">
-                    <FormLabel className="text-foreground mb-2 block">Dimension Unit</FormLabel>
-                    <Select value={dimensionUnit} onValueChange={handleUnitChange}>
-                      <SelectTrigger className="w-32 bg-popover border-border text-foreground">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        <SelectItem value="cm" className="text-foreground hover:bg-accent">cm</SelectItem>
-                        <SelectItem value="inch" className="text-foreground hover:bg-accent">inch</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <FormField
                       control={form.control}
                       name="GSM"
@@ -533,7 +519,7 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">
                             Deckle ({dimensionUnit}) <span className="text-red-500">*</span>
                             {deckleInputValue && (
-                              <span className="text-xs text-muted-foreground ml-2">
+                              <span className="text-xs text-muted-foreground block">
                                 = {getDeckleDimensions()}
                               </span>
                             )}
@@ -561,7 +547,7 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">
                             Grain ({dimensionUnit}) <span className="text-red-500">*</span>
                             {grainInputValue && (
-                              <span className="text-xs text-muted-foreground ml-2">
+                              <span className="text-xs text-muted-foreground block">
                                 = {getGrainDimensions()}
                               </span>
                             )}
@@ -580,6 +566,19 @@ export default function AddDeal() {
                         </FormItem>
                       )}
                     />
+
+                    <FormItem>
+                      <FormLabel className="text-foreground">Dimension Unit</FormLabel>
+                      <Select value={dimensionUnit} onValueChange={handleUnitChange}>
+                        <SelectTrigger className="bg-popover border-border text-foreground">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border">
+                          <SelectItem value="cm" className="text-foreground hover:bg-accent">cm</SelectItem>
+                          <SelectItem value="inch" className="text-foreground hover:bg-accent">inch</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
                   </div>
                 </CardContent>
               </Card>
