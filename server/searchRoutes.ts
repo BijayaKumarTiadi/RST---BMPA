@@ -55,14 +55,14 @@ searchRouter.post('/precise', async (req, res) => {
     const { executeQuery } = await import('./database');
     const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, page = 1, pageSize = 12 } = req.body;
     
-    let whereClause = 'WHERE StockStatus = 1'; // Only active stock
+    let joinClause = 'FROM deal_master dm LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID';
+    let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
     
-    // Add category filter
+    // Add category filter using stock_groups table
     if (category && category.trim()) {
-      whereClause += ` AND (Make LIKE ? OR Grade LIKE ? OR Brand LIKE ?)`;
-      const categoryPattern = `%${category.trim()}%`;
-      queryParams.push(categoryPattern, categoryPattern, categoryPattern);
+      whereClause += ` AND sg.GroupName LIKE ?`;
+      queryParams.push(`%${category.trim()}%`);
     }
     
     // Add GSM filter with tolerance
@@ -72,56 +72,48 @@ searchRouter.post('/precise', async (req, res) => {
       const minGsm = gsmValue - toleranceValue;
       const maxGsm = gsmValue + toleranceValue;
       
-      whereClause += ` AND CAST(GSM AS UNSIGNED) BETWEEN ? AND ?`;
+      whereClause += ` AND dm.GSM BETWEEN ? AND ?`;
       queryParams.push(minGsm, maxGsm);
     }
     
-    // Add deckle filter (search in stock_description with tolerance)
+    // Add deckle filter using actual Deckle_mm column with tolerance
     if (deckle && !isNaN(Number(deckle))) {
       const deckleValue = Number(deckle);
       const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
       
-      if (dimToleranceValue > 0) {
-        const minDeckle = deckleValue - dimToleranceValue;
-        const maxDeckle = deckleValue + dimToleranceValue;
-        // Search for dimension values in range using OR conditions
-        const deckleConditions = [];
-        for (let i = Math.floor(minDeckle * 10); i <= Math.ceil(maxDeckle * 10); i++) {
-          const val = i / 10;
-          deckleConditions.push('stock_description LIKE ?');
-          queryParams.push(`%${val}%`);
-        }
-        whereClause += ` AND (${deckleConditions.join(' OR ')})`;
-      } else {
-        whereClause += ` AND stock_description LIKE ?`;
-        queryParams.push(`%${deckleValue}%`);
+      // Convert to mm if needed (assuming input might be in cm)
+      let deckleValueMm = deckleValue;
+      if (deckleUnit === 'cm') {
+        deckleValueMm = deckleValue * 10; // Convert cm to mm
       }
+      
+      const minDeckle = deckleValueMm - dimToleranceValue;
+      const maxDeckle = deckleValueMm + dimToleranceValue;
+      
+      whereClause += ` AND dm.Deckle_mm BETWEEN ? AND ?`;
+      queryParams.push(minDeckle, maxDeckle);
     }
     
-    // Add grain filter (search in stock_description with tolerance)
+    // Add grain filter using actual grain_mm column with tolerance
     if (grain && !isNaN(Number(grain))) {
       const grainValue = Number(grain);
       const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
       
-      if (dimToleranceValue > 0) {
-        const minGrain = grainValue - dimToleranceValue;
-        const maxGrain = grainValue + dimToleranceValue;
-        // Search for dimension values in range using OR conditions
-        const grainConditions = [];
-        for (let i = Math.floor(minGrain * 10); i <= Math.ceil(maxGrain * 10); i++) {
-          const val = i / 10;
-          grainConditions.push('stock_description LIKE ?');
-          queryParams.push(`%${val}%`);
-        }
-        whereClause += ` AND (${grainConditions.join(' OR ')})`;
-      } else {
-        whereClause += ` AND stock_description LIKE ?`;
-        queryParams.push(`%${grainValue}%`);
+      // Convert to mm if needed (assuming input might be in cm)
+      let grainValueMm = grainValue;
+      if (grainUnit === 'cm') {
+        grainValueMm = grainValue * 10; // Convert cm to mm
       }
+      
+      const minGrain = grainValueMm - dimToleranceValue;
+      const maxGrain = grainValueMm + dimToleranceValue;
+      
+      whereClause += ` AND dm.grain_mm BETWEEN ? AND ?`;
+      queryParams.push(minGrain, maxGrain);
     }
     
     // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM deal_master ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total ${joinClause} ${whereClause}`;
     const [countResult] = await executeQuery(countQuery, queryParams);
     const total = countResult.total;
     
@@ -129,16 +121,24 @@ searchRouter.post('/precise', async (req, res) => {
     const offset = (page - 1) * pageSize;
     const searchQuery = `
       SELECT 
-        TransID,
-        Make,
-        Grade,
-        Brand,
-        GSM,
-        stock_description,
-        Seller_comments
-      FROM deal_master 
+        dm.TransID,
+        dm.Make,
+        dm.Grade,
+        dm.Brand,
+        dm.GSM,
+        dm.Deckle_mm,
+        dm.grain_mm,
+        dm.stock_description,
+        dm.Seller_comments,
+        dm.OfferPrice,
+        dm.OfferUnit,
+        dm.quantity,
+        dm.created_by_name,
+        dm.created_by_company,
+        sg.GroupName as category_name
+      ${joinClause}
       ${whereClause}
-      ORDER BY TransID DESC
+      ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?
     `;
     
