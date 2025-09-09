@@ -31,27 +31,17 @@ export default function Marketplace() {
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
   
-  // Applied filters (actually used in queries)
+  // Main search state - this will be used for everything
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  // Pending filters (UI state, not applied yet)
-  const [pendingMakes, setPendingMakes] = useState<string[]>([]);
-  const [pendingGrades, setPendingGrades] = useState<string[]>([]);
-  const [pendingBrands, setPendingBrands] = useState<string[]>([]);
-  const [pendingGsm, setPendingGsm] = useState<string[]>([]);
-  const [pendingUnits, setPendingUnits] = useState<string[]>([]);
-  const [pendingStockStatus, setPendingStockStatus] = useState<string[]>([]);
-  const [pendingLocations, setPendingLocations] = useState<string[]>([]);
   
-  // Applied filters (actually used in queries)
-  const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
-  const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedGsm, setSelectedGsm] = useState<string[]>([]);
-  const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
-  const [selectedStockStatus, setSelectedStockStatus] = useState<string[]>([]);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  // Available filter options from search API (dynamic based on search)
+  const [availableMakes, setAvailableMakes] = useState<any[]>([]);
+  const [availableGrades, setAvailableGrades] = useState<any[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<any[]>([]);
+  const [availableGsm, setAvailableGsm] = useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -81,31 +71,22 @@ export default function Marketplace() {
     },
   });
 
-  // Fetch deals with filters
+  // Fetch deals - now using search results or fallback to regular deals
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals", { 
-      search: searchTerm, 
-      group_id: selectedCategory, 
-      sort: sortBy,
-      makes: selectedMakes,
-      grades: selectedGrades,
-      brands: selectedBrands,
-      gsm: selectedGsm,
-      units: selectedUnits,
-      stockStatus: selectedStockStatus,
-      page: currentPage
-    }],
+    queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
     queryFn: async () => {
+      // If we have search results, use them instead
+      if (searchResults && searchResults.data) {
+        return {
+          deals: searchResults.data,
+          total: searchResults.total,
+          page: searchResults.page || 1
+        };
+      }
+      
+      // Otherwise fetch regular deals (fallback)
       const params = new URLSearchParams();
-      if (searchTerm?.trim()) params.append('search', searchTerm.trim());
-      if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== '') params.append('group_id', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
-      if (selectedMakes.length > 0) params.append('makes', selectedMakes.join(','));
-      if (selectedGrades.length > 0) params.append('grades', selectedGrades.join(','));
-      if (selectedBrands.length > 0) params.append('brands', selectedBrands.join(','));
-      if (selectedGsm.length > 0) params.append('gsm', selectedGsm.join(','));
-      if (selectedUnits.length > 0) params.append('units', selectedUnits.join(','));
-      if (selectedStockStatus.length > 0) params.append('stock_status', selectedStockStatus.join(','));
       params.append('limit', itemsPerPage.toString());
       params.append('page', currentPage.toString());
       
@@ -113,6 +94,7 @@ export default function Marketplace() {
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
+    enabled: !isSearching, // Don't fetch when search is in progress
   });
 
   if (!isAuthenticated) {
@@ -181,84 +163,131 @@ export default function Marketplace() {
   }, [searchTerm, selectedCategory, selectedMakes, selectedGrades, selectedBrands, selectedGsm, selectedUnits, selectedStockStatus]);
   
   // Apply pending filters
-  const applyFilters = () => {
-    setSearchTerm(pendingSearchTerm);
-    setSelectedCategory(pendingSelectedCategory);
-    setSelectedMakes(pendingMakes);
-    setSelectedGrades(pendingGrades);
-    setSelectedBrands(pendingBrands);
-    setSelectedGsm(pendingGsm);
-    setSelectedUnits(pendingUnits);
-    setSelectedStockStatus(pendingStockStatus);
-    setSelectedLocations(pendingLocations);
+  const applySearch = () => {
+    // Trigger search with current search term
     setCurrentPage(1);
+    performSearch(pendingSearchTerm);
+  };
+
+  const performSearch = async (query: string) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch('/api/search/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query.trim(),
+          page: currentPage,
+          pageSize: itemsPerPage
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setSearchTerm(query); // Update search term after successful search
+        if (data.aggregations) {
+          setSearchAggregations(data.aggregations);
+          // Update available filter options based on search results
+          setAvailableMakes(data.aggregations.makes || []);
+          setAvailableGrades(data.aggregations.grades || []);
+          setAvailableBrands(data.aggregations.brands || []);
+          setAvailableGsm(data.aggregations.gsm || []);
+          setAvailableUnits(data.aggregations.units || []);
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
   
   // Handle hierarchical filter changes
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
-    if (checked) {
-      setPendingSelectedCategory(categoryId === "all" ? "" : categoryId);
+  // Handle search term changes to update filter options
+  const handleSearchChange = async (value: string) => {
+    setPendingSearchTerm(value);
+    
+    // Update filter options based on current search
+    if (value.trim()) {
+      try {
+        const response = await fetch('/api/search/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: value.trim(),
+            page: 1,
+            pageSize: itemsPerPage
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.aggregations) {
+            setAvailableMakes(data.aggregations.makes || []);
+            setAvailableGrades(data.aggregations.grades || []);
+            setAvailableBrands(data.aggregations.brands || []);
+            setAvailableGsm(data.aggregations.gsm || []);
+            setAvailableUnits(data.aggregations.units || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating filters:', error);
+      }
     } else {
-      setPendingSelectedCategory("");
+      // Clear filter options when search is empty
+      setAvailableMakes([]);
+      setAvailableGrades([]);
+      setAvailableBrands([]);
+      setAvailableGsm([]);
+      setAvailableUnits([]);
     }
-    // Reset dependent filters when category changes
-    setPendingMakes([]);
-    setPendingGrades([]);
-    setPendingBrands([]);
   };
 
-  const handleMakeChange = (makeId: string, checked: boolean) => {
-    if (checked) {
-      setPendingMakes([...pendingMakes, makeId]);
-    } else {
-      setPendingMakes(pendingMakes.filter(id => id !== makeId));
-      // Filter out any grades and brands that only belong to the unchecked make
-      const remainingMakes = pendingMakes.filter(id => id !== makeId);
-      if (remainingMakes.length === 0) {
-        setPendingGrades([]);
-        setPendingBrands([]);
-      } else {
-        // Keep only grades and brands that belong to remaining makes
-        const validGrades = grades.filter((grade: any) => 
-          remainingMakes.some(rmakeId => grade.Make_ID != null ? grade.Make_ID.toString() === rmakeId : false)
-        ).map((grade: any) => grade.gradeID?.toString()).filter(Boolean);
-        
-        const validBrands = brands.filter((brand: any) => 
-          remainingMakes.some(rmakeId => brand.make_ID != null ? brand.make_ID.toString() === rmakeId : false)
-        ).map((brand: any) => brand.brandID?.toString()).filter(Boolean);
-        
-        setPendingGrades(pendingGrades.filter(gradeId => validGrades.includes(gradeId)));
-        setPendingBrands(pendingBrands.filter(brandId => validBrands.includes(brandId)));
-      }
-    }
+  const addFilterToSearch = (filterText: string) => {
+    const currentText = pendingSearchTerm.trim();
+    const newText = currentText ? `${currentText} ${filterText}` : filterText;
+    setPendingSearchTerm(newText);
+  };
+
+  const handleMakeClick = (make: any) => {
+    addFilterToSearch(make.Make || make.name || make.value || make);
+  };
+
+  const handleGradeClick = (grade: any) => {
+    addFilterToSearch(grade.Grade || grade.name || grade.value || grade);
+  };
+
+  const handleBrandClick = (brand: any) => {
+    addFilterToSearch(brand.Brand || brand.name || brand.value || brand);
+  };
+
+  const handleGsmClick = (gsm: any) => {
+    addFilterToSearch(`${gsm.GSM || gsm.value || gsm}gsm`);
+  };
+
+  const handleUnitClick = (unit: any) => {
+    addFilterToSearch(unit.OfferUnit || unit.name || unit.value || unit);
   };
 
   // Clear all filters
   const clearAllFilters = () => {
-    // Clear both pending and applied filters
     setPendingSearchTerm("");
-    setPendingSelectedCategory("");
-    setPendingMakes([]);
-    setPendingGrades([]);
-    setPendingBrands([]);
-    setPendingGsm([]);
-    setPendingUnits([]);
-    setPendingStockStatus([]);
-    setPendingLocations([]);
     setSearchTerm("");
-    setSelectedCategory("");
-    setSelectedMakes([]);
-    setSelectedGrades([]);
-    setSelectedBrands([]);
-    setSelectedGsm([]);
-    setSelectedUnits([]);
-    setSelectedStockStatus([]);
-    setSelectedLocations([]);
     setSortBy("newest");
     setCurrentPage(1);
-    // Clear search results and aggregations
     setSearchResults(null);
     setSearchAggregations(null);
+    setAvailableMakes([]);
+    setAvailableGrades([]);
+    setAvailableBrands([]);
+    setAvailableGsm([]);
+    setAvailableUnits([]);
+    setAvailableLocations([]);
   };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
