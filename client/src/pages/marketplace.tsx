@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -51,7 +51,8 @@ export default function Marketplace() {
     deckle: "",
     deckleUnit: "cm",
     grain: "",
-    grainUnit: "cm"
+    grainUnit: "cm",
+    dimensionTolerance: ""
   });
   
   // Auto-suggestion states
@@ -660,15 +661,29 @@ export default function Marketplace() {
                   )}
                 </div>
 
-                {/* Tolerance */}
+                {/* GSM Tolerance */}
                 <div className="flex-1 min-w-24">
-                  <label className="text-sm font-medium">Tolerance</label>
+                  <label className="text-sm font-medium">GSM ±</label>
                   <Input
                     type="number"
                     placeholder="10"
                     value={preciseSearch.tolerance}
                     onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
                     data-testid="input-precise-tolerance"
+                    className="mt-1 h-9 text-sm"
+                  />
+                </div>
+
+                {/* Dimension Tolerance */}
+                <div className="flex-1 min-w-24">
+                  <label className="text-sm font-medium">Dim ±</label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="2"
+                    value={preciseSearch.dimensionTolerance}
+                    onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
+                    data-testid="input-precise-dimension-tolerance"
                     className="mt-1 h-9 text-sm"
                   />
                 </div>
@@ -788,7 +803,8 @@ export default function Marketplace() {
                         deckle: '',
                         deckleUnit: 'cm',
                         grain: '',
-                        grainUnit: 'cm'
+                        grainUnit: 'cm',
+                        dimensionTolerance: ''
                       });
                       setCategorySuggestions([]);
                       setGsmSuggestions([]);
@@ -802,12 +818,22 @@ export default function Marketplace() {
                 </div>
               </div>
 
-              {/* GSM Range Display */}
-              {preciseSearch.gsm && preciseSearch.tolerance && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  GSM Range: {Number(preciseSearch.gsm) - Number(preciseSearch.tolerance || 0)} - {Number(preciseSearch.gsm) + Number(preciseSearch.tolerance || 0)}
-                </div>
-              )}
+              {/* Tolerance Range Display */}
+              <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                {preciseSearch.gsm && preciseSearch.tolerance && (
+                  <div>
+                    GSM Range: {Number(preciseSearch.gsm) - Number(preciseSearch.tolerance || 0)} - {Number(preciseSearch.gsm) + Number(preciseSearch.tolerance || 0)}
+                  </div>
+                )}
+                {(preciseSearch.deckle || preciseSearch.grain) && preciseSearch.dimensionTolerance && (
+                  <div>
+                    Dimension Range: 
+                    {preciseSearch.deckle && ` Deckle: ${(Number(preciseSearch.deckle) - Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} - ${(Number(preciseSearch.deckle) + Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} ${preciseSearch.deckleUnit}`}
+                    {preciseSearch.deckle && preciseSearch.grain && ', '}
+                    {preciseSearch.grain && ` Grain: ${(Number(preciseSearch.grain) - Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} - ${(Number(preciseSearch.grain) + Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} ${preciseSearch.grainUnit}`}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

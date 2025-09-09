@@ -53,7 +53,7 @@ searchRouter.get('/health', async (req, res) => {
 searchRouter.post('/precise', async (req, res) => {
   try {
     const { executeQuery } = await import('./database');
-    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, page = 1, pageSize = 12 } = req.body;
+    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, page = 1, pageSize = 12 } = req.body;
     
     let whereClause = 'WHERE StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
@@ -76,18 +76,48 @@ searchRouter.post('/precise', async (req, res) => {
       queryParams.push(minGsm, maxGsm);
     }
     
-    // Add deckle filter (search in stock_description)
+    // Add deckle filter (search in stock_description with tolerance)
     if (deckle && !isNaN(Number(deckle))) {
       const deckleValue = Number(deckle);
-      whereClause += ` AND stock_description LIKE ?`;
-      queryParams.push(`%${deckleValue}%`);
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
+      
+      if (dimToleranceValue > 0) {
+        const minDeckle = deckleValue - dimToleranceValue;
+        const maxDeckle = deckleValue + dimToleranceValue;
+        // Search for dimension values in range using OR conditions
+        const deckleConditions = [];
+        for (let i = Math.floor(minDeckle * 10); i <= Math.ceil(maxDeckle * 10); i++) {
+          const val = i / 10;
+          deckleConditions.push('stock_description LIKE ?');
+          queryParams.push(`%${val}%`);
+        }
+        whereClause += ` AND (${deckleConditions.join(' OR ')})`;
+      } else {
+        whereClause += ` AND stock_description LIKE ?`;
+        queryParams.push(`%${deckleValue}%`);
+      }
     }
     
-    // Add grain filter (search in stock_description)
+    // Add grain filter (search in stock_description with tolerance)
     if (grain && !isNaN(Number(grain))) {
       const grainValue = Number(grain);
-      whereClause += ` AND stock_description LIKE ?`;
-      queryParams.push(`%${grainValue}%`);
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
+      
+      if (dimToleranceValue > 0) {
+        const minGrain = grainValue - dimToleranceValue;
+        const maxGrain = grainValue + dimToleranceValue;
+        // Search for dimension values in range using OR conditions
+        const grainConditions = [];
+        for (let i = Math.floor(minGrain * 10); i <= Math.ceil(maxGrain * 10); i++) {
+          const val = i / 10;
+          grainConditions.push('stock_description LIKE ?');
+          queryParams.push(`%${val}%`);
+        }
+        whereClause += ` AND (${grainConditions.join(' OR ')})`;
+      } else {
+        whereClause += ` AND stock_description LIKE ?`;
+        queryParams.push(`%${grainValue}%`);
+      }
     }
     
     // Get total count
