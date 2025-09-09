@@ -417,45 +417,6 @@ export default function Marketplace() {
                 
                 <Separator />
                 
-                {/* Categories */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('categories')}
-                  >
-                    Categories
-                    {expandedSections.categories ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.categories && (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="all-categories" 
-                          checked={pendingSelectedCategory === "" || pendingSelectedCategory === "all"}
-                          onCheckedChange={(checked) => setPendingSelectedCategory(checked ? "all" : "")}
-                        />
-                        <label htmlFor="all-categories" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          All Categories
-                        </label>
-                      </div>
-                      {groups.map((group: any) => (
-                        <div key={group.GroupID} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`category-${group.GroupID}`}
-                            checked={pendingSelectedCategory === group.GroupID.toString()}
-                            onCheckedChange={(checked) => handleCategoryChange(group.GroupID.toString(), checked)}
-                          />
-                          <label htmlFor={`category-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {group.GroupName}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
                 
                 {/* Makes Filter */}
                 <div>
@@ -735,45 +696,6 @@ export default function Marketplace() {
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 
-                {/* Categories */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('categories')}
-                  >
-                    Categories
-                    {expandedSections.categories ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.categories && (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="all-categories-desktop" 
-                          checked={pendingSelectedCategory === "" || pendingSelectedCategory === "all"}
-                          onCheckedChange={(checked) => setPendingSelectedCategory(checked ? "all" : "")}
-                        />
-                        <label htmlFor="all-categories-desktop" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          All Categories
-                        </label>
-                      </div>
-                      {groups.map((group: any) => (
-                        <div key={group.GroupID} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`category-desktop-${group.GroupID}`}
-                            checked={pendingSelectedCategory === group.GroupID.toString()}
-                            onCheckedChange={(checked) => handleCategoryChange(group.GroupID.toString(), checked)}
-                          />
-                          <label htmlFor={`category-desktop-${group.GroupID}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {group.GroupName}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
                 
                 {/* Makes Filter */}
                 <div>
