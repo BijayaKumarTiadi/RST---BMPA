@@ -104,15 +104,11 @@ searchRouter.post('/precise', async (req, res) => {
         Grade,
         Brand,
         GSM,
-        OfferUnit,
-        OfferQty,
-        OfferPrice,
-        Location,
-        deal_created_at,
-        stock_description
+        stock_description,
+        Seller_comments
       FROM deal_master 
       ${whereClause}
-      ORDER BY deal_created_at DESC
+      ORDER BY TransID DESC
       LIMIT ? OFFSET ?
     `;
     

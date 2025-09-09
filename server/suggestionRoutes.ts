@@ -93,18 +93,23 @@ router.get('/deckle', async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    // Get deckle values from stock_description - extract first number before X
+    // Get deckle values from stock_description - extract first dimension number  
     const query = `
       SELECT DISTINCT 
-        SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', 1), ' ', -1) as value,
+        TRIM(SUBSTRING_INDEX(
+          SUBSTRING_INDEX(stock_description, ' X ', 1), 
+          ' ', -1
+        )) as value,
         COUNT(*) as count
       FROM deal_master 
       WHERE stock_description IS NOT NULL 
-        AND stock_description LIKE '%X%'
+        AND stock_description LIKE '% X %'
         AND stock_description LIKE '%${searchTerm}%'
-        AND SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', 1), ' ', -1) REGEXP '^[0-9.]+$'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != ''
+      HAVING value IS NOT NULL 
+        AND value != '' 
+        AND value REGEXP '^[0-9]+\\.?[0-9]*$'
+        AND CAST(value AS DECIMAL(10,2)) > 0
       ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
       LIMIT 10
     `;
@@ -132,18 +137,23 @@ router.get('/grain', async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    // Get grain values from stock_description - extract number after X
+    // Get grain values from stock_description - extract second dimension number
     const query = `
       SELECT DISTINCT 
-        SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', -1), ' ', 1) as value,
+        TRIM(SUBSTRING_INDEX(
+          SUBSTRING_INDEX(stock_description, ' X ', -1), 
+          ' ', 1
+        )) as value,
         COUNT(*) as count
       FROM deal_master 
       WHERE stock_description IS NOT NULL 
-        AND stock_description LIKE '%X%'
+        AND stock_description LIKE '% X %'
         AND stock_description LIKE '%${searchTerm}%'
-        AND SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', -1), ' ', 1) REGEXP '^[0-9.]+$'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != ''
+      HAVING value IS NOT NULL 
+        AND value != '' 
+        AND value REGEXP '^[0-9]+\\.?[0-9]*$'
+        AND CAST(value AS DECIMAL(10,2)) > 0
       ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
       LIMIT 10
     `;
