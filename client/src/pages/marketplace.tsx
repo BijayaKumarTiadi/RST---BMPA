@@ -626,34 +626,50 @@ export default function Marketplace() {
                   />
                 </div>
 
-                {/* Deckle x Grain */}
+                {/* Deckle x Grain - Category specific */}
                 <div className="flex-1 min-w-40">
-                  <label className="text-sm font-medium">Deckle x Grain</label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="64.8"
-                        value={preciseSearch.deckle}
-                        onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
-                        data-testid="input-precise-deckle"
-                        className="h-9 text-sm"
-                      />
-                    </div>
-                    <span className="text-gray-500 text-sm font-medium px-1">x</span>
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="84.1"
-                        value={preciseSearch.grain}
-                        onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
-                        data-testid="input-precise-grain"
-                        className="h-9 text-sm"
-                      />
-                    </div>
-                  </div>
+                  {(() => {
+                    const category = preciseSearch.category;
+                    const isPaperReel = category?.toLowerCase().includes('paper reel');
+                    const isKraftReel = category?.toLowerCase().includes('kraft reel');
+                    const grainLabel = isKraftReel ? 'B.S' : 'Grain';
+                    const dimensionLabel = isPaperReel ? 'Deckle' : `Deckle x ${grainLabel}`;
+                    
+                    return (
+                      <>
+                        <label className="text-sm font-medium">{dimensionLabel}</label>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="64.8"
+                              value={preciseSearch.deckle}
+                              onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
+                              data-testid="input-precise-deckle"
+                              className="h-9 text-sm"
+                            />
+                          </div>
+                          {!isPaperReel && (
+                            <>
+                              <span className="text-gray-500 text-sm font-medium px-1">x</span>
+                              <div className="relative flex-1">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="84.1"
+                                  value={preciseSearch.grain}
+                                  onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
+                                  data-testid="input-precise-grain"
+                                  className="h-9 text-sm"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Dimension Tolerance */}
