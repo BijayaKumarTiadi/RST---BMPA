@@ -17,7 +17,6 @@ import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
-import PowerSearch from "@/components/power-search";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
@@ -570,30 +569,8 @@ export default function Marketplace() {
       <Navigation />
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
-        {/* Powerful Search Bar */}
-        <div className="mb-6">
-          <PowerSearch 
-            onSearch={(results) => {
-              if (results && results.success) {
-                setSearchResults(results);
-                setSearchAggregations(results.aggregations || null);
-                setCurrentPage(1);
-              }
-            }}
-            onLoading={(loading) => setIsSearching(loading)}
-            className="w-full"
-          />
-        </div>
-
-        {/* OR Divider */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex-grow h-px bg-border"></div>
-          <span className="px-4 text-sm text-muted-foreground font-medium">OR</span>
-          <div className="flex-grow h-px bg-border"></div>
-        </div>
-
         {/* Precise Search */}
-        <div className="mb-4">
+        <div className="mb-6">
           <Card className="w-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -601,7 +578,7 @@ export default function Marketplace() {
                 Precise Search
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {/* Single Row Layout */}
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
