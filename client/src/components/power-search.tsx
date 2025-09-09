@@ -285,8 +285,6 @@ export default function PowerSearch({ onSearch, onLoading, className }: PowerSea
           AI-powered search
         </span>
         <span>•</span>
-        <span>Search by: Product, Brand, GSM range (200-300), Dimensions, Company</span>
-        <span>•</span>
         <span>Fuzzy matching enabled</span>
       </div>
     </div>
