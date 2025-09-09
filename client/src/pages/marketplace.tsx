@@ -312,22 +312,26 @@ export default function Marketplace() {
 
   const handleMakeClick = (make: any) => {
     console.log('Make clicked:', make);
-    addFilterToSearch(make.Make || make.name || make.value || make);
+    const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
+    addFilterToSearch(makeText);
   };
 
   const handleGradeClick = (grade: any) => {
     console.log('Grade clicked:', grade);
-    addFilterToSearch(grade.Grade || grade.name || grade.value || grade);
+    const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
+    addFilterToSearch(gradeText);
   };
 
   const handleBrandClick = (brand: any) => {
     console.log('Brand clicked:', brand);
-    addFilterToSearch(brand.Brand || brand.name || brand.value || brand);
+    const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
+    addFilterToSearch(brandText);
   };
 
   const handleGsmClick = (gsm: any) => {
     console.log('GSM clicked:', gsm);
-    addFilterToSearch(`${gsm.GSM || gsm.value || gsm}gsm`);
+    const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
+    addFilterToSearch(`${gsmText}gsm`);
   };
 
   const handleUnitClick = (unit: any) => {
@@ -527,7 +531,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleMakeClick(make)}
                         >
-                          <span className="text-sm">{make.Make || make.name || make}</span>
+                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
                           {make.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {make.count}
@@ -564,7 +568,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGradeClick(grade)}
                         >
-                          <span className="text-sm">{grade.Grade || grade.name || grade}</span>
+                          <span className="text-sm">{grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown')}</span>
                           {grade.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {grade.count}
@@ -601,7 +605,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleBrandClick(brand)}
                         >
-                          <span className="text-sm">{brand.Brand || brand.name || brand}</span>
+                          <span className="text-sm">{brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown')}</span>
                           {brand.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {brand.count}
@@ -638,7 +642,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGsmClick(gsm)}
                         >
-                          <span className="text-sm">{gsm.GSM || gsm.value || gsm} GSM</span>
+                          <span className="text-sm">{gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown')} GSM</span>
                           {gsm.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {gsm.count}
@@ -732,7 +736,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleMakeClick(make)}
                         >
-                          <span className="text-sm">{make.Make || make.name || make}</span>
+                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
                           {make.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {make.count}
@@ -769,7 +773,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGradeClick(grade)}
                         >
-                          <span className="text-sm">{grade.Grade || grade.name || grade}</span>
+                          <span className="text-sm">{grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown')}</span>
                           {grade.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {grade.count}
@@ -806,7 +810,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleBrandClick(brand)}
                         >
-                          <span className="text-sm">{brand.Brand || brand.name || brand}</span>
+                          <span className="text-sm">{brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown')}</span>
                           {brand.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {brand.count}
@@ -843,7 +847,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGsmClick(gsm)}
                         >
-                          <span className="text-sm">{gsm.GSM || gsm.value || gsm} GSM</span>
+                          <span className="text-sm">{gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown')} GSM</span>
                           {gsm.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {gsm.count}
