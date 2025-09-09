@@ -547,9 +547,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings API - Get user settings
-  app.get('/api/settings', requireAuth, async (req, res) => {
+  app.get('/api/settings', requireAuth, async (req: any, res) => {
     try {
-      const memberId = req.user?.id;
+      const memberId = req.session.memberId;
       if (!memberId) {
         return res.status(401).json({ message: 'Not authenticated' });
       }
@@ -586,9 +586,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings API - Update user settings
-  app.put('/api/settings', requireAuth, async (req, res) => {
+  app.put('/api/settings', requireAuth, async (req: any, res) => {
     try {
-      const memberId = req.user?.id;
+      const memberId = req.session.memberId;
       if (!memberId) {
         return res.status(401).json({ message: 'Not authenticated' });
       }

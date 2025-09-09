@@ -121,6 +121,29 @@ export default function Marketplace() {
     }
   }, [userSettings]);
 
+  // Helper function to format dimensions based on user preference
+  const formatDimensions = (deckle_mm: number, grain_mm: number) => {
+    const userUnit = userSettings?.dimension_unit || 'cm';
+    
+    if (userUnit === 'inch') {
+      const deckleInch = (deckle_mm / 25.4).toFixed(2);
+      const grainInch = (grain_mm / 25.4).toFixed(2);
+      return (
+        <>
+          <div>{deckleInch}" × {grainInch}"</div>
+          <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
+        </>
+      );
+    }
+  };
+
   // Fetch deals - now using search results or fallback to regular deals
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
@@ -191,7 +214,7 @@ export default function Marketplace() {
   // Dynamic GSM options based on search results or all deals
   const gsmOptions = searchAggregations?.gsm 
     ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
-    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a: string, b: string) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
+    : Array.from(new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))).sort((a, b) => parseFloat(a as string) - parseFloat(b as string)).map((gsm) => ({ value: gsm as string, count: 0 }));
   
   // No filtering needed - using available options from search API
 
@@ -1311,12 +1334,9 @@ export default function Marketplace() {
                             <div className="text-sm">
                               <span className="font-medium text-gray-500">Dimensions:</span>
                               <div className="text-xs font-semibold text-foreground mt-1">
-                                {(deal.Deckle_mm && deal.grain_mm) ? (
-                                  <>
-                                    <div>{(deal.Deckle_mm/10).toFixed(1)} × {(deal.grain_mm/10).toFixed(1)} cm</div>
-                                    <div>{(deal.Deckle_mm/25.4).toFixed(2)}" × {(deal.grain_mm/25.4).toFixed(2)}"</div>
-                                  </>
-                                ) : 'N/A'}
+                                {(deal.Deckle_mm && deal.grain_mm) ? 
+                                  formatDimensions(deal.Deckle_mm, deal.grain_mm)
+                                : 'N/A'}
                               </div>
                             </div>
                           </div>
