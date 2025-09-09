@@ -51,7 +51,6 @@ export default function Marketplace() {
     brands: false,
     gsm: false,
     units: false,
-    stockStatus: false,
     location: false
   });
   
@@ -179,14 +178,26 @@ export default function Marketplace() {
         const data = await response.json();
         setSearchResults(data);
         setSearchTerm(query); // Update search term after successful search
-        if (data.aggregations) {
-          setSearchAggregations(data.aggregations);
+        console.log('Search API response:', data);
+        if (data.data && data.data.aggregations) {
+          console.log('Using data.data.aggregations:', data.data.aggregations);
+          setSearchAggregations(data.data.aggregations);
           // Update available filter options based on search results
+          setAvailableMakes(data.data.aggregations.makes || []);
+          setAvailableGrades(data.data.aggregations.grades || []);
+          setAvailableBrands(data.data.aggregations.brands || []);
+          setAvailableGsm(data.data.aggregations.gsm || []);
+          setAvailableUnits(data.data.aggregations.units || []);
+        } else if (data.aggregations) {
+          console.log('Using data.aggregations:', data.aggregations);
+          setSearchAggregations(data.aggregations);
           setAvailableMakes(data.aggregations.makes || []);
           setAvailableGrades(data.aggregations.grades || []);
           setAvailableBrands(data.aggregations.brands || []);
           setAvailableGsm(data.aggregations.gsm || []);
           setAvailableUnits(data.aggregations.units || []);
+        } else {
+          console.log('No aggregations found in response');
         }
       }
     } catch (error) {
@@ -218,7 +229,16 @@ export default function Marketplace() {
         
         if (response.ok) {
           const data = await response.json();
-          if (data.aggregations) {
+          console.log('Search Change API response:', data);
+          if (data.data && data.data.aggregations) {
+            console.log('Updating filters with aggregations:', data.data.aggregations);
+            setAvailableMakes(data.data.aggregations.makes || []);
+            setAvailableGrades(data.data.aggregations.grades || []);
+            setAvailableBrands(data.data.aggregations.brands || []);
+            setAvailableGsm(data.data.aggregations.gsm || []);
+            setAvailableUnits(data.data.aggregations.units || []);
+          } else if (data.aggregations) {
+            console.log('Updating filters with aggregations (direct):', data.aggregations);
             setAvailableMakes(data.aggregations.makes || []);
             setAvailableGrades(data.aggregations.grades || []);
             setAvailableBrands(data.aggregations.brands || []);
@@ -584,39 +604,7 @@ export default function Marketplace() {
                   )}
                 </div>
                 
-                <Separator />
 
-                {/* Stock Status Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('stockStatus')}
-                  >
-                    Stock Status
-                    {expandedSections.stockStatus ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.stockStatus && (
-                    <div className="mt-3 space-y-2">
-                      {[
-                        { label: "Available", value: "1" },
-                        { label: "Sold", value: "2" },
-                        { label: "Reserved", value: "3" },
-                        { label: "On Hold", value: "4" }
-                      ].map((status) => (
-                        <Button
-                          key={status.value}
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-auto p-2 text-left"
-                          onClick={() => addFilterToSearch(status.label)}
-                        >
-                          <span className="text-sm">{status.label}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 
                 <Separator />
                 
@@ -821,39 +809,7 @@ export default function Marketplace() {
                   )}
                 </div>
                 
-                <Separator />
 
-                {/* Stock Status Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('stockStatus')}
-                  >
-                    Stock Status
-                    {expandedSections.stockStatus ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.stockStatus && (
-                    <div className="mt-3 space-y-2">
-                      {[
-                        { label: "Available", value: "1" },
-                        { label: "Sold", value: "2" },
-                        { label: "Reserved", value: "3" },
-                        { label: "On Hold", value: "4" }
-                      ].map((status) => (
-                        <Button
-                          key={status.value}
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-auto p-2 text-left"
-                          onClick={() => addFilterToSearch(status.label)}
-                        >
-                          <span className="text-sm">{status.label}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 
                 <Separator />
                 
