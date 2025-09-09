@@ -674,20 +674,6 @@ export default function Marketplace() {
                   />
                 </div>
 
-                {/* Dimension Tolerance */}
-                <div className="flex-1 min-w-24">
-                  <label className="text-sm font-medium">Dim ±</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="2"
-                    value={preciseSearch.dimensionTolerance}
-                    onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
-                    data-testid="input-precise-dimension-tolerance"
-                    className="mt-1 h-9 text-sm"
-                  />
-                </div>
-
                 {/* Deckle x Grain */}
                 <div className="flex-1 min-w-40">
                   <label className="text-sm font-medium">Deckle x Grain</label>
@@ -748,6 +734,20 @@ export default function Marketplace() {
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Dimension Tolerance */}
+                <div className="flex-1 min-w-24">
+                  <label className="text-sm font-medium">Dim ±</label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="2"
+                    value={preciseSearch.dimensionTolerance}
+                    onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
+                    data-testid="input-precise-dimension-tolerance"
+                    className="mt-1 h-9 text-sm"
+                  />
                 </div>
 
                 {/* Single Unit Selector */}
