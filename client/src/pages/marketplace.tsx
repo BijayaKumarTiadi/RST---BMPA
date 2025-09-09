@@ -96,6 +96,31 @@ export default function Marketplace() {
     },
   });
 
+  // Fetch user settings for dimension unit preference
+  const { data: userSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Update precise search default units when user settings are loaded
+  useEffect(() => {
+    if (userSettings?.dimension_unit) {
+      const defaultUnit = userSettings.dimension_unit;
+      setPreciseSearch(prev => ({
+        ...prev,
+        deckleUnit: defaultUnit,
+        grainUnit: defaultUnit
+      }));
+    }
+  }, [userSettings]);
+
   // Fetch deals - now using search results or fallback to regular deals
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
