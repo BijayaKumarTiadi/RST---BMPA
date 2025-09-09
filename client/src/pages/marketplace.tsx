@@ -157,10 +157,10 @@ export default function Marketplace() {
   // Reset to page 1 when filters change
   const resetPage = () => setCurrentPage(1);
 
-  // Reset page when any applied filter changes
+  // Reset page when search term changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedCategory, selectedMakes, selectedGrades, selectedBrands, selectedGsm, selectedUnits, selectedStockStatus]);
+  }, [searchTerm]);
   
   // Apply pending filters
   const applySearch = () => {
@@ -437,7 +437,7 @@ export default function Marketplace() {
                     <Input
                       placeholder="Search offers..."
                       value={pendingSearchTerm}
-                      onChange={(e) => setPendingSearchTerm(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10"
                       data-testid="input-search"
                     />
@@ -459,32 +459,24 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {filteredMakes.map((make: any) => (
-                        <div key={make.make_ID || make.id || make.name} className="flex items-center justify-between space-x-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`make-${make.make_ID || make.id || make.name}`}
-                              checked={pendingMakes.includes((make.make_ID || make.id || make.name)?.toString())}
-                              onCheckedChange={(checked) => {
-                                const makeId = (make.make_ID || make.id || make.name)?.toString();
-                                if (makeId) {
-                                  handleMakeChange(makeId, checked);
-                                }
-                              }}
-                            />
-                            <label htmlFor={`make-${make.make_ID || make.id || make.name}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                              {make.make_Name || make.name}
-                            </label>
-                          </div>
-                          {make.count > 0 && (
+                      {availableMakes.map((make: any, index: number) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-between h-auto p-2 text-left"
+                          onClick={() => handleMakeClick(make)}
+                        >
+                          <span className="text-sm">{make.Make || make.name}</span>
+                          {make.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {make.count}
                             </Badge>
                           )}
-                        </div>
+                        </Button>
                       ))}
-                      {filteredMakes.length === 0 && pendingSelectedCategory && (
-                        <p className="text-sm text-muted-foreground italic">No makes available for selected category</p>
+                      {availableMakes.length === 0 && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
                   )}
@@ -692,9 +684,9 @@ export default function Marketplace() {
                 <div className="space-y-3">
                   <Button 
                     className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    onClick={applyFilters}
+                    onClick={applySearch}
                   >
-                    Apply Filters
+                    Apply Search
                   </Button>
                   
                   <Button 
@@ -957,10 +949,10 @@ export default function Marketplace() {
                 <div className="space-y-3">
                   <Button 
                     className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    onClick={applyFilters}
-                    data-testid="button-apply-filters-desktop"
+                    onClick={applySearch}
+                    data-testid="button-apply-search-desktop"
                   >
-                    Apply Filters
+                    Apply Search
                   </Button>
                   
                   <Button 
