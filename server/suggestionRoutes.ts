@@ -17,17 +17,18 @@ router.get('/categories', async (req, res) => {
       return res.json({ success: true, suggestions: [] });
     }
 
+    const searchTerm = q.trim();
     const query = `
       SELECT DISTINCT 
         CASE 
-          WHEN Grade LIKE '%${q}%' THEN Grade
-          WHEN Make LIKE '%${q}%' THEN Make 
-          WHEN Brand LIKE '%${q}%' THEN Brand
+          WHEN Grade LIKE '%${searchTerm}%' THEN Grade
+          WHEN Make LIKE '%${searchTerm}%' THEN Make 
+          WHEN Brand LIKE '%${searchTerm}%' THEN Brand
           ELSE NULL
         END as value,
         COUNT(*) as count
       FROM deal_master 
-      WHERE (Grade LIKE '%${q}%' OR Make LIKE '%${q}%' OR Brand LIKE '%${q}%')
+      WHERE (Grade LIKE '%${searchTerm}%' OR Make LIKE '%${searchTerm}%' OR Brand LIKE '%${searchTerm}%')
         AND (Grade IS NOT NULL OR Make IS NOT NULL OR Brand IS NOT NULL)
       GROUP BY value
       HAVING value IS NOT NULL
@@ -57,12 +58,13 @@ router.get('/gsm', async (req, res) => {
       return res.json({ success: true, suggestions: [] });
     }
 
+    const searchTerm = q.trim();
     const query = `
       SELECT DISTINCT GSM as value, COUNT(*) as count
       FROM deal_master 
       WHERE GSM IS NOT NULL 
         AND GSM != '' 
-        AND GSM LIKE '%${q}%'
+        AND GSM LIKE '%${searchTerm}%'
       GROUP BY GSM
       ORDER BY count DESC, CAST(GSM AS UNSIGNED) ASC
       LIMIT 10
@@ -90,24 +92,20 @@ router.get('/deckle', async (req, res) => {
       return res.json({ success: true, suggestions: [] });
     }
 
-    // Get deckle values from stock_description - extract dimensions
+    const searchTerm = q.trim();
+    // Get deckle values from stock_description - extract first number before X
     const query = `
       SELECT DISTINCT 
-        SUBSTRING_INDEX(
-          TRIM(SUBSTRING_INDEX(
-            SUBSTRING_INDEX(stock_description, 'X', 1), 
-            ' ', -1
-          )), 
-          '.', 1
-        ) as value,
+        SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', 1), ' ', -1) as value,
         COUNT(*) as count
       FROM deal_master 
       WHERE stock_description IS NOT NULL 
         AND stock_description LIKE '%X%'
-        AND stock_description LIKE '%${q}%'
+        AND stock_description LIKE '%${searchTerm}%'
+        AND SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', 1), ' ', -1) REGEXP '^[0-9.]+$'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != '' AND value REGEXP '^[0-9]+$'
-      ORDER BY count DESC, CAST(value AS UNSIGNED) ASC
+      HAVING value IS NOT NULL AND value != ''
+      ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
       LIMIT 10
     `;
 
@@ -133,24 +131,20 @@ router.get('/grain', async (req, res) => {
       return res.json({ success: true, suggestions: [] });
     }
 
-    // Get grain values from stock_description - extract dimensions after X
+    const searchTerm = q.trim();
+    // Get grain values from stock_description - extract number after X
     const query = `
       SELECT DISTINCT 
-        SUBSTRING_INDEX(
-          TRIM(SUBSTRING_INDEX(
-            SUBSTRING_INDEX(stock_description, 'X', -1), 
-            ' ', 1
-          )), 
-          '.', 1
-        ) as value,
+        SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', -1), ' ', 1) as value,
         COUNT(*) as count
       FROM deal_master 
       WHERE stock_description IS NOT NULL 
         AND stock_description LIKE '%X%'
-        AND stock_description LIKE '%${q}%'
+        AND stock_description LIKE '%${searchTerm}%'
+        AND SUBSTRING_INDEX(SUBSTRING_INDEX(stock_description, 'X', -1), ' ', 1) REGEXP '^[0-9.]+$'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != '' AND value REGEXP '^[0-9]+$'
-      ORDER BY count DESC, CAST(value AS UNSIGNED) ASC
+      HAVING value IS NOT NULL AND value != ''
+      ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
       LIMIT 10
     `;
 
