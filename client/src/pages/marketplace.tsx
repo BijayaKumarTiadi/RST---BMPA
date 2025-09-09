@@ -166,7 +166,7 @@ export default function Marketplace() {
   // Dynamic GSM options based on search results or all deals
   const gsmOptions = searchAggregations?.gsm 
     ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
-    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a, b) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
+    : [...new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))].sort((a: string, b: string) => parseFloat(a) - parseFloat(b)).map((gsm: string) => ({ value: gsm, count: 0 }));
   
   // No filtering needed - using available options from search API
 
@@ -383,7 +383,7 @@ export default function Marketplace() {
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
       console.log('Starting chat with dealId:', dealId, 'sellerId:', sellerId);
-      console.log('Deal object:', deals.find(d => d.TransID === dealId));
+      console.log('Deal object:', deals.find((d: any) => d.TransID === dealId));
       
       if (!dealId || !sellerId) {
         console.error('Missing dealId or sellerId');
@@ -631,9 +631,11 @@ export default function Marketplace() {
                   {(() => {
                     const category = preciseSearch.category;
                     const isPaperReel = category?.toLowerCase().includes('paper reel');
+                    const isBoardReel = category?.toLowerCase().includes('board reel');
                     const isKraftReel = category?.toLowerCase().includes('kraft reel');
                     const grainLabel = isKraftReel ? 'B.S' : 'Grain';
-                    const dimensionLabel = isPaperReel ? 'Deckle' : `Deckle x ${grainLabel}`;
+                    const showGrainField = !isPaperReel && !isBoardReel;
+                    const dimensionLabel = showGrainField ? `Deckle x ${grainLabel}` : 'Deckle';
                     
                     return (
                       <>
@@ -650,7 +652,7 @@ export default function Marketplace() {
                               className="h-9 text-sm"
                             />
                           </div>
-                          {!isPaperReel && (
+                          {showGrainField && (
                             <>
                               <span className="text-gray-500 text-sm font-medium px-1">x</span>
                               <div className="relative flex-1">
@@ -742,10 +744,7 @@ export default function Marketplace() {
                         grainUnit: 'cm',
                         dimensionTolerance: ''
                       });
-                      setCategorySuggestions([]);
                       setGsmSuggestions([]);
-                      setDeckleSuggestions([]);
-                      setGrainSuggestions([]);
                     }}
                     className="h-9 px-3"
                   >
