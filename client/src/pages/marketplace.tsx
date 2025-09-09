@@ -604,22 +604,15 @@ export default function Marketplace() {
                         { label: "Reserved", value: "3" },
                         { label: "On Hold", value: "4" }
                       ].map((status) => (
-                        <div key={status.value} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`status-${status.value}`}
-                            checked={pendingStockStatus.includes(status.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setPendingStockStatus([...pendingStockStatus, status.value]);
-                              } else {
-                                setPendingStockStatus(pendingStockStatus.filter(val => val !== status.value));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`status-${status.value}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {status.label}
-                          </label>
-                        </div>
+                        <Button
+                          key={status.value}
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-auto p-2 text-left"
+                          onClick={() => addFilterToSearch(status.label)}
+                        >
+                          <span className="text-sm">{status.label}</span>
+                        </Button>
                       ))}
                     </div>
                   )}
@@ -805,35 +798,25 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {gsmOptions.map((gsmOption: any) => {
-                        const gsmValue = typeof gsmOption === 'string' ? gsmOption : gsmOption.value;
-                        const gsmCount = typeof gsmOption === 'object' ? gsmOption.count : 0;
-                        return (
-                          <div key={gsmValue} className="flex items-center justify-between space-x-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`gsm-desktop-${gsmValue}`}
-                                checked={pendingGsm.includes(gsmValue)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setPendingGsm([...pendingGsm, gsmValue]);
-                                  } else {
-                                    setPendingGsm(pendingGsm.filter(val => val !== gsmValue));
-                                  }
-                                }}
-                              />
-                              <label htmlFor={`gsm-desktop-${gsmValue}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                {gsmValue} GSM
-                              </label>
-                            </div>
-                            {gsmCount > 0 && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {gsmCount}
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {availableGsm.map((gsm: any, index: number) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-between h-auto p-2 text-left"
+                          onClick={() => handleGsmClick(gsm)}
+                        >
+                          <span className="text-sm">{gsm.GSM || gsm.value} GSM</span>
+                          {gsm.count && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {gsm.count}
+                            </Badge>
+                          )}
+                        </Button>
+                      ))}
+                      {availableGsm.length === 0 && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -858,22 +841,15 @@ export default function Marketplace() {
                         { label: "Reserved", value: "3" },
                         { label: "On Hold", value: "4" }
                       ].map((status) => (
-                        <div key={status.value} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`status-desktop-${status.value}`}
-                            checked={pendingStockStatus.includes(status.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setPendingStockStatus([...pendingStockStatus, status.value]);
-                              } else {
-                                setPendingStockStatus(pendingStockStatus.filter(val => val !== status.value));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`status-desktop-${status.value}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {status.label}
-                          </label>
-                        </div>
+                        <Button
+                          key={status.value}
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-auto p-2 text-left"
+                          onClick={() => addFilterToSearch(status.label)}
+                        >
+                          <span className="text-sm">{status.label}</span>
+                        </Button>
                       ))}
                     </div>
                   )}
