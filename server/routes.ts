@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
 import searchRouter from "./searchRoutes";
+import suggestionRouter from "./suggestionRoutes";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -42,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Search routes (Elasticsearch)
   app.use('/api/search', searchRouter);
+  
+  // Suggestion routes for precise search
+  app.use('/api/suggestions', suggestionRouter);
 
 
   // Debug endpoint to check sample deal data with search_key
