@@ -179,23 +179,33 @@ export default function Marketplace() {
         setSearchResults(data);
         setSearchTerm(query); // Update search term after successful search
         console.log('Search API response:', data);
-        if (data.data && data.data.aggregations) {
-          console.log('Using data.data.aggregations:', data.data.aggregations);
-          setSearchAggregations(data.data.aggregations);
-          // Update available filter options based on search results
-          setAvailableMakes(data.data.aggregations.makes || []);
-          setAvailableGrades(data.data.aggregations.grades || []);
-          setAvailableBrands(data.data.aggregations.brands || []);
-          setAvailableGsm(data.data.aggregations.gsm || []);
-          setAvailableUnits(data.data.aggregations.units || []);
-        } else if (data.aggregations) {
-          console.log('Using data.aggregations:', data.aggregations);
+        console.log('Available aggregations:', data.aggregations);
+        
+        if (data.aggregations) {
           setSearchAggregations(data.aggregations);
-          setAvailableMakes(data.aggregations.makes || []);
-          setAvailableGrades(data.aggregations.grades || []);
-          setAvailableBrands(data.aggregations.brands || []);
-          setAvailableGsm(data.aggregations.gsm || []);
-          setAvailableUnits(data.aggregations.units || []);
+          
+          // Log each filter array to debug
+          console.log('Makes data:', data.aggregations.makes);
+          console.log('Grades data:', data.aggregations.grades);  
+          console.log('Brands data:', data.aggregations.brands);
+          console.log('GSM data:', data.aggregations.gsm);
+          
+          const makes = data.aggregations.makes || [];
+          const grades = data.aggregations.grades || [];
+          const brands = data.aggregations.brands || [];
+          const gsm = data.aggregations.gsm || [];
+          const units = data.aggregations.units || [];
+          
+          console.log('Setting availableMakes:', makes);
+          console.log('Setting availableGrades:', grades);
+          console.log('Setting availableBrands:', brands);
+          console.log('Setting availableGsm:', gsm);
+          
+          setAvailableMakes(makes);
+          setAvailableGrades(grades);
+          setAvailableBrands(brands);
+          setAvailableGsm(gsm);
+          setAvailableUnits(units);
         } else {
           console.log('No aggregations found in response');
         }
@@ -230,20 +240,16 @@ export default function Marketplace() {
         if (response.ok) {
           const data = await response.json();
           console.log('Search Change API response:', data);
-          if (data.data && data.data.aggregations) {
-            console.log('Updating filters with aggregations:', data.data.aggregations);
-            setAvailableMakes(data.data.aggregations.makes || []);
-            setAvailableGrades(data.data.aggregations.grades || []);
-            setAvailableBrands(data.data.aggregations.brands || []);
-            setAvailableGsm(data.data.aggregations.gsm || []);
-            setAvailableUnits(data.data.aggregations.units || []);
-          } else if (data.aggregations) {
-            console.log('Updating filters with aggregations (direct):', data.aggregations);
+          
+          if (data.aggregations) {
+            console.log('Updating filters with aggregations:', data.aggregations);
             setAvailableMakes(data.aggregations.makes || []);
             setAvailableGrades(data.aggregations.grades || []);
             setAvailableBrands(data.aggregations.brands || []);
             setAvailableGsm(data.aggregations.gsm || []);
             setAvailableUnits(data.aggregations.units || []);
+          } else {
+            console.log('No aggregations in search change response');
           }
         }
       } catch (error) {
@@ -266,18 +272,22 @@ export default function Marketplace() {
   };
 
   const handleMakeClick = (make: any) => {
+    console.log('Make clicked:', make);
     addFilterToSearch(make.Make || make.name || make.value || make);
   };
 
   const handleGradeClick = (grade: any) => {
+    console.log('Grade clicked:', grade);
     addFilterToSearch(grade.Grade || grade.name || grade.value || grade);
   };
 
   const handleBrandClick = (brand: any) => {
+    console.log('Brand clicked:', brand);
     addFilterToSearch(brand.Brand || brand.name || brand.value || brand);
   };
 
   const handleGsmClick = (gsm: any) => {
+    console.log('GSM clicked:', gsm);
     addFilterToSearch(`${gsm.GSM || gsm.value || gsm}gsm`);
   };
 
@@ -478,7 +488,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleMakeClick(make)}
                         >
-                          <span className="text-sm">{make.Make || make.name}</span>
+                          <span className="text-sm">{make.Make || make.name || make}</span>
                           {make.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {make.count}
@@ -515,7 +525,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGradeClick(grade)}
                         >
-                          <span className="text-sm">{grade.Grade || grade.name}</span>
+                          <span className="text-sm">{grade.Grade || grade.name || grade}</span>
                           {grade.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {grade.count}
@@ -552,7 +562,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleBrandClick(brand)}
                         >
-                          <span className="text-sm">{brand.Brand || brand.name}</span>
+                          <span className="text-sm">{brand.Brand || brand.name || brand}</span>
                           {brand.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {brand.count}
@@ -589,7 +599,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGsmClick(gsm)}
                         >
-                          <span className="text-sm">{gsm.GSM || gsm.value} GSM</span>
+                          <span className="text-sm">{gsm.GSM || gsm.value || gsm} GSM</span>
                           {gsm.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {gsm.count}
@@ -683,7 +693,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleMakeClick(make)}
                         >
-                          <span className="text-sm">{make.Make || make.name}</span>
+                          <span className="text-sm">{make.Make || make.name || make}</span>
                           {make.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {make.count}
@@ -720,7 +730,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGradeClick(grade)}
                         >
-                          <span className="text-sm">{grade.Grade || grade.name}</span>
+                          <span className="text-sm">{grade.Grade || grade.name || grade}</span>
                           {grade.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {grade.count}
@@ -757,7 +767,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleBrandClick(brand)}
                         >
-                          <span className="text-sm">{brand.Brand || brand.name}</span>
+                          <span className="text-sm">{brand.Brand || brand.name || brand}</span>
                           {brand.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {brand.count}
@@ -794,7 +804,7 @@ export default function Marketplace() {
                           className="w-full justify-between h-auto p-2 text-left"
                           onClick={() => handleGsmClick(gsm)}
                         >
-                          <span className="text-sm">{gsm.GSM || gsm.value} GSM</span>
+                          <span className="text-sm">{gsm.GSM || gsm.value || gsm} GSM</span>
                           {gsm.count && (
                             <Badge variant="secondary" className="text-xs px-2 py-0">
                               {gsm.count}
