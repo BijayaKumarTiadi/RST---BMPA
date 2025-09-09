@@ -75,10 +75,16 @@ searchRouter.post('/precise', async (req, res) => {
       queryParams.push(minGsm, maxGsm);
     }
     
+    // Determine default tolerance for dimension searches
+    const hasBothDimensions = (deckle && !isNaN(Number(deckle))) && (grain && !isNaN(Number(grain)));
+    const defaultDimTolerance = hasBothDimensions ? 20 : 0; // Auto-apply 20mm tolerance when both dimensions provided
+    
     // Add deckle filter using actual Deckle_mm column with tolerance
     if (deckle && !isNaN(Number(deckle))) {
       const deckleValue = Number(deckle);
-      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) 
+        ? Number(dimensionTolerance) 
+        : defaultDimTolerance;
       
       // Convert to mm if needed (assuming input might be in cm)
       let deckleValueMm = deckleValue;
@@ -96,7 +102,9 @@ searchRouter.post('/precise', async (req, res) => {
     // Add grain filter using actual grain_mm column with tolerance
     if (grain && !isNaN(Number(grain))) {
       const grainValue = Number(grain);
-      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) ? Number(dimensionTolerance) : 0;
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) 
+        ? Number(dimensionTolerance) 
+        : defaultDimTolerance;
       
       // Convert to mm if needed (assuming input might be in cm)
       let grainValueMm = grainValue;
