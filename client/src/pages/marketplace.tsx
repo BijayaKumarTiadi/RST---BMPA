@@ -56,11 +56,9 @@ export default function Marketplace() {
   });
   
   // Auto-suggestion states
-  const [categorySuggestions, setCategorySuggestions] = useState<any[]>([]);
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [deckleSuggestions, setDeckleSuggestions] = useState<any[]>([]);
   const [grainSuggestions, setGrainSuggestions] = useState<any[]>([]);
-  const [allCategories, setAllCategories] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -426,23 +424,6 @@ export default function Marketplace() {
   };
 
   // Auto-suggestion functions for precise search
-  const fetchCategorySuggestions = async (query: string | any) => {
-    const queryStr = String(query || '');
-    if (!queryStr.trim()) {
-      setCategorySuggestions([]);
-      return;
-    }
-    try {
-      const response = await fetch(`/api/suggestions/categories?q=${encodeURIComponent(queryStr)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCategorySuggestions(data.suggestions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching category suggestions:', error);
-    }
-  };
-
   const fetchGsmSuggestions = async (query: string | any) => {
     const queryStr = String(query || '');
     if (!queryStr.trim()) {
