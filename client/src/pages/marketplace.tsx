@@ -151,6 +151,45 @@ export default function Marketplace() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // Load initial filter data when component mounts
+  useEffect(() => {
+    loadInitialFilters();
+  }, []);
+
+  // Load initial filter options
+  const loadInitialFilters = async () => {
+    try {
+      console.log('Loading initial filter data...');
+      const response = await fetch('/api/search/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: '', // Empty query to get all data
+          page: 1,
+          pageSize: 1 // Just need aggregations, not all results
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Initial filter response:', data);
+        
+        if (data.aggregations) {
+          console.log('Setting initial filter options');
+          setAvailableMakes(data.aggregations.makes || []);
+          setAvailableGrades(data.aggregations.grades || []);
+          setAvailableBrands(data.aggregations.brands || []);
+          setAvailableGsm(data.aggregations.gsm || []);
+          setAvailableUnits(data.aggregations.units || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading initial filters:', error);
+    }
+  };
   
   // Apply pending filters
   const applySearch = () => {
