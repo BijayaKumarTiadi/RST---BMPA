@@ -3,7 +3,7 @@ import { executeQuery } from './database';
 
 const router = Router();
 
-// Get category suggestions from deal_master
+// Get category suggestions from stock_groups table
 router.get('/categories', async (req, res) => {
   try {
     let { q } = req.query;
@@ -20,23 +20,19 @@ router.get('/categories', async (req, res) => {
     const searchTerm = q.trim();
     const query = `
       SELECT DISTINCT 
-        CASE 
-          WHEN Grade LIKE '%${searchTerm}%' THEN Grade
-          WHEN Make LIKE '%${searchTerm}%' THEN Make 
-          WHEN Brand LIKE '%${searchTerm}%' THEN Brand
-          ELSE NULL
-        END as value,
-        COUNT(*) as count
-      FROM deal_master 
-      WHERE (Grade LIKE '%${searchTerm}%' OR Make LIKE '%${searchTerm}%' OR Brand LIKE '%${searchTerm}%')
-        AND (Grade IS NOT NULL OR Make IS NOT NULL OR Brand IS NOT NULL)
-      GROUP BY value
-      HAVING value IS NOT NULL
-      ORDER BY count DESC, value ASC
+        sg.GroupName as value,
+        COUNT(dm.TransID) as count
+      FROM stock_groups sg
+      LEFT JOIN deal_master dm ON sg.GroupID = dm.groupID
+      WHERE sg.GroupName LIKE ? 
+        AND sg.IsActive = 1
+        AND sg.GroupName IS NOT NULL
+      GROUP BY sg.GroupID, sg.GroupName
+      ORDER BY count DESC, sg.GroupName ASC
       LIMIT 10
     `;
 
-    const results = await executeQuery(query);
+    const results = await executeQuery(query, [`%${searchTerm}%`]);
     res.json({ success: true, suggestions: results });
   } catch (error) {
     console.error('Error fetching category suggestions:', error);
@@ -78,7 +74,7 @@ router.get('/gsm', async (req, res) => {
   }
 });
 
-// Get deckle suggestions from deal_master
+// Get deckle suggestions from deal_master Deckle_mm column
 router.get('/deckle', async (req, res) => {
   try {
     let { q } = req.query;
@@ -93,28 +89,20 @@ router.get('/deckle', async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    // Get deckle values from stock_description - extract first dimension number  
     const query = `
       SELECT DISTINCT 
-        TRIM(SUBSTRING_INDEX(
-          SUBSTRING_INDEX(stock_description, ' X ', 1), 
-          ' ', -1
-        )) as value,
+        Deckle_mm as value,
         COUNT(*) as count
       FROM deal_master 
-      WHERE stock_description IS NOT NULL 
-        AND stock_description LIKE '% X %'
-        AND stock_description LIKE '%${searchTerm}%'
-      GROUP BY value
-      HAVING value IS NOT NULL 
-        AND value != '' 
-        AND value REGEXP '^[0-9]+\\.?[0-9]*$'
-        AND CAST(value AS DECIMAL(10,2)) > 0
-      ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
+      WHERE Deckle_mm IS NOT NULL 
+        AND Deckle_mm > 0
+        AND CAST(Deckle_mm AS CHAR) LIKE ?
+      GROUP BY Deckle_mm
+      ORDER BY count DESC, Deckle_mm ASC
       LIMIT 10
     `;
 
-    const results = await executeQuery(query);
+    const results = await executeQuery(query, [`%${searchTerm}%`]);
     res.json({ success: true, suggestions: results });
   } catch (error) {
     console.error('Error fetching deckle suggestions:', error);
@@ -122,7 +110,7 @@ router.get('/deckle', async (req, res) => {
   }
 });
 
-// Get grain suggestions from deal_master  
+// Get grain suggestions from deal_master grain_mm column
 router.get('/grain', async (req, res) => {
   try {
     let { q } = req.query;
@@ -137,28 +125,20 @@ router.get('/grain', async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    // Get grain values from stock_description - extract second dimension number
     const query = `
       SELECT DISTINCT 
-        TRIM(SUBSTRING_INDEX(
-          SUBSTRING_INDEX(stock_description, ' X ', -1), 
-          ' ', 1
-        )) as value,
+        grain_mm as value,
         COUNT(*) as count
       FROM deal_master 
-      WHERE stock_description IS NOT NULL 
-        AND stock_description LIKE '% X %'
-        AND stock_description LIKE '%${searchTerm}%'
-      GROUP BY value
-      HAVING value IS NOT NULL 
-        AND value != '' 
-        AND value REGEXP '^[0-9]+\\.?[0-9]*$'
-        AND CAST(value AS DECIMAL(10,2)) > 0
-      ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
+      WHERE grain_mm IS NOT NULL 
+        AND grain_mm > 0
+        AND CAST(grain_mm AS CHAR) LIKE ?
+      GROUP BY grain_mm
+      ORDER BY count DESC, grain_mm ASC
       LIMIT 10
     `;
 
-    const results = await executeQuery(query);
+    const results = await executeQuery(query, [`%${searchTerm}%`]);
     res.json({ success: true, suggestions: results });
   } catch (error) {
     console.error('Error fetching grain suggestions:', error);
