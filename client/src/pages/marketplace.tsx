@@ -586,22 +586,22 @@ export default function Marketplace() {
         </div>
 
         {/* OR Divider */}
-        <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center justify-center mb-3">
           <div className="flex-grow h-px bg-border"></div>
           <span className="px-4 text-sm text-muted-foreground font-medium">OR</span>
           <div className="flex-grow h-px bg-border"></div>
         </div>
 
         {/* Precise Search */}
-        <div className="mb-4">
+        <div className="mb-3">
           <Card className="w-full">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Search className="h-5 w-5" />
                 Precise Search
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {/* Single Row Layout */}
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
@@ -818,22 +818,6 @@ export default function Marketplace() {
                 </div>
               </div>
 
-              {/* Tolerance Range Display */}
-              <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                {preciseSearch.gsm && preciseSearch.tolerance && (
-                  <div>
-                    GSM Range: {Number(preciseSearch.gsm) - Number(preciseSearch.tolerance || 0)} - {Number(preciseSearch.gsm) + Number(preciseSearch.tolerance || 0)}
-                  </div>
-                )}
-                {(preciseSearch.deckle || preciseSearch.grain) && preciseSearch.dimensionTolerance && (
-                  <div>
-                    Dimension Range: 
-                    {preciseSearch.deckle && ` Deckle: ${(Number(preciseSearch.deckle) - Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} - ${(Number(preciseSearch.deckle) + Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} ${preciseSearch.deckleUnit}`}
-                    {preciseSearch.deckle && preciseSearch.grain && ', '}
-                    {preciseSearch.grain && ` Grain: ${(Number(preciseSearch.grain) - Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} - ${(Number(preciseSearch.grain) + Number(preciseSearch.dimensionTolerance || 0)).toFixed(1)} ${preciseSearch.grainUnit}`}
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
         </div>
