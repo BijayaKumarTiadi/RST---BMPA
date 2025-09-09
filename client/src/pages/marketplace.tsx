@@ -592,109 +592,103 @@ export default function Marketplace() {
         </div>
 
         {/* Precise Search */}
-        <div className="mb-8">
+        <div className="mb-4">
           <Card className="w-full">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Search className="h-5 w-5" />
                 Precise Search
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Search by specific technical parameters for more accurate results
-              </p>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                {/* Category Field */}
-                <div className="space-y-2">
+            <CardContent className="p-4">
+              {/* Single Row Layout */}
+              <div className="flex flex-wrap items-end gap-3">
+                {/* Category */}
+                <div className="relative flex-1 min-w-32">
                   <label className="text-sm font-medium">Category</label>
-                  <div className="relative">
-                    <Input
-                      placeholder="e.g., Paper, Board, Tissue..."
-                      value={preciseSearch.category}
-                      onChange={(e) => handlePreciseSearchChange('category', e.target.value)}
-                      data-testid="input-precise-category"
-                    />
-                    {categorySuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-50 mt-1 max-h-48 overflow-y-auto">
-                        {categorySuggestions.map((suggestion: any, index: number) => (
-                          <button
-                            key={index}
-                            className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                            onClick={() => {
-                              handlePreciseSearchChange('category', suggestion.value || suggestion);
-                              setCategorySuggestions([]);
-                            }}
-                          >
-                            {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    placeholder="FBB, Duplex..."
+                    value={preciseSearch.category}
+                    onChange={(e) => handlePreciseSearchChange('category', e.target.value)}
+                    data-testid="input-precise-category"
+                    className="mt-1 h-9 text-sm"
+                  />
+                  {categorySuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      {categorySuggestions.map((suggestion: any, index: number) => (
+                        <button
+                          key={index}
+                          className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                          onClick={() => {
+                            handlePreciseSearchChange('category', suggestion.value || suggestion);
+                            setCategorySuggestions([]);
+                          }}
+                        >
+                          {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* GSM Field */}
-                <div className="space-y-2">
+                {/* GSM */}
+                <div className="relative flex-1 min-w-24">
                   <label className="text-sm font-medium">GSM</label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      placeholder="e.g., 80, 120, 250..."
-                      value={preciseSearch.gsm}
-                      onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
-                      data-testid="input-precise-gsm"
-                    />
-                    {gsmSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-50 mt-1 max-h-48 overflow-y-auto">
-                        {gsmSuggestions.map((suggestion: any, index: number) => (
-                          <button
-                            key={index}
-                            className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                            onClick={() => {
-                              handlePreciseSearchChange('gsm', suggestion.value || suggestion);
-                              setGsmSuggestions([]);
-                            }}
-                          >
-                            {suggestion.value || suggestion} GSM {suggestion.count && `(${suggestion.count})`}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tolerance Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Tolerance (±)</label>
                   <Input
                     type="number"
-                    placeholder="e.g., 5, 10..."
+                    placeholder="300"
+                    value={preciseSearch.gsm}
+                    onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
+                    data-testid="input-precise-gsm"
+                    className="mt-1 h-9 text-sm"
+                  />
+                  {gsmSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      {gsmSuggestions.map((suggestion: any, index: number) => (
+                        <button
+                          key={index}
+                          className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                          onClick={() => {
+                            handlePreciseSearchChange('gsm', suggestion.value || suggestion);
+                            setGsmSuggestions([]);
+                          }}
+                        >
+                          {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tolerance */}
+                <div className="flex-1 min-w-24">
+                  <label className="text-sm font-medium">Tolerance</label>
+                  <Input
+                    type="number"
+                    placeholder="10"
                     value={preciseSearch.tolerance}
                     onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
                     data-testid="input-precise-tolerance"
+                    className="mt-1 h-9 text-sm"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    GSM range will be: {preciseSearch.gsm && preciseSearch.tolerance ? 
-                      `${Number(preciseSearch.gsm) - Number(preciseSearch.tolerance || 0)} - ${Number(preciseSearch.gsm) + Number(preciseSearch.tolerance || 0)}` : 
-                      'Enter GSM and tolerance'}
-                  </p>
                 </div>
 
-                {/* Deckle Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Deckle</label>
-                  <div className="flex gap-2">
+                {/* Deckle x Grain */}
+                <div className="flex-1 min-w-40">
+                  <label className="text-sm font-medium">Deckle x Grain</label>
+                  <div className="flex items-center gap-1 mt-1">
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        placeholder="e.g., 70, 100..."
+                        step="0.1"
+                        placeholder="64.8"
                         value={preciseSearch.deckle}
                         onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
                         data-testid="input-precise-deckle"
+                        className="h-9 text-sm"
                       />
                       {deckleSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-50 mt-1 max-h-48 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                           {deckleSuggestions.map((suggestion: any, index: number) => (
                             <button
                               key={index}
@@ -710,35 +704,19 @@ export default function Marketplace() {
                         </div>
                       )}
                     </div>
-                    <Select 
-                      value={preciseSearch.deckleUnit} 
-                      onValueChange={(value) => setPreciseSearch(prev => ({ ...prev, deckleUnit: value }))}
-                    >
-                      <SelectTrigger className="w-16">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cm">cm</SelectItem>
-                        <SelectItem value="inch">inch</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Grain Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Grain</label>
-                  <div className="flex gap-2">
+                    <span className="text-gray-500 text-sm font-medium px-1">x</span>
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        placeholder="e.g., 50, 80..."
+                        step="0.1"
+                        placeholder="84.1"
                         value={preciseSearch.grain}
                         onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
                         data-testid="input-precise-grain"
+                        className="h-9 text-sm"
                       />
                       {grainSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-50 mt-1 max-h-48 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                           {grainSuggestions.map((suggestion: any, index: number) => (
                             <button
                               key={index}
@@ -754,33 +732,82 @@ export default function Marketplace() {
                         </div>
                       )}
                     </div>
-                    <Select 
-                      value={preciseSearch.grainUnit} 
-                      onValueChange={(value) => setPreciseSearch(prev => ({ ...prev, grainUnit: value }))}
-                    >
-                      <SelectTrigger className="w-16">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cm">cm</SelectItem>
-                        <SelectItem value="inch">inch</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
+                </div>
+
+                {/* Single Unit Selector */}
+                <div className="flex-shrink-0">
+                  <label className="text-sm font-medium">Unit</label>
+                  <Select
+                    value={preciseSearch.deckleUnit}
+                    onValueChange={(value) => {
+                      setPreciseSearch(prev => ({ 
+                        ...prev, 
+                        deckleUnit: value,
+                        grainUnit: value 
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-9 mt-1 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cm">cm</SelectItem>
+                      <SelectItem value="inch">inch</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={performPreciseSearch}
+                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
+                    data-testid="button-precise-search"
+                    disabled={isSearching}
+                  >
+                    {isSearching ? (
+                      <>
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Search
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-3 w-3" />
+                        Search
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setPreciseSearch({
+                        category: '',
+                        gsm: '',
+                        tolerance: '',
+                        deckle: '',
+                        deckleUnit: 'cm',
+                        grain: '',
+                        grainUnit: 'cm'
+                      });
+                      setCategorySuggestions([]);
+                      setGsmSuggestions([]);
+                      setDeckleSuggestions([]);
+                      setGrainSuggestions([]);
+                    }}
+                    className="h-9 px-3"
+                  >
+                    Clear
+                  </Button>
                 </div>
               </div>
 
-              {/* Search Button */}
-              <div className="flex justify-end">
-                <Button 
-                  onClick={performPreciseSearch}
-                  className="bg-blue-600 hover:bg-blue-700"
-                  data-testid="button-precise-search"
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  Search Precisely
-                </Button>
-              </div>
+              {/* GSM Range Display */}
+              {preciseSearch.gsm && preciseSearch.tolerance && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  GSM Range: {Number(preciseSearch.gsm) - Number(preciseSearch.tolerance || 0)} - {Number(preciseSearch.gsm) + Number(preciseSearch.tolerance || 0)}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
