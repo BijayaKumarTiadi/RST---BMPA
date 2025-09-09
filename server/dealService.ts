@@ -290,7 +290,7 @@ class DealService {
         LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         ${whereClause}
-        ORDER BY d.uplaodDate DESC
+        ORDER BY d.deal_created_at DESC
         LIMIT ? OFFSET ?
       `;
 

@@ -1146,10 +1146,10 @@ export default function Marketplace() {
 
 
                           {/* Deal Age */}
-                          {deal.uplaodDate && (
+                          {deal.deal_created_at && (
                             <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
                               <Calendar className="h-3 w-3" />
-                              <span>{getRelativeTime(deal.uplaodDate)}</span>
+                              <span>{getRelativeTime(deal.deal_created_at)}</span>
                             </div>
                           )}
 
