@@ -60,6 +60,7 @@ export default function Marketplace() {
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [deckleSuggestions, setDeckleSuggestions] = useState<any[]>([]);
   const [grainSuggestions, setGrainSuggestions] = useState<any[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -85,6 +86,17 @@ export default function Marketplace() {
       const response = await fetch('/api/stock/hierarchy');
       if (!response.ok) throw new Error('Failed to fetch stock hierarchy');
       return response.json();
+    },
+  });
+
+  // Fetch all categories for dropdown
+  const { data: categoriesData } = useQuery({
+    queryKey: ["/api/suggestions/categories", "all"],
+    queryFn: async () => {
+      const response = await fetch('/api/suggestions/categories?q=');
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const result = await response.json();
+      return result.suggestions || [];
     },
   });
 
@@ -414,13 +426,14 @@ export default function Marketplace() {
   };
 
   // Auto-suggestion functions for precise search
-  const fetchCategorySuggestions = async (query: string) => {
-    if (!query.trim()) {
+  const fetchCategorySuggestions = async (query: string | any) => {
+    const queryStr = String(query || '');
+    if (!queryStr.trim()) {
       setCategorySuggestions([]);
       return;
     }
     try {
-      const response = await fetch(`/api/suggestions/categories?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/suggestions/categories?q=${encodeURIComponent(queryStr)}`);
       if (response.ok) {
         const data = await response.json();
         setCategorySuggestions(data.suggestions || []);
@@ -430,13 +443,14 @@ export default function Marketplace() {
     }
   };
 
-  const fetchGsmSuggestions = async (query: string) => {
-    if (!query.trim()) {
+  const fetchGsmSuggestions = async (query: string | any) => {
+    const queryStr = String(query || '');
+    if (!queryStr.trim()) {
       setGsmSuggestions([]);
       return;
     }
     try {
-      const response = await fetch(`/api/suggestions/gsm?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/suggestions/gsm?q=${encodeURIComponent(queryStr)}`);
       if (response.ok) {
         const data = await response.json();
         setGsmSuggestions(data.suggestions || []);
@@ -446,13 +460,14 @@ export default function Marketplace() {
     }
   };
 
-  const fetchDeckleSuggestions = async (query: string) => {
-    if (!query.trim()) {
+  const fetchDeckleSuggestions = async (query: string | any) => {
+    const queryStr = String(query || '');
+    if (!queryStr.trim()) {
       setDeckleSuggestions([]);
       return;
     }
     try {
-      const response = await fetch(`/api/suggestions/deckle?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/suggestions/deckle?q=${encodeURIComponent(queryStr)}`);
       if (response.ok) {
         const data = await response.json();
         setDeckleSuggestions(data.suggestions || []);
@@ -462,13 +477,14 @@ export default function Marketplace() {
     }
   };
 
-  const fetchGrainSuggestions = async (query: string) => {
-    if (!query.trim()) {
+  const fetchGrainSuggestions = async (query: string | any) => {
+    const queryStr = String(query || '');
+    if (!queryStr.trim()) {
       setGrainSuggestions([]);
       return;
     }
     try {
-      const response = await fetch(`/api/suggestions/grain?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/suggestions/grain?q=${encodeURIComponent(queryStr)}`);
       if (response.ok) {
         const data = await response.json();
         setGrainSuggestions(data.suggestions || []);
@@ -605,31 +621,24 @@ export default function Marketplace() {
               {/* Single Row Layout */}
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
-                <div className="relative flex-1 min-w-32">
+                <div className="flex-1 min-w-32">
                   <label className="text-sm font-medium">Category</label>
-                  <Input
-                    placeholder="FBB, Duplex..."
-                    value={preciseSearch.category}
-                    onChange={(e) => handlePreciseSearchChange('category', e.target.value)}
-                    data-testid="input-precise-category"
-                    className="mt-1 h-9 text-sm"
-                  />
-                  {categorySuggestions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                      {categorySuggestions.map((suggestion: any, index: number) => (
-                        <button
-                          key={index}
-                          className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                          onClick={() => {
-                            handlePreciseSearchChange('category', suggestion.value || suggestion);
-                            setCategorySuggestions([]);
-                          }}
-                        >
-                          {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                        </button>
+                  <Select 
+                    value={preciseSearch.category} 
+                    onValueChange={(value) => handlePreciseSearchChange('category', value)}
+                  >
+                    <SelectTrigger className="mt-1 h-9 text-sm" data-testid="select-precise-category">
+                      <SelectValue placeholder="Select category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Categories</SelectItem>
+                      {categoriesData?.map((category: any, index: number) => (
+                        <SelectItem key={index} value={category.value || category}>
+                          {category.value || category} {category.count && `(${category.count})`}
+                        </SelectItem>
                       ))}
-                    </div>
-                  )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* GSM */}

@@ -12,27 +12,45 @@ router.get('/categories', async (req, res) => {
     if (Array.isArray(q)) {
       q = q[0];
     }
+
+    const searchTerm = q && typeof q === 'string' ? q.trim() : '';
     
-    if (!q || typeof q !== 'string' || !q.trim()) {
-      return res.json({ success: true, suggestions: [] });
+    let query, params;
+    
+    if (!searchTerm) {
+      // Return all active categories when no query provided
+      query = `
+        SELECT DISTINCT 
+          sg.GroupName as value,
+          COUNT(dm.TransID) as count
+        FROM stock_groups sg
+        LEFT JOIN deal_master dm ON sg.GroupID = dm.groupID
+        WHERE sg.IsActive = 1
+          AND sg.GroupName IS NOT NULL
+        GROUP BY sg.GroupID, sg.GroupName
+        ORDER BY count DESC, sg.GroupName ASC
+        LIMIT 20
+      `;
+      params = [];
+    } else {
+      // Filter categories based on search term
+      query = `
+        SELECT DISTINCT 
+          sg.GroupName as value,
+          COUNT(dm.TransID) as count
+        FROM stock_groups sg
+        LEFT JOIN deal_master dm ON sg.GroupID = dm.groupID
+        WHERE sg.GroupName LIKE ? 
+          AND sg.IsActive = 1
+          AND sg.GroupName IS NOT NULL
+        GROUP BY sg.GroupID, sg.GroupName
+        ORDER BY count DESC, sg.GroupName ASC
+        LIMIT 10
+      `;
+      params = [`%${searchTerm}%`];
     }
 
-    const searchTerm = q.trim();
-    const query = `
-      SELECT DISTINCT 
-        sg.GroupName as value,
-        COUNT(dm.TransID) as count
-      FROM stock_groups sg
-      LEFT JOIN deal_master dm ON sg.GroupID = dm.groupID
-      WHERE sg.GroupName LIKE ? 
-        AND sg.IsActive = 1
-        AND sg.GroupName IS NOT NULL
-      GROUP BY sg.GroupID, sg.GroupName
-      ORDER BY count DESC, sg.GroupName ASC
-      LIMIT 10
-    `;
-
-    const results = await executeQuery(query, [`%${searchTerm}%`]);
+    const results = await executeQuery(query, params);
     res.json({ success: true, suggestions: results });
   } catch (error) {
     console.error('Error fetching category suggestions:', error);
