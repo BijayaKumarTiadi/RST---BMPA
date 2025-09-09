@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Package, IndianRupee, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const dealSchema = z.object({
   groupID: z.string().min(1, "Stock group is required"),
@@ -41,6 +42,7 @@ export default function AddDeal() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
   const [makeText, setMakeText] = useState("");
@@ -158,6 +160,26 @@ export default function AddDeal() {
       Seller_comments: "",
     },
   });
+
+  // Fetch user settings for dimension unit preference
+  const { data: userSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Update dimension unit when user settings are loaded
+  useEffect(() => {
+    if (userSettings?.dimension_unit && userSettings.dimension_unit !== dimensionUnit) {
+      setDimensionUnit(userSettings.dimension_unit);
+    }
+  }, [userSettings, dimensionUnit]);
 
   // Fetch stock hierarchy
   const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
