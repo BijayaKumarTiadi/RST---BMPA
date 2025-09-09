@@ -29,6 +29,7 @@ interface UserSettings {
   show_contact_info: boolean;
   show_company_details: boolean;
   auto_respond_inquiries: boolean;
+  dimension_unit: 'cm' | 'inch';
 }
 
 export default function Settings() {
@@ -52,6 +53,7 @@ export default function Settings() {
     show_contact_info: true,
     show_company_details: true,
     auto_respond_inquiries: false,
+    dimension_unit: 'cm',
   });
 
 
@@ -344,6 +346,27 @@ export default function Settings() {
                       <SelectItem value="INR">₹ Indian Rupee</SelectItem>
                       <SelectItem value="USD">$ US Dollar</SelectItem>
                       <SelectItem value="EUR">€ Euro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base">Default Dimension Unit</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Choose your preferred unit for paper dimensions (affects add product and precise search)
+                  </p>
+                  <Select
+                    value={settings.dimension_unit}
+                    onValueChange={(value: 'cm' | 'inch') => handleSettingChange('dimension_unit', value)}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cm">Centimeters (cm)</SelectItem>
+                      <SelectItem value="inch">Inches (inch)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

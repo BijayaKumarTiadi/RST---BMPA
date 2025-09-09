@@ -546,6 +546,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Settings API - Get user settings
+  app.get('/api/settings', requireAuth, async (req, res) => {
+    try {
+      const memberId = req.user?.id;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get user settings including paperunit from bmpa_members table
+      const memberData = await executeQuerySingle(`
+        SELECT paperunit, email, mname as name
+        FROM bmpa_members 
+        WHERE member_id = ?
+      `, [memberId]);
+
+      const settings = {
+        email_notifications: true,
+        sms_notifications: false,
+        marketing_emails: true,
+        inquiry_alerts: true,
+        price_alerts: false,
+        security_alerts: true,
+        language: 'en',
+        timezone: 'Asia/Kolkata',
+        currency: 'INR',
+        privacy_level: 'members_only',
+        show_contact_info: true,
+        show_company_details: true,
+        auto_respond_inquiries: false,
+        dimension_unit: memberData?.paperunit || 'cm' // Default to cm if not set
+      };
+
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      res.status(500).json({ message: 'Failed to fetch settings' });
+    }
+  });
+
+  // Settings API - Update user settings
+  app.put('/api/settings', requireAuth, async (req, res) => {
+    try {
+      const memberId = req.user?.id;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const settingsUpdate = req.body;
+      
+      // If dimension_unit is being updated, save it to paperunit column
+      if ('dimension_unit' in settingsUpdate) {
+        await executeQuery(`
+          UPDATE bmpa_members 
+          SET paperunit = ? 
+          WHERE member_id = ?
+        `, [settingsUpdate.dimension_unit, memberId]);
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Settings updated successfully' 
+      });
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      res.status(500).json({ message: 'Failed to update settings' });
+    }
+  });
+
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {
