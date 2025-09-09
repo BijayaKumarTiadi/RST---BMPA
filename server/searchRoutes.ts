@@ -60,7 +60,7 @@ searchRouter.post('/precise', async (req, res) => {
     const queryParams: any[] = [];
     
     // Add category filter using stock_groups table
-    if (category && category.trim()) {
+    if (category && category.trim() && category !== 'all') {
       whereClause += ` AND sg.GroupName LIKE ?`;
       queryParams.push(`%${category.trim()}%`);
     }

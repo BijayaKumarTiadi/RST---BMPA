@@ -498,9 +498,8 @@ export default function Marketplace() {
   const handlePreciseSearchChange = (field: string, value: string) => {
     setPreciseSearch(prev => ({ ...prev, [field]: value }));
     
-    // Trigger auto-suggestions based on field
-    if (field === 'category') fetchCategorySuggestions(value);
-    else if (field === 'gsm') fetchGsmSuggestions(value);
+    // Trigger auto-suggestions based on field (excluding category - dropdown only)
+    if (field === 'gsm') fetchGsmSuggestions(value);
     else if (field === 'deckle') fetchDeckleSuggestions(value);
     else if (field === 'grain') fetchGrainSuggestions(value);
   };
@@ -631,7 +630,7 @@ export default function Marketplace() {
                       <SelectValue placeholder="Select category..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {categoriesData?.map((category: any, index: number) => (
                         <SelectItem key={index} value={category.value || category}>
                           {category.value || category} {category.count && `(${category.count})`}
