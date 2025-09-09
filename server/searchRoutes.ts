@@ -55,7 +55,6 @@ searchRouter.post('/precise', async (req, res) => {
     const { executeQuery } = await import('./database');
     const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, page = 1, pageSize = 12 } = req.body;
     
-    let joinClause = 'FROM deal_master dm LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID';
     let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
     
@@ -113,7 +112,12 @@ searchRouter.post('/precise', async (req, res) => {
     }
     
     // Get total count
-    const countQuery = `SELECT COUNT(*) as total ${joinClause} ${whereClause}`;
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM deal_master dm 
+      LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
+      ${whereClause}
+    `;
     const [countResult] = await executeQuery(countQuery, queryParams);
     const total = countResult.total;
     
@@ -121,22 +125,13 @@ searchRouter.post('/precise', async (req, res) => {
     const offset = (page - 1) * pageSize;
     const searchQuery = `
       SELECT 
-        dm.TransID,
-        dm.Make,
-        dm.Grade,
-        dm.Brand,
-        dm.GSM,
-        dm.Deckle_mm,
-        dm.grain_mm,
-        dm.stock_description,
-        dm.Seller_comments,
-        dm.OfferPrice,
-        dm.OfferUnit,
-        dm.quantity,
-        dm.created_by_name,
-        dm.created_by_company,
-        sg.GroupName as category_name
-      ${joinClause}
+        dm.*,
+        sg.GroupName as category_name,
+        m.mname as created_by_name,
+        m.company_name as created_by_company
+      FROM deal_master dm 
+      LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
+      LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       ${whereClause}
       ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?
