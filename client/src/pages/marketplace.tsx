@@ -57,8 +57,6 @@ export default function Marketplace() {
   
   // Auto-suggestion states
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
-  const [deckleSuggestions, setDeckleSuggestions] = useState<any[]>([]);
-  const [grainSuggestions, setGrainSuggestions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -441,39 +439,6 @@ export default function Marketplace() {
     }
   };
 
-  const fetchDeckleSuggestions = async (query: string | any) => {
-    const queryStr = String(query || '');
-    if (!queryStr.trim()) {
-      setDeckleSuggestions([]);
-      return;
-    }
-    try {
-      const response = await fetch(`/api/suggestions/deckle?q=${encodeURIComponent(queryStr)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setDeckleSuggestions(data.suggestions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching deckle suggestions:', error);
-    }
-  };
-
-  const fetchGrainSuggestions = async (query: string | any) => {
-    const queryStr = String(query || '');
-    if (!queryStr.trim()) {
-      setGrainSuggestions([]);
-      return;
-    }
-    try {
-      const response = await fetch(`/api/suggestions/grain?q=${encodeURIComponent(queryStr)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setGrainSuggestions(data.suggestions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching grain suggestions:', error);
-    }
-  };
 
   // Handle precise search field changes
   const handlePreciseSearchChange = (field: string, value: string) => {
@@ -481,8 +446,6 @@ export default function Marketplace() {
     
     // Trigger auto-suggestions based on field (excluding category - dropdown only)
     if (field === 'gsm') fetchGsmSuggestions(value);
-    else if (field === 'deckle') fetchDeckleSuggestions(value);
-    else if (field === 'grain') fetchGrainSuggestions(value);
   };
 
   const performPreciseSearch = async () => {
@@ -677,22 +640,6 @@ export default function Marketplace() {
                         data-testid="input-precise-deckle"
                         className="h-9 text-sm"
                       />
-                      {deckleSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                          {deckleSuggestions.map((suggestion: any, index: number) => (
-                            <button
-                              key={index}
-                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                              onClick={() => {
-                                handlePreciseSearchChange('deckle', suggestion.value || suggestion);
-                                setDeckleSuggestions([]);
-                              }}
-                            >
-                              {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                     <span className="text-gray-500 text-sm font-medium px-1">x</span>
                     <div className="relative flex-1">
@@ -705,22 +652,6 @@ export default function Marketplace() {
                         data-testid="input-precise-grain"
                         className="h-9 text-sm"
                       />
-                      {grainSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                          {grainSuggestions.map((suggestion: any, index: number) => (
-                            <button
-                              key={index}
-                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                              onClick={() => {
-                                handlePreciseSearchChange('grain', suggestion.value || suggestion);
-                                setGrainSuggestions([]);
-                              }}
-                            >
-                              {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
