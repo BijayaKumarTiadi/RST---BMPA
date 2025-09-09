@@ -488,9 +488,37 @@ export default function Marketplace() {
     else if (field === 'grain') fetchGrainSuggestions(value);
   };
 
-  const performPreciseSearch = () => {
+  const performPreciseSearch = async () => {
     console.log('Performing precise search with:', preciseSearch);
-    // TODO: Implement precise search logic
+    
+    try {
+      setIsSearching(true);
+      const response = await fetch('/api/search/precise', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...preciseSearch,
+          page: 1,
+          pageSize: itemsPerPage
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Precise search results:', data);
+        setSearchResults(data);
+        setSearchTerm(''); // Clear regular search term
+        setCurrentPage(1);
+      } else {
+        console.error('Precise search failed');
+      }
+    } catch (error) {
+      console.error('Error performing precise search:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // Modal handlers

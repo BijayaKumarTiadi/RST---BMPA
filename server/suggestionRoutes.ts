@@ -6,8 +6,14 @@ const router = Router();
 // Get category suggestions from deal_master
 router.get('/categories', async (req, res) => {
   try {
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
+    let { q } = req.query;
+    
+    // Handle array case
+    if (Array.isArray(q)) {
+      q = q[0];
+    }
+    
+    if (!q || typeof q !== 'string' || !q.trim()) {
       return res.json({ success: true, suggestions: [] });
     }
 
@@ -40,8 +46,14 @@ router.get('/categories', async (req, res) => {
 // Get GSM suggestions from deal_master
 router.get('/gsm', async (req, res) => {
   try {
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
+    let { q } = req.query;
+    
+    // Handle array case
+    if (Array.isArray(q)) {
+      q = q[0];
+    }
+    
+    if (!q || typeof q !== 'string' || !q.trim()) {
       return res.json({ success: true, suggestions: [] });
     }
 
@@ -67,26 +79,35 @@ router.get('/gsm', async (req, res) => {
 // Get deckle suggestions from deal_master
 router.get('/deckle', async (req, res) => {
   try {
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
+    let { q } = req.query;
+    
+    // Handle array case
+    if (Array.isArray(q)) {
+      q = q[0];
+    }
+    
+    if (!q || typeof q !== 'string' || !q.trim()) {
       return res.json({ success: true, suggestions: [] });
     }
 
-    // Extract numeric values from dimensions fields that might contain deckle info
+    // Get deckle values from stock_description - extract dimensions
     const query = `
       SELECT DISTINCT 
-        SUBSTRING_INDEX(SUBSTRING_INDEX(Dimensions, 'x', 1), ' ', -1) as value,
+        SUBSTRING_INDEX(
+          TRIM(SUBSTRING_INDEX(
+            SUBSTRING_INDEX(stock_description, 'X', 1), 
+            ' ', -1
+          )), 
+          '.', 1
+        ) as value,
         COUNT(*) as count
       FROM deal_master 
-      WHERE Dimensions IS NOT NULL 
-        AND Dimensions != ''
-        AND (
-          Dimensions LIKE '%${q}%' 
-          OR SUBSTRING_INDEX(SUBSTRING_INDEX(Dimensions, 'x', 1), ' ', -1) LIKE '%${q}%'
-        )
+      WHERE stock_description IS NOT NULL 
+        AND stock_description LIKE '%X%'
+        AND stock_description LIKE '%${q}%'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != ''
-      ORDER BY count DESC, CAST(value AS DECIMAL(10,2)) ASC
+      HAVING value IS NOT NULL AND value != '' AND value REGEXP '^[0-9]+$'
+      ORDER BY count DESC, CAST(value AS UNSIGNED) ASC
       LIMIT 10
     `;
 
@@ -101,27 +122,35 @@ router.get('/deckle', async (req, res) => {
 // Get grain suggestions from deal_master  
 router.get('/grain', async (req, res) => {
   try {
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
+    let { q } = req.query;
+    
+    // Handle array case
+    if (Array.isArray(q)) {
+      q = q[0];
+    }
+    
+    if (!q || typeof q !== 'string' || !q.trim()) {
       return res.json({ success: true, suggestions: [] });
     }
 
-    // Extract numeric values from dimensions fields that might contain grain info
+    // Get grain values from stock_description - extract dimensions after X
     const query = `
       SELECT DISTINCT 
-        TRIM(SUBSTRING_INDEX(Dimensions, 'x', -1)) as value,
+        SUBSTRING_INDEX(
+          TRIM(SUBSTRING_INDEX(
+            SUBSTRING_INDEX(stock_description, 'X', -1), 
+            ' ', 1
+          )), 
+          '.', 1
+        ) as value,
         COUNT(*) as count
       FROM deal_master 
-      WHERE Dimensions IS NOT NULL 
-        AND Dimensions != ''
-        AND Dimensions LIKE '%x%'
-        AND (
-          Dimensions LIKE '%${q}%'
-          OR TRIM(SUBSTRING_INDEX(Dimensions, 'x', -1)) LIKE '%${q}%'
-        )
+      WHERE stock_description IS NOT NULL 
+        AND stock_description LIKE '%X%'
+        AND stock_description LIKE '%${q}%'
       GROUP BY value
-      HAVING value IS NOT NULL AND value != ''
-      ORDER BY count DESC, CAST(SUBSTRING_INDEX(value, ' ', 1) AS DECIMAL(10,2)) ASC
+      HAVING value IS NOT NULL AND value != '' AND value REGEXP '^[0-9]+$'
+      ORDER BY count DESC, CAST(value AS UNSIGNED) ASC
       LIMIT 10
     `;
 
@@ -132,5 +161,6 @@ router.get('/grain', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch suggestions' });
   }
 });
+
 
 export default router;
