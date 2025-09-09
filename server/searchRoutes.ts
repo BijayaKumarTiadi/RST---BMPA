@@ -86,10 +86,12 @@ searchRouter.post('/precise', async (req, res) => {
         ? Number(dimensionTolerance) 
         : defaultDimTolerance;
       
-      // Convert to mm if needed (assuming input might be in cm)
+      // Convert to mm if needed
       let deckleValueMm = deckleValue;
       if (deckleUnit === 'cm') {
         deckleValueMm = deckleValue * 10; // Convert cm to mm
+      } else if (deckleUnit === 'inch') {
+        deckleValueMm = deckleValue * 25.4; // Convert inch to mm
       }
       
       const minDeckle = deckleValueMm - dimToleranceValue;
@@ -106,10 +108,12 @@ searchRouter.post('/precise', async (req, res) => {
         ? Number(dimensionTolerance) 
         : defaultDimTolerance;
       
-      // Convert to mm if needed (assuming input might be in cm)
+      // Convert to mm if needed
       let grainValueMm = grainValue;
       if (grainUnit === 'cm') {
         grainValueMm = grainValue * 10; // Convert cm to mm
+      } else if (grainUnit === 'inch') {
+        grainValueMm = grainValue * 25.4; // Convert inch to mm
       }
       
       const minGrain = grainValueMm - dimToleranceValue;
