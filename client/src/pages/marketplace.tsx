@@ -753,27 +753,6 @@ export default function Marketplace() {
       <Navigation />
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
-        {/* Powerful Search Bar */}
-        <div className="mb-6">
-          <PowerSearch 
-            onSearch={(results) => {
-              if (results && results.success) {
-                setSearchResults(results);
-                setSearchAggregations(results.aggregations || null);
-                setCurrentPage(1);
-              }
-            }}
-            onLoading={(loading) => setIsSearching(loading)}
-            className="w-full"
-          />
-        </div>
-
-        {/* OR Divider */}
-        <div className="flex items-center justify-center mb-3">
-          <div className="flex-grow h-px bg-border"></div>
-          <span className="px-4 text-sm text-muted-foreground font-medium">OR</span>
-          <div className="flex-grow h-px bg-border"></div>
-        </div>
 
         {/* Precise Search */}
         <div className="mb-3">
@@ -995,7 +974,7 @@ export default function Marketplace() {
         <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Marketplace</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Discover stock deals from verified sellers across the trading industry
+            Discover stock deals from verified sellers across the printing industry
           </p>
         </div>
         
