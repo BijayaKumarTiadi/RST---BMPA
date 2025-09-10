@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, MessageCircle, MapPin, Heart, Eye, Edit, Mail, MessageSquare, Calendar, Building, Loader2 } from "lucide-react";
+import { Package, Search, MessageCircle, MapPin, Heart, Eye, Edit, Mail, MessageSquare, Calendar, Building, Loader2, Filter } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -27,6 +27,41 @@ export default function Marketplace() {
   const [filteredDeals, setFilteredDeals] = useState<any[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Filter states
+  const [activeFilters, setActiveFilters] = useState({
+    search: '',
+    makes: [] as string[],
+    grades: [] as string[],
+    brands: [] as string[],
+    categories: [] as string[],
+    gsm: { min: '', max: '' },
+    dimensions: { deckle: '', grain: '', unit: 'cm' }
+  });
+  
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    makes: false,
+    grades: false,
+    brands: false,
+    categories: false
+  });
+  
+  // Precise search states
+  const [preciseSearch, setPreciseSearch] = useState({
+    category: '',
+    gsm: '',
+    tolerance: '',
+    deckle: '',
+    deckleUnit: 'cm',
+    grain: '',
+    grainUnit: 'cm',
+    dimensionTolerance: ''
+  });
+  
+  const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
   const itemsPerPage = 12;
   
   // Modal states
@@ -172,10 +207,113 @@ export default function Marketplace() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Initial filter response:', data);
+        console.log('Setting initial filter options');
+      }
+    } catch (error) {
+      console.error('Error loading initial filters:', error);
+    }
+  };
   
+  // Filter utility functions
+  const updateFilter = (key: string, value: any) => {
+    setActiveFilters(prev => ({ ...prev, [key]: value }));
+  };
   
-
-
+  const toggleArrayFilter = (arrayKey: string, value: string) => {
+    setActiveFilters(prev => {
+      const currentArray = prev[arrayKey as keyof typeof prev] as string[];
+      return {
+        ...prev,
+        [arrayKey]: currentArray.includes(value)
+          ? currentArray.filter(item => item !== value)
+          : [...currentArray, value]
+      };
+    });
+  };
+  
+  const clearSpecificFilter = (filterKey: string) => {
+    if (filterKey === 'gsm') {
+      setActiveFilters(prev => ({ ...prev, gsm: { min: '', max: '' } }));
+    } else if (filterKey === 'dimensions') {
+      setActiveFilters(prev => ({ ...prev, dimensions: { deckle: '', grain: '', unit: 'cm' } }));
+    }
+  };
+  
+  const clearAllFilters = () => {
+    setActiveFilters({
+      search: '',
+      makes: [],
+      grades: [],
+      brands: [],
+      categories: [],
+      gsm: { min: '', max: '' },
+      dimensions: { deckle: '', grain: '', unit: 'cm' }
+    });
+  };
+  
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (activeFilters.search) count++;
+    count += activeFilters.makes.length;
+    count += activeFilters.grades.length;
+    count += activeFilters.brands.length;
+    count += activeFilters.categories.length;
+    if (activeFilters.gsm.min || activeFilters.gsm.max) count++;
+    if (activeFilters.dimensions.deckle || activeFilters.dimensions.grain) count++;
+    return count;
+  };
+  
+  // Apply filters to deals
+  useEffect(() => {
+    if (!allDeals.length) {
+      setFilteredDeals([]);
+      return;
+    }
+    
+    let filtered = allDeals.filter((deal: any) => {
+      // Search filter
+      if (activeFilters.search) {
+        const searchTerm = activeFilters.search.toLowerCase();
+        const searchableText = `${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''} ${deal.stock_description || ''} ${deal.Seller_comments || ''}`.toLowerCase();
+        if (!searchableText.includes(searchTerm)) return false;
+      }
+      
+      // Make filter
+      if (activeFilters.makes.length > 0 && !activeFilters.makes.includes(deal.Make)) return false;
+      
+      // Grade filter
+      if (activeFilters.grades.length > 0 && !activeFilters.grades.includes(deal.Grade)) return false;
+      
+      // Brand filter
+      if (activeFilters.brands.length > 0 && !activeFilters.brands.includes(deal.Brand)) return false;
+      
+      // GSM filter
+      if (activeFilters.gsm.min && deal.GSM < parseInt(activeFilters.gsm.min)) return false;
+      if (activeFilters.gsm.max && deal.GSM > parseInt(activeFilters.gsm.max)) return false;
+      
+      return true;
+    });
+    
+    // Apply sorting
+    filtered.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.deal_created_at || 0).getTime() - new Date(a.deal_created_at || 0).getTime();
+        case 'oldest':
+          return new Date(a.deal_created_at || 0).getTime() - new Date(b.deal_created_at || 0).getTime();
+        case 'price-low':
+          return (a.OfferPrice || a.Price || 0) - (b.OfferPrice || b.Price || 0);
+        case 'price-high':
+          return (b.OfferPrice || b.Price || 0) - (a.OfferPrice || a.Price || 0);
+        default:
+          return 0;
+      }
+    });
+    
+    setFilteredDeals(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [allDeals, activeFilters, sortBy]);
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -215,7 +353,7 @@ export default function Marketplace() {
   };
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section as keyof typeof prev] }));
   };
 
   // Auto-suggestion functions for precise search
@@ -266,7 +404,8 @@ export default function Marketplace() {
         const data = await response.json();
         console.log('Precise search results:', data);
         setSearchResults(data);
-        setSearchTerm(''); // Clear regular search term
+        // Clear regular search term
+        updateFilter('search', '');
         setCurrentPage(1);
       } else {
         console.error('Precise search failed');
@@ -704,7 +843,7 @@ export default function Marketplace() {
         {/* Main Content */}
         <div>
           {/* Results */}
-            {dealsLoading || hierarchyLoading ? (
+          {dealsLoading || hierarchyLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
