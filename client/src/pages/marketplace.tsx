@@ -1325,12 +1325,7 @@ export default function Marketplace() {
               {/* Mobile Filter Content - Will be the same as desktop */}
               <div className="space-y-6">
             <Card className="sticky top-4">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Filter Options</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 pt-6">
                 {/* Search */}
                 <div>
                   <div className="relative">
@@ -1541,12 +1536,7 @@ export default function Marketplace() {
           {/* Desktop Sidebar - Filters */}
           <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
             <Card className="sticky top-4">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Filter Options</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pt-6">
                 
                 {/* Makes Filter - Checkbox based */}
                 <div>
