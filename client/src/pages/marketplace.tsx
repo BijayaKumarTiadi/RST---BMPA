@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2 } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2, X, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -27,21 +27,55 @@ export default function Marketplace() {
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAggregations, setSearchAggregations] = useState<any>(null);
-  // Pending filters (UI state, not applied yet)
-  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
-  const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
   
-  // Main search state - this will be used for everything
+  // Main search state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
+  // UNIFIED FILTER STATE - Complete filter management
+  const [filters, setFilters] = useState({
+    // Selected filter values
+    selectedMakes: [] as string[],
+    selectedGrades: [] as string[],
+    selectedBrands: [] as string[],
+    selectedGsm: [] as string[],
+    selectedUnits: [] as string[],
+    selectedLocations: [] as string[],
+    
+    // Range filters
+    gsmRange: { min: '', max: '' },
+    priceRange: { min: '', max: '' },
+    
+    // Date filters
+    dateRange: { from: '', to: '' },
+    
+    // Dimension filters
+    dimensionFilters: {
+      deckleMin: '',
+      deckleMax: '',
+      grainMin: '',
+      grainMax: '',
+      unit: 'cm'
+    },
+    
+    // Category filter
+    selectedCategory: '',
+    
+    // Availability filters
+    inStock: false,
+    hasImages: false,
+    verifiedSellers: false
+  });
+  
   // Available filter options from search API (dynamic based on search)
-  const [availableMakes, setAvailableMakes] = useState<any[]>([]);
-  const [availableGrades, setAvailableGrades] = useState<any[]>([]);
-  const [availableBrands, setAvailableBrands] = useState<any[]>([]);
-  const [availableGsm, setAvailableGsm] = useState<any[]>([]);
-  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
-  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+  const [availableFilters, setAvailableFilters] = useState({
+    makes: [] as any[],
+    grades: [] as any[],
+    brands: [] as any[],
+    gsm: [] as any[],
+    units: [] as any[],
+    locations: [] as any[]
+  });
 
   // Precise search states
   const [preciseSearch, setPreciseSearch] = useState({
@@ -144,7 +178,101 @@ export default function Marketplace() {
     }
   };
 
-  // Fetch deals - now using search results or fallback to regular deals
+  // Unified search and filter function
+  const performUnifiedSearch = async (resetPage = false) => {
+    const page = resetPage ? 1 : currentPage;
+    setIsSearching(true);
+    
+    try {
+      const payload = {
+        // Search terms
+        query: searchTerm,
+        preciseSearch,
+        
+        // All active filters
+        filters: {
+          makes: filters.selectedMakes,
+          grades: filters.selectedGrades,
+          brands: filters.selectedBrands,
+          gsm: filters.selectedGsm,
+          units: filters.selectedUnits,
+          locations: filters.selectedLocations,
+          category: filters.selectedCategory,
+          gsmRange: filters.gsmRange,
+          priceRange: filters.priceRange,
+          dateRange: filters.dateRange,
+          dimensionFilters: filters.dimensionFilters,
+          inStock: filters.inStock,
+          hasImages: filters.hasImages,
+          verifiedSellers: filters.verifiedSellers
+        },
+        
+        // Pagination and sorting
+        page,
+        pageSize: itemsPerPage,
+        sortBy
+      };
+      
+      const response = await fetch('/api/search/unified', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setSearchAggregations(data.aggregations || null);
+        
+        // Update available filter options
+        if (data.aggregations) {
+          setAvailableFilters({
+            makes: data.aggregations.makes || [],
+            grades: data.aggregations.grades || [],
+            brands: data.aggregations.brands || [],
+            gsm: data.aggregations.gsm || [],
+            units: data.aggregations.units || [],
+            locations: data.aggregations.locations || []
+          });
+        }
+        
+        if (resetPage) setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('Unified search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  // Check if any filters are active
+  const hasActiveFilters = () => {
+    return (
+      filters.selectedMakes.length > 0 ||
+      filters.selectedGrades.length > 0 ||
+      filters.selectedBrands.length > 0 ||
+      filters.selectedGsm.length > 0 ||
+      filters.selectedUnits.length > 0 ||
+      filters.selectedLocations.length > 0 ||
+      filters.selectedCategory !== '' ||
+      filters.gsmRange.min !== '' ||
+      filters.gsmRange.max !== '' ||
+      filters.priceRange.min !== '' ||
+      filters.priceRange.max !== '' ||
+      filters.dateRange.from !== '' ||
+      filters.dateRange.to !== '' ||
+      filters.dimensionFilters.deckleMin !== '' ||
+      filters.dimensionFilters.deckleMax !== '' ||
+      filters.dimensionFilters.grainMin !== '' ||
+      filters.dimensionFilters.grainMax !== '' ||
+      filters.inStock ||
+      filters.hasImages ||
+      filters.verifiedSellers ||
+      searchTerm !== ''
+    );
+  };
+  
+  // Fetch deals - fallback when no search/filters are active
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
     queryFn: async () => {
@@ -167,7 +295,7 @@ export default function Marketplace() {
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: !isSearching, // Don't fetch when search is in progress
+    enabled: !isSearching && !hasActiveFilters(), // Only fetch when no search/filters are active
   });
 
   if (!isAuthenticated) {
@@ -185,6 +313,124 @@ export default function Marketplace() {
     );
   }
 
+  // FILTER MANAGEMENT FUNCTIONS
+  const addFilter = (type: string, value: string) => {
+    setFilters(prev => {
+      const key = `selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev;
+      const currentValues = prev[key] as string[];
+      if (!currentValues.includes(value)) {
+        return {
+          ...prev,
+          [key]: [...currentValues, value]
+        };
+      }
+      return prev;
+    });
+    // Trigger search with new filter
+    setTimeout(() => performUnifiedSearch(true), 100);
+  };
+  
+  const removeFilter = (type: string, value: string) => {
+    setFilters(prev => {
+      const key = `selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev;
+      const currentValues = prev[key] as string[];
+      return {
+        ...prev,
+        [key]: currentValues.filter(v => v !== value)
+      };
+    });
+    // Trigger search with updated filters
+    setTimeout(() => performUnifiedSearch(true), 100);
+  };
+  
+  const updateRangeFilter = (type: 'gsmRange' | 'priceRange' | 'dateRange', field: 'min' | 'max' | 'from' | 'to', value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [field]: value
+      }
+    }));
+  };
+  
+  const updateDimensionFilter = (field: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      dimensionFilters: {
+        ...prev.dimensionFilters,
+        [field]: value
+      }
+    }));
+  };
+  
+  const toggleBooleanFilter = (type: 'inStock' | 'hasImages' | 'verifiedSellers') => {
+    setFilters(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }));
+    // Trigger search with updated filter
+    setTimeout(() => performUnifiedSearch(true), 100);
+  };
+  
+  const clearAllFilters = () => {
+    setFilters({
+      selectedMakes: [],
+      selectedGrades: [],
+      selectedBrands: [],
+      selectedGsm: [],
+      selectedUnits: [],
+      selectedLocations: [],
+      gsmRange: { min: '', max: '' },
+      priceRange: { min: '', max: '' },
+      dateRange: { from: '', to: '' },
+      dimensionFilters: {
+        deckleMin: '',
+        deckleMax: '',
+        grainMin: '',
+        grainMax: '',
+        unit: 'cm'
+      },
+      selectedCategory: '',
+      inStock: false,
+      hasImages: false,
+      verifiedSellers: false
+    });
+    setSearchTerm('');
+    setPreciseSearch({
+      category: "",
+      gsm: "",
+      tolerance: "",
+      deckle: "",
+      deckleUnit: "cm",
+      grain: "",
+      grainUnit: "cm",
+      dimensionTolerance: ""
+    });
+    setSearchResults(null);
+    setCurrentPage(1);
+  };
+  
+  // Get count of active filters for display
+  const getActiveFilterCount = () => {
+    return (
+      filters.selectedMakes.length +
+      filters.selectedGrades.length +
+      filters.selectedBrands.length +
+      filters.selectedGsm.length +
+      filters.selectedUnits.length +
+      filters.selectedLocations.length +
+      (filters.selectedCategory ? 1 : 0) +
+      (filters.gsmRange.min || filters.gsmRange.max ? 1 : 0) +
+      (filters.priceRange.min || filters.priceRange.max ? 1 : 0) +
+      (filters.dateRange.from || filters.dateRange.to ? 1 : 0) +
+      (filters.dimensionFilters.deckleMin || filters.dimensionFilters.deckleMax || 
+       filters.dimensionFilters.grainMin || filters.dimensionFilters.grainMax ? 1 : 0) +
+      (filters.inStock ? 1 : 0) +
+      (filters.hasImages ? 1 : 0) +
+      (filters.verifiedSellers ? 1 : 0)
+    );
+  };
+  
   // Use search results if available, otherwise use regular deals
   const deals = searchResults?.data || dealsData?.deals || [];
   const totalDeals = searchResults?.total || dealsData?.total || 0;
@@ -273,160 +519,46 @@ export default function Marketplace() {
   };
 
   const performSearch = async (query: string) => {
-    setIsSearching(true);
-    try {
-      const response = await fetch('/api/search/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: query.trim(),
-          page: currentPage,
-          pageSize: itemsPerPage
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-        setSearchTerm(query); // Update search term after successful search
-        console.log('Search API response:', data);
-        console.log('Available aggregations:', data.aggregations);
-        
-        if (data.aggregations) {
-          setSearchAggregations(data.aggregations);
-          
-          // Log each filter array to debug
-          console.log('Makes data:', data.aggregations.makes);
-          console.log('Grades data:', data.aggregations.grades);  
-          console.log('Brands data:', data.aggregations.brands);
-          console.log('GSM data:', data.aggregations.gsm);
-          
-          const makes = data.aggregations.makes || [];
-          const grades = data.aggregations.grades || [];
-          const brands = data.aggregations.brands || [];
-          const gsm = data.aggregations.gsm || [];
-          const units = data.aggregations.units || [];
-          
-          console.log('Setting availableMakes:', makes);
-          console.log('Setting availableGrades:', grades);
-          console.log('Setting availableBrands:', brands);
-          console.log('Setting availableGsm:', gsm);
-          
-          setAvailableMakes(makes);
-          setAvailableGrades(grades);
-          setAvailableBrands(brands);
-          setAvailableGsm(gsm);
-          setAvailableUnits(units);
-        } else {
-          console.log('No aggregations found in response');
-        }
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
+    setSearchTerm(query);
+    performUnifiedSearch(true);
   };
   
-  // Handle hierarchical filter changes
-  // Handle search term changes to update filter options
+  // Legacy search change handler - now just updates search term
   const handleSearchChange = async (value: string) => {
-    setPendingSearchTerm(value);
-    
-    // Update filter options based on current search
+    setSearchTerm(value);
     if (value.trim()) {
-      try {
-        const response = await fetch('/api/search/search', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: value.trim(),
-            page: 1,
-            pageSize: itemsPerPage
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Search Change API response:', data);
-          
-          if (data.aggregations) {
-            console.log('Updating filters with aggregations:', data.aggregations);
-            setAvailableMakes(data.aggregations.makes || []);
-            setAvailableGrades(data.aggregations.grades || []);
-            setAvailableBrands(data.aggregations.brands || []);
-            setAvailableGsm(data.aggregations.gsm || []);
-            setAvailableUnits(data.aggregations.units || []);
-          } else {
-            console.log('No aggregations in search change response');
-          }
-        }
-      } catch (error) {
-        console.error('Error updating filters:', error);
-      }
-    } else {
-      // Clear filter options when search is empty
-      setAvailableMakes([]);
-      setAvailableGrades([]);
-      setAvailableBrands([]);
-      setAvailableGsm([]);
-      setAvailableUnits([]);
+      // Debounce the unified search
+      setTimeout(() => performUnifiedSearch(true), 300);
     }
   };
 
-  const addFilterToSearch = (filterText: string) => {
-    const currentText = pendingSearchTerm.trim();
-    const newText = currentText ? `${currentText} ${filterText}` : filterText;
-    setPendingSearchTerm(newText);
-  };
-
+  // Updated filter click handlers using new unified system
   const handleMakeClick = (make: any) => {
-    console.log('Make clicked:', make);
     const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
-    addFilterToSearch(makeText);
+    addFilter('makes', makeText);
   };
 
   const handleGradeClick = (grade: any) => {
-    console.log('Grade clicked:', grade);
     const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
-    addFilterToSearch(gradeText);
+    addFilter('grades', gradeText);
   };
 
   const handleBrandClick = (brand: any) => {
-    console.log('Brand clicked:', brand);
     const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
-    addFilterToSearch(brandText);
+    addFilter('brands', brandText);
   };
 
   const handleGsmClick = (gsm: any) => {
-    console.log('GSM clicked:', gsm);
     const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
-    addFilterToSearch(`${gsmText}gsm`);
+    addFilter('gsm', gsmText);
   };
 
   const handleUnitClick = (unit: any) => {
-    addFilterToSearch(unit.OfferUnit || unit.name || unit.value || unit);
+    const unitText = unit.OfferUnit || unit.name || unit.value || unit;
+    addFilter('units', unitText);
   };
 
-  // Clear all filters
-  const clearAllFilters = () => {
-    setPendingSearchTerm("");
-    setSearchTerm("");
-    setSortBy("newest");
-    setCurrentPage(1);
-    setSearchResults(null);
-    setSearchAggregations(null);
-    setAvailableMakes([]);
-    setAvailableGrades([]);
-    setAvailableBrands([]);
-    setAvailableGsm([]);
-    setAvailableUnits([]);
-    setAvailableLocations([]);
-  };
+  // This function is now replaced by the comprehensive clearAllFilters above
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
