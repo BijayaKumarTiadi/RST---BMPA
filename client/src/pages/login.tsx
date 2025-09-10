@@ -194,7 +194,6 @@ export default function Login() {
             <Printer className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Stock Laabh</h1>
-          <p className="text-gray-600 text-sm mt-1">Professional Trading Platform</p>
         </div>
 
         <Card className="shadow-lg border-0">
