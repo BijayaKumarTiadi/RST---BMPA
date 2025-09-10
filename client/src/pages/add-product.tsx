@@ -103,9 +103,13 @@ export default function AddDeal() {
     if (!isNaN(inputVal)) {
       const mmValue = convertToMm(inputVal, dimensionUnit);
       if (dimensionUnit === "cm") {
-        return `${(mmValue / 25.4).toFixed(2)}" (inch)`;
+        const inchValue = mmValue / 25.4;
+        const inchDisplay = inchValue % 1 === 0 ? inchValue.toString() : inchValue.toFixed(2);
+        return `${inchDisplay}" (inch)`;
       } else {
-        return `${(mmValue / 10).toFixed(1)} cm`;
+        const cmValue = mmValue / 10;
+        const cmDisplay = cmValue % 1 === 0 ? cmValue.toString() : cmValue.toFixed(1);
+        return `${cmDisplay} cm`;
       }
     }
     return "";
@@ -116,9 +120,13 @@ export default function AddDeal() {
     if (!isNaN(inputVal)) {
       const mmValue = convertToMm(inputVal, dimensionUnit);
       if (dimensionUnit === "cm") {
-        return `${(mmValue / 25.4).toFixed(2)}" (inch)`;
+        const inchValue = mmValue / 25.4;
+        const inchDisplay = inchValue % 1 === 0 ? inchValue.toString() : inchValue.toFixed(2);
+        return `${inchDisplay}" (inch)`;
       } else {
-        return `${(mmValue / 10).toFixed(1)} cm`;
+        const cmValue = mmValue / 10;
+        const cmDisplay = cmValue % 1 === 0 ? cmValue.toString() : cmValue.toFixed(1);
+        return `${cmDisplay} cm`;
       }
     }
     return "";

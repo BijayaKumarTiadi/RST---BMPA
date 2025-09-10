@@ -242,19 +242,29 @@ export default function Marketplace() {
     const userUnit = userSettings?.dimension_unit || 'cm';
     
     if (userUnit === 'inch') {
-      const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      const grainInch = (grain_mm / 25.4).toFixed(2);
+      const deckleInch = (deckle_mm / 25.4);
+      const grainInch = (grain_mm / 25.4);
+      const deckleInchDisplay = deckleInch % 1 === 0 ? deckleInch.toString() : deckleInch.toFixed(2);
+      const grainInchDisplay = grainInch % 1 === 0 ? grainInch.toString() : grainInch.toFixed(2);
       return (
         <>
-          <div>{deckleInch}" × {grainInch}"</div>
+          <div>{deckleInchDisplay}" × {grainInchDisplay}"</div>
           <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
         </>
       );
     } else {
+      const deckleCm = deckle_mm / 10;
+      const grainCm = grain_mm / 10;
+      const deckleCmDisplay = deckleCm % 1 === 0 ? deckleCm.toString() : deckleCm.toFixed(1);
+      const grainCmDisplay = grainCm % 1 === 0 ? grainCm.toString() : grainCm.toFixed(1);
+      const deckleInchSec = (deckle_mm / 25.4);
+      const grainInchSec = (grain_mm / 25.4);
+      const deckleInchSecDisplay = deckleInchSec % 1 === 0 ? deckleInchSec.toString() : deckleInchSec.toFixed(2);
+      const grainInchSecDisplay = grainInchSec % 1 === 0 ? grainInchSec.toString() : grainInchSec.toFixed(2);
       return (
         <>
-          <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
-          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
+          <div>{deckleCmDisplay} × {grainCmDisplay} cm</div>
+          <div className="text-xs text-muted-foreground">{deckleInchSecDisplay}" × {grainInchSecDisplay}"</div>
         </>
       );
     }
