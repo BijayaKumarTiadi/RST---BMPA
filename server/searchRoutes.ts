@@ -190,7 +190,7 @@ searchRouter.post('/unified', async (req, res) => {
         bm.city as seller_location,
         cat.category_name
       FROM deal_master dm
-      LEFT JOIN bmpa_members bm ON dm.SellerID = bm.member_id
+      LEFT JOIN bmpa_members bm ON dm.SellerId = bm.member_id
       LEFT JOIN bmpa_categories cat ON dm.CategoryID = cat.category_id
       WHERE dm.StockStatus = 1 AND bm.mstatus = 1
     `;

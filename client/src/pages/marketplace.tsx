@@ -245,7 +245,45 @@ export default function Marketplace() {
     }
   };
   
-  // Check if any filters are active - function definition moved below checkbox handlers
+  // HELPER FUNCTIONS FOR FILTER MANAGEMENT (moved here to fix initialization order)
+  const getActiveFilterCount = () => {
+    return filters.selectedMakes.length + 
+           filters.selectedGrades.length + 
+           filters.selectedBrands.length + 
+           filters.selectedGsm.length + 
+           filters.selectedLocations.length;
+  };
+  
+  const hasActiveFilters = () => {
+    return getActiveFilterCount() > 0 || searchTerm.trim().length > 0;
+  };
+  
+  // Apply all selected filters
+  const applyFilters = () => {
+    setCurrentPage(1);
+    performUnifiedSearch(true);
+  };
+  
+  // Legacy handlers for backward compatibility (now use checkbox system)
+  const handleMakeClick = (make: any) => {
+    const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
+    handleFilterCheckboxChange('makes', makeText, true);
+  };
+
+  const handleGradeClick = (grade: any) => {
+    const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
+    handleFilterCheckboxChange('grades', gradeText, true);
+  };
+
+  const handleBrandClick = (brand: any) => {
+    const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
+    handleFilterCheckboxChange('brands', brandText, true);
+  };
+
+  const handleGsmClick = (gsm: any) => {
+    const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
+    handleFilterCheckboxChange('gsm', gsmText, true);
+  };
   
   // Fetch deals - fallback when no search/filters are active
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
@@ -491,46 +529,7 @@ export default function Marketplace() {
     }
   };
 
-  // CHECKBOX-BASED FILTER HANDLERS
-  const handleFilterCheckboxChange = (filterType: string, value: string, checked: boolean) => {
-    setFilters(prev => {
-      const key = `selected${filterType.charAt(0).toUpperCase() + filterType.slice(1)}` as keyof typeof prev;
-      const currentValues = prev[key] as string[];
-      
-      if (checked) {
-        // Add to selected filters
-        return {
-          ...prev,
-          [key]: [...currentValues, value]
-        };
-      } else {
-        // Remove from selected filters
-        return {
-          ...prev,
-          [key]: currentValues.filter(v => v !== value)
-        };
-      }
-    });
-  };
-  
-  // Helper functions for filter UI
-  const getActiveFilterCount = () => {
-    return filters.selectedMakes.length + 
-           filters.selectedGrades.length + 
-           filters.selectedBrands.length + 
-           filters.selectedGsm.length + 
-           filters.selectedLocations.length;
-  };
-  
-  const hasActiveFilters = () => {
-    return getActiveFilterCount() > 0 || searchTerm.trim().length > 0;
-  };
-  
-  // Apply all selected filters
-  const applyFilters = () => {
-    setCurrentPage(1);
-    performUnifiedSearch(true);
-  };
+  // Duplicate functions removed - they are now defined above before useQuery
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
