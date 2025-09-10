@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { Printer, Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info, LayoutDashboard, Store } from "lucide-react";
+import { Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info, LayoutDashboard, Store } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -62,8 +62,12 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 sm:space-x-3" data-testid="logo-link">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Printer className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+            <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center">
+              <img 
+                src="/bmpa-logo.svg" 
+                alt="BMPA Logo" 
+                className="h-6 w-auto sm:h-8 object-contain"
+              />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
