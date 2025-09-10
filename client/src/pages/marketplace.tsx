@@ -1809,7 +1809,7 @@ export default function Marketplace() {
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
                         {/* Header with badges - No Board/Reel */}
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1">
                           {/* Status Badge */}
                           <Badge 
                             variant={deal.Status === 'active' ? 'default' : 'secondary'}
@@ -1825,47 +1825,47 @@ export default function Marketplace() {
                         </h3>
                       </div>
 
-                        <CardContent className="p-3 flex-1 flex flex-col">
+                        <CardContent className="p-2 flex-1 flex flex-col">
 
                           {/* 2. GSM and Dimensions properly aligned */}
-                          <div className="space-y-1 mb-3">
-                            <div className="flex items-center text-sm">
-                              <span className="font-medium text-gray-500">GSM:</span>
-                              <span className="font-bold text-foreground ml-2">{deal.GSM || 'N/A'}</span>
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-medium text-gray-500">Dimensions:</span>
-                              <div className="text-xs font-semibold text-foreground mt-1">
-                                {(deal.Deckle_mm && deal.grain_mm) ? 
-                                  formatDimensions(deal.Deckle_mm, deal.grain_mm)
-                                : 'N/A'}
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-medium text-gray-500">GSM:</span>
+                                <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-medium text-gray-500">Dimensions:</span>
+                                <div className="font-semibold text-foreground">
+                                  {(deal.Deckle_mm && deal.grain_mm) ? 
+                                    formatDimensions(deal.Deckle_mm, deal.grain_mm)
+                                  : 'N/A'}
+                                </div>
                               </div>
                             </div>
                           </div>
 
                           {/* 3. Quantity and Price */}
-                          <div className="flex items-center justify-between mb-3 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <div className="text-sm">
+                          <div className="flex items-center justify-between mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs">
                               <span className="font-medium text-gray-500">Qty:</span>
                               <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
-                            <div className="text-sm">
+                            <div className="text-xs">
                               <span className="font-medium text-gray-500">Price:</span>
                               <span className="font-bold text-foreground ml-1" data-testid={`deal-price-${deal.TransID}`}>
                                 ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
                               </span>
-                              <span className="text-sm text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
+                              <span className="text-xs text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
                           </div>
 
-
-
                           {/* Seller Info with Icon */}
-                          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                            <Building className="h-4 w-4 text-gray-500" />
+                          <div className="flex items-center gap-1 mb-1 p-1.5 bg-gray-50 dark:bg-gray-800 rounded">
+                            <Building className="h-3 w-3 text-gray-500" />
                             <div>
                               <span className="text-xs text-gray-500">by </span>
-                              <span className="text-sm font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
+                              <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
                                 {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
                               </span>
                             </div>
@@ -1874,21 +1874,21 @@ export default function Marketplace() {
 
                           {/* Deal Age */}
                           {deal.deal_created_at && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
                               <Calendar className="h-3 w-3" />
                               <span>{getRelativeTime(deal.deal_created_at)}</span>
                             </div>
                           )}
 
                           {/* Action Buttons */}
-                          <div className="space-y-1 mt-auto">
+                          <div className="mt-auto">
                             <Button
                               size="sm"
-                              className="w-full text-sm bg-blue-600 hover:bg-blue-700 text-white"
+                              className="w-full text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white mb-1"
                               onClick={() => handleViewDetails(deal)}
                               data-testid={`button-view-details-${deal.TransID}`}
                             >
-                              <Eye className="h-4 w-4 mr-2" />
+                              <Eye className="h-3 w-3 mr-1" />
                               View Details
                             </Button>
                             
