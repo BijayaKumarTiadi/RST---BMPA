@@ -872,6 +872,25 @@ export default function Marketplace() {
     }
   };
 
+  // Click outside handler for GSM suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-testid="input-precise-gsm"]') && 
+          !target.closest('.absolute.z-50')) {
+        setGsmSuggestions([]);
+      }
+    };
+
+    if (gsmSuggestions.length > 0) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [gsmSuggestions.length]);
+
 
   // Handle precise search field changes
   const handlePreciseSearchChange = (field: string, value: string) => {
