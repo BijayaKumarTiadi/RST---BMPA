@@ -776,19 +776,134 @@ export default function Marketplace() {
       <Navigation />
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
-        {/* Powerful Search Bar */}
-        <div className="mb-6">
-          <PowerSearch 
-            onSearch={(results) => {
-              if (results && results.success) {
-                setSearchResults(results);
-                setSearchAggregations(results.aggregations || null);
-                setCurrentPage(1);
-              }
-            }}
-            onLoading={(loading) => setIsSearching(loading)}
-            className="w-full"
-          />
+        {/* Client-Side Search and Filter Section */}
+        <div className="mb-6 space-y-4">
+          {/* Main Search Bar */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder="Search by make, grade, brand, description..."
+                value={activeFilters.search}
+                onChange={(e) => updateFilter('search', e.target.value)}
+                className="h-12 text-lg"
+                data-testid="input-main-search"
+              />
+            </div>
+            
+            {/* Filter Toggle Button */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsFilterSheetOpen(true)}
+                className="h-12 px-6"
+                data-testid="button-open-filters"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters {getActiveFilterCount() > 0 && `(${getActiveFilterCount()})`}
+              </Button>
+              
+              {getActiveFilterCount() > 0 && (
+                <Button 
+                  variant="ghost" 
+                  onClick={clearAllFilters}
+                  className="h-12 px-4 text-red-600"
+                  data-testid="button-clear-all-filters"
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Filter Chips */}
+          {getActiveFilterCount() > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {activeFilters.search && (
+                <Badge variant="secondary" className="px-3 py-1">
+                  Search: "{activeFilters.search}"
+                  <button 
+                    onClick={() => updateFilter('search', '')}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              
+              {activeFilters.makes.map(make => (
+                <Badge key={make} variant="secondary" className="px-3 py-1">
+                  Make: {make}
+                  <button 
+                    onClick={() => toggleArrayFilter('makes', make)}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              
+              {activeFilters.grades.map(grade => (
+                <Badge key={grade} variant="secondary" className="px-3 py-1">
+                  Grade: {grade}
+                  <button 
+                    onClick={() => toggleArrayFilter('grades', grade)}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              
+              {activeFilters.brands.map(brand => (
+                <Badge key={brand} variant="secondary" className="px-3 py-1">
+                  Brand: {brand}
+                  <button 
+                    onClick={() => toggleArrayFilter('brands', brand)}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              
+              {activeFilters.categories.map(category => (
+                <Badge key={category} variant="secondary" className="px-3 py-1">
+                  Category: {category}
+                  <button 
+                    onClick={() => toggleArrayFilter('categories', category)}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              
+              {(activeFilters.gsm.min || activeFilters.gsm.max) && (
+                <Badge variant="secondary" className="px-3 py-1">
+                  GSM: {activeFilters.gsm.min || '0'} - {activeFilters.gsm.max || '∞'}
+                  <button 
+                    onClick={() => clearSpecificFilter('gsm')}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              
+              {(activeFilters.dimensions.deckle || activeFilters.dimensions.grain) && (
+                <Badge variant="secondary" className="px-3 py-1">
+                  Dimensions: {activeFilters.dimensions.deckle || ''}×{activeFilters.dimensions.grain || ''} {activeFilters.dimensions.unit}
+                  <button 
+                    onClick={() => clearSpecificFilter('dimensions')}
+                    className="ml-2 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {/* OR Divider */}
@@ -1012,240 +1127,249 @@ export default function Marketplace() {
           </p>
         </div>
 
-        {/* Mobile Filter Button */}
-        <div className="lg:hidden mb-4">
-          <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
-                {searchTerm && (
+        {/* Comprehensive Filter Sheet */}
+        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+          <SheetContent side="right" className="w-[85vw] sm:w-[400px] overflow-y-auto">
+            <SheetHeader className="mb-6">
+              <SheetTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Advanced Filters
+                {getActiveFilterCount() > 0 && (
                   <Badge variant="secondary" className="ml-2">
-                    Active Search
+                    {getActiveFilterCount()} Active
                   </Badge>
                 )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[85vw] sm:w-[350px] overflow-y-auto">
-              <SheetHeader className="mb-6">
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              {/* Mobile Filter Content - Will be the same as desktop */}
-              <div className="space-y-6">
-            <Card className="sticky top-4">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  <CardTitle className="text-lg">Filters</CardTitle>
+              </SheetTitle>
+            </SheetHeader>
+            
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="flex-1"
+                >
+                  Clear All
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => setIsFilterSheetOpen(false)}
+                  className="flex-1"
+                >
+                  Apply Filters
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Makes Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Makes</label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                  {availableMakes.slice(0, 20).map((make: string) => (
+                    <div key={make} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`make-${make}`}
+                        checked={activeFilters.makes.includes(make)}
+                        onCheckedChange={() => toggleArrayFilter('makes', make)}
+                      />
+                      <label htmlFor={`make-${make}`} className="text-sm flex-1 cursor-pointer">
+                        {make}
+                      </label>
+                    </div>
+                  ))}
+                  {availableMakes.length > 20 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Showing first 20 of {availableMakes.length} makes
+                    </p>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Search */}
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              </div>
+
+              {/* Grades Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Grades</label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                  {availableGrades.slice(0, 20).map((grade: string) => (
+                    <div key={grade} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`grade-${grade}`}
+                        checked={activeFilters.grades.includes(grade)}
+                        onCheckedChange={() => toggleArrayFilter('grades', grade)}
+                      />
+                      <label htmlFor={`grade-${grade}`} className="text-sm flex-1 cursor-pointer">
+                        {grade}
+                      </label>
+                    </div>
+                  ))}
+                  {availableGrades.length > 20 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Showing first 20 of {availableGrades.length} grades
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Brands Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Brands</label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                  {availableBrands.slice(0, 20).map((brand: string) => (
+                    <div key={brand} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`brand-${brand}`}
+                        checked={activeFilters.brands.includes(brand)}
+                        onCheckedChange={() => toggleArrayFilter('brands', brand)}
+                      />
+                      <label htmlFor={`brand-${brand}`} className="text-sm flex-1 cursor-pointer">
+                        {brand}
+                      </label>
+                    </div>
+                  ))}
+                  {availableBrands.length > 20 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Showing first 20 of {availableBrands.length} brands
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Categories Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Categories</label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                  {availableCategories.map((category: string) => (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`category-${category}`}
+                        checked={activeFilters.categories.includes(category)}
+                        onCheckedChange={() => toggleArrayFilter('categories', category)}
+                      />
+                      <label htmlFor={`category-${category}`} className="text-sm flex-1 cursor-pointer">
+                        {category}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* GSM Range Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">GSM Range</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min GSM"
+                    value={activeFilters.gsm.min}
+                    onChange={(e) => updateFilter('gsm', { ...activeFilters.gsm, min: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max GSM"
+                    value={activeFilters.gsm.max}
+                    onChange={(e) => updateFilter('gsm', { ...activeFilters.gsm, max: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              {/* Dimensions Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Dimensions</label>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="Search offers..."
-                      value={pendingSearchTerm}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search"
+                      type="number"
+                      placeholder="Deckle"
+                      value={activeFilters.dimensions.deckle}
+                      onChange={(e) => updateFilter('dimensions', { ...activeFilters.dimensions, deckle: e.target.value })}
+                      className="flex-1"
+                    />
+                    <span className="flex items-center px-2 text-sm text-muted-foreground">×</span>
+                    <Input
+                      type="number"
+                      placeholder="Grain"
+                      value={activeFilters.dimensions.grain}
+                      onChange={(e) => updateFilter('dimensions', { ...activeFilters.dimensions, grain: e.target.value })}
+                      className="flex-1"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Select
+                      value={activeFilters.dimensions.unit}
+                      onValueChange={(value) => updateFilter('dimensions', { ...activeFilters.dimensions, unit: value })}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cm">cm</SelectItem>
+                        <SelectItem value="inch">inch</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Input
+                      type="number"
+                      placeholder="Tolerance"
+                      value={activeFilters.dimensions.tolerance}
+                      onChange={(e) => updateFilter('dimensions', { ...activeFilters.dimensions, tolerance: e.target.value })}
+                      className="flex-1"
                     />
                   </div>
                 </div>
-                
-                <Separator />
-                
-                
-                {/* Makes Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('makes')}
-                  >
-                    Makes
-                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.makes && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableMakes.map((make: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleMakeClick(make)}
-                        >
-                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
-                          {make.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {make.count}
-                            </Badge>
-                          )}
-                        </Button>
-                      ))}
-                      {availableMakes.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-
-                {/* Grades Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('grades')}
-                  >
-                    Grades
-                    {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.grades && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGrades.map((grade: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleGradeClick(grade)}
-                        >
-                          <span className="text-sm">{grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown')}</span>
-                          {grade.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {grade.count}
-                            </Badge>
-                          )}
-                        </Button>
-                      ))}
-                      {availableGrades.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-
-                {/* Brands Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('brands')}
-                  >
-                    Brands
-                    {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.brands && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableBrands.map((brand: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleBrandClick(brand)}
-                        >
-                          <span className="text-sm">{brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown')}</span>
-                          {brand.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {brand.count}
-                            </Badge>
-                          )}
-                        </Button>
-                      ))}
-                      {availableBrands.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-
-                {/* GSM Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('gsm')}
-                  >
-                    GSM
-                    {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.gsm && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGsm.map((gsm: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleGsmClick(gsm)}
-                        >
-                          <span className="text-sm">{gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown')} GSM</span>
-                          {gsm.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {gsm.count}
-                            </Badge>
-                          )}
-                        </Button>
-                      ))}
-                      {availableGsm.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-
-                
-                <Separator />
-                
-                {/* Sort Options */}
-                <div>
-                  <label className="text-sm font-semibold">Sort By</label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="mt-2" data-testid="select-sort">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="price_low">Price: Low to High</SelectItem>
-                      <SelectItem value="price_high">Price: High to Low</SelectItem>
-                      <SelectItem value="quantity">Quantity</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Filter Action Buttons */}
-                <div className="space-y-3">
-                  <Button 
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    onClick={applySearch}
-                  >
-                    Apply Search
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={clearAllFilters}
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
               </div>
-            </SheetContent>
-          </Sheet>
+
+              {/* Units Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Offer Units</label>
+                <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                  {availableUnits.map((unit: string) => (
+                    <div key={unit} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`unit-${unit}`}
+                        checked={activeFilters.units.includes(unit)}
+                        onCheckedChange={() => toggleArrayFilter('units', unit)}
+                      />
+                      <label htmlFor={`unit-${unit}`} className="text-sm flex-1 cursor-pointer">
+                        {unit}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Results and Sorting */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Showing {paginatedDeals.length} of {totalDeals} results
+              {getActiveFilterCount() > 0 && ` (${getActiveFilterCount()} filters applied)`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Sort:</label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Main Layout: Sidebar + Content */}
