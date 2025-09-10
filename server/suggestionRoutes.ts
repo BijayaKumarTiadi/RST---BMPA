@@ -15,7 +15,7 @@ router.get('/categories', async (req, res) => {
 
     const searchTerm = q && typeof q === 'string' ? q.trim() : '';
     
-    let query, params;
+    let query, params: string[];
     
     if (!searchTerm) {
       // Return all active categories when no query provided
