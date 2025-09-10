@@ -196,21 +196,30 @@ searchRouter.post('/unified', async (req, res) => {
     const queryParams: any[] = [];
     const conditions: string[] = [];
 
-    // Text search with GSM precision
+    // Smart search logic
     if (query && query.trim()) {
       const queryLower = query.trim().toLowerCase();
       
-      // Check if query contains GSM value (like "70 gsm", "70gsm", "70 GSM")
+      // Check if it's a pure number (like "70") - treat as exact GSM search
+      const pureNumberMatch = queryLower.match(/^\d+$/);
+      
+      // Check if it contains "gsm" (like "70 gsm", "70gsm") - treat as exact GSM search
       const gsmMatch = queryLower.match(/(\d+)\s*gsm/);
       
-      if (gsmMatch) {
-        // For GSM searches, be more precise
+      if (pureNumberMatch) {
+        // Pure number: search ONLY exact GSM value
+        console.log(`🔍 Pure number search: ${queryLower} - searching only GSM`);
+        conditions.push(`dm.GSM = ?`);
+        queryParams.push(parseInt(queryLower));
+      } else if (gsmMatch) {
+        // "number gsm": search ONLY exact GSM value
         const gsmValue = gsmMatch[1];
-        conditions.push(`(dm.GSM = ? OR dm.search_key LIKE ? OR dm.Make LIKE ? OR dm.Grade LIKE ? OR dm.Brand LIKE ?)`);
-        const searchTerm = `%${query.trim()}%`;
-        queryParams.push(parseInt(gsmValue), searchTerm, searchTerm, searchTerm, searchTerm);
+        console.log(`🔍 GSM search: ${gsmValue} - searching only GSM`);
+        conditions.push(`dm.GSM = ?`);
+        queryParams.push(parseInt(gsmValue));
       } else {
-        // For non-GSM searches, use regular text search
+        // Text search: search in all text fields
+        console.log(`🔍 Text search: ${queryLower} - searching all fields`);
         conditions.push(`(dm.search_key LIKE ? OR dm.Make LIKE ? OR dm.Grade LIKE ? OR dm.Brand LIKE ?)`);
         const searchTerm = `%${query.trim()}%`;
         queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
