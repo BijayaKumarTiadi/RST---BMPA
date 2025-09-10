@@ -5,14 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2 } from "lucide-react";
+import { Package, Search, MessageCircle, MapPin, Heart, Eye, Edit, Mail, MessageSquare, Calendar, Building, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -23,47 +20,12 @@ export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchAggregations, setSearchAggregations] = useState<any>(null);
-  // Pending filters (UI state, not applied yet)
-  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
-  const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
-  
-  // Main search state - this will be used for everything
-  const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
   // Client-side filtering states
   const [allDeals, setAllDeals] = useState<any[]>([]);
   const [filteredDeals, setFilteredDeals] = useState<any[]>([]);
 
-  // Quick precise search states
-  const [quickSearch, setQuickSearch] = useState({
-    category: "",
-    gsm: "",
-    tolerance: "",
-    deckle: "",
-    deckleUnit: "cm",
-    grain: "",
-    grainUnit: "cm",
-    dimensionTolerance: ""
-  });
-
-  // Precise search state for advanced search form
-  const [preciseSearch, setPreciseSearch] = useState({
-    category: '',
-    gsm: '',
-    deckle: '',
-    grain: '',
-    deckleUnit: 'cm',
-    grainUnit: 'cm',
-    tolerance: '',
-    dimensionTolerance: ''
-  });
-  
-  // Auto-suggestion states
-  const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   
@@ -186,13 +148,6 @@ export default function Marketplace() {
   
   // No filtering needed - using available options from search API
 
-  // Reset to page 1 when filters change
-  const resetPage = () => setCurrentPage(1);
-
-  // Reset page when search term changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
 
   // Load initial filter data when component mounts
   useEffect(() => {
@@ -233,70 +188,6 @@ export default function Marketplace() {
     }
   };
   
-  // Apply pending filters
-  const applySearch = () => {
-    // Trigger search with current search term
-    setCurrentPage(1);
-    performSearch(pendingSearchTerm);
-  };
-
-  const performSearch = async (query: string) => {
-    setIsSearching(true);
-    try {
-      const response = await fetch('/api/search/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: query.trim(),
-          page: currentPage,
-          pageSize: itemsPerPage
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-        setSearchTerm(query); // Update search term after successful search
-        console.log('Search API response:', data);
-        console.log('Available aggregations:', data.aggregations);
-        
-        if (data.aggregations) {
-          setSearchAggregations(data.aggregations);
-          
-          // Log each filter array to debug
-          console.log('Makes data:', data.aggregations.makes);
-          console.log('Grades data:', data.aggregations.grades);  
-          console.log('Brands data:', data.aggregations.brands);
-          console.log('GSM data:', data.aggregations.gsm);
-          
-          const makes = data.aggregations.makes || [];
-          const grades = data.aggregations.grades || [];
-          const brands = data.aggregations.brands || [];
-          const gsm = data.aggregations.gsm || [];
-          const units = data.aggregations.units || [];
-          
-          console.log('Setting availableMakes:', makes);
-          console.log('Setting availableGrades:', grades);
-          console.log('Setting availableBrands:', brands);
-          console.log('Setting availableGsm:', gsm);
-          
-          setAvailableMakes(makes);
-          setAvailableGrades(grades);
-          setAvailableBrands(brands);
-          setAvailableGsm(gsm);
-          setAvailableUnits(units);
-        } else {
-          console.log('No aggregations found in response');
-        }
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
   
   // Handle hierarchical filter changes
   // Handle search term changes to update filter options
@@ -907,10 +798,7 @@ export default function Marketplace() {
 
         {/* Main Content */}
         <div>
-
-
-
-            {/* Results */}
+          {/* Results */}
             {dealsLoading || hierarchyLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
