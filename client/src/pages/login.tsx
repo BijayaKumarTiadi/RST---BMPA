@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock, Shield, Printer, Clock, AlertTriangle } from "lucide-react";
+import { Loader2, Mail, Lock, Shield, Clock, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Logo } from "@/components/ui/logo";
 
 export default function Login() {
   const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -190,10 +191,10 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Printer className="h-8 w-8 text-white" />
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Stock Laabh</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
         </div>
 
         <Card className="shadow-lg border-0">

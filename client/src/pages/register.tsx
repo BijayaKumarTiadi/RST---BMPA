@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Logo } from "@/components/ui/logo";
 import { 
   Mail, 
   Lock, 
   User, 
   Building, 
   MapPin, 
-  Printer, 
   CheckCircle, 
   Loader2,
   Shield
@@ -184,11 +184,11 @@ export default function Register() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Printer className="h-8 w-8 text-white" />
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Stock Laabh Registration</h1>
-          <p className="text-gray-600 text-sm mt-1">Join the Professional Trading Platform</p>
+          <h1 className="text-2xl font-bold text-gray-900">Join Stock Laabh</h1>
+          <p className="text-gray-600 text-sm mt-1">Create your professional trading account</p>
         </div>
 
         <Card className="shadow-xl border-0">

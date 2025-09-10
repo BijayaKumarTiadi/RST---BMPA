@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Printer, Menu, X, Shield, Sun, Moon } from "lucide-react";
+import { Menu, X, Shield, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { apiRequest } from "@/lib/queryClient";
+import { Logo } from "@/components/ui/logo";
 
 interface AdminUser {
   id: number;
@@ -36,14 +37,8 @@ export default function AdminNavigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/admin-dashboard" className="flex items-center space-x-3" data-testid="logo-link">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Printer className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
-              <p className="text-xs text-muted-foreground">Professional Trading Platform</p>
-            </div>
+          <Link href="/admin-dashboard" className="flex items-center" data-testid="logo-link">
+            <Logo size="md" />
           </Link>
 
           {/* Desktop Navigation */}

@@ -11,7 +11,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, Lock, Printer, LogIn, ArrowLeft } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { Shield, Lock, LogIn, ArrowLeft } from "lucide-react";
 
 const adminLoginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -141,12 +142,12 @@ export default function AdminLogin() {
       
       <div className="max-w-md mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Printer className="h-8 w-8 text-primary-foreground" />
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Stock Laabh Admin</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Admin Portal</h1>
           <p className="text-muted-foreground">
-            Administrative portal for Stock Laabh
+            Administrative access for Stock Laabh
           </p>
         </div>
 
