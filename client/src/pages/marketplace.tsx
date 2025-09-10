@@ -1570,305 +1570,179 @@ export default function Marketplace() {
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 
-                {/* Client-side Filters for Precise Search Results */}
-                {searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? (
-                  <>
-                    {/* Makes Filter - Checkbox based */}
-                    <div>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between p-0 h-auto font-semibold"
-                        onClick={() => toggleSection('makes')}
-                      >
-                        Makes {clientFilters.makes.length > 0 && `(${clientFilters.makes.length})`}
-                        {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                      {expandedSections.makes && (
-                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                          {getUniqueValues('makes').map((make: any, index: number) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`make-${index}`}
-                                checked={clientFilters.makes.includes(make.value)}
-                                onCheckedChange={(checked) => handleFilterChange('makes', make.value, checked as boolean)}
-                                data-testid={`checkbox-make-${make.value}`}
-                              />
-                              <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
-                                <span>{make.value}</span>
-                                <Badge variant="secondary" className="text-xs px-2 py-0">
-                                  {make.count}
-                                </Badge>
-                              </label>
-                            </div>
-                          ))}
-                          {getUniqueValues('makes').length === 0 && (
-                            <p className="text-sm text-muted-foreground italic">No makes available in current results</p>
-                          )}
+                {/* Makes Filter - Checkbox based */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('makes')}
+                  >
+                    Makes {clientFilters.makes.length > 0 && `(${clientFilters.makes.length})`}
+                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.makes && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                        getUniqueValues('makes') : 
+                        (searchAggregations?.makes || availableMakes || []).map((make: any) => ({
+                          value: make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown'),
+                          count: make.count || 0
+                        }))
+                      ).map((make: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`make-${index}`}
+                            checked={clientFilters.makes.includes(make.value)}
+                            onCheckedChange={(checked) => handleFilterChange('makes', make.value, checked as boolean)}
+                            data-testid={`checkbox-make-${make.value}`}
+                          />
+                          <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                            <span>{make.value}</span>
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {make.count}
+                            </Badge>
+                          </label>
                         </div>
+                      ))}
+                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
+                       !(searchAggregations?.makes || availableMakes || []).length && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
-                  </>
-                ) : (
-                  // Original Makes Filter for regular search
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('makes')}
-                    >
-                      Makes
-                      {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.makes && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {availableMakes.map((make: any, index: number) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            className="w-full justify-between h-auto p-2 text-left"
-                            onClick={() => handleMakeClick(make)}
-                          >
-                            <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
-                            {make.count && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {make.count}
-                              </Badge>
-                            )}
-                          </Button>
-                        ))}
-                        {availableMakes.length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
                 
                 <Separator />
 
-                {/* Conditional Grades Filter */}
-                {searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? (
-                  // Client-side Grades Filter - Checkbox based
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('grades')}
-                    >
-                      Grades {clientFilters.grades.length > 0 && `(${clientFilters.grades.length})`}
-                      {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.grades && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {getUniqueValues('grades').map((grade: any, index: number) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`grade-${index}`}
-                              checked={clientFilters.grades.includes(grade.value)}
-                              onCheckedChange={(checked) => handleFilterChange('grades', grade.value, checked as boolean)}
-                              data-testid={`checkbox-grade-${grade.value}`}
-                            />
-                            <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
-                              <span>{grade.value}</span>
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {grade.count}
-                              </Badge>
-                            </label>
-                          </div>
-                        ))}
-                        {getUniqueValues('grades').length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">No grades available in current results</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Original Grades Filter
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('grades')}
-                    >
-                      Grades
-                      {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.grades && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {availableGrades.map((grade: any, index: number) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            className="w-full justify-between h-auto p-2 text-left"
-                            onClick={() => handleGradeClick(grade)}
-                          >
-                            <span className="text-sm">{grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown')}</span>
-                            {grade.count && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {grade.count}
-                              </Badge>
-                            )}
-                          </Button>
-                        ))}
-                        {availableGrades.length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Grades Filter - Checkbox based */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('grades')}
+                  >
+                    Grades {clientFilters.grades.length > 0 && `(${clientFilters.grades.length})`}
+                    {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.grades && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                        getUniqueValues('grades') : 
+                        (searchAggregations?.grades || availableGrades || []).map((grade: any) => ({
+                          value: grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown'),
+                          count: grade.count || 0
+                        }))
+                      ).map((grade: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`grade-${index}`}
+                            checked={clientFilters.grades.includes(grade.value)}
+                            onCheckedChange={(checked) => handleFilterChange('grades', grade.value, checked as boolean)}
+                            data-testid={`checkbox-grade-${grade.value}`}
+                          />
+                          <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                            <span>{grade.value}</span>
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {grade.count}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))}
+                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
+                       !(searchAggregations?.grades || availableGrades || []).length && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <Separator />
 
-                {/* Conditional Brands Filter */}
-                {searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? (
-                  // Client-side Brands Filter - Checkbox based
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('brands')}
-                    >
-                      Brands {clientFilters.brands.length > 0 && `(${clientFilters.brands.length})`}
-                      {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.brands && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {getUniqueValues('brands').map((brand: any, index: number) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`brand-${index}`}
-                              checked={clientFilters.brands.includes(brand.value)}
-                              onCheckedChange={(checked) => handleFilterChange('brands', brand.value, checked as boolean)}
-                              data-testid={`checkbox-brand-${brand.value}`}
-                            />
-                            <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
-                              <span>{brand.value}</span>
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {brand.count}
-                              </Badge>
-                            </label>
-                          </div>
-                        ))}
-                        {getUniqueValues('brands').length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">No brands available in current results</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Original Brands Filter
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('brands')}
-                    >
-                      Brands
-                      {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.brands && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {availableBrands.map((brand: any, index: number) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            className="w-full justify-between h-auto p-2 text-left"
-                            onClick={() => handleBrandClick(brand)}
-                          >
-                            <span className="text-sm">{brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown')}</span>
-                            {brand.count && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {brand.count}
-                              </Badge>
-                            )}
-                          </Button>
-                        ))}
-                        {availableBrands.length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Brands Filter - Checkbox based */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('brands')}
+                  >
+                    Brands {clientFilters.brands.length > 0 && `(${clientFilters.brands.length})`}
+                    {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.brands && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                        getUniqueValues('brands') : 
+                        (searchAggregations?.brands || availableBrands || []).map((brand: any) => ({
+                          value: brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown'),
+                          count: brand.count || 0
+                        }))
+                      ).map((brand: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`brand-${index}`}
+                            checked={clientFilters.brands.includes(brand.value)}
+                            onCheckedChange={(checked) => handleFilterChange('brands', brand.value, checked as boolean)}
+                            data-testid={`checkbox-brand-${brand.value}`}
+                          />
+                          <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                            <span>{brand.value}</span>
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {brand.count}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))}
+                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
+                       !(searchAggregations?.brands || availableBrands || []).length && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <Separator />
 
-                {/* Conditional GSM Filter */}
-                {searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? (
-                  // Client-side GSM Filter - Checkbox based
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('gsm')}
-                    >
-                      GSM {clientFilters.gsm.length > 0 && `(${clientFilters.gsm.length})`}
-                      {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.gsm && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {getUniqueValues('gsm').map((gsm: any, index: number) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`gsm-${index}`}
-                              checked={clientFilters.gsm.includes(gsm.value)}
-                              onCheckedChange={(checked) => handleFilterChange('gsm', gsm.value, checked as boolean)}
-                              data-testid={`checkbox-gsm-${gsm.value}`}
-                            />
-                            <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
-                              <span>{gsm.value} GSM</span>
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {gsm.count}
-                              </Badge>
-                            </label>
-                          </div>
-                        ))}
-                        {getUniqueValues('gsm').length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">No GSM values available in current results</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Original GSM Filter
-                  <div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto font-semibold"
-                      onClick={() => toggleSection('gsm')}
-                    >
-                      GSM
-                      {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    {expandedSections.gsm && (
-                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                        {availableGsm.map((gsm: any, index: number) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            className="w-full justify-between h-auto p-2 text-left"
-                            onClick={() => handleGsmClick(gsm)}
-                          >
-                            <span className="text-sm">{gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown')} GSM</span>
-                            {gsm.count && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0">
-                                {gsm.count}
-                              </Badge>
-                            )}
-                          </Button>
-                        ))}
-                        {availableGsm.length === 0 && (
-                          <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* GSM Filter - Checkbox based */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('gsm')}
+                  >
+                    GSM {clientFilters.gsm.length > 0 && `(${clientFilters.gsm.length})`}
+                    {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.gsm && (
+                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                        getUniqueValues('gsm') : 
+                        (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
+                          value: gsm.GSM?.toString() || gsm.value?.toString() || (typeof gsm === 'string' ? gsm : 'Unknown'),
+                          count: gsm.count || 0
+                        }))
+                      ).map((gsm: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`gsm-${index}`}
+                            checked={clientFilters.gsm.includes(gsm.value)}
+                            onCheckedChange={(checked) => handleFilterChange('gsm', gsm.value, checked as boolean)}
+                            data-testid={`checkbox-gsm-${gsm.value}`}
+                          />
+                          <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                            <span>{gsm.value} GSM</span>
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {gsm.count}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))}
+                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
+                       !(searchAggregations?.gsm || availableGsm || []).length && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 
                 <Separator />
