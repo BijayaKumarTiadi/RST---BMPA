@@ -1291,7 +1291,7 @@ export default function Marketplace() {
             <SheetTrigger asChild>
               <Button variant="outline" className="w-full">
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
+                Filter
                 {searchTerm && (
                   <Badge variant="secondary" className="ml-2">
                     Active Search
@@ -1308,8 +1308,7 @@ export default function Marketplace() {
             <Card className="sticky top-4">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  <CardTitle className="text-lg">Filters</CardTitle>
+                  <CardTitle className="text-lg">Filter Options</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1525,8 +1524,7 @@ export default function Marketplace() {
             <Card className="sticky top-4">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  <CardTitle className="text-lg">Filters</CardTitle>
+                  <CardTitle className="text-lg">Filter Options</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
@@ -1538,7 +1536,7 @@ export default function Marketplace() {
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('makes')}
                   >
-                    Makes {clientFilters.makes.length > 0 && `(${clientFilters.makes.length})`}
+                    Makes
                     {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.makes && (
@@ -1557,11 +1555,8 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => handleFilterChange('makes', make.value, checked as boolean)}
                             data-testid={`checkbox-make-${make.value}`}
                           />
-                          <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                          <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer">
                             <span>{make.value}</span>
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {make.count}
-                            </Badge>
                           </label>
                         </div>
                       ))}
@@ -1582,7 +1577,7 @@ export default function Marketplace() {
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('grades')}
                   >
-                    Grades {clientFilters.grades.length > 0 && `(${clientFilters.grades.length})`}
+                    Grades
                     {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.grades && (
@@ -1601,11 +1596,8 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => handleFilterChange('grades', grade.value, checked as boolean)}
                             data-testid={`checkbox-grade-${grade.value}`}
                           />
-                          <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                          <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer">
                             <span>{grade.value}</span>
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {grade.count}
-                            </Badge>
                           </label>
                         </div>
                       ))}
@@ -1626,7 +1618,7 @@ export default function Marketplace() {
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('brands')}
                   >
-                    Brands {clientFilters.brands.length > 0 && `(${clientFilters.brands.length})`}
+                    Brands
                     {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.brands && (
@@ -1645,11 +1637,8 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => handleFilterChange('brands', brand.value, checked as boolean)}
                             data-testid={`checkbox-brand-${brand.value}`}
                           />
-                          <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                          <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer">
                             <span>{brand.value}</span>
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {brand.count}
-                            </Badge>
                           </label>
                         </div>
                       ))}
@@ -1670,7 +1659,7 @@ export default function Marketplace() {
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('gsm')}
                   >
-                    GSM {clientFilters.gsm.length > 0 && `(${clientFilters.gsm.length})`}
+                    GSM
                     {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.gsm && (
@@ -1689,11 +1678,8 @@ export default function Marketplace() {
                             onCheckedChange={(checked) => handleFilterChange('gsm', gsm.value, checked as boolean)}
                             data-testid={`checkbox-gsm-${gsm.value}`}
                           />
-                          <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer flex justify-between">
+                          <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer">
                             <span>{gsm.value} GSM</span>
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {gsm.count}
-                            </Badge>
                           </label>
                         </div>
                       ))}
