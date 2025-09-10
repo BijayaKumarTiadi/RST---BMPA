@@ -256,8 +256,10 @@ searchRouter.post('/unified', async (req, res) => {
     }
 
     // Sorting
-    let orderBy = 'ORDER BY dm.DateAdded DESC';
+    let orderBy = 'ORDER BY dm.TransID DESC';
     switch (sortBy) {
+      case 'newest': orderBy = 'ORDER BY dm.TransID DESC'; break;
+      case 'oldest': orderBy = 'ORDER BY dm.TransID ASC'; break;
       case 'price-low': orderBy = 'ORDER BY dm.Rate ASC'; break;
       case 'price-high': orderBy = 'ORDER BY dm.Rate DESC'; break;
       case 'gsm-low': orderBy = 'ORDER BY dm.GSM ASC'; break;

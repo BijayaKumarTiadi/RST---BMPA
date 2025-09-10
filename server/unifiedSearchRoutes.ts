@@ -214,11 +214,11 @@ unifiedSearchRouter.post('/unified', async (req, res) => {
     // DATE FILTERS
     if (filters.dateRange) {
       if (filters.dateRange.from) {
-        conditions.push('dm.DateAdded >= ?');
+        conditions.push('dm.TransID >= ?');
         queryParams.push(filters.dateRange.from);
       }
       if (filters.dateRange.to) {
-        conditions.push('dm.DateAdded <= ?');
+        conditions.push('dm.TransID <= ?');
         queryParams.push(filters.dateRange.to);
       }
     }
@@ -232,10 +232,10 @@ unifiedSearchRouter.post('/unified', async (req, res) => {
     let orderBy = '';
     switch (sortBy) {
       case 'newest':
-        orderBy = 'ORDER BY dm.DateAdded DESC';
+        orderBy = 'ORDER BY dm.TransID DESC';
         break;
       case 'oldest':
-        orderBy = 'ORDER BY dm.DateAdded ASC';
+        orderBy = 'ORDER BY dm.TransID ASC';
         break;
       case 'price-low':
         orderBy = 'ORDER BY dm.Rate ASC';
@@ -250,7 +250,7 @@ unifiedSearchRouter.post('/unified', async (req, res) => {
         orderBy = 'ORDER BY dm.GSM DESC';
         break;
       default:
-        orderBy = 'ORDER BY dm.DateAdded DESC';
+        orderBy = 'ORDER BY dm.TransID DESC';
     }
 
     // Get total count
