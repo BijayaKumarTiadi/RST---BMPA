@@ -89,6 +89,42 @@ export default function Marketplace() {
     categories: [] as string[]
   });
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
+
+  // Handle checkbox changes for client-side filters
+  const handleFilterChange = (filterType: string, value: string, checked: boolean) => {
+    setClientFilters(prev => {
+      const newFilters = { ...prev };
+      const filterArray = newFilters[filterType as keyof typeof newFilters];
+      
+      if (checked) {
+        // Add value if not already present
+        if (!filterArray.includes(value)) {
+          newFilters[filterType as keyof typeof newFilters] = [...filterArray, value];
+        }
+      } else {
+        // Remove value
+        newFilters[filterType as keyof typeof newFilters] = filterArray.filter(item => item !== value);
+      }
+      
+      return newFilters;
+    });
+  };
+
+  // Clear all client-side filters
+  const clearClientFilters = () => {
+    setClientFilters({
+      makes: [],
+      grades: [],
+      brands: [],
+      gsm: [],
+      categories: []
+    });
+  };
+
+  // Auto-apply client filters when they change
+  useEffect(() => {
+    applyClientFilters();
+  }, [clientFilters, allPreciseSearchResults]);
   
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
@@ -751,33 +787,7 @@ export default function Marketplace() {
     setCurrentPage(1); // Reset to first page
   };
 
-  // Handle checkbox filter changes
-  const handleFilterChange = (filterType: keyof typeof clientFilters, value: string, checked: boolean) => {
-    setClientFilters(prev => {
-      const newFilters = { ...prev };
-      if (checked) {
-        if (!newFilters[filterType].includes(value)) {
-          newFilters[filterType] = [...newFilters[filterType], value];
-        }
-      } else {
-        newFilters[filterType] = newFilters[filterType].filter(item => item !== value);
-      }
-      return newFilters;
-    });
-  };
 
-  // Clear all client filters
-  const clearClientFilters = () => {
-    setClientFilters({
-      makes: [],
-      grades: [],
-      brands: [],
-      gsm: [],
-      categories: []
-    });
-    setFilteredResults(allPreciseSearchResults);
-    setCurrentPage(1);
-  };
 
   // Apply client-side filters whenever filters change or results change
   useEffect(() => {
