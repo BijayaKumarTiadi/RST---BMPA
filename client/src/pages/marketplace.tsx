@@ -184,6 +184,7 @@ export default function Marketplace() {
     priceRange: false,
     dimensionRange: false
   });
+  const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
   
   // Modal states
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
@@ -1000,215 +1001,230 @@ export default function Marketplace() {
           </p>
         </div>
 
-        {/* Precise Search */}
-        <div className="mb-3">
-          <Card className="w-full">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Search className="h-5 w-5" />
-                Precise Search
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-              {/* Single Row Layout */}
-              <div className="flex flex-wrap items-end gap-3">
-                {/* Category */}
-                <div className="flex-1 min-w-32">
-                  <label className="text-sm font-medium">Category <span className="text-red-500">*</span></label>
-                  <Select 
-                    value={preciseSearch.category} 
-                    onValueChange={(value) => handlePreciseSearchChange('category', value)}
-                  >
-                    <SelectTrigger className="mt-1 h-9 text-sm" data-testid="select-precise-category">
-                      <SelectValue placeholder="Select category first..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {categoriesData?.map((category: any, index: number) => (
-                        <SelectItem key={index} value={category.value || category}>
-                          {category.value || category} {category.count && `(${category.count})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Precise Search - Hoverable Collapse */}
+        <div 
+          className="mb-3"
+          onMouseEnter={() => setPreciseSearchExpanded(true)}
+          onMouseLeave={() => setPreciseSearchExpanded(false)}
+        >
+          <Card className="w-full transition-all duration-300 hover:shadow-lg border-blue-200 dark:border-blue-800">
+            {/* Always visible header */}
+            <div className="p-3 cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">Precise Search</span>
                 </div>
-
-                {/* GSM */}
-                <div className="relative flex-1 min-w-24">
-                  <label className="text-sm font-medium">GSM <span className="text-red-500">*</span></label>
-                  <Input
-                    type="number"
-                    placeholder="300"
-                    value={preciseSearch.gsm}
-                    onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
-                    data-testid="input-precise-gsm"
-                    className="mt-1 h-9 text-sm"
-                    disabled={!preciseSearch.category}
-                  />
-                  {gsmSuggestions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                      <div className="flex items-center justify-between p-2 border-b">
-                        <span className="text-xs font-medium text-muted-foreground">GSM Suggestions</span>
-                        <button
-                          onClick={() => setGsmSuggestions([])}
-                          className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent"
-                          data-testid="button-close-gsm-suggestions"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                      {gsmSuggestions.map((suggestion: any, index: number) => (
-                        <button
-                          key={index}
-                          className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                          onClick={() => {
-                            handlePreciseSearchChange('gsm', suggestion.value || suggestion);
-                            setGsmSuggestions([]);
-                          }}
-                        >
-                          {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* GSM Tolerance */}
-                <div className="flex-1 min-w-24">
-                  <label className="text-sm font-medium">GSM ±</label>
-                  <Input
-                    type="number"
-                    placeholder="10"
-                    value={preciseSearch.tolerance}
-                    onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
-                    data-testid="input-precise-tolerance"
-                    className="mt-1 h-9 text-sm"
-                    disabled={!preciseSearch.category || !preciseSearch.gsm}
-                  />
-                </div>
-
-                {/* Deckle Field */}
-                <div className="flex-1 min-w-24">
-                  <label className="text-sm font-medium">Deckle</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="64.8"
-                    value={preciseSearch.deckle}
-                    onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
-                    data-testid="input-precise-deckle"
-                    className="mt-1 h-9 text-sm"
-                    disabled={!preciseSearch.category || !preciseSearch.gsm}
-                  />
-                </div>
-
-                {/* Grain Field - Category specific */}
-                {(() => {
-                  const category = preciseSearch.category;
-                  const isPaperReel = category?.toLowerCase().includes('paper reel');
-                  const isBoardReel = category?.toLowerCase().includes('board reel');
-                  const isKraftReel = category?.toLowerCase().includes('kraft reel');
-                  const grainLabel = isKraftReel ? 'B.S' : 'Grain';
-                  const showGrainField = !isPaperReel && !isBoardReel;
-                  
-                  return showGrainField ? (
-                    <div className="flex-1 min-w-24">
-                      <label className="text-sm font-medium">{grainLabel}</label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="84.1"
-                        value={preciseSearch.grain}
-                        onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
-                        data-testid="input-precise-grain"
-                        className="mt-1 h-9 text-sm"
-                        disabled={!preciseSearch.category || !preciseSearch.gsm}
-                      />
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Dimension Tolerance */}
-                <div className="flex-1 min-w-24">
-                  <label className="text-sm font-medium">Dim ±</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="2"
-                    value={preciseSearch.dimensionTolerance}
-                    onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
-                    data-testid="input-precise-dimension-tolerance"
-                    className="mt-1 h-9 text-sm"
-                    disabled={!preciseSearch.category || !preciseSearch.gsm}
-                  />
-                </div>
-
-                {/* Single Unit Selector */}
-                <div className="flex-shrink-0">
-                  <label className="text-sm font-medium">Unit</label>
-                  <Select
-                    value={preciseSearch.deckleUnit}
-                    onValueChange={(value) => {
-                      setPreciseSearch(prev => ({ 
-                        ...prev, 
-                        deckleUnit: value,
-                        grainUnit: value 
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="w-16 h-9 mt-1 text-sm" disabled={!preciseSearch.category || !preciseSearch.gsm}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cm">cm</SelectItem>
-                      <SelectItem value="inch">inch</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={performPreciseSearch}
-                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
-                    data-testid="button-precise-search"
-                    disabled={isSearching || !preciseSearch.category || !preciseSearch.gsm}
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Search
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-3 w-3" />
-                        Search
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setPreciseSearch({
-                        category: '',
-                        gsm: '',
-                        tolerance: '10',
-                        deckle: '',
-                        deckleUnit: 'cm',
-                        grain: '',
-                        grainUnit: 'cm',
-                        dimensionTolerance: '2'
-                      });
-                      setGsmSuggestions([]);
-                    }}
-                    className="h-9 px-3"
-                  >
-                    Clear
-                  </Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Hover to search</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${preciseSearchExpanded ? 'rotate-180' : ''}`} />
                 </div>
               </div>
+            </div>
+            
+            {/* Expandable content */}
+            <div className={`transition-all duration-300 overflow-hidden ${preciseSearchExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="px-3 pb-3">
+                <div className="border-t border-border mb-3"></div>
+                {/* Single Row Layout */}
+                <div className="flex flex-wrap items-end gap-3">
+                  {/* Category */}
+                  <div className="flex-1 min-w-32">
+                    <label className="text-sm font-medium">Category <span className="text-red-500">*</span></label>
+                    <Select 
+                      value={preciseSearch.category} 
+                      onValueChange={(value) => handlePreciseSearchChange('category', value)}
+                    >
+                      <SelectTrigger className="mt-1 h-9 text-sm" data-testid="select-precise-category">
+                        <SelectValue placeholder="Select category first..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categoriesData?.map((category: any, index: number) => (
+                          <SelectItem key={index} value={category.value || category}>
+                            {category.value || category} {category.count && `(${category.count})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            </CardContent>
+                  {/* GSM */}
+                  <div className="relative flex-1 min-w-24">
+                    <label className="text-sm font-medium">GSM <span className="text-red-500">*</span></label>
+                    <Input
+                      type="number"
+                      placeholder="300"
+                      value={preciseSearch.gsm}
+                      onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
+                      data-testid="input-precise-gsm"
+                      className="mt-1 h-9 text-sm"
+                      disabled={!preciseSearch.category}
+                    />
+                    {gsmSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        <div className="flex items-center justify-between p-2 border-b">
+                          <span className="text-xs font-medium text-muted-foreground">GSM Suggestions</span>
+                          <button
+                            onClick={() => setGsmSuggestions([])}
+                            className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent"
+                            data-testid="button-close-gsm-suggestions"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {gsmSuggestions.map((suggestion: any, index: number) => (
+                          <button
+                            key={index}
+                            className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                            onClick={() => {
+                              handlePreciseSearchChange('gsm', suggestion.value || suggestion);
+                              setGsmSuggestions([]);
+                            }}
+                          >
+                            {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* GSM Tolerance */}
+                  <div className="flex-1 min-w-24">
+                    <label className="text-sm font-medium">GSM ±</label>
+                    <Input
+                      type="number"
+                      placeholder="10"
+                      value={preciseSearch.tolerance}
+                      onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
+                      data-testid="input-precise-tolerance"
+                      className="mt-1 h-9 text-sm"
+                      disabled={!preciseSearch.category || !preciseSearch.gsm}
+                    />
+                  </div>
+
+                  {/* Deckle Field */}
+                  <div className="flex-1 min-w-24">
+                    <label className="text-sm font-medium">Deckle</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="64.8"
+                      value={preciseSearch.deckle}
+                      onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
+                      data-testid="input-precise-deckle"
+                      className="mt-1 h-9 text-sm"
+                      disabled={!preciseSearch.category || !preciseSearch.gsm}
+                    />
+                  </div>
+
+                  {/* Grain Field - Category specific */}
+                  {(() => {
+                    const category = preciseSearch.category;
+                    const isPaperReel = category?.toLowerCase().includes('paper reel');
+                    const isBoardReel = category?.toLowerCase().includes('board reel');
+                    const isKraftReel = category?.toLowerCase().includes('kraft reel');
+                    const grainLabel = isKraftReel ? 'B.S' : 'Grain';
+                    const showGrainField = !isPaperReel && !isBoardReel;
+                    
+                    return showGrainField ? (
+                      <div className="flex-1 min-w-24">
+                        <label className="text-sm font-medium">{grainLabel}</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="84.1"
+                          value={preciseSearch.grain}
+                          onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
+                          data-testid="input-precise-grain"
+                          className="mt-1 h-9 text-sm"
+                          disabled={!preciseSearch.category || !preciseSearch.gsm}
+                        />
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Dimension Tolerance */}
+                  <div className="flex-1 min-w-24">
+                    <label className="text-sm font-medium">Dim ±</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="2"
+                      value={preciseSearch.dimensionTolerance}
+                      onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
+                      data-testid="input-precise-dimension-tolerance"
+                      className="mt-1 h-9 text-sm"
+                      disabled={!preciseSearch.category || !preciseSearch.gsm}
+                    />
+                  </div>
+
+                  {/* Single Unit Selector */}
+                  <div className="flex-shrink-0">
+                    <label className="text-sm font-medium">Unit</label>
+                    <Select
+                      value={preciseSearch.deckleUnit}
+                      onValueChange={(value) => {
+                        setPreciseSearch(prev => ({ 
+                          ...prev, 
+                          deckleUnit: value,
+                          grainUnit: value 
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-16 h-9 mt-1 text-sm" disabled={!preciseSearch.category || !preciseSearch.gsm}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cm">cm</SelectItem>
+                        <SelectItem value="inch">inch</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={performPreciseSearch}
+                      className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
+                      data-testid="button-precise-search"
+                      disabled={isSearching || !preciseSearch.category || !preciseSearch.gsm}
+                    >
+                      {isSearching ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Search
+                        </>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-3 w-3" />
+                          Search
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setPreciseSearch({
+                          category: '',
+                          gsm: '',
+                          tolerance: '10',
+                          deckle: '',
+                          deckleUnit: 'cm',
+                          grain: '',
+                          grainUnit: 'cm',
+                          dimensionTolerance: '2'
+                        });
+                        setGsmSuggestions([]);
+                      }}
+                      className="h-9 px-3"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </Card>
         </div>
         
