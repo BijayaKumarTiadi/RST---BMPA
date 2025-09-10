@@ -974,6 +974,13 @@ export default function Marketplace() {
       
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
 
+        {/* Tagline */}
+        <div className="mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground text-center">
+            Discover stock deals from verified sellers across the printing industry
+          </p>
+        </div>
+
         {/* Precise Search */}
         <div className="mb-3">
           <Card className="w-full">
@@ -1195,13 +1202,6 @@ export default function Marketplace() {
           </Card>
         </div>
         
-        {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Marketplace</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Discover stock deals from verified sellers across the printing industry
-          </p>
-        </div>
         
         {/* Active Filters Display */}
         {hasActiveFilters() && (
