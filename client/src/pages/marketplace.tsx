@@ -645,6 +645,16 @@ export default function Marketplace() {
                   />
                   {gsmSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      <div className="flex items-center justify-between p-2 border-b">
+                        <span className="text-xs font-medium text-muted-foreground">GSM Suggestions</span>
+                        <button
+                          onClick={() => setGsmSuggestions([])}
+                          className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent"
+                          data-testid="button-close-gsm-suggestions"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
                       {gsmSuggestions.map((suggestion: any, index: number) => (
                         <button
                           key={index}
