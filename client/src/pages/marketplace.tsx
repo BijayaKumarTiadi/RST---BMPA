@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2 } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -27,6 +27,23 @@ export default function Marketplace() {
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAggregations, setSearchAggregations] = useState<any>(null);
+  // Unified Filter State
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchTerm: "",
+    selectedMakes: [] as string[],
+    selectedGrades: [] as string[],
+    selectedBrands: [] as string[],
+    selectedCategories: [] as string[],
+    selectedLocations: [] as string[],
+    gsmRange: { min: "", max: "" },
+    priceRange: { min: "", max: "" },
+    dimensionRange: {
+      deckle: { min: "", max: "" },
+      grain: { min: "", max: "" }
+    },
+    dateRange: "all" // all, today, week, month
+  });
+  
   // Pending filters (UI state, not applied yet)
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
@@ -66,7 +83,10 @@ export default function Marketplace() {
     brands: false,
     gsm: false,
     units: false,
-    location: false
+    location: false,
+    gsmRange: false,
+    priceRange: false,
+    dimensionRange: false
   });
   
   // Modal states
@@ -188,7 +208,24 @@ export default function Marketplace() {
   // Use search results if available, otherwise use regular deals
   const deals = searchResults?.data || dealsData?.deals || [];
   const totalDeals = searchResults?.total || dealsData?.total || 0;
-  const totalPages = Math.ceil(totalDeals / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalDeals / itemsPerPage));
+  
+  // Handle page change with filters
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // If filters are active, reapply them with the new page
+    if (hasActiveFilters()) {
+      applyFilters(appliedFilters, false); // false means don't reset page
+    }
+  };
+  
+  // Ensure current page doesn't exceed total pages
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+  
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
@@ -412,8 +449,146 @@ export default function Marketplace() {
     addFilterToSearch(unit.OfferUnit || unit.name || unit.value || unit);
   };
 
+  // Apply filters and trigger search
+  const applyFilters = async (newFilters = appliedFilters, resetPage = true) => {
+    setIsSearching(true);
+    if (resetPage) setCurrentPage(1);
+    
+    try {
+      const response = await fetch('/api/search/advanced', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filters: newFilters,
+          page: resetPage ? 1 : currentPage,
+          pageSize: itemsPerPage,
+          sortBy: sortBy
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setSearchAggregations(data.aggregations || null);
+        setAppliedFilters(newFilters);
+        console.log('Applied filters:', newFilters);
+        console.log('Filter results:', data);
+      }
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Add filter
+  const addFilter = (type: string, value: string) => {
+    const newFilters = { ...appliedFilters };
+    switch (type) {
+      case 'makes':
+        if (!newFilters.selectedMakes.includes(value)) {
+          newFilters.selectedMakes = [...newFilters.selectedMakes, value];
+        }
+        break;
+      case 'grades':
+        if (!newFilters.selectedGrades.includes(value)) {
+          newFilters.selectedGrades = [...newFilters.selectedGrades, value];
+        }
+        break;
+      case 'brands':
+        if (!newFilters.selectedBrands.includes(value)) {
+          newFilters.selectedBrands = [...newFilters.selectedBrands, value];
+        }
+        break;
+      case 'categories':
+        if (!newFilters.selectedCategories.includes(value)) {
+          newFilters.selectedCategories = [...newFilters.selectedCategories, value];
+        }
+        break;
+      case 'locations':
+        if (!newFilters.selectedLocations.includes(value)) {
+          newFilters.selectedLocations = [...newFilters.selectedLocations, value];
+        }
+        break;
+    }
+    applyFilters(newFilters);
+  };
+
+  // Remove filter
+  const removeFilter = (type: string, value: string) => {
+    const newFilters = { ...appliedFilters };
+    switch (type) {
+      case 'makes':
+        newFilters.selectedMakes = newFilters.selectedMakes.filter(item => item !== value);
+        break;
+      case 'grades':
+        newFilters.selectedGrades = newFilters.selectedGrades.filter(item => item !== value);
+        break;
+      case 'brands':
+        newFilters.selectedBrands = newFilters.selectedBrands.filter(item => item !== value);
+        break;
+      case 'categories':
+        newFilters.selectedCategories = newFilters.selectedCategories.filter(item => item !== value);
+        break;
+      case 'locations':
+        newFilters.selectedLocations = newFilters.selectedLocations.filter(item => item !== value);
+        break;
+    }
+    applyFilters(newFilters);
+  };
+
+  // Set range filter
+  const setRangeFilter = (type: string, range: any) => {
+    const newFilters = { ...appliedFilters };
+    if (type === 'gsm') {
+      newFilters.gsmRange = range;
+    } else if (type === 'price') {
+      newFilters.priceRange = range;
+    } else if (type === 'deckle') {
+      newFilters.dimensionRange.deckle = range;
+    } else if (type === 'grain') {
+      newFilters.dimensionRange.grain = range;
+    }
+    applyFilters(newFilters);
+  };
+
+  // Check if filters are active
+  const hasActiveFilters = () => {
+    return appliedFilters.selectedMakes.length > 0 ||
+           appliedFilters.selectedGrades.length > 0 ||
+           appliedFilters.selectedBrands.length > 0 ||
+           appliedFilters.selectedCategories.length > 0 ||
+           appliedFilters.selectedLocations.length > 0 ||
+           appliedFilters.gsmRange.min !== "" ||
+           appliedFilters.gsmRange.max !== "" ||
+           appliedFilters.priceRange.min !== "" ||
+           appliedFilters.priceRange.max !== "" ||
+           appliedFilters.dimensionRange.deckle.min !== "" ||
+           appliedFilters.dimensionRange.deckle.max !== "" ||
+           appliedFilters.dimensionRange.grain.min !== "" ||
+           appliedFilters.dimensionRange.grain.max !== "";
+  };
+
   // Clear all filters
   const clearAllFilters = () => {
+    const emptyFilters = {
+      searchTerm: "",
+      selectedMakes: [],
+      selectedGrades: [],
+      selectedBrands: [],
+      selectedCategories: [],
+      selectedLocations: [],
+      gsmRange: { min: "", max: "" },
+      priceRange: { min: "", max: "" },
+      dimensionRange: {
+        deckle: { min: "", max: "" },
+        grain: { min: "", max: "" }
+      },
+      dateRange: "all"
+    };
+    
     setPendingSearchTerm("");
     setSearchTerm("");
     setSortBy("newest");
@@ -426,6 +601,7 @@ export default function Marketplace() {
     setAvailableGsm([]);
     setAvailableUnits([]);
     setAvailableLocations([]);
+    setAppliedFilters(emptyFilters);
   };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
@@ -822,6 +998,88 @@ export default function Marketplace() {
             Discover stock deals from verified sellers across the trading industry
           </p>
         </div>
+        
+        {/* Active Filters Display */}
+        {hasActiveFilters() && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium text-muted-foreground">Active Filters:</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearAllFilters}
+                className="text-xs h-6 px-2"
+              >
+                Clear All
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {appliedFilters.selectedMakes.map((make, index) => (
+                <Badge key={`make-${index}`} variant="secondary" className="flex items-center gap-1">
+                  Make: {make}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeFilter('makes', make)}
+                  />
+                </Badge>
+              ))}
+              {appliedFilters.selectedGrades.map((grade, index) => (
+                <Badge key={`grade-${index}`} variant="secondary" className="flex items-center gap-1">
+                  Grade: {grade}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeFilter('grades', grade)}
+                  />
+                </Badge>
+              ))}
+              {appliedFilters.selectedBrands.map((brand, index) => (
+                <Badge key={`brand-${index}`} variant="secondary" className="flex items-center gap-1">
+                  Brand: {brand}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeFilter('brands', brand)}
+                  />
+                </Badge>
+              ))}
+              {appliedFilters.selectedCategories.map((category, index) => (
+                <Badge key={`category-${index}`} variant="secondary" className="flex items-center gap-1">
+                  Category: {category}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeFilter('categories', category)}
+                  />
+                </Badge>
+              ))}
+              {appliedFilters.selectedLocations.map((location, index) => (
+                <Badge key={`location-${index}`} variant="secondary" className="flex items-center gap-1">
+                  Location: {location}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeFilter('locations', location)}
+                  />
+                </Badge>
+              ))}
+              {(appliedFilters.gsmRange.min || appliedFilters.gsmRange.max) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  GSM: {appliedFilters.gsmRange.min || '0'}-{appliedFilters.gsmRange.max || '∞'}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => setRangeFilter('gsm', { min: '', max: '' })}
+                  />
+                </Badge>
+              )}
+              {(appliedFilters.priceRange.min || appliedFilters.priceRange.max) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Price: ₹{appliedFilters.priceRange.min || '0'}-₹{appliedFilters.priceRange.max || '∞'}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => setRangeFilter('price', { min: '', max: '' })}
+                  />
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Mobile Filter Button */}
         <div className="lg:hidden mb-4">
@@ -867,6 +1125,105 @@ export default function Marketplace() {
                 
                 <Separator />
                 
+                {/* GSM Range Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('gsmRange')}
+                  >
+                    GSM Range
+                    {expandedSections.gsmRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.gsmRange && (
+                    <div className="mt-3 space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Min GSM"
+                          value={appliedFilters.gsmRange.min}
+                          onChange={(e) => {
+                            const newRange = { ...appliedFilters.gsmRange, min: e.target.value };
+                            setRangeFilter('gsm', newRange);
+                          }}
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Max GSM"
+                          value={appliedFilters.gsmRange.max}
+                          onChange={(e) => {
+                            const newRange = { ...appliedFilters.gsmRange, max: e.target.value };
+                            setRangeFilter('gsm', newRange);
+                          }}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      {(appliedFilters.gsmRange.min || appliedFilters.gsmRange.max) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRangeFilter('gsm', { min: '', max: '' })}
+                          className="w-full h-7 text-xs"
+                        >
+                          Clear GSM Range
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                {/* Price Range Filter */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto font-semibold"
+                    onClick={() => toggleSection('priceRange')}
+                  >
+                    Price Range (₹)
+                    {expandedSections.priceRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                  {expandedSections.priceRange && (
+                    <div className="mt-3 space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Min Price"
+                          value={appliedFilters.priceRange.min}
+                          onChange={(e) => {
+                            const newRange = { ...appliedFilters.priceRange, min: e.target.value };
+                            setRangeFilter('price', newRange);
+                          }}
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Max Price"
+                          value={appliedFilters.priceRange.max}
+                          onChange={(e) => {
+                            const newRange = { ...appliedFilters.priceRange, max: e.target.value };
+                            setRangeFilter('price', newRange);
+                          }}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      {(appliedFilters.priceRange.min || appliedFilters.priceRange.max) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRangeFilter('price', { min: '', max: '' })}
+                          className="w-full h-7 text-xs"
+                        >
+                          Clear Price Range
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
                 
                 {/* Makes Filter */}
                 <div>
@@ -1456,7 +1813,7 @@ export default function Marketplace() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
                     >
                       Previous
@@ -1472,7 +1829,7 @@ export default function Marketplace() {
                               key={pageNum}
                               variant={currentPage === pageNum ? "default" : "outline"}
                               size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
+                              onClick={() => handlePageChange(pageNum)}
                               className="w-8 h-8 p-0"
                             >
                               {pageNum}
@@ -1486,7 +1843,7 @@ export default function Marketplace() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
                     >
                       Next

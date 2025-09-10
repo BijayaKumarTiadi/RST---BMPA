@@ -9,6 +9,7 @@ import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
+import advancedSearchRouter from "./advancedSearchRoutes";
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -43,6 +44,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Search routes (Elasticsearch)
   app.use('/api/search', searchRouter);
+  
+  // Advanced search routes for robust filtering
+  app.use('/api/search', advancedSearchRouter);
   
   // Suggestion routes for precise search
   app.use('/api/suggestions', suggestionRouter);
