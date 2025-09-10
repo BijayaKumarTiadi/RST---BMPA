@@ -61,6 +61,18 @@ export default function Marketplace() {
     grainUnit: "cm",
     dimensionTolerance: ""
   });
+
+  // Precise search state for advanced search form
+  const [preciseSearch, setPreciseSearch] = useState({
+    category: '',
+    gsm: '',
+    deckle: '',
+    grain: '',
+    deckleUnit: 'cm',
+    grainUnit: 'cm',
+    tolerance: '',
+    dimensionTolerance: ''
+  });
   
   // Auto-suggestion states
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
