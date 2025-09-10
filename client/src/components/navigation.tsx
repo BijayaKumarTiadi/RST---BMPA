@@ -62,7 +62,8 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 sm:space-x-3" data-testid="logo-link">
-            <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center 
+              bg-white dark:bg-gray-900 rounded-md p-1 transition-colors duration-200 border border-gray-200 dark:border-gray-700">
               <img 
                 src="/bmpa-logo.svg" 
                 alt="BMPA Logo" 
