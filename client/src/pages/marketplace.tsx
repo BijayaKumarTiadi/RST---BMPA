@@ -1014,7 +1014,7 @@ export default function Marketplace() {
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
                 <div className="flex-1 min-w-32">
-                  <label className="text-sm font-medium">Category *</label>
+                  <label className="text-sm font-medium">Category <span className="text-red-500">*</span></label>
                   <Select 
                     value={preciseSearch.category} 
                     onValueChange={(value) => handlePreciseSearchChange('category', value)}
@@ -1035,7 +1035,7 @@ export default function Marketplace() {
 
                 {/* GSM */}
                 <div className="relative flex-1 min-w-24">
-                  <label className="text-sm font-medium">GSM *</label>
+                  <label className="text-sm font-medium">GSM <span className="text-red-500">*</span></label>
                   <Input
                     type="number"
                     placeholder="300"
