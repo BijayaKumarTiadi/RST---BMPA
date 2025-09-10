@@ -23,7 +23,6 @@ export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAggregations, setSearchAggregations] = useState<any>(null);
@@ -38,17 +37,6 @@ export default function Marketplace() {
   // Client-side filtering states
   const [allDeals, setAllDeals] = useState<any[]>([]);
   const [filteredDeals, setFilteredDeals] = useState<any[]>([]);
-  const [activeFilters, setActiveFilters] = useState({
-    search: '',
-    makes: [] as string[],
-    grades: [] as string[],
-    brands: [] as string[],
-    categories: [] as string[],
-    gsm: { min: '', max: '' },
-    dimensions: { deckle: '', grain: '', unit: 'cm', tolerance: '' },
-    units: [] as string[],
-    locations: [] as string[]
-  });
 
   // Quick precise search states
   const [quickSearch, setQuickSearch] = useState({
@@ -78,15 +66,6 @@ export default function Marketplace() {
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
-    categories: true,
-    makes: false,
-    grades: false,
-    brands: false,
-    gsm: false,
-    units: false,
-    location: false
-  });
   
   // Modal states
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
@@ -144,167 +123,15 @@ export default function Marketplace() {
     enabled: isAuthenticated,
   });
 
-  // Update quick search default units when user settings are loaded
-  useEffect(() => {
-    if (userSettings?.dimension_unit) {
-      const defaultUnit = userSettings.dimension_unit;
-      setQuickSearch(prev => ({
-        ...prev,
-        deckleUnit: defaultUnit,
-        grainUnit: defaultUnit
-      }));
-      setActiveFilters(prev => ({
-        ...prev,
-        dimensions: {
-          ...prev.dimensions,
-          unit: defaultUnit
-        }
-      }));
-    }
-  }, [userSettings]);
 
-  // Load and filter data when deals or filters change
+  // Load data when deals change
   useEffect(() => {
     if (dealsData?.success && dealsData?.data) {
       setAllDeals(dealsData.data);
-      applyFilters(dealsData.data);
+      setFilteredDeals(dealsData.data);
     }
-  }, [dealsData, activeFilters, sortBy]);
+  }, [dealsData, sortBy]);
 
-  // Client-side filtering function
-  const applyFilters = (deals: any[]) => {
-    let filtered = [...deals];
-
-    // Text search filter
-    if (activeFilters.search.trim()) {
-      const searchLower = activeFilters.search.toLowerCase();
-      filtered = filtered.filter(deal => {
-        const searchFields = [
-          deal.Make,
-          deal.Grade, 
-          deal.Brand,
-          deal.stock_description,
-          deal.category_name,
-          deal.Seller_comments
-        ].filter(Boolean).join(' ').toLowerCase();
-        
-        return searchFields.includes(searchLower);
-      });
-    }
-
-    // Makes filter
-    if (activeFilters.makes.length > 0) {
-      filtered = filtered.filter(deal => 
-        activeFilters.makes.includes(deal.Make)
-      );
-    }
-
-    // Grades filter  
-    if (activeFilters.grades.length > 0) {
-      filtered = filtered.filter(deal => 
-        activeFilters.grades.includes(deal.Grade)
-      );
-    }
-
-    // Brands filter
-    if (activeFilters.brands.length > 0) {
-      filtered = filtered.filter(deal => 
-        activeFilters.brands.includes(deal.Brand)
-      );
-    }
-
-    // Categories filter
-    if (activeFilters.categories.length > 0) {
-      filtered = filtered.filter(deal => 
-        activeFilters.categories.includes(deal.category_name)
-      );
-    }
-
-    // GSM range filter
-    if (activeFilters.gsm.min || activeFilters.gsm.max) {
-      filtered = filtered.filter(deal => {
-        const gsm = Number(deal.GSM);
-        if (isNaN(gsm)) return false;
-        
-        const min = activeFilters.gsm.min ? Number(activeFilters.gsm.min) : 0;
-        const max = activeFilters.gsm.max ? Number(activeFilters.gsm.max) : Infinity;
-        
-        return gsm >= min && gsm <= max;
-      });
-    }
-
-    // Dimensions filter (deckle x grain with tolerance)
-    if (activeFilters.dimensions.deckle || activeFilters.dimensions.grain) {
-      filtered = filtered.filter(deal => {
-        let matches = true;
-        const tolerance = Number(activeFilters.dimensions.tolerance) || 0;
-        
-        // Convert input dimensions to mm for comparison
-        if (activeFilters.dimensions.deckle) {
-          const deckleInput = Number(activeFilters.dimensions.deckle);
-          if (isNaN(deckleInput)) return false;
-          
-          let deckleInputMm = deckleInput;
-          if (activeFilters.dimensions.unit === 'cm') {
-            deckleInputMm = deckleInput * 10;
-          } else if (activeFilters.dimensions.unit === 'inch') {
-            deckleInputMm = deckleInput * 25.4;
-          }
-          
-          const dealDeckle = Number(deal.Deckle_mm);
-          if (isNaN(dealDeckle)) return false;
-          
-          const minDeckle = deckleInputMm - tolerance;
-          const maxDeckle = deckleInputMm + tolerance;
-          
-          matches = matches && (dealDeckle >= minDeckle && dealDeckle <= maxDeckle);
-        }
-        
-        if (activeFilters.dimensions.grain) {
-          const grainInput = Number(activeFilters.dimensions.grain);
-          if (isNaN(grainInput)) return false;
-          
-          let grainInputMm = grainInput;
-          if (activeFilters.dimensions.unit === 'cm') {
-            grainInputMm = grainInput * 10;
-          } else if (activeFilters.dimensions.unit === 'inch') {
-            grainInputMm = grainInput * 25.4;
-          }
-          
-          const dealGrain = Number(deal.grain_mm);
-          if (isNaN(dealGrain)) return false;
-          
-          const minGrain = grainInputMm - tolerance;
-          const maxGrain = grainInputMm + tolerance;
-          
-          matches = matches && (dealGrain >= minGrain && dealGrain <= maxGrain);
-        }
-        
-        return matches;
-      });
-    }
-
-    // Units filter
-    if (activeFilters.units.length > 0) {
-      filtered = filtered.filter(deal => 
-        activeFilters.units.includes(deal.OfferUnit)
-      );
-    }
-
-    // Apply sorting
-    if (sortBy === 'newest') {
-      filtered.sort((a, b) => new Date(b.DateCreated).getTime() - new Date(a.DateCreated).getTime());
-    } else if (sortBy === 'oldest') {
-      filtered.sort((a, b) => new Date(a.DateCreated).getTime() - new Date(b.DateCreated).getTime());
-    } else if (sortBy === 'price-low') {
-      filtered.sort((a, b) => Number(a.PerKgRate) - Number(b.PerKgRate));
-    } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => Number(b.PerKgRate) - Number(a.PerKgRate));
-    }
-
-    setFilteredDeals(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  };
 
   // Helper function to format dimensions based on user preference
   const formatDimensions = (deckle_mm: number, grain_mm: number) => {
@@ -354,94 +181,8 @@ export default function Marketplace() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedDeals = filteredDeals.slice(startIndex, endIndex);
 
-  // Generate filter options from all available data
-  const getUniqueValues = (field: string) => {
-    return [...new Set(allDeals.map(deal => deal[field]).filter(Boolean))].sort();
-  };
+
   
-  const availableMakes = getUniqueValues('Make');
-  const availableGrades = getUniqueValues('Grade');  
-  const availableBrands = getUniqueValues('Brand');
-  const availableCategories = getUniqueValues('category_name');
-  const availableUnits = getUniqueValues('OfferUnit');
-
-  // Filter management functions
-  const toggleArrayFilter = (filterType: keyof typeof activeFilters, value: string) => {
-    setActiveFilters(prev => {
-      const currentArray = prev[filterType] as string[];
-      const newArray = currentArray.includes(value)
-        ? currentArray.filter(item => item !== value)
-        : [...currentArray, value];
-      
-      return { ...prev, [filterType]: newArray };
-    });
-  };
-
-  const updateFilter = (filterType: keyof typeof activeFilters, value: any) => {
-    setActiveFilters(prev => ({ ...prev, [filterType]: value }));
-  };
-
-  const clearAllFilters = () => {
-    setActiveFilters({
-      search: '',
-      makes: [],
-      grades: [],
-      brands: [],
-      categories: [],
-      gsm: { min: '', max: '' },
-      dimensions: { deckle: '', grain: '', unit: activeFilters.dimensions.unit, tolerance: '' },
-      units: [],
-      locations: []
-    });
-  };
-
-  const clearSpecificFilter = (filterType: keyof typeof activeFilters) => {
-    if (filterType === 'gsm') {
-      updateFilter('gsm', { min: '', max: '' });
-    } else if (filterType === 'dimensions') {
-      updateFilter('dimensions', { deckle: '', grain: '', unit: activeFilters.dimensions.unit, tolerance: '' });
-    } else if (Array.isArray(activeFilters[filterType])) {
-      updateFilter(filterType, []);
-    } else {
-      updateFilter(filterType, '');
-    }
-  };
-
-  // Count active filters for display
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (activeFilters.search.trim()) count++;
-    if (activeFilters.makes.length > 0) count++;
-    if (activeFilters.grades.length > 0) count++;
-    if (activeFilters.brands.length > 0) count++;
-    if (activeFilters.categories.length > 0) count++;
-    if (activeFilters.gsm.min || activeFilters.gsm.max) count++;
-    if (activeFilters.dimensions.deckle || activeFilters.dimensions.grain) count++;
-    if (activeFilters.units.length > 0) count++;
-    return count;
-  };
-  
-  // Define dynamic filter options first based on search results
-  const dynamicMakes = searchAggregations?.makes 
-    ? searchAggregations.makes.map((item: any) => ({ name: item.Make, count: item.count }))
-    : null;
-    
-  const dynamicGrades = searchAggregations?.grades 
-    ? searchAggregations.grades.map((item: any) => ({ name: item.Grade, count: item.count }))
-    : null;
-    
-  const dynamicBrands = searchAggregations?.brands 
-    ? searchAggregations.brands.map((item: any) => ({ name: item.Brand, count: item.count }))
-    : null;
-    
-  const dynamicUnits = searchAggregations?.units 
-    ? searchAggregations.units.map((item: any) => ({ name: item.OfferUnit, count: item.count }))
-    : null;
-
-  // Dynamic GSM options based on search results or all deals
-  const gsmOptions = searchAggregations?.gsm 
-    ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
-    : Array.from(new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))).sort((a, b) => parseFloat(a as string) - parseFloat(b as string)).map((gsm) => ({ value: gsm as string, count: 0 }));
   
   // No filtering needed - using available options from search API
 
@@ -1146,7 +887,6 @@ export default function Marketplace() {
           <div>
             <p className="text-sm text-muted-foreground">
               Showing {paginatedDeals.length} of {totalDeals} results
-              {getActiveFilterCount() > 0 && ` (${getActiveFilterCount()} filters applied)`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1189,14 +929,8 @@ export default function Marketplace() {
                 <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No deals found</h3>
                 <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or search terms
+                  No deals are currently available
                 </p>
-                <Button 
-                  variant="outline" 
-                  onClick={clearAllFilters}
-                >
-                  Clear Filters
-                </Button>
               </div>
             ) : (
               <>
