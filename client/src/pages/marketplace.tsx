@@ -52,6 +52,52 @@ export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
+  // Client-side sorting function
+  const sortDeals = (deals: any[], sortType: string) => {
+    if (!deals || deals.length === 0) return deals;
+    
+    const dealsCopy = [...deals];
+    
+    switch (sortType) {
+      case 'newest':
+        return dealsCopy.sort((a, b) => new Date(b.deal_created_at).getTime() - new Date(a.deal_created_at).getTime());
+      case 'oldest':
+        return dealsCopy.sort((a, b) => new Date(a.deal_created_at).getTime() - new Date(b.deal_created_at).getTime());
+      case 'price-low':
+        return dealsCopy.sort((a, b) => (a.OfferPrice || 0) - (b.OfferPrice || 0));
+      case 'price-high':
+        return dealsCopy.sort((a, b) => (b.OfferPrice || 0) - (a.OfferPrice || 0));
+      case 'gsm-low':
+        return dealsCopy.sort((a, b) => (a.GSM || 0) - (b.GSM || 0));
+      case 'gsm-high':
+        return dealsCopy.sort((a, b) => (b.GSM || 0) - (a.GSM || 0));
+      case 'quantity-low':
+        return dealsCopy.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
+      case 'quantity-high':
+        return dealsCopy.sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+      case 'size-small':
+        return dealsCopy.sort((a, b) => {
+          const sizeA = (a.Deckle_mm || 0) * (a.grain_mm || 0);
+          const sizeB = (b.Deckle_mm || 0) * (b.grain_mm || 0);
+          return sizeA - sizeB;
+        });
+      case 'size-large':
+        return dealsCopy.sort((a, b) => {
+          const sizeA = (a.Deckle_mm || 0) * (a.grain_mm || 0);
+          const sizeB = (b.Deckle_mm || 0) * (b.grain_mm || 0);
+          return sizeB - sizeA;
+        });
+      case 'location':
+        return dealsCopy.sort((a, b) => (a.Location || '').localeCompare(b.Location || ''));
+      case 'company':
+        return dealsCopy.sort((a, b) => (a.created_by_company || '').localeCompare(b.created_by_company || ''));
+      case 'category':
+        return dealsCopy.sort((a, b) => (a.category_name || '').localeCompare(b.category_name || ''));
+      default:
+        return dealsCopy.sort((a, b) => new Date(b.deal_created_at).getTime() - new Date(a.deal_created_at).getTime());
+    }
+  };
+  
   // Available filter options from search API (dynamic based on search)
   const [availableMakes, setAvailableMakes] = useState<any[]>([]);
   const [availableGrades, setAvailableGrades] = useState<any[]>([]);
@@ -214,9 +260,9 @@ export default function Marketplace() {
     }
   };
 
-  // Fetch deals - now using search results or fallback to regular deals
+  // Fetch deals - initial load only, sorting is client-side
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
+    queryKey: ["/api/deals"],
     queryFn: async () => {
       // If we have search results, use them instead
       if (searchResults && searchResults.data) {
@@ -227,11 +273,10 @@ export default function Marketplace() {
         };
       }
       
-      // Otherwise fetch regular deals (fallback)
+      // Otherwise fetch regular deals (no sorting, we'll sort client-side)
       const params = new URLSearchParams();
-      if (sortBy) params.append('sort', sortBy);
-      params.append('limit', itemsPerPage.toString());
-      params.append('page', currentPage.toString());
+      params.append('limit', '100'); // Get more data for client-side sorting
+      params.append('page', '1');
       
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
@@ -261,23 +306,34 @@ export default function Marketplace() {
   };
 
   // Use search results if available, otherwise use regular deals
-  // For precise search with all records, use client-side pagination and filtering
+  // Apply client-side sorting to existing data (NO API CALLS)
   let deals = [];
   let totalDeals = 0;
   
   if (searchResults?.maxRecords && allPreciseSearchResults.length > 0) {
     // Use filtered results if filters are applied, otherwise use all results
-    const dataToUse = hasClientFilters() ? filteredResults : allPreciseSearchResults;
+    const rawData = hasClientFilters() ? filteredResults : allPreciseSearchResults;
     
-    // Client-side pagination for precise search (max 100 records)
+    // Apply client-side sorting first
+    const sortedData = sortDeals(rawData, sortBy);
+    
+    // Then apply client-side pagination for precise search (max 100 records)
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    deals = dataToUse.slice(startIndex, endIndex);
-    totalDeals = dataToUse.length;
+    deals = sortedData.slice(startIndex, endIndex);
+    totalDeals = sortedData.length;
   } else {
-    // Regular server-side pagination
-    deals = searchResults?.data || dealsData?.deals || [];
-    totalDeals = searchResults?.total || dealsData?.total || 0;
+    // Get raw data from search results or regular deals
+    const rawData = searchResults?.data || dealsData?.deals || [];
+    
+    // Apply client-side sorting to existing data (NO API CALLS)
+    const sortedData = sortDeals(rawData, sortBy);
+    
+    // Apply pagination to sorted data
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    deals = sortedData.slice(startIndex, endIndex);
+    totalDeals = sortedData.length;
   }
   
   const totalPages = Math.max(1, Math.ceil(totalDeals / itemsPerPage));
@@ -536,8 +592,8 @@ export default function Marketplace() {
         body: JSON.stringify({
           filters: newFilters,
           page: resetPage ? 1 : currentPage,
-          pageSize: itemsPerPage,
-          sortBy: sortBy
+          pageSize: 100, // Get more data for client-side sorting
+          sortBy: 'newest' // Use default sort for API, sorting handled client-side
         })
       });
       
@@ -1662,6 +1718,13 @@ export default function Marketplace() {
                       <SelectItem value="price-high">Price: High to Low</SelectItem>
                       <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
                       <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
+                      <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
+                      <SelectItem value="quantity-high">Quantity: High to Low</SelectItem>
+                      <SelectItem value="size-small">Size: Small to Large</SelectItem>
+                      <SelectItem value="size-large">Size: Large to Small</SelectItem>
+                      <SelectItem value="location">Location (A-Z)</SelectItem>
+                      <SelectItem value="company">Company (A-Z)</SelectItem>
+                      <SelectItem value="category">Category (A-Z)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
