@@ -196,11 +196,25 @@ searchRouter.post('/unified', async (req, res) => {
     const queryParams: any[] = [];
     const conditions: string[] = [];
 
-    // Text search
+    // Text search with GSM precision
     if (query && query.trim()) {
-      conditions.push(`(dm.search_key LIKE ? OR dm.Make LIKE ? OR dm.Grade LIKE ? OR dm.Brand LIKE ?)`);
-      const searchTerm = `%${query.trim()}%`;
-      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      const queryLower = query.trim().toLowerCase();
+      
+      // Check if query contains GSM value (like "70 gsm", "70gsm", "70 GSM")
+      const gsmMatch = queryLower.match(/(\d+)\s*gsm/);
+      
+      if (gsmMatch) {
+        // For GSM searches, be more precise
+        const gsmValue = gsmMatch[1];
+        conditions.push(`(dm.GSM = ? OR dm.search_key LIKE ? OR dm.Make LIKE ? OR dm.Grade LIKE ? OR dm.Brand LIKE ?)`);
+        const searchTerm = `%${query.trim()}%`;
+        queryParams.push(parseInt(gsmValue), searchTerm, searchTerm, searchTerm, searchTerm);
+      } else {
+        // For non-GSM searches, use regular text search
+        conditions.push(`(dm.search_key LIKE ? OR dm.Make LIKE ? OR dm.Grade LIKE ? OR dm.Brand LIKE ?)`);
+        const searchTerm = `%${query.trim()}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      }
     }
 
     // Advanced filters
