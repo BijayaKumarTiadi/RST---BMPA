@@ -499,11 +499,14 @@ export default function Marketplace() {
         
         if (data.aggregations) {
           console.log('Setting initial filter options');
-          setAvailableMakes(data.aggregations.makes || []);
-          setAvailableGrades(data.aggregations.grades || []);
-          setAvailableBrands(data.aggregations.brands || []);
-          setAvailableGsm(data.aggregations.gsm || []);
-          setAvailableUnits(data.aggregations.units || []);
+          setAvailableFilters({
+            makes: data.aggregations.makes || [],
+            grades: data.aggregations.grades || [],
+            brands: data.aggregations.brands || [],
+            gsm: data.aggregations.gsm || [],
+            units: data.aggregations.units || [],
+            locations: data.aggregations.locations || []
+          });
         }
       }
     } catch (error) {
@@ -515,7 +518,7 @@ export default function Marketplace() {
   const applySearch = () => {
     // Trigger search with current search term
     setCurrentPage(1);
-    performSearch(pendingSearchTerm);
+    performUnifiedSearch(true);
   };
 
   const performSearch = async (query: string) => {
@@ -979,7 +982,7 @@ export default function Marketplace() {
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search offers..."
-                      value={pendingSearchTerm}
+                      value={searchTerm}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10"
                       data-testid="input-search"
@@ -1002,7 +1005,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableMakes.map((make: any, index: number) => (
+                      {availableFilters.makes.map((make: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1018,7 +1021,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableMakes.length === 0 && (
+                      {availableFilters.makes.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
@@ -1039,7 +1042,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGrades.map((grade: any, index: number) => (
+                      {availableFilters.grades.map((grade: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1055,7 +1058,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableGrades.length === 0 && (
+                      {availableFilters.grades.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
                       )}
                     </div>
@@ -1076,7 +1079,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableBrands.map((brand: any, index: number) => (
+                      {availableFilters.brands.map((brand: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1092,7 +1095,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableBrands.length === 0 && (
+                      {availableFilters.brands.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
                       )}
                     </div>
@@ -1113,7 +1116,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGsm.map((gsm: any, index: number) => (
+                      {availableFilters.gsm.map((gsm: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1129,7 +1132,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableGsm.length === 0 && (
+                      {availableFilters.gsm.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
                       )}
                     </div>
@@ -1207,7 +1210,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableMakes.map((make: any, index: number) => (
+                      {availableFilters.makes.map((make: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1223,7 +1226,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableMakes.length === 0 && (
+                      {availableFilters.makes.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
@@ -1244,7 +1247,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGrades.map((grade: any, index: number) => (
+                      {availableFilters.grades.map((grade: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1260,7 +1263,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableGrades.length === 0 && (
+                      {availableFilters.grades.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
                       )}
                     </div>
@@ -1281,7 +1284,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableBrands.map((brand: any, index: number) => (
+                      {availableFilters.brands.map((brand: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1297,7 +1300,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableBrands.length === 0 && (
+                      {availableFilters.brands.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
                       )}
                     </div>
@@ -1318,7 +1321,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableGsm.map((gsm: any, index: number) => (
+                      {availableFilters.gsm.map((gsm: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1334,7 +1337,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableGsm.length === 0 && (
+                      {availableFilters.gsm.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
                       )}
                     </div>
