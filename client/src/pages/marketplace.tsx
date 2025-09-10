@@ -719,13 +719,13 @@ export default function Marketplace() {
         <div className="mb-6">
           <PowerSearch 
             onSearch={(results) => {
-              if (results && results.success) {
-                setSearchResults(results);
-                setSearchAggregations(results.aggregations || null);
+              if (results && results.success && results.data) {
+                // Apply results to client-side filtering
+                setFilteredDeals(results.data);
                 setCurrentPage(1);
               }
             }}
-            onLoading={(loading) => setIsSearching(loading)}
+            onLoading={(loading) => {/* No longer need loading state */}}
             className="w-full"
           />
         </div>
@@ -903,19 +903,12 @@ export default function Marketplace() {
                     onClick={performPreciseSearch}
                     className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
                     data-testid="button-precise-search"
-                    disabled={isSearching}
+                    disabled={false}
                   >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Search
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-3 w-3" />
-                        Search
-                      </>
-                    )}
+                    <>
+                      <Search className="mr-2 h-3 w-3" />
+                      Search
+                    </>
                   </Button>
                   <Button 
                     variant="outline"
