@@ -1817,24 +1817,15 @@ export default function Marketplace() {
                           >
                             {deal.Status === 'active' ? 'Available' : deal.Status}
                           </Badge>
-                          
-                          {/* Wishlist Button */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
-                            data-testid={`button-wishlist-${deal.TransID}`}
-                          >
-                            <Heart className="h-3 w-3" />
-                          </Button>
                         </div>
+                        
+                        {/* Product Description in Header */}
+                        <h3 className="font-bold text-sm line-clamp-2 text-gray-800 dark:text-gray-200" data-testid={`deal-title-${deal.TransID}`}>
+                          {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
+                        </h3>
                       </div>
 
                         <CardContent className="p-4 flex-1 flex flex-col">
-                          {/* 1. Description - Extract from Seller_comments after newline */}
-                            <h3 className="font-bold text-lg line-clamp-2 mb-4 text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                              {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
-                            </h3>
 
                           {/* 2. GSM and Dimensions properly aligned */}
                           <div className="space-y-2 mb-4">
