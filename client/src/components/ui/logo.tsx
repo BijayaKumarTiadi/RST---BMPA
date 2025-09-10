@@ -15,7 +15,7 @@ export function Logo({ className = "", size = 'md', showText = true }: LogoProps
     <div className={`flex items-center space-x-3 ${className}`}>
       <div className="flex items-center justify-center">
         <div className={`${sizeClasses[size]} w-auto flex items-center justify-center 
-          bg-gray-900 dark:bg-white rounded-md p-1 transition-colors duration-200`}>
+          bg-white dark:bg-gray-900 rounded-md p-1 transition-colors duration-200 border border-gray-200 dark:border-gray-700`}>
           <img 
             src="/bmpa-logo.svg" 
             alt="BMPA Logo" 
