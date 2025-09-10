@@ -17,7 +17,9 @@ export function Logo({ className = "", size = 'md', showText = true }: LogoProps
         <img 
           src="/bmpa-logo.svg" 
           alt="BMPA Logo" 
-          className={`${sizeClasses[size]} w-auto object-contain`}
+          className={`${sizeClasses[size]} w-auto object-contain 
+            filter brightness-0 dark:filter-none
+            transition-all duration-200`}
         />
       </div>
       {showText && (
