@@ -116,6 +116,22 @@ export default function Marketplace() {
     enabled: isAuthenticated,
   });
 
+  // Fetch all deals once for client-side filtering
+  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+    queryKey: ["/api/search/data"],
+    queryFn: async () => {
+      const response = await fetch('/api/search/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (!response.ok) throw new Error('Failed to fetch deals');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: isAuthenticated,
+  });
+
   // Update quick search default units when user settings are loaded
   useEffect(() => {
     if (userSettings?.dimension_unit) {
@@ -300,21 +316,6 @@ export default function Marketplace() {
       );
     }
   };
-
-  // Fetch all deals once for client-side filtering
-  const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/search/data"],
-    queryFn: async () => {
-      const response = await fetch('/api/search/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      if (!response.ok) throw new Error('Failed to fetch deals');
-      return response.json();
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
 
   if (!isAuthenticated) {
     return (
