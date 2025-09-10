@@ -49,11 +49,13 @@ searchRouter.get('/health', async (req, res) => {
   });
 });
 
-// Precise search endpoint
+// Precise search endpoint - FETCH ALL RECORDS
 searchRouter.post('/precise', async (req, res) => {
   try {
     const { executeQuery } = await import('./database');
-    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, page = 1, pageSize = 12 } = req.body;
+    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance } = req.body;
+    
+    console.log('Precise search - fetching ALL records:', req.body);
     
     let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
@@ -123,18 +125,7 @@ searchRouter.post('/precise', async (req, res) => {
       queryParams.push(minGrain, maxGrain);
     }
     
-    // Get total count
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM deal_master dm 
-      LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
-      ${whereClause}
-    `;
-    const [countResult] = await executeQuery(countQuery, queryParams);
-    const total = countResult.total;
-    
-    // Get paginated results
-    const offset = (page - 1) * pageSize;
+    // Get ALL results - NO PAGINATION
     const searchQuery = `
       SELECT 
         dm.*,
@@ -146,19 +137,17 @@ searchRouter.post('/precise', async (req, res) => {
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       ${whereClause}
       ORDER BY dm.TransID DESC
-      LIMIT ? OFFSET ?
     `;
     
-    const searchParams = [...queryParams, pageSize, offset];
-    const results = await executeQuery(searchQuery, searchParams);
+    const results = await executeQuery(searchQuery, queryParams);
+    
+    console.log(`Precise search found ${results.length} total records - returning ALL`);
     
     res.json({
       success: true,
       data: results,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
+      total: results.length,
+      allRecords: true, // Flag to indicate all records returned
       searchType: 'precise'
     });
   } catch (error) {

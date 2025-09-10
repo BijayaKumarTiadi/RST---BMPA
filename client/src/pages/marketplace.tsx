@@ -76,6 +76,9 @@ export default function Marketplace() {
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  
+  // Client-side pagination for precise search results
+  const [allPreciseSearchResults, setAllPreciseSearchResults] = useState<any[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
     makes: false,
@@ -206,8 +209,22 @@ export default function Marketplace() {
   }
 
   // Use search results if available, otherwise use regular deals
-  const deals = searchResults?.data || dealsData?.deals || [];
-  const totalDeals = searchResults?.total || dealsData?.total || 0;
+  // For precise search with all records, use client-side pagination
+  let deals = [];
+  let totalDeals = 0;
+  
+  if (searchResults?.allRecords && allPreciseSearchResults.length > 0) {
+    // Client-side pagination for precise search
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    deals = allPreciseSearchResults.slice(startIndex, endIndex);
+    totalDeals = allPreciseSearchResults.length;
+  } else {
+    // Regular server-side pagination
+    deals = searchResults?.data || dealsData?.deals || [];
+    totalDeals = searchResults?.total || dealsData?.total || 0;
+  }
+  
   const totalPages = Math.max(1, Math.ceil(totalDeals / itemsPerPage));
   
   // Handle page change with filters
@@ -217,6 +234,7 @@ export default function Marketplace() {
     if (hasActiveFilters()) {
       applyFilters(appliedFilters, false); // false means don't reset page
     }
+    // Note: For precise search with allRecords, pagination is handled client-side automatically
   };
   
   // Ensure current page doesn't exceed total pages
@@ -673,7 +691,7 @@ export default function Marketplace() {
   };
 
   const performPreciseSearch = async () => {
-    console.log('Performing precise search with:', preciseSearch);
+    console.log('Performing precise search with (fetching ALL records):', preciseSearch);
     
     try {
       setIsSearching(true);
@@ -682,19 +700,25 @@ export default function Marketplace() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...preciseSearch,
-          page: 1,
-          pageSize: itemsPerPage
-        })
+        body: JSON.stringify(preciseSearch) // No pagination params - fetch all
       });
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Precise search results:', data);
-        setSearchResults(data);
+        console.log('Precise search results (ALL RECORDS):', data);
+        console.log(`Received ${data.data?.length || 0} total records`);
+        
+        // Store all results for client-side pagination
+        setAllPreciseSearchResults(data.data || []);
+        
+        // Set search results for display (this will be paginated client-side)
+        setSearchResults({
+          ...data,
+          allRecords: true // Flag to indicate we have all records
+        });
+        
         setSearchTerm(''); // Clear regular search term
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to first page
       } else {
         console.error('Precise search failed');
       }
