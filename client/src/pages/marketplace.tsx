@@ -35,16 +35,23 @@ export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
-  // Available filter options from search API (dynamic based on search)
-  const [availableMakes, setAvailableMakes] = useState<any[]>([]);
-  const [availableGrades, setAvailableGrades] = useState<any[]>([]);
-  const [availableBrands, setAvailableBrands] = useState<any[]>([]);
-  const [availableGsm, setAvailableGsm] = useState<any[]>([]);
-  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
-  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+  // Client-side filtering states
+  const [allDeals, setAllDeals] = useState<any[]>([]);
+  const [filteredDeals, setFilteredDeals] = useState<any[]>([]);
+  const [activeFilters, setActiveFilters] = useState({
+    search: '',
+    makes: [] as string[],
+    grades: [] as string[],
+    brands: [] as string[],
+    categories: [] as string[],
+    gsm: { min: '', max: '' },
+    dimensions: { deckle: '', grain: '', unit: 'cm', tolerance: '' },
+    units: [] as string[],
+    locations: [] as string[]
+  });
 
-  // Precise search states
-  const [preciseSearch, setPreciseSearch] = useState({
+  // Quick precise search states
+  const [quickSearch, setQuickSearch] = useState({
     category: "",
     gsm: "",
     tolerance: "",
@@ -109,17 +116,167 @@ export default function Marketplace() {
     enabled: isAuthenticated,
   });
 
-  // Update precise search default units when user settings are loaded
+  // Update quick search default units when user settings are loaded
   useEffect(() => {
     if (userSettings?.dimension_unit) {
       const defaultUnit = userSettings.dimension_unit;
-      setPreciseSearch(prev => ({
+      setQuickSearch(prev => ({
         ...prev,
         deckleUnit: defaultUnit,
         grainUnit: defaultUnit
       }));
+      setActiveFilters(prev => ({
+        ...prev,
+        dimensions: {
+          ...prev.dimensions,
+          unit: defaultUnit
+        }
+      }));
     }
   }, [userSettings]);
+
+  // Load and filter data when deals or filters change
+  useEffect(() => {
+    if (dealsData?.success && dealsData?.data) {
+      setAllDeals(dealsData.data);
+      applyFilters(dealsData.data);
+    }
+  }, [dealsData, activeFilters, sortBy]);
+
+  // Client-side filtering function
+  const applyFilters = (deals: any[]) => {
+    let filtered = [...deals];
+
+    // Text search filter
+    if (activeFilters.search.trim()) {
+      const searchLower = activeFilters.search.toLowerCase();
+      filtered = filtered.filter(deal => {
+        const searchFields = [
+          deal.Make,
+          deal.Grade, 
+          deal.Brand,
+          deal.stock_description,
+          deal.category_name,
+          deal.Seller_comments
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        return searchFields.includes(searchLower);
+      });
+    }
+
+    // Makes filter
+    if (activeFilters.makes.length > 0) {
+      filtered = filtered.filter(deal => 
+        activeFilters.makes.includes(deal.Make)
+      );
+    }
+
+    // Grades filter  
+    if (activeFilters.grades.length > 0) {
+      filtered = filtered.filter(deal => 
+        activeFilters.grades.includes(deal.Grade)
+      );
+    }
+
+    // Brands filter
+    if (activeFilters.brands.length > 0) {
+      filtered = filtered.filter(deal => 
+        activeFilters.brands.includes(deal.Brand)
+      );
+    }
+
+    // Categories filter
+    if (activeFilters.categories.length > 0) {
+      filtered = filtered.filter(deal => 
+        activeFilters.categories.includes(deal.category_name)
+      );
+    }
+
+    // GSM range filter
+    if (activeFilters.gsm.min || activeFilters.gsm.max) {
+      filtered = filtered.filter(deal => {
+        const gsm = Number(deal.GSM);
+        if (isNaN(gsm)) return false;
+        
+        const min = activeFilters.gsm.min ? Number(activeFilters.gsm.min) : 0;
+        const max = activeFilters.gsm.max ? Number(activeFilters.gsm.max) : Infinity;
+        
+        return gsm >= min && gsm <= max;
+      });
+    }
+
+    // Dimensions filter (deckle x grain with tolerance)
+    if (activeFilters.dimensions.deckle || activeFilters.dimensions.grain) {
+      filtered = filtered.filter(deal => {
+        let matches = true;
+        const tolerance = Number(activeFilters.dimensions.tolerance) || 0;
+        
+        // Convert input dimensions to mm for comparison
+        if (activeFilters.dimensions.deckle) {
+          const deckleInput = Number(activeFilters.dimensions.deckle);
+          if (isNaN(deckleInput)) return false;
+          
+          let deckleInputMm = deckleInput;
+          if (activeFilters.dimensions.unit === 'cm') {
+            deckleInputMm = deckleInput * 10;
+          } else if (activeFilters.dimensions.unit === 'inch') {
+            deckleInputMm = deckleInput * 25.4;
+          }
+          
+          const dealDeckle = Number(deal.Deckle_mm);
+          if (isNaN(dealDeckle)) return false;
+          
+          const minDeckle = deckleInputMm - tolerance;
+          const maxDeckle = deckleInputMm + tolerance;
+          
+          matches = matches && (dealDeckle >= minDeckle && dealDeckle <= maxDeckle);
+        }
+        
+        if (activeFilters.dimensions.grain) {
+          const grainInput = Number(activeFilters.dimensions.grain);
+          if (isNaN(grainInput)) return false;
+          
+          let grainInputMm = grainInput;
+          if (activeFilters.dimensions.unit === 'cm') {
+            grainInputMm = grainInput * 10;
+          } else if (activeFilters.dimensions.unit === 'inch') {
+            grainInputMm = grainInput * 25.4;
+          }
+          
+          const dealGrain = Number(deal.grain_mm);
+          if (isNaN(dealGrain)) return false;
+          
+          const minGrain = grainInputMm - tolerance;
+          const maxGrain = grainInputMm + tolerance;
+          
+          matches = matches && (dealGrain >= minGrain && dealGrain <= maxGrain);
+        }
+        
+        return matches;
+      });
+    }
+
+    // Units filter
+    if (activeFilters.units.length > 0) {
+      filtered = filtered.filter(deal => 
+        activeFilters.units.includes(deal.OfferUnit)
+      );
+    }
+
+    // Apply sorting
+    if (sortBy === 'newest') {
+      filtered.sort((a, b) => new Date(b.DateCreated).getTime() - new Date(a.DateCreated).getTime());
+    } else if (sortBy === 'oldest') {
+      filtered.sort((a, b) => new Date(a.DateCreated).getTime() - new Date(b.DateCreated).getTime());
+    } else if (sortBy === 'price-low') {
+      filtered.sort((a, b) => Number(a.PerKgRate) - Number(b.PerKgRate));
+    } else if (sortBy === 'price-high') {
+      filtered.sort((a, b) => Number(b.PerKgRate) - Number(a.PerKgRate));
+    }
+
+    setFilteredDeals(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
 
   // Helper function to format dimensions based on user preference
   const formatDimensions = (deckle_mm: number, grain_mm: number) => {
@@ -144,30 +301,19 @@ export default function Marketplace() {
     }
   };
 
-  // Fetch deals - now using search results or fallback to regular deals
+  // Fetch all deals once for client-side filtering
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
+    queryKey: ["/api/search/data"],
     queryFn: async () => {
-      // If we have search results, use them instead
-      if (searchResults && searchResults.data) {
-        return {
-          deals: searchResults.data,
-          total: searchResults.total,
-          page: searchResults.page || 1
-        };
-      }
-      
-      // Otherwise fetch regular deals (fallback)
-      const params = new URLSearchParams();
-      if (sortBy) params.append('sort', sortBy);
-      params.append('limit', itemsPerPage.toString());
-      params.append('page', currentPage.toString());
-      
-      const response = await fetch(`/api/deals?${params.toString()}`);
+      const response = await fetch('/api/search/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: !isSearching, // Don't fetch when search is in progress
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   if (!isAuthenticated) {
@@ -185,14 +331,82 @@ export default function Marketplace() {
     );
   }
 
-  // Use search results if available, otherwise use regular deals
-  const deals = searchResults?.data || dealsData?.deals || [];
-  const totalDeals = searchResults?.total || dealsData?.total || 0;
+  // Use filtered deals for display and pagination
+  const deals = filteredDeals;
+  const totalDeals = filteredDeals.length;
   const totalPages = Math.ceil(totalDeals / itemsPerPage);
-  const groups = stockHierarchy?.groups || [];
-  const makes = stockHierarchy?.makes || [];
-  const grades = stockHierarchy?.grades || [];
-  const brands = stockHierarchy?.brands || [];
+  
+  // Paginated deals for current page
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDeals = filteredDeals.slice(startIndex, endIndex);
+
+  // Generate filter options from all available data
+  const getUniqueValues = (field: string) => {
+    return [...new Set(allDeals.map(deal => deal[field]).filter(Boolean))].sort();
+  };
+  
+  const availableMakes = getUniqueValues('Make');
+  const availableGrades = getUniqueValues('Grade');  
+  const availableBrands = getUniqueValues('Brand');
+  const availableCategories = getUniqueValues('category_name');
+  const availableUnits = getUniqueValues('OfferUnit');
+
+  // Filter management functions
+  const toggleArrayFilter = (filterType: keyof typeof activeFilters, value: string) => {
+    setActiveFilters(prev => {
+      const currentArray = prev[filterType] as string[];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+      
+      return { ...prev, [filterType]: newArray };
+    });
+  };
+
+  const updateFilter = (filterType: keyof typeof activeFilters, value: any) => {
+    setActiveFilters(prev => ({ ...prev, [filterType]: value }));
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilters({
+      search: '',
+      makes: [],
+      grades: [],
+      brands: [],
+      categories: [],
+      gsm: { min: '', max: '' },
+      dimensions: { deckle: '', grain: '', unit: activeFilters.dimensions.unit, tolerance: '' },
+      units: [],
+      locations: []
+    });
+  };
+
+  const clearSpecificFilter = (filterType: keyof typeof activeFilters) => {
+    if (filterType === 'gsm') {
+      updateFilter('gsm', { min: '', max: '' });
+    } else if (filterType === 'dimensions') {
+      updateFilter('dimensions', { deckle: '', grain: '', unit: activeFilters.dimensions.unit, tolerance: '' });
+    } else if (Array.isArray(activeFilters[filterType])) {
+      updateFilter(filterType, []);
+    } else {
+      updateFilter(filterType, '');
+    }
+  };
+
+  // Count active filters for display
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (activeFilters.search.trim()) count++;
+    if (activeFilters.makes.length > 0) count++;
+    if (activeFilters.grades.length > 0) count++;
+    if (activeFilters.brands.length > 0) count++;
+    if (activeFilters.categories.length > 0) count++;
+    if (activeFilters.gsm.min || activeFilters.gsm.max) count++;
+    if (activeFilters.dimensions.deckle || activeFilters.dimensions.grain) count++;
+    if (activeFilters.units.length > 0) count++;
+    return count;
+  };
   
   // Define dynamic filter options first based on search results
   const dynamicMakes = searchAggregations?.makes 
@@ -412,21 +626,6 @@ export default function Marketplace() {
     addFilterToSearch(unit.OfferUnit || unit.name || unit.value || unit);
   };
 
-  // Clear all filters
-  const clearAllFilters = () => {
-    setPendingSearchTerm("");
-    setSearchTerm("");
-    setSortBy("newest");
-    setCurrentPage(1);
-    setSearchResults(null);
-    setSearchAggregations(null);
-    setAvailableMakes([]);
-    setAvailableGrades([]);
-    setAvailableBrands([]);
-    setAvailableGsm([]);
-    setAvailableUnits([]);
-    setAvailableLocations([]);
-  };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -1288,13 +1487,13 @@ export default function Marketplace() {
                 {/* Results Header */}
                 <div className="flex items-center justify-between mb-6">
                   <p className="text-muted-foreground">
-                    Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
+                    Showing {paginatedDeals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
                   </p>
                 </div>
 
                 {/* Deal Cards Grid - Responsive */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {deals.map((deal: any) => (
+                  {paginatedDeals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
                         {/* Header with badges - No Board/Reel */}
