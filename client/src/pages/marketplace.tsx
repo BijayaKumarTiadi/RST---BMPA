@@ -1807,7 +1807,7 @@ export default function Marketplace() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
-                      <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
+                      <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
                         {/* Header with badges - No Board/Reel */}
                         <div className="flex items-center justify-between mb-2">
                           {/* Status Badge */}
@@ -1825,10 +1825,10 @@ export default function Marketplace() {
                         </h3>
                       </div>
 
-                        <CardContent className="p-4 flex-1 flex flex-col">
+                        <CardContent className="p-3 flex-1 flex flex-col">
 
                           {/* 2. GSM and Dimensions properly aligned */}
-                          <div className="space-y-2 mb-4">
+                          <div className="space-y-1 mb-3">
                             <div className="flex items-center text-sm">
                               <span className="font-medium text-gray-500">GSM:</span>
                               <span className="font-bold text-foreground ml-2">{deal.GSM || 'N/A'}</span>
@@ -1844,7 +1844,7 @@ export default function Marketplace() {
                           </div>
 
                           {/* 3. Quantity and Price */}
-                          <div className="flex items-center justify-between mb-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-3 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-sm">
                               <span className="font-medium text-gray-500">Qty:</span>
                               <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
@@ -1861,7 +1861,7 @@ export default function Marketplace() {
 
 
                           {/* Seller Info with Icon */}
-                          <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                             <Building className="h-4 w-4 text-gray-500" />
                             <div>
                               <span className="text-xs text-gray-500">by </span>
@@ -1874,14 +1874,14 @@ export default function Marketplace() {
 
                           {/* Deal Age */}
                           {deal.deal_created_at && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
                               <Calendar className="h-3 w-3" />
                               <span>{getRelativeTime(deal.deal_created_at)}</span>
                             </div>
                           )}
 
                           {/* Action Buttons */}
-                          <div className="space-y-2 mt-auto">
+                          <div className="space-y-1 mt-auto">
                             <Button
                               size="sm"
                               className="w-full text-sm bg-blue-600 hover:bg-blue-700 text-white"
