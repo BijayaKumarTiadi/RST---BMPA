@@ -1,6 +1,25 @@
 import { executeQuery, executeQuerySingle } from './database.js';
 import crypto from 'crypto';
 
+// Helper function to get ORDER BY clause based on sort parameter
+function getSortClause(sortBy?: string): string {
+  switch (sortBy) {
+    case 'price-low':
+      return 'ORDER BY d.OfferPrice ASC';
+    case 'price-high':
+      return 'ORDER BY d.OfferPrice DESC';
+    case 'gsm-low':
+      return 'ORDER BY d.GSM ASC';
+    case 'gsm-high':
+      return 'ORDER BY d.GSM DESC';
+    case 'oldest':
+      return 'ORDER BY d.deal_created_at ASC';
+    case 'newest':
+    default:
+      return 'ORDER BY d.deal_created_at DESC';
+  }
+}
+
 export interface Deal {
   DealID: number;
   GroupID: number;
@@ -143,6 +162,7 @@ class DealService {
     status?: string;
     search?: string;
     location?: string;
+    sort?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ deals: Deal[]; total: number }> {
@@ -290,7 +310,7 @@ class DealService {
         LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
         ${whereClause}
-        ORDER BY d.deal_created_at DESC
+        ${getSortClause(filters?.sort)}
         LIMIT ? OFFSET ?
       `;
 

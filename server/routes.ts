@@ -680,6 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         seller_id,
         seller_only,
         status,
+        sort,
         page = 1,
         limit = 20
       } = req.query;
@@ -705,6 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: location as string,
         seller_id: actualSellerId,
         status: status as string,
+        sort: sort as string,
         limit: parseInt(limit as string),
         offset: (parseInt(page as string) - 1) * parseInt(limit as string),
       };

@@ -1416,9 +1416,10 @@ export default function Marketplace() {
                     <SelectContent>
                       <SelectItem value="newest">Newest First</SelectItem>
                       <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="price_low">Price: Low to High</SelectItem>
-                      <SelectItem value="price_high">Price: High to Low</SelectItem>
-                      <SelectItem value="quantity">Quantity</SelectItem>
+                      <SelectItem value="price-low">Price: Low to High</SelectItem>
+                      <SelectItem value="price-high">Price: High to Low</SelectItem>
+                      <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
+                      <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1650,9 +1651,10 @@ export default function Marketplace() {
                     <SelectContent>
                       <SelectItem value="newest">Newest First</SelectItem>
                       <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="price_low">Price: Low to High</SelectItem>
-                      <SelectItem value="price_high">Price: High to Low</SelectItem>
-                      <SelectItem value="quantity">Quantity</SelectItem>
+                      <SelectItem value="price-low">Price: Low to High</SelectItem>
+                      <SelectItem value="price-high">Price: High to Low</SelectItem>
+                      <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
+                      <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
