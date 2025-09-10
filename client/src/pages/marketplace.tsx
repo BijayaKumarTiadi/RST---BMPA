@@ -79,6 +79,17 @@ export default function Marketplace() {
   
   // Client-side pagination for precise search results
   const [allPreciseSearchResults, setAllPreciseSearchResults] = useState<any[]>([]);
+  
+  // Client-side filter states (checkbox based)
+  const [clientFilters, setClientFilters] = useState({
+    makes: [] as string[],
+    grades: [] as string[],
+    brands: [] as string[],
+    gsm: [] as string[],
+    categories: [] as string[]
+  });
+  const [filteredResults, setFilteredResults] = useState<any[]>([]);
+  
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
     makes: false,
@@ -209,16 +220,19 @@ export default function Marketplace() {
   }
 
   // Use search results if available, otherwise use regular deals
-  // For precise search with all records, use client-side pagination
+  // For precise search with all records, use client-side pagination and filtering
   let deals = [];
   let totalDeals = 0;
   
   if (searchResults?.maxRecords && allPreciseSearchResults.length > 0) {
+    // Use filtered results if filters are applied, otherwise use all results
+    const dataToUse = hasClientFilters() ? filteredResults : allPreciseSearchResults;
+    
     // Client-side pagination for precise search (max 100 records)
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    deals = allPreciseSearchResults.slice(startIndex, endIndex);
-    totalDeals = allPreciseSearchResults.length;
+    deals = dataToUse.slice(startIndex, endIndex);
+    totalDeals = dataToUse.length;
   } else {
     // Regular server-side pagination
     deals = searchResults?.data || dealsData?.deals || [];
@@ -662,6 +676,115 @@ export default function Marketplace() {
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
+
+  // Helper function to check if any client filters are applied
+  const hasClientFilters = () => {
+    return Object.values(clientFilters).some(filterArray => filterArray.length > 0);
+  };
+
+  // Extract unique values from precise search results for client-side filtering
+  const getUniqueValues = (field: string) => {
+    if (!allPreciseSearchResults.length) return [];
+    
+    const values = allPreciseSearchResults
+      .map(deal => {
+        switch (field) {
+          case 'makes': return deal.Make;
+          case 'grades': return deal.Grade;
+          case 'brands': return deal.Brand;
+          case 'gsm': return deal.GSM?.toString();
+          case 'categories': return deal.category_name;
+          default: return null;
+        }
+      })
+      .filter(value => value && value.trim() !== '')
+      .reduce((acc, value) => {
+        const existing = acc.find(item => item.value === value);
+        if (existing) {
+          existing.count++;
+        } else {
+          acc.push({ value, count: 1 });
+        }
+        return acc;
+      }, [] as Array<{value: string, count: number}>);
+    
+    return values.sort((a, b) => b.count - a.count);
+  };
+
+  // Client-side filtering function
+  const applyClientFilters = () => {
+    if (!hasClientFilters()) {
+      setFilteredResults(allPreciseSearchResults);
+      return;
+    }
+
+    const filtered = allPreciseSearchResults.filter(deal => {
+      // Check makes filter
+      if (clientFilters.makes.length > 0 && !clientFilters.makes.includes(deal.Make)) {
+        return false;
+      }
+      
+      // Check grades filter
+      if (clientFilters.grades.length > 0 && !clientFilters.grades.includes(deal.Grade)) {
+        return false;
+      }
+      
+      // Check brands filter
+      if (clientFilters.brands.length > 0 && !clientFilters.brands.includes(deal.Brand)) {
+        return false;
+      }
+      
+      // Check GSM filter
+      if (clientFilters.gsm.length > 0 && !clientFilters.gsm.includes(deal.GSM?.toString())) {
+        return false;
+      }
+      
+      // Check categories filter
+      if (clientFilters.categories.length > 0 && !clientFilters.categories.includes(deal.category_name)) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    setFilteredResults(filtered);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  // Handle checkbox filter changes
+  const handleFilterChange = (filterType: keyof typeof clientFilters, value: string, checked: boolean) => {
+    setClientFilters(prev => {
+      const newFilters = { ...prev };
+      if (checked) {
+        if (!newFilters[filterType].includes(value)) {
+          newFilters[filterType] = [...newFilters[filterType], value];
+        }
+      } else {
+        newFilters[filterType] = newFilters[filterType].filter(item => item !== value);
+      }
+      return newFilters;
+    });
+  };
+
+  // Clear all client filters
+  const clearClientFilters = () => {
+    setClientFilters({
+      makes: [],
+      grades: [],
+      brands: [],
+      gsm: [],
+      categories: []
+    });
+    setFilteredResults(allPreciseSearchResults);
+    setCurrentPage(1);
+  };
+
+  // Apply client-side filters whenever filters change or results change
+  useEffect(() => {
+    if (allPreciseSearchResults.length > 0) {
+      applyClientFilters();
+    }
+  }, [clientFilters, allPreciseSearchResults]);
 
   // Auto-suggestion functions for precise search
   const fetchGsmSuggestions = async (query: string | any) => {
