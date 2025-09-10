@@ -428,7 +428,6 @@ export default function Login() {
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
           <p>© 2025 Stock Laabh. All rights reserved.</p>
-          <p className="mt-1">Professional Trading Platform</p>
           <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
         </div>
       </div>
