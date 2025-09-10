@@ -860,7 +860,9 @@ export default function Marketplace() {
       return;
     }
     try {
-      const response = await fetch(`/api/suggestions/gsm?q=${encodeURIComponent(queryStr)}`);
+      // Include category parameter if selected
+      const categoryParam = preciseSearch.category ? `&category=${encodeURIComponent(preciseSearch.category)}` : '';
+      const response = await fetch(`/api/suggestions/gsm?q=${encodeURIComponent(queryStr)}${categoryParam}`);
       if (response.ok) {
         const data = await response.json();
         setGsmSuggestions(data.suggestions || []);
@@ -874,6 +876,11 @@ export default function Marketplace() {
   // Handle precise search field changes
   const handlePreciseSearchChange = (field: string, value: string) => {
     setPreciseSearch(prev => ({ ...prev, [field]: value }));
+    
+    // Clear GSM suggestions when category changes to get fresh category-specific suggestions
+    if (field === 'category') {
+      setGsmSuggestions([]);
+    }
     
     // Trigger auto-suggestions based on field (excluding category - dropdown only)
     if (field === 'gsm') fetchGsmSuggestions(value);

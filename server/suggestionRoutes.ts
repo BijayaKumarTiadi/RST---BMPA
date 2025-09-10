@@ -61,11 +61,14 @@ router.get('/categories', async (req, res) => {
 // Get GSM suggestions from deal_master
 router.get('/gsm', async (req, res) => {
   try {
-    let { q } = req.query;
+    let { q, category } = req.query;
     
     // Handle array case
     if (Array.isArray(q)) {
       q = q[0];
+    }
+    if (Array.isArray(category)) {
+      category = category[0];
     }
     
     if (!q || typeof q !== 'string' || !q.trim()) {
@@ -73,18 +76,41 @@ router.get('/gsm', async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    const query = `
-      SELECT DISTINCT GSM as value, COUNT(*) as count
-      FROM deal_master 
-      WHERE GSM IS NOT NULL 
-        AND GSM != '' 
-        AND GSM LIKE '%${searchTerm}%'
-      GROUP BY GSM
-      ORDER BY count DESC, CAST(GSM AS UNSIGNED) ASC
-      LIMIT 10
-    `;
+    let query = '';
+    let params = [];
+    
+    if (category && category.trim()) {
+      // Filter GSM suggestions by category using groupID
+      query = `
+        SELECT DISTINCT d.GSM as value, COUNT(*) as count
+        FROM deal_master d
+        LEFT JOIN stock_groups sg ON d.groupID = sg.GroupID
+        WHERE d.GSM IS NOT NULL 
+          AND d.GSM != '' 
+          AND d.GSM LIKE ?
+          AND sg.GroupName = ?
+          AND sg.IsActive = 1
+        GROUP BY d.GSM
+        ORDER BY count DESC, CAST(d.GSM AS UNSIGNED) ASC
+        LIMIT 10
+      `;
+      params = [`%${searchTerm}%`, category.trim()];
+    } else {
+      // Original query without category filtering
+      query = `
+        SELECT DISTINCT GSM as value, COUNT(*) as count
+        FROM deal_master 
+        WHERE GSM IS NOT NULL 
+          AND GSM != '' 
+          AND GSM LIKE ?
+        GROUP BY GSM
+        ORDER BY count DESC, CAST(GSM AS UNSIGNED) ASC
+        LIMIT 10
+      `;
+      params = [`%${searchTerm}%`];
+    }
 
-    const results = await executeQuery(query);
+    const results = await executeQuery(query, params);
     res.json({ success: true, suggestions: results });
   } catch (error) {
     console.error('Error fetching GSM suggestions:', error);
