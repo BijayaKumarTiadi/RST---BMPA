@@ -1525,7 +1525,7 @@ export default function Marketplace() {
         {/* Main Layout: Sidebar + Content */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Desktop Sidebar - Filters */}
-          <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
+          <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
             <Card className="sticky top-4">
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pt-6">
                 
@@ -1804,7 +1804,7 @@ export default function Marketplace() {
               <>
 
                 {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
