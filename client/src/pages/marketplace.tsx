@@ -1802,12 +1802,6 @@ export default function Marketplace() {
               </div>
             ) : (
               <>
-                {/* Results Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <p className="text-muted-foreground">
-                    Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
-                  </p>
-                </div>
 
                 {/* Deal Cards Grid - Responsive */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1959,7 +1953,11 @@ export default function Marketplace() {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center mt-8 space-x-2">
+                  <div className="flex flex-col items-center mt-8 space-y-4">
+                    <p className="text-muted-foreground text-sm">
+                      Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
+                    </p>
+                    <div className="flex items-center justify-center space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1998,6 +1996,7 @@ export default function Marketplace() {
                     >
                       Next
                     </Button>
+                    </div>
                   </div>
                 )}
               </>
