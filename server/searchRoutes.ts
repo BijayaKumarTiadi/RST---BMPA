@@ -187,11 +187,9 @@ searchRouter.post('/unified', async (req, res) => {
         dm.*,
         bm.mname as seller_name,
         bm.company_name as seller_company,
-        bm.city as seller_location,
-        cat.category_name
+        bm.city as seller_location
       FROM deal_master dm
-      LEFT JOIN bmpa_members bm ON dm.SellerId = bm.member_id
-      LEFT JOIN bmpa_categories cat ON dm.CategoryID = cat.category_id
+      LEFT JOIN bmpa_members bm ON dm.memberID = bm.member_id
       WHERE dm.StockStatus = 1 AND bm.mstatus = 1
     `;
 
@@ -266,24 +264,23 @@ searchRouter.post('/unified', async (req, res) => {
       case 'gsm-high': orderBy = 'ORDER BY dm.GSM DESC'; break;
     }
 
-    // Get total count - fix column name
-    const countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM').replace('dm.SellerID', 'dm.SellerId');
+    // Get total count
+    const countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM');
     const countResult = await executeQuerySingle(countQuery, queryParams);
     const total = countResult?.total || 0;
 
-    // Get paginated results - fix column name  
+    // Get paginated results
     const offset = (page - 1) * pageSize;
-    const finalQuery = `${baseQuery.replace('dm.SellerID', 'dm.SellerId')} ${orderBy} LIMIT ${pageSize} OFFSET ${offset}`;
+    const finalQuery = `${baseQuery} ${orderBy} LIMIT ${pageSize} OFFSET ${offset}`;
     const deals = await executeQuery(finalQuery, queryParams);
 
-    // Generate aggregations for filter options - fix column name
-    const aggregationsBaseQuery = baseQuery.replace('dm.SellerID', 'dm.SellerId');
+    // Generate aggregations for filter options
     const aggregations = {
-      makes: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Make as Make, COUNT(*) as count FROM') + ' GROUP BY dm.Make HAVING dm.Make IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      grades: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Grade as Grade, COUNT(*) as count FROM') + ' GROUP BY dm.Grade HAVING dm.Grade IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      brands: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Brand as Brand, COUNT(*) as count FROM') + ' GROUP BY dm.Brand HAVING dm.Brand IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      gsm: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.GSM as GSM, COUNT(*) as count FROM') + ' GROUP BY dm.GSM HAVING dm.GSM IS NOT NULL ORDER BY dm.GSM ASC LIMIT 30', queryParams),
-      locations: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT bm.city as location, COUNT(*) as count FROM') + ' GROUP BY bm.city HAVING bm.city IS NOT NULL ORDER BY count DESC LIMIT 15', queryParams)
+      makes: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Make as Make, COUNT(*) as count FROM') + ' GROUP BY dm.Make HAVING dm.Make IS NOT NULL AND dm.Make != "" ORDER BY count DESC LIMIT 20', queryParams),
+      grades: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Grade as Grade, COUNT(*) as count FROM') + ' GROUP BY dm.Grade HAVING dm.Grade IS NOT NULL AND dm.Grade != "" ORDER BY count DESC LIMIT 20', queryParams),
+      brands: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Brand as Brand, COUNT(*) as count FROM') + ' GROUP BY dm.Brand HAVING dm.Brand IS NOT NULL AND dm.Brand != "" ORDER BY count DESC LIMIT 20', queryParams),
+      gsm: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.GSM as GSM, COUNT(*) as count FROM') + ' GROUP BY dm.GSM HAVING dm.GSM IS NOT NULL AND dm.GSM != "" AND dm.GSM > 0 ORDER BY CAST(dm.GSM AS UNSIGNED) ASC LIMIT 30', queryParams),
+      locations: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT bm.city as location, COUNT(*) as count FROM') + ' GROUP BY bm.city HAVING bm.city IS NOT NULL AND bm.city != "" ORDER BY count DESC LIMIT 15', queryParams)
     };
 
     res.json({
