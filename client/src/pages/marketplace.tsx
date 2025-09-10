@@ -1915,7 +1915,7 @@ export default function Marketplace() {
                                     variant="outline"
                                     onClick={() => handleSendInquiry(deal)}
                                     data-testid={`button-send-inquiry-${deal.TransID}`}
-                                    className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                    className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
                                   >
                                     <Mail className="h-3 w-3 mr-1" />
                                     Send Inquiry
@@ -1926,7 +1926,7 @@ export default function Marketplace() {
                                     variant="outline"
                                     onClick={() => handleSendWhatsApp(deal)}
                                     data-testid={`button-send-whatsapp-${deal.TransID}`}
-                                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 text-xs"
                                   >
                                     <MessageSquare className="h-3 w-3 mr-1" />
                                     WhatsApp
