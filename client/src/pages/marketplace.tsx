@@ -64,12 +64,12 @@ export default function Marketplace() {
   const [preciseSearch, setPreciseSearch] = useState({
     category: "",
     gsm: "",
-    tolerance: "",
+    tolerance: "10",
     deckle: "",
     deckleUnit: "cm",
     grain: "",
     grainUnit: "cm",
-    dimensionTolerance: ""
+    dimensionTolerance: "2"
   });
   
   // Auto-suggestion states
@@ -768,13 +768,13 @@ export default function Marketplace() {
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
                 <div className="flex-1 min-w-32">
-                  <label className="text-sm font-medium">Category</label>
+                  <label className="text-sm font-medium">Category *</label>
                   <Select 
                     value={preciseSearch.category} 
                     onValueChange={(value) => handlePreciseSearchChange('category', value)}
                   >
                     <SelectTrigger className="mt-1 h-9 text-sm" data-testid="select-precise-category">
-                      <SelectValue placeholder="Select category..." />
+                      <SelectValue placeholder="Select category first..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
@@ -789,7 +789,7 @@ export default function Marketplace() {
 
                 {/* GSM */}
                 <div className="relative flex-1 min-w-24">
-                  <label className="text-sm font-medium">GSM</label>
+                  <label className="text-sm font-medium">GSM *</label>
                   <Input
                     type="number"
                     placeholder="300"
@@ -797,6 +797,7 @@ export default function Marketplace() {
                     onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
                     data-testid="input-precise-gsm"
                     className="mt-1 h-9 text-sm"
+                    disabled={!preciseSearch.category}
                   />
                   {gsmSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
@@ -836,6 +837,7 @@ export default function Marketplace() {
                     onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
                     data-testid="input-precise-tolerance"
                     className="mt-1 h-9 text-sm"
+                    disabled={!preciseSearch.category || !preciseSearch.gsm}
                   />
                 </div>
 
@@ -863,6 +865,7 @@ export default function Marketplace() {
                               onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
                               data-testid="input-precise-deckle"
                               className="h-9 text-sm"
+                              disabled={!preciseSearch.category || !preciseSearch.gsm}
                             />
                           </div>
                           {showGrainField && (
@@ -877,6 +880,7 @@ export default function Marketplace() {
                                   onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
                                   data-testid="input-precise-grain"
                                   className="h-9 text-sm"
+                                  disabled={!preciseSearch.category || !preciseSearch.gsm}
                                 />
                               </div>
                             </>
@@ -898,6 +902,7 @@ export default function Marketplace() {
                     onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
                     data-testid="input-precise-dimension-tolerance"
                     className="mt-1 h-9 text-sm"
+                    disabled={!preciseSearch.category || !preciseSearch.gsm}
                   />
                 </div>
 
@@ -914,7 +919,7 @@ export default function Marketplace() {
                       }));
                     }}
                   >
-                    <SelectTrigger className="w-16 h-9 mt-1 text-sm">
+                    <SelectTrigger className="w-16 h-9 mt-1 text-sm" disabled={!preciseSearch.category || !preciseSearch.gsm}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -930,7 +935,7 @@ export default function Marketplace() {
                     onClick={performPreciseSearch}
                     className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
                     data-testid="button-precise-search"
-                    disabled={isSearching}
+                    disabled={isSearching || !preciseSearch.category || !preciseSearch.gsm}
                   >
                     {isSearching ? (
                       <>
@@ -950,12 +955,12 @@ export default function Marketplace() {
                       setPreciseSearch({
                         category: '',
                         gsm: '',
-                        tolerance: '',
+                        tolerance: '10',
                         deckle: '',
                         deckleUnit: 'cm',
                         grain: '',
                         grainUnit: 'cm',
-                        dimensionTolerance: ''
+                        dimensionTolerance: '2'
                       });
                       setGsmSuggestions([]);
                     }}
