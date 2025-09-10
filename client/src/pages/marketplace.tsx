@@ -1420,6 +1420,13 @@ export default function Marketplace() {
                       <SelectItem value="price-high">Price: High to Low</SelectItem>
                       <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
                       <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
+                      <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
+                      <SelectItem value="quantity-high">Quantity: High to Low</SelectItem>
+                      <SelectItem value="size-small">Size: Small to Large</SelectItem>
+                      <SelectItem value="size-large">Size: Large to Small</SelectItem>
+                      <SelectItem value="location">Location (A-Z)</SelectItem>
+                      <SelectItem value="company">Company (A-Z)</SelectItem>
+                      <SelectItem value="category">Category (A-Z)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

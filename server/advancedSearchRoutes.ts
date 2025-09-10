@@ -149,6 +149,27 @@ router.post('/advanced', async (req, res) => {
       case 'gsm-high':
         query += ' ORDER BY d.GSM DESC';
         break;
+      case 'quantity-low':
+        query += ' ORDER BY d.quantity ASC';
+        break;
+      case 'quantity-high':
+        query += ' ORDER BY d.quantity DESC';
+        break;
+      case 'size-small':
+        query += ' ORDER BY (d.Deckle_mm * d.grain_mm) ASC';
+        break;
+      case 'size-large':
+        query += ' ORDER BY (d.Deckle_mm * d.grain_mm) DESC';
+        break;
+      case 'location':
+        query += ' ORDER BY d.Location ASC';
+        break;
+      case 'company':
+        query += ' ORDER BY m.company_name ASC';
+        break;
+      case 'category':
+        query += ' ORDER BY g.GroupName ASC';
+        break;
       case 'oldest':
         query += ' ORDER BY d.deal_created_at ASC';
         break;

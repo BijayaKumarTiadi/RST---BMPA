@@ -12,6 +12,20 @@ function getSortClause(sortBy?: string): string {
       return 'ORDER BY d.GSM ASC';
     case 'gsm-high':
       return 'ORDER BY d.GSM DESC';
+    case 'quantity-low':
+      return 'ORDER BY d.quantity ASC';
+    case 'quantity-high':
+      return 'ORDER BY d.quantity DESC';
+    case 'size-small':
+      return 'ORDER BY (d.Deckle_mm * d.grain_mm) ASC';
+    case 'size-large':
+      return 'ORDER BY (d.Deckle_mm * d.grain_mm) DESC';
+    case 'location':
+      return 'ORDER BY d.Location ASC';
+    case 'company':
+      return 'ORDER BY mb.company_name ASC';
+    case 'category':
+      return 'ORDER BY g.GroupName ASC';
     case 'oldest':
       return 'ORDER BY d.deal_created_at ASC';
     case 'newest':
