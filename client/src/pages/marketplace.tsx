@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2, X, RefreshCw } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -27,55 +27,21 @@ export default function Marketplace() {
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAggregations, setSearchAggregations] = useState<any>(null);
+  // Pending filters (UI state, not applied yet)
+  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
+  const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
   
-  // Main search state
+  // Main search state - this will be used for everything
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
-  // UNIFIED FILTER STATE - Complete filter management
-  const [filters, setFilters] = useState({
-    // Selected filter values
-    selectedMakes: [] as string[],
-    selectedGrades: [] as string[],
-    selectedBrands: [] as string[],
-    selectedGsm: [] as string[],
-    selectedUnits: [] as string[],
-    selectedLocations: [] as string[],
-    
-    // Range filters
-    gsmRange: { min: '', max: '' },
-    priceRange: { min: '', max: '' },
-    
-    // Date filters
-    dateRange: { from: '', to: '' },
-    
-    // Dimension filters
-    dimensionFilters: {
-      deckleMin: '',
-      deckleMax: '',
-      grainMin: '',
-      grainMax: '',
-      unit: 'cm'
-    },
-    
-    // Category filter
-    selectedCategory: '',
-    
-    // Availability filters
-    inStock: false,
-    hasImages: false,
-    verifiedSellers: false
-  });
-  
   // Available filter options from search API (dynamic based on search)
-  const [availableFilters, setAvailableFilters] = useState({
-    makes: [] as any[],
-    grades: [] as any[],
-    brands: [] as any[],
-    gsm: [] as any[],
-    units: [] as any[],
-    locations: [] as any[]
-  });
+  const [availableMakes, setAvailableMakes] = useState<any[]>([]);
+  const [availableGrades, setAvailableGrades] = useState<any[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<any[]>([]);
+  const [availableGsm, setAvailableGsm] = useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
 
   // Precise search states
   const [preciseSearch, setPreciseSearch] = useState({
@@ -178,139 +144,7 @@ export default function Marketplace() {
     }
   };
 
-  // Unified search and filter function
-  const performUnifiedSearch = async (resetPage = false) => {
-    const page = resetPage ? 1 : currentPage;
-    setIsSearching(true);
-    
-    try {
-      const payload = {
-        // Search terms
-        query: searchTerm,
-        preciseSearch,
-        
-        // All active filters
-        filters: {
-          makes: filters.selectedMakes,
-          grades: filters.selectedGrades,
-          brands: filters.selectedBrands,
-          gsm: filters.selectedGsm,
-          units: filters.selectedUnits,
-          locations: filters.selectedLocations,
-          category: filters.selectedCategory,
-          gsmRange: filters.gsmRange,
-          priceRange: filters.priceRange,
-          dateRange: filters.dateRange,
-          dimensionFilters: filters.dimensionFilters,
-          inStock: filters.inStock,
-          hasImages: filters.hasImages,
-          verifiedSellers: filters.verifiedSellers
-        },
-        
-        // Pagination and sorting
-        page,
-        pageSize: itemsPerPage,
-        sortBy
-      };
-      
-      const response = await fetch('/api/search/unified', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-        setSearchAggregations(data.aggregations || null);
-        
-        // Update available filter options
-        if (data.aggregations) {
-          setAvailableFilters({
-            makes: data.aggregations.makes || [],
-            grades: data.aggregations.grades || [],
-            brands: data.aggregations.brands || [],
-            gsm: data.aggregations.gsm || [],
-            units: data.aggregations.units || [],
-            locations: data.aggregations.locations || []
-          });
-        }
-        
-        if (resetPage) setCurrentPage(1);
-      }
-    } catch (error) {
-      console.error('Unified search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-  
-  // HELPER FUNCTIONS FOR FILTER MANAGEMENT (moved here to fix initialization order)
-  const getActiveFilterCount = () => {
-    return filters.selectedMakes.length + 
-           filters.selectedGrades.length + 
-           filters.selectedBrands.length + 
-           filters.selectedGsm.length + 
-           filters.selectedLocations.length;
-  };
-  
-  const hasActiveFilters = () => {
-    return getActiveFilterCount() > 0 || searchTerm.trim().length > 0;
-  };
-  
-  // Apply all selected filters
-  const applyFilters = () => {
-    setCurrentPage(1);
-    performUnifiedSearch(true);
-  };
-  
-  // CHECKBOX-BASED FILTER HANDLERS - CORE FUNCTION
-  const handleFilterCheckboxChange = (filterType: string, value: string, checked: boolean) => {
-    setFilters(prev => {
-      const key = `selected${filterType.charAt(0).toUpperCase() + filterType.slice(1)}` as keyof typeof prev;
-      const currentValues = prev[key] as string[];
-      
-      if (checked) {
-        // Add to selected filters if not already present
-        if (!currentValues.includes(value)) {
-          return {
-            ...prev,
-            [key]: [...currentValues, value]
-          };
-        }
-        return prev;
-      } else {
-        // Remove from selected filters
-        return {
-          ...prev,
-          [key]: currentValues.filter(v => v !== value)
-        };
-      }
-    });
-  };
-  
-  // Legacy handlers for backward compatibility (now use checkbox system)
-  const handleMakeClick = (make: any) => {
-    const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
-    handleFilterCheckboxChange('makes', makeText, true);
-  };
-
-  const handleGradeClick = (grade: any) => {
-    const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
-    handleFilterCheckboxChange('grades', gradeText, true);
-  };
-
-  const handleBrandClick = (brand: any) => {
-    const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
-    handleFilterCheckboxChange('brands', brandText, true);
-  };
-
-  const handleGsmClick = (gsm: any) => {
-    const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
-    handleFilterCheckboxChange('gsm', gsmText, true);
-  };
-  
-  // Fetch deals - fallback when no search/filters are active
+  // Fetch deals - now using search results or fallback to regular deals
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
     queryFn: async () => {
@@ -333,7 +167,7 @@ export default function Marketplace() {
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: !isSearching && !hasActiveFilters(), // Only fetch when no search/filters are active
+    enabled: !isSearching, // Don't fetch when search is in progress
   });
 
   if (!isAuthenticated) {
@@ -351,105 +185,6 @@ export default function Marketplace() {
     );
   }
 
-  // FILTER MANAGEMENT FUNCTIONS
-  const addFilter = (type: string, value: string) => {
-    setFilters(prev => {
-      const key = `selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev;
-      const currentValues = prev[key] as string[];
-      if (!currentValues.includes(value)) {
-        return {
-          ...prev,
-          [key]: [...currentValues, value]
-        };
-      }
-      return prev;
-    });
-    // Trigger search with new filter
-    setTimeout(() => performUnifiedSearch(true), 100);
-  };
-  
-  const removeFilter = (type: string, value: string) => {
-    setFilters(prev => {
-      const key = `selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev;
-      const currentValues = prev[key] as string[];
-      return {
-        ...prev,
-        [key]: currentValues.filter(v => v !== value)
-      };
-    });
-    // Trigger search with updated filters
-    setTimeout(() => performUnifiedSearch(true), 100);
-  };
-  
-  const updateRangeFilter = (type: 'gsmRange' | 'priceRange' | 'dateRange', field: 'min' | 'max' | 'from' | 'to', value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [field]: value
-      }
-    }));
-  };
-  
-  const updateDimensionFilter = (field: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      dimensionFilters: {
-        ...prev.dimensionFilters,
-        [field]: value
-      }
-    }));
-  };
-  
-  const toggleBooleanFilter = (type: 'inStock' | 'hasImages' | 'verifiedSellers') => {
-    setFilters(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-    // Trigger search with updated filter
-    setTimeout(() => performUnifiedSearch(true), 100);
-  };
-  
-  const clearAllFilters = () => {
-    setFilters({
-      selectedMakes: [],
-      selectedGrades: [],
-      selectedBrands: [],
-      selectedGsm: [],
-      selectedUnits: [],
-      selectedLocations: [],
-      gsmRange: { min: '', max: '' },
-      priceRange: { min: '', max: '' },
-      dateRange: { from: '', to: '' },
-      dimensionFilters: {
-        deckleMin: '',
-        deckleMax: '',
-        grainMin: '',
-        grainMax: '',
-        unit: 'cm'
-      },
-      selectedCategory: '',
-      inStock: false,
-      hasImages: false,
-      verifiedSellers: false
-    });
-    setSearchTerm('');
-    setPreciseSearch({
-      category: "",
-      gsm: "",
-      tolerance: "",
-      deckle: "",
-      deckleUnit: "cm",
-      grain: "",
-      grainUnit: "cm",
-      dimensionTolerance: ""
-    });
-    setSearchResults(null);
-    setCurrentPage(1);
-  };
-  
-  // Duplicate function removed - using the one defined below after checkbox handlers
-  
   // Use search results if available, otherwise use regular deals
   const deals = searchResults?.data || dealsData?.deals || [];
   const totalDeals = searchResults?.total || dealsData?.total || 0;
@@ -518,14 +253,11 @@ export default function Marketplace() {
         
         if (data.aggregations) {
           console.log('Setting initial filter options');
-          setAvailableFilters({
-            makes: data.aggregations.makes || [],
-            grades: data.aggregations.grades || [],
-            brands: data.aggregations.brands || [],
-            gsm: data.aggregations.gsm || [],
-            units: data.aggregations.units || [],
-            locations: data.aggregations.locations || []
-          });
+          setAvailableMakes(data.aggregations.makes || []);
+          setAvailableGrades(data.aggregations.grades || []);
+          setAvailableBrands(data.aggregations.brands || []);
+          setAvailableGsm(data.aggregations.gsm || []);
+          setAvailableUnits(data.aggregations.units || []);
         }
       }
     } catch (error) {
@@ -537,24 +269,164 @@ export default function Marketplace() {
   const applySearch = () => {
     // Trigger search with current search term
     setCurrentPage(1);
-    performUnifiedSearch(true);
+    performSearch(pendingSearchTerm);
   };
 
   const performSearch = async (query: string) => {
-    setSearchTerm(query);
-    performUnifiedSearch(true);
+    setIsSearching(true);
+    try {
+      const response = await fetch('/api/search/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query.trim(),
+          page: currentPage,
+          pageSize: itemsPerPage
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setSearchTerm(query); // Update search term after successful search
+        console.log('Search API response:', data);
+        console.log('Available aggregations:', data.aggregations);
+        
+        if (data.aggregations) {
+          setSearchAggregations(data.aggregations);
+          
+          // Log each filter array to debug
+          console.log('Makes data:', data.aggregations.makes);
+          console.log('Grades data:', data.aggregations.grades);  
+          console.log('Brands data:', data.aggregations.brands);
+          console.log('GSM data:', data.aggregations.gsm);
+          
+          const makes = data.aggregations.makes || [];
+          const grades = data.aggregations.grades || [];
+          const brands = data.aggregations.brands || [];
+          const gsm = data.aggregations.gsm || [];
+          const units = data.aggregations.units || [];
+          
+          console.log('Setting availableMakes:', makes);
+          console.log('Setting availableGrades:', grades);
+          console.log('Setting availableBrands:', brands);
+          console.log('Setting availableGsm:', gsm);
+          
+          setAvailableMakes(makes);
+          setAvailableGrades(grades);
+          setAvailableBrands(brands);
+          setAvailableGsm(gsm);
+          setAvailableUnits(units);
+        } else {
+          console.log('No aggregations found in response');
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
   
-  // Legacy search change handler - now just updates search term
+  // Handle hierarchical filter changes
+  // Handle search term changes to update filter options
   const handleSearchChange = async (value: string) => {
-    setSearchTerm(value);
+    setPendingSearchTerm(value);
+    
+    // Update filter options based on current search
     if (value.trim()) {
-      // Debounce the unified search
-      setTimeout(() => performUnifiedSearch(true), 300);
+      try {
+        const response = await fetch('/api/search/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: value.trim(),
+            page: 1,
+            pageSize: itemsPerPage
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Search Change API response:', data);
+          
+          if (data.aggregations) {
+            console.log('Updating filters with aggregations:', data.aggregations);
+            setAvailableMakes(data.aggregations.makes || []);
+            setAvailableGrades(data.aggregations.grades || []);
+            setAvailableBrands(data.aggregations.brands || []);
+            setAvailableGsm(data.aggregations.gsm || []);
+            setAvailableUnits(data.aggregations.units || []);
+          } else {
+            console.log('No aggregations in search change response');
+          }
+        }
+      } catch (error) {
+        console.error('Error updating filters:', error);
+      }
+    } else {
+      // Clear filter options when search is empty
+      setAvailableMakes([]);
+      setAvailableGrades([]);
+      setAvailableBrands([]);
+      setAvailableGsm([]);
+      setAvailableUnits([]);
     }
   };
 
-  // Duplicate functions removed - they are now defined above before useQuery
+  const addFilterToSearch = (filterText: string) => {
+    const currentText = pendingSearchTerm.trim();
+    const newText = currentText ? `${currentText} ${filterText}` : filterText;
+    setPendingSearchTerm(newText);
+  };
+
+  const handleMakeClick = (make: any) => {
+    console.log('Make clicked:', make);
+    const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
+    addFilterToSearch(makeText);
+  };
+
+  const handleGradeClick = (grade: any) => {
+    console.log('Grade clicked:', grade);
+    const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
+    addFilterToSearch(gradeText);
+  };
+
+  const handleBrandClick = (brand: any) => {
+    console.log('Brand clicked:', brand);
+    const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
+    addFilterToSearch(brandText);
+  };
+
+  const handleGsmClick = (gsm: any) => {
+    console.log('GSM clicked:', gsm);
+    const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
+    addFilterToSearch(`${gsmText}gsm`);
+  };
+
+  const handleUnitClick = (unit: any) => {
+    addFilterToSearch(unit.OfferUnit || unit.name || unit.value || unit);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setPendingSearchTerm("");
+    setSearchTerm("");
+    setSortBy("newest");
+    setCurrentPage(1);
+    setSearchResults(null);
+    setSearchAggregations(null);
+    setAvailableMakes([]);
+    setAvailableGrades([]);
+    setAvailableBrands([]);
+    setAvailableGsm([]);
+    setAvailableUnits([]);
+    setAvailableLocations([]);
+  };
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -975,7 +847,7 @@ export default function Marketplace() {
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search offers..."
-                      value={searchTerm}
+                      value={pendingSearchTerm}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10"
                       data-testid="input-search"
@@ -998,7 +870,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.makes.map((make: any, index: number) => (
+                      {availableMakes.map((make: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1014,7 +886,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.makes.length === 0 && (
+                      {availableMakes.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
@@ -1035,7 +907,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.grades.map((grade: any, index: number) => (
+                      {availableGrades.map((grade: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1051,7 +923,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.grades.length === 0 && (
+                      {availableGrades.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
                       )}
                     </div>
@@ -1072,7 +944,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.brands.map((brand: any, index: number) => (
+                      {availableBrands.map((brand: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1088,7 +960,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.brands.length === 0 && (
+                      {availableBrands.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
                       )}
                     </div>
@@ -1109,7 +981,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.gsm.map((gsm: any, index: number) => (
+                      {availableGsm.map((gsm: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1125,7 +997,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.gsm.length === 0 && (
+                      {availableGsm.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
                       )}
                     </div>
@@ -1153,25 +1025,19 @@ export default function Marketplace() {
                   </Select>
                 </div>
                 
-                {/* APPLY FILTERS BUTTON */}
-                <div className="space-y-3 border-t pt-4">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Selected filters: {getActiveFilterCount()}
-                  </div>
+                {/* Filter Action Buttons */}
+                <div className="space-y-3">
                   <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={applyFilters}
-                    disabled={!hasActiveFilters()}
-                    data-testid="button-apply-filters"
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                    onClick={applySearch}
                   >
-                    Apply Filters ({getActiveFilterCount()})
+                    Apply Search
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     className="w-full"
                     onClick={clearAllFilters}
-                    data-testid="button-clear-filters"
                   >
                     Clear All Filters
                   </Button>
@@ -1196,61 +1062,37 @@ export default function Marketplace() {
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 
-                {/* Search */}
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search offers..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search-desktop"
-                    />
-                  </div>
-                </div>
                 
-                <Separator />
-                
-                {/* Makes Filter - CHECKBOX VERSION */}
+                {/* Makes Filter */}
                 <div>
                   <Button
                     variant="ghost"
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('makes')}
                   >
-                    Makes {filters.selectedMakes.length > 0 && <Badge variant="default" className="ml-2 text-xs">{filters.selectedMakes.length}</Badge>}
+                    Makes
                     {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.makes.map((make: any, index: number) => {
-                        const makeValue = make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown');
-                        const isChecked = filters.selectedMakes.includes(makeValue);
-                        return (
-                          <div key={index} className="flex items-center space-x-2 p-1">
-                            <Checkbox
-                              id={`make-desktop-${index}`}
-                              checked={isChecked}
-                              onCheckedChange={(checked) => handleFilterCheckboxChange('makes', makeValue, !!checked)}
-                              data-testid={`checkbox-make-${makeValue}`}
-                            />
-                            <label 
-                              htmlFor={`make-desktop-${index}`} 
-                              className="text-sm flex-1 cursor-pointer flex justify-between items-center"
-                            >
-                              <span>{makeValue}</span>
-                              {make.count && (
-                                <Badge variant="secondary" className="text-xs px-2 py-0 ml-2">
-                                  {make.count}
-                                </Badge>
-                              )}
-                            </label>
-                          </div>
-                        );
-                      })}
-                      {availableFilters.makes.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Search to see available makes</p>
+                      {availableMakes.map((make: any, index: number) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-between h-auto p-2 text-left"
+                          onClick={() => handleMakeClick(make)}
+                        >
+                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
+                          {make.count && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0">
+                              {make.count}
+                            </Badge>
+                          )}
+                        </Button>
+                      ))}
+                      {availableMakes.length === 0 && (
+                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
                       )}
                     </div>
                   )}
@@ -1270,7 +1112,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.grades.map((grade: any, index: number) => (
+                      {availableGrades.map((grade: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1286,7 +1128,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.grades.length === 0 && (
+                      {availableGrades.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
                       )}
                     </div>
@@ -1307,7 +1149,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.brands.map((brand: any, index: number) => (
+                      {availableBrands.map((brand: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1323,7 +1165,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.brands.length === 0 && (
+                      {availableBrands.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
                       )}
                     </div>
@@ -1344,7 +1186,7 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.gsm.map((gsm: any, index: number) => (
+                      {availableGsm.map((gsm: any, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
@@ -1360,7 +1202,7 @@ export default function Marketplace() {
                           )}
                         </Button>
                       ))}
-                      {availableFilters.gsm.length === 0 && (
+                      {availableGsm.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
                       )}
                     </div>
