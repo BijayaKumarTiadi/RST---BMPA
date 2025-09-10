@@ -31,7 +31,6 @@ const dealSchema = z.object({
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
-  stockType: z.string().min(1, "Stock type is required"),
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
@@ -163,7 +162,6 @@ export default function AddDeal() {
       grain_mm: "" as any,
       OfferPrice: "" as any,
       OfferUnit: "",
-      stockType: "",
       quantity: "" as any, // No default value
       Seller_comments: "",
     },
@@ -342,7 +340,7 @@ export default function AddDeal() {
           grain_mm: data.grain_mm,
         },
         location: 'India',
-        stock_type: data.stockType,
+        stock_type: "sheet", // Default value
       };
       console.log('Payload being sent to backend:', payload);
       return apiRequest("POST", "/api/deals", payload);
@@ -371,8 +369,7 @@ export default function AddDeal() {
           grain_mm: "" as any,
           OfferPrice: "" as any,
           OfferUnit: "",
-          stockType: "",
-          quantity: "" as any,
+            quantity: "" as any,
           Seller_comments: "",
         });
         setSelectedGroup("");
@@ -578,53 +575,6 @@ export default function AddDeal() {
                     />
                   </div>
 
-                  {/* Third Row: Stock Type and Description */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="stockType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Stock Type <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={field.value}
-                              onChange={(value) => form.setValue("stockType", value)}
-                              placeholder="Type reel or sheet..."
-                              suggestions={[
-                                { value: "reel", label: "Reel" },
-                                { value: "sheet", label: "Sheet" }
-                              ]}
-                              displayField="label"
-                              valueField="value"
-                              testId="input-stock-type"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="deal_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Description (Auto-generated)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              value={field.value || generateStockDescription()}
-                              readOnly
-                              className="bg-muted border-border text-foreground cursor-not-allowed"
-                              placeholder="Auto-generated from selections"
-                              data-testid="input-description"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </CardContent>
               </Card>
 
