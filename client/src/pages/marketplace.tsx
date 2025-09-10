@@ -264,6 +264,31 @@ export default function Marketplace() {
     performUnifiedSearch(true);
   };
   
+  // CHECKBOX-BASED FILTER HANDLERS - CORE FUNCTION
+  const handleFilterCheckboxChange = (filterType: string, value: string, checked: boolean) => {
+    setFilters(prev => {
+      const key = `selected${filterType.charAt(0).toUpperCase() + filterType.slice(1)}` as keyof typeof prev;
+      const currentValues = prev[key] as string[];
+      
+      if (checked) {
+        // Add to selected filters if not already present
+        if (!currentValues.includes(value)) {
+          return {
+            ...prev,
+            [key]: [...currentValues, value]
+          };
+        }
+        return prev;
+      } else {
+        // Remove from selected filters
+        return {
+          ...prev,
+          [key]: currentValues.filter(v => v !== value)
+        };
+      }
+    });
+  };
+  
   // Legacy handlers for backward compatibility (now use checkbox system)
   const handleMakeClick = (make: any) => {
     const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');

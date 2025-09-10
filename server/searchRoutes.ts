@@ -266,23 +266,24 @@ searchRouter.post('/unified', async (req, res) => {
       case 'gsm-high': orderBy = 'ORDER BY dm.GSM DESC'; break;
     }
 
-    // Get total count
-    const countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM');
+    // Get total count - fix column name
+    const countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM').replace('dm.SellerID', 'dm.SellerId');
     const countResult = await executeQuerySingle(countQuery, queryParams);
     const total = countResult?.total || 0;
 
-    // Get paginated results
+    // Get paginated results - fix column name  
     const offset = (page - 1) * pageSize;
-    const finalQuery = `${baseQuery} ${orderBy} LIMIT ${pageSize} OFFSET ${offset}`;
+    const finalQuery = `${baseQuery.replace('dm.SellerID', 'dm.SellerId')} ${orderBy} LIMIT ${pageSize} OFFSET ${offset}`;
     const deals = await executeQuery(finalQuery, queryParams);
 
-    // Generate aggregations for filter options
+    // Generate aggregations for filter options - fix column name
+    const aggregationsBaseQuery = baseQuery.replace('dm.SellerID', 'dm.SellerId');
     const aggregations = {
-      makes: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Make as Make, COUNT(*) as count FROM') + ' GROUP BY dm.Make HAVING dm.Make IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      grades: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Grade as Grade, COUNT(*) as count FROM') + ' GROUP BY dm.Grade HAVING dm.Grade IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      brands: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Brand as Brand, COUNT(*) as count FROM') + ' GROUP BY dm.Brand HAVING dm.Brand IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
-      gsm: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.GSM as GSM, COUNT(*) as count FROM') + ' GROUP BY dm.GSM HAVING dm.GSM IS NOT NULL ORDER BY dm.GSM ASC LIMIT 30', queryParams),
-      locations: await executeQuery(baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT bm.city as location, COUNT(*) as count FROM') + ' GROUP BY bm.city HAVING bm.city IS NOT NULL ORDER BY count DESC LIMIT 15', queryParams)
+      makes: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Make as Make, COUNT(*) as count FROM') + ' GROUP BY dm.Make HAVING dm.Make IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
+      grades: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Grade as Grade, COUNT(*) as count FROM') + ' GROUP BY dm.Grade HAVING dm.Grade IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
+      brands: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.Brand as Brand, COUNT(*) as count FROM') + ' GROUP BY dm.Brand HAVING dm.Brand IS NOT NULL ORDER BY count DESC LIMIT 20', queryParams),
+      gsm: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT dm.GSM as GSM, COUNT(*) as count FROM') + ' GROUP BY dm.GSM HAVING dm.GSM IS NOT NULL ORDER BY dm.GSM ASC LIMIT 30', queryParams),
+      locations: await executeQuery(aggregationsBaseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT bm.city as location, COUNT(*) as count FROM') + ' GROUP BY bm.city HAVING bm.city IS NOT NULL ORDER BY count DESC LIMIT 15', queryParams)
     };
 
     res.json({
