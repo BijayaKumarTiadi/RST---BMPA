@@ -213,8 +213,8 @@ export default function Marketplace() {
   let deals = [];
   let totalDeals = 0;
   
-  if (searchResults?.allRecords && allPreciseSearchResults.length > 0) {
-    // Client-side pagination for precise search
+  if (searchResults?.maxRecords && allPreciseSearchResults.length > 0) {
+    // Client-side pagination for precise search (max 100 records)
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     deals = allPreciseSearchResults.slice(startIndex, endIndex);
@@ -234,7 +234,7 @@ export default function Marketplace() {
     if (hasActiveFilters()) {
       applyFilters(appliedFilters, false); // false means don't reset page
     }
-    // Note: For precise search with allRecords, pagination is handled client-side automatically
+    // Note: For precise search with maxRecords (100 limit), pagination is handled client-side automatically
   };
   
   // Ensure current page doesn't exceed total pages
@@ -691,7 +691,7 @@ export default function Marketplace() {
   };
 
   const performPreciseSearch = async () => {
-    console.log('Performing precise search with (fetching ALL records):', preciseSearch);
+    console.log('Performing precise search with (max 100 records):', preciseSearch);
     
     try {
       setIsSearching(true);
@@ -705,8 +705,8 @@ export default function Marketplace() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Precise search results (ALL RECORDS):', data);
-        console.log(`Received ${data.data?.length || 0} total records`);
+        console.log('Precise search results (MAX 100 RECORDS):', data);
+        console.log(`Received ${data.data?.length || 0} records (max 100 limit)`);
         
         // Store all results for client-side pagination
         setAllPreciseSearchResults(data.data || []);
@@ -714,7 +714,7 @@ export default function Marketplace() {
         // Set search results for display (this will be paginated client-side)
         setSearchResults({
           ...data,
-          allRecords: true // Flag to indicate we have all records
+          maxRecords: 100 // Flag to indicate 100 record limit
         });
         
         setSearchTerm(''); // Clear regular search term

@@ -125,7 +125,7 @@ searchRouter.post('/precise', async (req, res) => {
       queryParams.push(minGrain, maxGrain);
     }
     
-    // Get ALL results - NO PAGINATION
+    // Get results with 100 record limit
     const searchQuery = `
       SELECT 
         dm.*,
@@ -137,17 +137,18 @@ searchRouter.post('/precise', async (req, res) => {
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       ${whereClause}
       ORDER BY dm.TransID DESC
+      LIMIT 100
     `;
     
     const results = await executeQuery(searchQuery, queryParams);
     
-    console.log(`Precise search found ${results.length} total records - returning ALL`);
+    console.log(`Precise search found ${results.length} records (max 100 limit)`);
     
     res.json({
       success: true,
       data: results,
       total: results.length,
-      allRecords: true, // Flag to indicate all records returned
+      maxRecords: 100, // Flag to indicate 100 record limit
       searchType: 'precise'
     });
   } catch (error) {
