@@ -49,12 +49,92 @@ searchRouter.get('/health', async (req, res) => {
   });
 });
 
-// Simple data endpoint - returns all data without filters (client-side filtering)
-searchRouter.post('/data', async (req, res) => {
+// Precise search endpoint
+searchRouter.post('/precise', async (req, res) => {
   try {
     const { executeQuery } = await import('./database');
+    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, page = 1, pageSize = 12 } = req.body;
     
-    // Simple query to get all active deals - no server-side filtering
+    let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
+    const queryParams: any[] = [];
+    
+    // Add category filter using stock_groups table
+    if (category && category.trim() && category !== 'all') {
+      whereClause += ` AND sg.GroupName LIKE ?`;
+      queryParams.push(`%${category.trim()}%`);
+    }
+    
+    // Add GSM filter with tolerance
+    if (gsm && !isNaN(Number(gsm))) {
+      const gsmValue = Number(gsm);
+      const toleranceValue = tolerance && !isNaN(Number(tolerance)) ? Number(tolerance) : 0;
+      const minGsm = gsmValue - toleranceValue;
+      const maxGsm = gsmValue + toleranceValue;
+      
+      whereClause += ` AND dm.GSM BETWEEN ? AND ?`;
+      queryParams.push(minGsm, maxGsm);
+    }
+    
+    // Determine default tolerance for dimension searches
+    const hasBothDimensions = (deckle && !isNaN(Number(deckle))) && (grain && !isNaN(Number(grain)));
+    const defaultDimTolerance = hasBothDimensions ? 20 : 0; // Auto-apply 20mm tolerance when both dimensions provided
+    
+    // Add deckle filter using actual Deckle_mm column with tolerance
+    if (deckle && !isNaN(Number(deckle))) {
+      const deckleValue = Number(deckle);
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) 
+        ? Number(dimensionTolerance) 
+        : defaultDimTolerance;
+      
+      // Convert to mm if needed
+      let deckleValueMm = deckleValue;
+      if (deckleUnit === 'cm') {
+        deckleValueMm = deckleValue * 10; // Convert cm to mm
+      } else if (deckleUnit === 'inch') {
+        deckleValueMm = deckleValue * 25.4; // Convert inch to mm
+      }
+      
+      const minDeckle = deckleValueMm - dimToleranceValue;
+      const maxDeckle = deckleValueMm + dimToleranceValue;
+      
+      whereClause += ` AND dm.Deckle_mm BETWEEN ? AND ?`;
+      queryParams.push(minDeckle, maxDeckle);
+    }
+    
+    // Add grain filter using actual grain_mm column with tolerance
+    if (grain && !isNaN(Number(grain))) {
+      const grainValue = Number(grain);
+      const dimToleranceValue = dimensionTolerance && !isNaN(Number(dimensionTolerance)) 
+        ? Number(dimensionTolerance) 
+        : defaultDimTolerance;
+      
+      // Convert to mm if needed
+      let grainValueMm = grainValue;
+      if (grainUnit === 'cm') {
+        grainValueMm = grainValue * 10; // Convert cm to mm
+      } else if (grainUnit === 'inch') {
+        grainValueMm = grainValue * 25.4; // Convert inch to mm
+      }
+      
+      const minGrain = grainValueMm - dimToleranceValue;
+      const maxGrain = grainValueMm + dimToleranceValue;
+      
+      whereClause += ` AND dm.grain_mm BETWEEN ? AND ?`;
+      queryParams.push(minGrain, maxGrain);
+    }
+    
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM deal_master dm 
+      LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
+      ${whereClause}
+    `;
+    const [countResult] = await executeQuery(countQuery, queryParams);
+    const total = countResult.total;
+    
+    // Get paginated results
+    const offset = (page - 1) * pageSize;
     const searchQuery = `
       SELECT 
         dm.*,
@@ -64,21 +144,26 @@ searchRouter.post('/data', async (req, res) => {
       FROM deal_master dm 
       LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
-      WHERE dm.StockStatus = 1
+      ${whereClause}
       ORDER BY dm.TransID DESC
+      LIMIT ? OFFSET ?
     `;
     
-    const results = await executeQuery(searchQuery, []);
+    const searchParams = [...queryParams, pageSize, offset];
+    const results = await executeQuery(searchQuery, searchParams);
     
     res.json({
       success: true,
       data: results,
-      total: results.length,
-      message: 'Raw data for client-side filtering'
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+      searchType: 'precise'
     });
   } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch data' });
+    console.error('Error performing precise search:', error);
+    res.status(500).json({ success: false, message: 'Failed to perform precise search' });
   }
 });
 
