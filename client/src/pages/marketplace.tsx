@@ -245,32 +245,7 @@ export default function Marketplace() {
     }
   };
   
-  // Check if any filters are active
-  const hasActiveFilters = () => {
-    return (
-      filters.selectedMakes.length > 0 ||
-      filters.selectedGrades.length > 0 ||
-      filters.selectedBrands.length > 0 ||
-      filters.selectedGsm.length > 0 ||
-      filters.selectedUnits.length > 0 ||
-      filters.selectedLocations.length > 0 ||
-      filters.selectedCategory !== '' ||
-      filters.gsmRange.min !== '' ||
-      filters.gsmRange.max !== '' ||
-      filters.priceRange.min !== '' ||
-      filters.priceRange.max !== '' ||
-      filters.dateRange.from !== '' ||
-      filters.dateRange.to !== '' ||
-      filters.dimensionFilters.deckleMin !== '' ||
-      filters.dimensionFilters.deckleMax !== '' ||
-      filters.dimensionFilters.grainMin !== '' ||
-      filters.dimensionFilters.grainMax !== '' ||
-      filters.inStock ||
-      filters.hasImages ||
-      filters.verifiedSellers ||
-      searchTerm !== ''
-    );
-  };
+  // Check if any filters are active - function definition moved below checkbox handlers
   
   // Fetch deals - fallback when no search/filters are active
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
@@ -410,26 +385,7 @@ export default function Marketplace() {
     setCurrentPage(1);
   };
   
-  // Get count of active filters for display
-  const getActiveFilterCount = () => {
-    return (
-      filters.selectedMakes.length +
-      filters.selectedGrades.length +
-      filters.selectedBrands.length +
-      filters.selectedGsm.length +
-      filters.selectedUnits.length +
-      filters.selectedLocations.length +
-      (filters.selectedCategory ? 1 : 0) +
-      (filters.gsmRange.min || filters.gsmRange.max ? 1 : 0) +
-      (filters.priceRange.min || filters.priceRange.max ? 1 : 0) +
-      (filters.dateRange.from || filters.dateRange.to ? 1 : 0) +
-      (filters.dimensionFilters.deckleMin || filters.dimensionFilters.deckleMax || 
-       filters.dimensionFilters.grainMin || filters.dimensionFilters.grainMax ? 1 : 0) +
-      (filters.inStock ? 1 : 0) +
-      (filters.hasImages ? 1 : 0) +
-      (filters.verifiedSellers ? 1 : 0)
-    );
-  };
+  // Duplicate function removed - using the one defined below after checkbox handlers
   
   // Use search results if available, otherwise use regular deals
   const deals = searchResults?.data || dealsData?.deals || [];
@@ -535,33 +491,46 @@ export default function Marketplace() {
     }
   };
 
-  // Updated filter click handlers using new unified system
-  const handleMakeClick = (make: any) => {
-    const makeText = make.Make || make.name || make.value || (typeof make === 'string' ? make : '');
-    addFilter('makes', makeText);
+  // CHECKBOX-BASED FILTER HANDLERS
+  const handleFilterCheckboxChange = (filterType: string, value: string, checked: boolean) => {
+    setFilters(prev => {
+      const key = `selected${filterType.charAt(0).toUpperCase() + filterType.slice(1)}` as keyof typeof prev;
+      const currentValues = prev[key] as string[];
+      
+      if (checked) {
+        // Add to selected filters
+        return {
+          ...prev,
+          [key]: [...currentValues, value]
+        };
+      } else {
+        // Remove from selected filters
+        return {
+          ...prev,
+          [key]: currentValues.filter(v => v !== value)
+        };
+      }
+    });
   };
-
-  const handleGradeClick = (grade: any) => {
-    const gradeText = grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : '');
-    addFilter('grades', gradeText);
+  
+  // Helper functions for filter UI
+  const getActiveFilterCount = () => {
+    return filters.selectedMakes.length + 
+           filters.selectedGrades.length + 
+           filters.selectedBrands.length + 
+           filters.selectedGsm.length + 
+           filters.selectedLocations.length;
   };
-
-  const handleBrandClick = (brand: any) => {
-    const brandText = brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : '');
-    addFilter('brands', brandText);
+  
+  const hasActiveFilters = () => {
+    return getActiveFilterCount() > 0 || searchTerm.trim().length > 0;
   };
-
-  const handleGsmClick = (gsm: any) => {
-    const gsmText = gsm.GSM || gsm.value || (typeof gsm === 'string' ? gsm : '');
-    addFilter('gsm', gsmText);
+  
+  // Apply all selected filters
+  const applyFilters = () => {
+    setCurrentPage(1);
+    performUnifiedSearch(true);
   };
-
-  const handleUnitClick = (unit: any) => {
-    const unitText = unit.OfferUnit || unit.name || unit.value || unit;
-    addFilter('units', unitText);
-  };
-
-  // This function is now replaced by the comprehensive clearAllFilters above
 
   const handleContactSeller = async (dealId: number, sellerId: number) => {
     try {
@@ -1160,19 +1129,25 @@ export default function Marketplace() {
                   </Select>
                 </div>
                 
-                {/* Filter Action Buttons */}
-                <div className="space-y-3">
+                {/* APPLY FILTERS BUTTON */}
+                <div className="space-y-3 border-t pt-4">
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Selected filters: {getActiveFilterCount()}
+                  </div>
                   <Button 
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    onClick={applySearch}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={applyFilters}
+                    disabled={!hasActiveFilters()}
+                    data-testid="button-apply-filters"
                   >
-                    Apply Search
+                    Apply Filters ({getActiveFilterCount()})
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     className="w-full"
                     onClick={clearAllFilters}
+                    data-testid="button-clear-filters"
                   >
                     Clear All Filters
                   </Button>
@@ -1197,37 +1172,61 @@ export default function Marketplace() {
               </CardHeader>
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 
+                {/* Search */}
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search offers..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-desktop"
+                    />
+                  </div>
+                </div>
                 
-                {/* Makes Filter */}
+                <Separator />
+                
+                {/* Makes Filter - CHECKBOX VERSION */}
                 <div>
                   <Button
                     variant="ghost"
                     className="w-full justify-between p-0 h-auto font-semibold"
                     onClick={() => toggleSection('makes')}
                   >
-                    Makes
+                    Makes {filters.selectedMakes.length > 0 && <Badge variant="default" className="ml-2 text-xs">{filters.selectedMakes.length}</Badge>}
                     {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableFilters.makes.map((make: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleMakeClick(make)}
-                        >
-                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
-                          {make.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {make.count}
-                            </Badge>
-                          )}
-                        </Button>
-                      ))}
+                      {availableFilters.makes.map((make: any, index: number) => {
+                        const makeValue = make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown');
+                        const isChecked = filters.selectedMakes.includes(makeValue);
+                        return (
+                          <div key={index} className="flex items-center space-x-2 p-1">
+                            <Checkbox
+                              id={`make-desktop-${index}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleFilterCheckboxChange('makes', makeValue, !!checked)}
+                              data-testid={`checkbox-make-${makeValue}`}
+                            />
+                            <label 
+                              htmlFor={`make-desktop-${index}`} 
+                              className="text-sm flex-1 cursor-pointer flex justify-between items-center"
+                            >
+                              <span>{makeValue}</span>
+                              {make.count && (
+                                <Badge variant="secondary" className="text-xs px-2 py-0 ml-2">
+                                  {make.count}
+                                </Badge>
+                              )}
+                            </label>
+                          </div>
+                        );
+                      })}
                       {availableFilters.makes.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                        <p className="text-sm text-muted-foreground italic">Search to see available makes</p>
                       )}
                     </div>
                   )}
