@@ -63,7 +63,7 @@ router.get('/gsm', async (req, res) => {
   try {
     let { q, category } = req.query;
     
-    // Handle array case
+    // Handle array case and ensure string type
     if (Array.isArray(q)) {
       q = q[0];
     }
@@ -77,9 +77,9 @@ router.get('/gsm', async (req, res) => {
 
     const searchTerm = q.trim();
     let query = '';
-    let params = [];
+    let params: string[] = [];
     
-    if (category && category.trim()) {
+    if (category && typeof category === 'string' && category.trim()) {
       // Filter GSM suggestions by category using groupID
       query = `
         SELECT DISTINCT d.GSM as value, COUNT(*) as count
