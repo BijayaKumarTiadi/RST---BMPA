@@ -995,7 +995,7 @@ export default function Marketplace() {
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
 
         {/* Tagline */}
-        <div className="mb-4">
+        <div className="mb-2">
           <p className="text-sm sm:text-base text-muted-foreground text-center">
             Discover stock deals from verified sellers across the printing industry
           </p>
