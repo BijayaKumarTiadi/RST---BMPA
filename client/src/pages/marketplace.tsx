@@ -242,29 +242,19 @@ export default function Marketplace() {
     const userUnit = userSettings?.dimension_unit || 'cm';
     
     if (userUnit === 'inch') {
-      const deckleInch = (deckle_mm / 25.4);
-      const grainInch = (grain_mm / 25.4);
-      const deckleInchDisplay = deckleInch % 1 === 0 ? deckleInch.toString() : deckleInch.toFixed(2);
-      const grainInchDisplay = grainInch % 1 === 0 ? grainInch.toString() : grainInch.toFixed(2);
+      const deckleInch = (deckle_mm / 25.4).toFixed(2);
+      const grainInch = (grain_mm / 25.4).toFixed(2);
       return (
         <>
-          <div>{deckleInchDisplay}" × {grainInchDisplay}"</div>
+          <div>{deckleInch}" × {grainInch}"</div>
           <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
         </>
       );
     } else {
-      const deckleCm = deckle_mm / 10;
-      const grainCm = grain_mm / 10;
-      const deckleCmDisplay = deckleCm % 1 === 0 ? deckleCm.toString() : deckleCm.toFixed(1);
-      const grainCmDisplay = grainCm % 1 === 0 ? grainCm.toString() : grainCm.toFixed(1);
-      const deckleInchSec = (deckle_mm / 25.4);
-      const grainInchSec = (grain_mm / 25.4);
-      const deckleInchSecDisplay = deckleInchSec % 1 === 0 ? deckleInchSec.toString() : deckleInchSec.toFixed(2);
-      const grainInchSecDisplay = grainInchSec % 1 === 0 ? grainInchSec.toString() : grainInchSec.toFixed(2);
       return (
         <>
-          <div>{deckleCmDisplay} × {grainCmDisplay} cm</div>
-          <div className="text-xs text-muted-foreground">{deckleInchSecDisplay}" × {grainInchSecDisplay}"</div>
+          <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
         </>
       );
     }
@@ -987,25 +977,11 @@ export default function Marketplace() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3">
-              {/* Search Name Group Frame */}
-              <div className="mb-4 p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/30 hover:bg-blue-50/50 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <Package className="h-4 w-4 text-blue-600" />
-                  <label className="text-sm font-medium text-blue-700">Search Name</label>
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Enter a name for this search (e.g., 'A4 Paper 80GSM')"
-                  className="h-9 text-sm border-blue-200 focus:border-blue-400 bg-white"
-                  data-testid="input-search-name"
-                />
-              </div>
-
               {/* Single Row Layout */}
               <div className="flex flex-wrap items-end gap-3">
                 {/* Category */}
                 <div className="flex-1 min-w-32">
-                  <label className="text-sm font-medium">Category <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-medium">Category *</label>
                   <Select 
                     value={preciseSearch.category} 
                     onValueChange={(value) => handlePreciseSearchChange('category', value)}
@@ -1026,7 +1002,7 @@ export default function Marketplace() {
 
                 {/* GSM */}
                 <div className="relative flex-1 min-w-24">
-                  <label className="text-sm font-medium">GSM <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-medium">GSM *</label>
                   <Input
                     type="number"
                     placeholder="300"
@@ -1078,50 +1054,55 @@ export default function Marketplace() {
                   />
                 </div>
 
-                {/* Deckle Field - Category specific */}
-                <div className="flex-1 min-w-28">
-                  <label className="text-sm font-medium">Deckle</label>
-                  <div className="mt-1">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="64.8"
-                      value={preciseSearch.deckle}
-                      onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
-                      data-testid="input-precise-deckle"
-                      className="h-9 text-sm"
-                      disabled={!preciseSearch.category || !preciseSearch.gsm}
-                    />
-                  </div>
+                {/* Deckle x Grain - Category specific */}
+                <div className="flex-1 min-w-40">
+                  {(() => {
+                    const category = preciseSearch.category;
+                    const isPaperReel = category?.toLowerCase().includes('paper reel');
+                    const isBoardReel = category?.toLowerCase().includes('board reel');
+                    const isKraftReel = category?.toLowerCase().includes('kraft reel');
+                    const grainLabel = isKraftReel ? 'B.S' : 'Grain';
+                    const showGrainField = !isPaperReel && !isBoardReel;
+                    const dimensionLabel = showGrainField ? `Deckle x ${grainLabel}` : 'Deckle';
+                    
+                    return (
+                      <>
+                        <label className="text-sm font-medium">{dimensionLabel}</label>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="64.8"
+                              value={preciseSearch.deckle}
+                              onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
+                              data-testid="input-precise-deckle"
+                              className="h-9 text-sm"
+                              disabled={!preciseSearch.category || !preciseSearch.gsm}
+                            />
+                          </div>
+                          {showGrainField && (
+                            <>
+                              <span className="text-gray-500 text-sm font-medium px-1">x</span>
+                              <div className="relative flex-1">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="84.1"
+                                  value={preciseSearch.grain}
+                                  onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
+                                  data-testid="input-precise-grain"
+                                  className="h-9 text-sm"
+                                  disabled={!preciseSearch.category || !preciseSearch.gsm}
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
-
-                {/* Grain Field - Category specific */}
-                {(() => {
-                  const category = preciseSearch.category;
-                  const isPaperReel = category?.toLowerCase().includes('paper reel');
-                  const isBoardReel = category?.toLowerCase().includes('board reel');
-                  const isKraftReel = category?.toLowerCase().includes('kraft reel');
-                  const grainLabel = isKraftReel ? 'B.S' : 'Grain';
-                  const showGrainField = !isPaperReel && !isBoardReel;
-                  
-                  return showGrainField ? (
-                    <div className="flex-1 min-w-28">
-                      <label className="text-sm font-medium">{grainLabel}</label>
-                      <div className="mt-1">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="84.1"
-                          value={preciseSearch.grain}
-                          onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
-                          data-testid="input-precise-grain"
-                          className="h-9 text-sm"
-                          disabled={!preciseSearch.category || !preciseSearch.gsm}
-                        />
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
 
                 {/* Dimension Tolerance */}
                 <div className="flex-1 min-w-24">
