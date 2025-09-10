@@ -24,15 +24,12 @@ export default function Marketplace() {
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchAggregations, setSearchAggregations] = useState<any>(null);
   
   // Main search state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   
-  // UNIFIED FILTER STATE - Complete filter management
+  // CLIENT-SIDE FILTER STATE - All filtering done on loaded data
   const [filters, setFilters] = useState({
     // Selected filter values
     selectedMakes: [] as string[],
@@ -67,15 +64,9 @@ export default function Marketplace() {
     verifiedSellers: false
   });
   
-  // Available filter options from search API (dynamic based on search)
-  const [availableFilters, setAvailableFilters] = useState({
-    makes: [] as any[],
-    grades: [] as any[],
-    brands: [] as any[],
-    gsm: [] as any[],
-    units: [] as any[],
-    locations: [] as any[]
-  });
+  // Store all loaded deals for client-side filtering
+  const [allDeals, setAllDeals] = useState<any[]>([]);
+  const [filteredDeals, setFilteredDeals] = useState<any[]>([]);
 
   // Precise search states
   const [preciseSearch, setPreciseSearch] = useState({
@@ -178,71 +169,95 @@ export default function Marketplace() {
     }
   };
 
-  // Unified search and filter function
-  const performUnifiedSearch = async (resetPage = false) => {
-    const page = resetPage ? 1 : currentPage;
-    setIsSearching(true);
+  // CLIENT-SIDE filtering function
+  const applyClientSideFilters = () => {
+    let filtered = [...allDeals];
     
-    try {
-      const payload = {
-        // Search terms
-        query: searchTerm,
-        preciseSearch,
-        
-        // All active filters
-        filters: {
-          makes: filters.selectedMakes,
-          grades: filters.selectedGrades,
-          brands: filters.selectedBrands,
-          gsm: filters.selectedGsm,
-          units: filters.selectedUnits,
-          locations: filters.selectedLocations,
-          category: filters.selectedCategory,
-          gsmRange: filters.gsmRange,
-          priceRange: filters.priceRange,
-          dateRange: filters.dateRange,
-          dimensionFilters: filters.dimensionFilters,
-          inStock: filters.inStock,
-          hasImages: filters.hasImages,
-          verifiedSellers: filters.verifiedSellers
-        },
-        
-        // Pagination and sorting
-        page,
-        pageSize: itemsPerPage,
-        sortBy
-      };
-      
-      const response = await fetch('/api/search/unified', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-        setSearchAggregations(data.aggregations || null);
-        
-        // Update available filter options
-        if (data.aggregations) {
-          setAvailableFilters({
-            makes: data.aggregations.makes || [],
-            grades: data.aggregations.grades || [],
-            brands: data.aggregations.brands || [],
-            gsm: data.aggregations.gsm || [],
-            units: data.aggregations.units || [],
-            locations: data.aggregations.locations || []
-          });
-        }
-        
-        if (resetPage) setCurrentPage(1);
-      }
-    } catch (error) {
-      console.error('Unified search error:', error);
-    } finally {
-      setIsSearching(false);
+    // Apply search term filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(deal => 
+        (deal.search_key && deal.search_key.toLowerCase().includes(searchLower)) ||
+        (deal.Make && deal.Make.toLowerCase().includes(searchLower)) ||
+        (deal.Grade && deal.Grade.toLowerCase().includes(searchLower)) ||
+        (deal.Brand && deal.Brand.toLowerCase().includes(searchLower)) ||
+        (deal.stock_description && deal.stock_description.toLowerCase().includes(searchLower))
+      );
     }
+    
+    // Apply selected filters
+    if (filters.selectedMakes.length > 0) {
+      filtered = filtered.filter(deal => 
+        deal.Make && filters.selectedMakes.includes(deal.Make)
+      );
+    }
+    
+    if (filters.selectedGrades.length > 0) {
+      filtered = filtered.filter(deal => 
+        deal.Grade && filters.selectedGrades.includes(deal.Grade)
+      );
+    }
+    
+    if (filters.selectedBrands.length > 0) {
+      filtered = filtered.filter(deal => 
+        deal.Brand && filters.selectedBrands.includes(deal.Brand)
+      );
+    }
+    
+    if (filters.selectedGsm.length > 0) {
+      filtered = filtered.filter(deal => 
+        deal.GSM && filters.selectedGsm.includes(deal.GSM.toString())
+      );
+    }
+    
+    if (filters.selectedUnits.length > 0) {
+      filtered = filtered.filter(deal => 
+        deal.OfferUnit && filters.selectedUnits.includes(deal.OfferUnit)
+      );
+    }
+    
+    // Apply GSM range filter
+    if (filters.gsmRange.min || filters.gsmRange.max) {
+      filtered = filtered.filter(deal => {
+        if (!deal.GSM) return false;
+        const gsm = parseFloat(deal.GSM);
+        if (filters.gsmRange.min && gsm < parseFloat(filters.gsmRange.min)) return false;
+        if (filters.gsmRange.max && gsm > parseFloat(filters.gsmRange.max)) return false;
+        return true;
+      });
+    }
+    
+    // Apply price range filter
+    if (filters.priceRange.min || filters.priceRange.max) {
+      filtered = filtered.filter(deal => {
+        if (!deal.OfferPrice) return false;
+        const price = parseFloat(deal.OfferPrice);
+        if (filters.priceRange.min && price < parseFloat(filters.priceRange.min)) return false;
+        if (filters.priceRange.max && price > parseFloat(filters.priceRange.max)) return false;
+        return true;
+      });
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.deal_created_at || 0).getTime() - new Date(a.deal_created_at || 0).getTime();
+        case 'oldest':
+          return new Date(a.deal_created_at || 0).getTime() - new Date(b.deal_created_at || 0).getTime();
+        case 'price_low':
+          return (parseFloat(a.OfferPrice) || 0) - (parseFloat(b.OfferPrice) || 0);
+        case 'price_high':
+          return (parseFloat(b.OfferPrice) || 0) - (parseFloat(a.OfferPrice) || 0);
+        case 'quantity':
+          return (parseFloat(b.quantity) || 0) - (parseFloat(a.quantity) || 0);
+        default:
+          return 0;
+      }
+    });
+    
+    setFilteredDeals(filtered);
+    setCurrentPage(1);
   };
   
   // HELPER FUNCTIONS FOR FILTER MANAGEMENT (moved here to fix initialization order)
@@ -258,10 +273,9 @@ export default function Marketplace() {
     return getActiveFilterCount() > 0 || searchTerm.trim().length > 0;
   };
   
-  // Apply all selected filters
+  // Apply all selected filters (client-side)
   const applyFilters = () => {
-    setCurrentPage(1);
-    performUnifiedSearch(true);
+    applyClientSideFilters();
   };
   
   // CHECKBOX-BASED FILTER HANDLERS - CORE FUNCTION
@@ -310,30 +324,15 @@ export default function Marketplace() {
     handleFilterCheckboxChange('gsm', gsmText, true);
   };
   
-  // Fetch deals - fallback when no search/filters are active
+  // Fetch ALL deals upfront for client-side filtering
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals", { sort: sortBy, page: currentPage }],
+    queryKey: ["/api/deals/all"],
     queryFn: async () => {
-      // If we have search results, use them instead
-      if (searchResults && searchResults.data) {
-        return {
-          deals: searchResults.data,
-          total: searchResults.total,
-          page: searchResults.page || 1
-        };
-      }
-      
-      // Otherwise fetch regular deals (fallback)
-      const params = new URLSearchParams();
-      if (sortBy) params.append('sort', sortBy);
-      params.append('limit', itemsPerPage.toString());
-      params.append('page', currentPage.toString());
-      
-      const response = await fetch(`/api/deals?${params.toString()}`);
+      // Fetch all deals without pagination for client-side filtering
+      const response = await fetch('/api/deals?limit=10000'); // Large limit to get all
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
     },
-    enabled: !isSearching && !hasActiveFilters(), // Only fetch when no search/filters are active
   });
 
   if (!isAuthenticated) {
@@ -364,8 +363,8 @@ export default function Marketplace() {
       }
       return prev;
     });
-    // Trigger search with new filter
-    setTimeout(() => performUnifiedSearch(true), 100);
+    // Trigger client-side filtering
+    setTimeout(() => applyClientSideFilters(), 100);
   };
   
   const removeFilter = (type: string, value: string) => {
@@ -377,8 +376,8 @@ export default function Marketplace() {
         [key]: currentValues.filter(v => v !== value)
       };
     });
-    // Trigger search with updated filters
-    setTimeout(() => performUnifiedSearch(true), 100);
+    // Trigger client-side filtering
+    setTimeout(() => applyClientSideFilters(), 100);
   };
   
   const updateRangeFilter = (type: 'gsmRange' | 'priceRange' | 'dateRange', field: 'min' | 'max' | 'from' | 'to', value: string) => {
@@ -406,8 +405,8 @@ export default function Marketplace() {
       ...prev,
       [type]: !prev[type]
     }));
-    // Trigger search with updated filter
-    setTimeout(() => performUnifiedSearch(true), 100);
+    // Trigger client-side filtering
+    setTimeout(() => applyClientSideFilters(), 100);
   };
   
   const clearAllFilters = () => {
@@ -444,42 +443,66 @@ export default function Marketplace() {
       grainUnit: "cm",
       dimensionTolerance: ""
     });
-    setSearchResults(null);
     setCurrentPage(1);
+    applyClientSideFilters();
   };
   
   // Duplicate function removed - using the one defined below after checkbox handlers
   
-  // Use search results if available, otherwise use regular deals
-  const deals = searchResults?.data || dealsData?.deals || [];
-  const totalDeals = searchResults?.total || dealsData?.total || 0;
+  // Use filtered deals for display, with pagination applied client-side
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const deals = filteredDeals.slice(startIndex, endIndex);
+  const totalDeals = filteredDeals.length;
   const totalPages = Math.ceil(totalDeals / itemsPerPage);
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
   
-  // Define dynamic filter options first based on search results
-  const dynamicMakes = searchAggregations?.makes 
-    ? searchAggregations.makes.map((item: any) => ({ name: item.Make, count: item.count }))
-    : null;
+  // Generate available filter options from all loaded deals
+  const availableFilters = {
+    makes: Array.from(new Set(allDeals.filter(deal => deal.Make).map(deal => deal.Make)))
+      .map(make => ({ 
+        Make: make, 
+        name: make, 
+        count: allDeals.filter(deal => deal.Make === make).length 
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     
-  const dynamicGrades = searchAggregations?.grades 
-    ? searchAggregations.grades.map((item: any) => ({ name: item.Grade, count: item.count }))
-    : null;
+    grades: Array.from(new Set(allDeals.filter(deal => deal.Grade).map(deal => deal.Grade)))
+      .map(grade => ({ 
+        Grade: grade, 
+        name: grade, 
+        count: allDeals.filter(deal => deal.Grade === grade).length 
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     
-  const dynamicBrands = searchAggregations?.brands 
-    ? searchAggregations.brands.map((item: any) => ({ name: item.Brand, count: item.count }))
-    : null;
+    brands: Array.from(new Set(allDeals.filter(deal => deal.Brand).map(deal => deal.Brand)))
+      .map(brand => ({ 
+        Brand: brand, 
+        name: brand, 
+        count: allDeals.filter(deal => deal.Brand === brand).length 
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     
-  const dynamicUnits = searchAggregations?.units 
-    ? searchAggregations.units.map((item: any) => ({ name: item.OfferUnit, count: item.count }))
-    : null;
-
-  // Dynamic GSM options based on search results or all deals
-  const gsmOptions = searchAggregations?.gsm 
-    ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
-    : Array.from(new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))).sort((a, b) => parseFloat(a as string) - parseFloat(b as string)).map((gsm) => ({ value: gsm as string, count: 0 }));
+    gsm: Array.from(new Set(allDeals.filter(deal => deal.GSM).map(deal => deal.GSM.toString())))
+      .map(gsm => ({ 
+        GSM: parseFloat(gsm), 
+        value: gsm, 
+        count: allDeals.filter(deal => deal.GSM?.toString() === gsm).length 
+      }))
+      .sort((a, b) => a.GSM - b.GSM),
+    
+    units: Array.from(new Set(allDeals.filter(deal => deal.OfferUnit).map(deal => deal.OfferUnit)))
+      .map(unit => ({ 
+        OfferUnit: unit, 
+        name: unit, 
+        count: allDeals.filter(deal => deal.OfferUnit === unit).length 
+      })),
+    
+    locations: [] // Add if location data is available
+  };
   
   // No filtering needed - using available options from search API
 
@@ -491,67 +514,38 @@ export default function Marketplace() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Load initial filter data when component mounts
+  // Initialize data when deals are loaded
   useEffect(() => {
-    loadInitialFilters();
-  }, []);
-
-  // Load initial filter options
-  const loadInitialFilters = async () => {
-    try {
-      console.log('Loading initial filter data...');
-      const response = await fetch('/api/search/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: '', // Empty query to get all data
-          page: 1,
-          pageSize: 1 // Just need aggregations, not all results
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Initial filter response:', data);
-        
-        if (data.aggregations) {
-          console.log('Setting initial filter options');
-          setAvailableFilters({
-            makes: data.aggregations.makes || [],
-            grades: data.aggregations.grades || [],
-            brands: data.aggregations.brands || [],
-            gsm: data.aggregations.gsm || [],
-            units: data.aggregations.units || [],
-            locations: data.aggregations.locations || []
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading initial filters:', error);
+    if (dealsData?.deals) {
+      setAllDeals(dealsData.deals);
+      setFilteredDeals(dealsData.deals);
     }
-  };
+  }, [dealsData]);
   
-  // Apply pending filters
+  // Apply filters whenever filter state or sort changes
+  useEffect(() => {
+    if (allDeals.length > 0) {
+      applyClientSideFilters();
+    }
+  }, [filters, sortBy, searchTerm, allDeals]);
+  
+  // Apply current filters and search
   const applySearch = () => {
-    // Trigger search with current search term
     setCurrentPage(1);
-    performUnifiedSearch(true);
+    applyClientSideFilters();
   };
 
-  const performSearch = async (query: string) => {
+  const performSearch = (query: string) => {
     setSearchTerm(query);
-    performUnifiedSearch(true);
+    setCurrentPage(1);
+    applyClientSideFilters();
   };
   
-  // Legacy search change handler - now just updates search term
-  const handleSearchChange = async (value: string) => {
+  // Search change handler - updates search term and applies filter
+  const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    if (value.trim()) {
-      // Debounce the unified search
-      setTimeout(() => performUnifiedSearch(true), 300);
-    }
+    // Debounce the client-side filtering
+    setTimeout(() => applyClientSideFilters(), 300);
   };
 
   // Duplicate functions removed - they are now defined above before useQuery
@@ -624,37 +618,53 @@ export default function Marketplace() {
     if (field === 'gsm') fetchGsmSuggestions(value);
   };
 
-  const performPreciseSearch = async () => {
+  const performPreciseSearch = () => {
     console.log('Performing precise search with:', preciseSearch);
     
-    try {
-      setIsSearching(true);
-      const response = await fetch('/api/search/precise', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...preciseSearch,
-          page: 1,
-          pageSize: itemsPerPage
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Precise search results:', data);
-        setSearchResults(data);
-        setSearchTerm(''); // Clear regular search term
-        setCurrentPage(1);
-      } else {
-        console.error('Precise search failed');
-      }
-    } catch (error) {
-      console.error('Error performing precise search:', error);
-    } finally {
-      setIsSearching(false);
+    // Apply precise search filters to client-side data
+    let filtered = [...allDeals];
+    
+    if (preciseSearch.category) {
+      // Add category filtering logic if needed
     }
+    
+    if (preciseSearch.gsm) {
+      const targetGsm = parseFloat(preciseSearch.gsm);
+      const tolerance = parseFloat(preciseSearch.tolerance) || 0;
+      filtered = filtered.filter(deal => {
+        if (!deal.GSM) return false;
+        const dealGsm = parseFloat(deal.GSM);
+        return Math.abs(dealGsm - targetGsm) <= tolerance;
+      });
+    }
+    
+    if (preciseSearch.deckle) {
+      const targetDeckle = parseFloat(preciseSearch.deckle);
+      const tolerance = parseFloat(preciseSearch.dimensionTolerance) || 0;
+      // Convert to mm if needed
+      const deckleInMm = preciseSearch.deckleUnit === 'inch' ? targetDeckle * 25.4 : targetDeckle * 10;
+      
+      filtered = filtered.filter(deal => {
+        if (!deal.Deckle_mm) return false;
+        return Math.abs(deal.Deckle_mm - deckleInMm) <= tolerance;
+      });
+    }
+    
+    if (preciseSearch.grain) {
+      const targetGrain = parseFloat(preciseSearch.grain);
+      const tolerance = parseFloat(preciseSearch.dimensionTolerance) || 0;
+      // Convert to mm if needed
+      const grainInMm = preciseSearch.grainUnit === 'inch' ? targetGrain * 25.4 : targetGrain * 10;
+      
+      filtered = filtered.filter(deal => {
+        if (!deal.grain_mm) return false;
+        return Math.abs(deal.grain_mm - grainInMm) <= tolerance;
+      });
+    }
+    
+    setFilteredDeals(filtered);
+    setSearchTerm(''); // Clear regular search term
+    setCurrentPage(1);
   };
 
   // Modal handlers
