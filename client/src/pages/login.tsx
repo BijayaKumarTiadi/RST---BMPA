@@ -310,7 +310,7 @@ export default function Login() {
                     <Button 
                       variant="link" 
                       className="p-0 h-auto text-blue-600"
-                      onClick={() => window.location.href = '/register'}
+                      onClick={() => setLocation('/register')}
                       data-testid="link-register"
                     >
                       Register here
