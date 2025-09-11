@@ -141,11 +141,11 @@ export default function Register() {
           description: data.message || "Registration successful! Please wait for admin approval.",
         });
       } else {
-        // Handle specific error cases
-        if (data.message && data.message.toLowerCase().includes('otp')) {
+        // Handle specific error cases - check for OTP in message
+        if (data.message && (data.message.toLowerCase().includes('otp') || data.message.toLowerCase().includes('invalid otp'))) {
           toast({
             title: "Invalid OTP",
-            description: "The verification code you entered is incorrect. Please check and try again.",
+            description: data.message || "The verification code you entered is incorrect. Please check and try again.",
             variant: "destructive",
           });
         } else {
@@ -161,25 +161,26 @@ export default function Register() {
       let errorMessage = "Registration failed. Please try again.";
       let errorTitle = "Error";
       
-      if (error.response) {
+      // Handle Response object thrown by apiRequest
+      if (error instanceof Response) {
         try {
-          const errorData = await error.response.json();
+          const errorData = await error.json();
           if (errorData.message) {
-            if (errorData.message.toLowerCase().includes('otp')) {
+            if (errorData.message.toLowerCase().includes('otp') || errorData.message.toLowerCase().includes('invalid otp')) {
               errorTitle = "Invalid OTP";
-              errorMessage = "The verification code you entered is incorrect. Please check and try again.";
+              errorMessage = errorData.message || "The verification code you entered is incorrect. Please check and try again.";
             } else {
               errorMessage = errorData.message;
               errorTitle = "Registration Failed";
             }
           }
         } catch (parseError) {
-          // If we can't parse the error response, use the original message
-          if (error.message && error.message.toLowerCase().includes('otp')) {
-            errorTitle = "Invalid OTP";
-            errorMessage = "The verification code you entered is incorrect. Please check and try again.";
-          }
+          // If we can't parse the error response, use generic message
+          errorMessage = "Registration failed. Please try again.";
         }
+      } else if (error?.message?.toLowerCase().includes('otp')) {
+        errorTitle = "Invalid OTP";
+        errorMessage = "The verification code you entered is incorrect. Please check and try again.";
       }
       
       toast({

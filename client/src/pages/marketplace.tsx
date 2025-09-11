@@ -1007,7 +1007,10 @@ export default function Marketplace() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">Hover to search</span>
+                  <div>
+                    <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">Hover to search</span>
+                    <p className="text-xs text-muted-foreground mt-1" data-testid="text-precise-search-instructions">Ready to find what you need? Fill in the required fields below and click Search.</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${preciseSearchExpanded ? 'rotate-180' : ''}`} />
