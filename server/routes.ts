@@ -902,12 +902,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT COUNT(*) as count FROM deal_master WHERE memberID = ?
       `, [sellerId]);
 
-      // Get all deals regardless of status (since Status column might not exist)
-      const activeDealsResult = totalDealsResult;
+      // Get active deals (StockStatus = 1)
+      const activeDealsResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM deal_master WHERE memberID = ? AND StockStatus = 1
+      `, [sellerId]);
 
-      // For sold deals and revenue, we'll return 0 since Status column doesn't exist yet
-      const soldDealsResult = { count: 0 };
-      const revenueResult = { revenue: 0 };
+      // Get sold deals (StockStatus = 2)
+      const soldDealsResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM deal_master WHERE memberID = ? AND StockStatus = 2
+      `, [sellerId]);
+
+      // Calculate total revenue from sold deals
+      const revenueResult = await executeQuerySingle(`
+        SELECT COALESCE(SUM(COALESCE(OfferPrice,0) * COALESCE(quantity,0)), 0) as revenue 
+        FROM deal_master 
+        WHERE memberID = ? AND StockStatus = 2
+      `, [sellerId]);
 
       const stats = {
         totalDeals: totalDealsResult?.count || 0,
@@ -918,6 +928,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalProducts: totalDealsResult?.count || 0,
         totalOrders: soldDealsResult?.count || 0
       };
+
+      console.log('📊 Seller Stats Debug for member', sellerId, ':', {
+        totalDeals: totalDealsResult?.count || 0,
+        activeDeals: activeDealsResult?.count || 0,
+        soldDeals: soldDealsResult?.count || 0,
+        calculatedSold: (totalDealsResult?.count || 0) - (activeDealsResult?.count || 0),
+        totalRevenue: revenueResult?.revenue || 0
+      });
 
       res.json(stats);
     } catch (error) {
