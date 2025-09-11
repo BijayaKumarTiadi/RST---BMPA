@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Package, IndianRupee, Hash, Plus } from "lucide-react";
+import { Package, IndianRupee, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,7 +31,6 @@ const dealSchema = z.object({
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
-  stockType: z.string().optional(),
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
