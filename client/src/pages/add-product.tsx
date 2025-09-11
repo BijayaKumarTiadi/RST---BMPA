@@ -460,7 +460,7 @@ export default function AddDeal() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-3">
             <div className="text-center">
               <h1 className="text-xl font-bold text-foreground mb-1">Add Offer</h1>
             </div>
