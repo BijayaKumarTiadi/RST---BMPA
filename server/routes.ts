@@ -937,6 +937,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRevenue: revenueResult?.revenue || 0
       });
 
+      // Prevent caching of stats data
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.json(stats);
     } catch (error) {
       console.error('Error fetching seller stats:', error);

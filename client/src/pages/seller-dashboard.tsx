@@ -113,6 +113,8 @@ export default function SellerDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/deals", "seller_only"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
+      // Force refetch stats to bypass cache
+      queryClient.refetchQueries({ queryKey: ["/api/seller/stats"] });
     },
     onError: (error: any) => {
       toast({
