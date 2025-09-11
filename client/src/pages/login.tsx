@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, Shield, Clock, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/ui/logo";
+import { useLocation } from "wouter";
 
 export default function Login() {
   const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -19,6 +20,29 @@ export default function Login() {
   const [showPendingApproval, setShowPendingApproval] = useState(false);
   const [showTestLogin, setShowTestLogin] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  // Helper function to show email not found toast
+  const showEmailNotFoundToast = () => {
+    toast({
+      title: "Welcome to Stock Laabh!",
+      description: (
+        <div className="space-y-2">
+          <p>We're excited to have you on board! Unfortunately, we couldn't find your email address.</p>
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-blue-600 underline"
+            onClick={() => setLocation('/register')}
+            data-testid="link-register-toast"
+          >
+            Click Register here to get started.
+          </Button>
+        </div>
+      ),
+      variant: "default",
+      duration: 8000,
+    });
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,18 +68,51 @@ export default function Login() {
           description: "Please check your email for the verification code",
         });
       } else {
+        // Check if it's an email not found error
+        if (data.message && (data.message.toLowerCase().includes('email not found') || data.message.toLowerCase().includes('user not found') || data.message.toLowerCase().includes('not registered') || data.message.toLowerCase().includes('email does not exist'))) {
+          showEmailNotFoundToast();
+        } else {
+          toast({
+            title: "Error",
+            description: data.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
+      // Check if error response contains email not found message
+      let errorMessage = "Failed to send OTP. Please try again.";
+      let errorTitle = "Error";
+      let isEmailNotFound = false;
+      
+      // Handle Response object thrown by apiRequest
+      if (error instanceof Response) {
+        try {
+          const errorData = await error.json();
+          if (errorData.message) {
+            if (errorData.message.toLowerCase().includes('email not found') || errorData.message.toLowerCase().includes('user not found') || errorData.message.toLowerCase().includes('not registered') || errorData.message.toLowerCase().includes('email does not exist')) {
+              isEmailNotFound = true;
+            } else {
+              errorMessage = errorData.message;
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use generic message
+          errorMessage = "Failed to send OTP. Please try again.";
+        }
+      } else if (error?.message?.toLowerCase().includes('email not found') || error?.message?.toLowerCase().includes('user not found')) {
+        isEmailNotFound = true;
+      }
+      
+      if (isEmailNotFound) {
+        showEmailNotFoundToast();
+      } else {
         toast({
-          title: "Error",
-          description: data.message,
+          title: errorTitle,
+          description: errorMessage,
           variant: "destructive",
         });
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send OTP. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
