@@ -22,7 +22,6 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [formData, setFormData] = useState({
@@ -76,29 +75,47 @@ export default function Register() {
     }
   };
 
-  const handleVerifyOTP = async () => {
-    if (!otp.trim() || otp.length !== 6) {
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
+      const data = await response.json();
+
+      if (data.success) {
+        setOtp('');
+        toast({
+          title: "OTP Resent",
+          description: "A new verification code has been sent to your email",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Please enter the 6-digit verification code",
+        description: "Failed to resend OTP. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setOtpVerified(true);
-    toast({
-      title: "Email Verified ✓",
-      description: "Complete your details below",
-    });
   };
 
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Quick validation
-    if (!email || !otp || !otpVerified) {
-      toast({ title: "Error", description: "Please verify your email first", variant: "destructive" });
+    // Validation
+    if (!email || !otp) {
+      toast({ title: "Error", description: "Please enter your email and OTP verification code", variant: "destructive" });
+      return;
+    }
+
+    if (otp.length !== 6) {
+      toast({ title: "Error", description: "Please enter the complete 6-digit verification code", variant: "destructive" });
       return;
     }
     
@@ -121,14 +138,23 @@ export default function Register() {
         setSuccess(true);
         toast({
           title: "Success! 🎉",
-          description: "Account created successfully!",
+          description: data.message || "Registration successful! Please wait for admin approval.",
         });
       } else {
-        toast({
-          title: "Registration Failed",
-          description: data.message,
-          variant: "destructive",
-        });
+        // Handle specific error cases
+        if (data.message && data.message.toLowerCase().includes('otp')) {
+          toast({
+            title: "Invalid OTP",
+            description: "The verification code you entered is incorrect. Please check and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: data.message || "Registration failed. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -268,25 +294,25 @@ export default function Register() {
                     <div className="flex items-end">
                       <Button 
                         type="button"
-                        onClick={handleVerifyOTP}
-                        disabled={!otp || otp.length !== 6 || otpVerified}
+                        onClick={handleResendOTP}
+                        disabled={loading}
+                        variant="outline"
                         className="w-full"
-                        data-testid="button-verify-otp"
+                        data-testid="button-resend-otp"
                       >
-                        {otpVerified ? 'Verified ✓' : 'Verify OTP'}
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Resending...
+                          </>
+                        ) : (
+                          'Resend OTP'
+                        )}
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {otpVerified && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Email verified! Complete your details below.
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
 
               {/* Registration Form */}
@@ -410,16 +436,16 @@ export default function Register() {
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-lg" 
-                  disabled={registering || !otpVerified}
+                  disabled={registering || !otpSent || !otp || otp.length !== 6}
                   data-testid="button-register"
                 >
                   {registering ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Creating Account...
+                      Verifying & Creating Account...
                     </>
                   ) : (
-                    'Complete Registration'
+                    'Verify OTP & Complete Registration'
                   )}
                 </Button>
 
