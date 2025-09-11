@@ -1760,17 +1760,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const emailHtml = generateInquiryEmail(inquiryData);
       
       // Get seller email (try to get from database or use a default format)
-      let sellerEmail = inquiryData.to;
+      let sellerEmail = '';
       if (!sellerEmail) {
         // Try to get seller email from database
         try {
           const sellerQuery = `
-            SELECT email FROM bmpa_members WHERE member_id = (
-              SELECT memberID FROM deal_master WHERE TransID = ?
-            )
+            SELECT COALESCE(d.created_by_email, m.email) AS sellerEmail
+            FROM deal_master d
+            LEFT JOIN bmpa_members m ON m.member_id = COALESCE(d.created_by_member_id, d.memberID)
+            WHERE d.TransID = ?
           `;
           const seller = await executeQuerySingle(sellerQuery, [inquiryData.productId]);
-          sellerEmail = seller?.email || `seller${inquiryData.productId}@stocklaabh.com`;
+          sellerEmail = seller?.sellerEmail || `seller${inquiryData.productId}@stocklaabh.com`;
+          
+          // Add diagnostic logging
+          if (!seller?.sellerEmail) {
+            console.log(`Warning: No seller email found for TransID ${inquiryData.productId}, falling back to default`);
+          } else {
+            console.log(`Found seller email for TransID ${inquiryData.productId}: ${seller.sellerEmail}`);
+          }
         } catch (dbError) {
           console.error('Error fetching seller email:', dbError);
           sellerEmail = `seller${inquiryData.productId}@stocklaabh.com`;
