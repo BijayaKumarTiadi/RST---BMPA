@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/ui/logo";
+import { useLocation } from "wouter";
 import { 
   Mail, 
   Lock, 
@@ -35,6 +36,29 @@ export default function Register() {
   });
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  // Helper function to show email already registered toast
+  const showEmailAlreadyRegisteredToast = () => {
+    toast({
+      title: "Email Already Registered",
+      description: (
+        <div className="space-y-2">
+          <p>This email is already registered with us.</p>
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-blue-600 underline"
+            onClick={() => setLocation('/login')}
+            data-testid="link-login-toast"
+          >
+            Please login using OTP instead.
+          </Button>
+        </div>
+      ),
+      variant: "default",
+      duration: 8000,
+    });
+  };
 
   const handleSendOTP = async () => {
     if (!email.trim()) {
@@ -58,18 +82,50 @@ export default function Register() {
           description: "Check your email for the verification code",
         });
       } else {
+        // Check if it's an email already registered error
+        if (data.message && (data.message.toLowerCase().includes('already registered') || data.message.toLowerCase().includes('email exists') || data.message.toLowerCase().includes('email is already') || data.message.toLowerCase().includes('already exists'))) {
+          showEmailAlreadyRegisteredToast();
+        } else {
+          toast({
+            title: "Error",
+            description: data.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
+      // Check if error response contains email already registered message
+      let errorMessage = "Failed to send OTP. Please try again.";
+      let isEmailAlreadyRegistered = false;
+      
+      // Handle Response object thrown by apiRequest
+      if (error instanceof Response) {
+        try {
+          const errorData = await error.json();
+          if (errorData.message) {
+            if (errorData.message.toLowerCase().includes('already registered') || errorData.message.toLowerCase().includes('email exists') || errorData.message.toLowerCase().includes('email is already') || errorData.message.toLowerCase().includes('already exists')) {
+              isEmailAlreadyRegistered = true;
+            } else {
+              errorMessage = errorData.message;
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use generic message
+          errorMessage = "Failed to send OTP. Please try again.";
+        }
+      } else if (error?.message?.toLowerCase().includes('already registered') || error?.message?.toLowerCase().includes('email exists')) {
+        isEmailAlreadyRegistered = true;
+      }
+      
+      if (isEmailAlreadyRegistered) {
+        showEmailAlreadyRegisteredToast();
+      } else {
         toast({
           title: "Error",
-          description: data.message,
+          description: errorMessage,
           variant: "destructive",
         });
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send OTP. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
@@ -88,18 +144,50 @@ export default function Register() {
           description: "A new verification code has been sent to your email",
         });
       } else {
+        // Check if it's an email already registered error
+        if (data.message && (data.message.toLowerCase().includes('already registered') || data.message.toLowerCase().includes('email exists') || data.message.toLowerCase().includes('email is already') || data.message.toLowerCase().includes('already exists'))) {
+          showEmailAlreadyRegisteredToast();
+        } else {
+          toast({
+            title: "Error",
+            description: data.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
+      // Check if error response contains email already registered message
+      let errorMessage = "Failed to resend OTP. Please try again.";
+      let isEmailAlreadyRegistered = false;
+      
+      // Handle Response object thrown by apiRequest
+      if (error instanceof Response) {
+        try {
+          const errorData = await error.json();
+          if (errorData.message) {
+            if (errorData.message.toLowerCase().includes('already registered') || errorData.message.toLowerCase().includes('email exists') || errorData.message.toLowerCase().includes('email is already') || errorData.message.toLowerCase().includes('already exists')) {
+              isEmailAlreadyRegistered = true;
+            } else {
+              errorMessage = errorData.message;
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use generic message
+          errorMessage = "Failed to resend OTP. Please try again.";
+        }
+      } else if (error?.message?.toLowerCase().includes('already registered') || error?.message?.toLowerCase().includes('email exists')) {
+        isEmailAlreadyRegistered = true;
+      }
+      
+      if (isEmailAlreadyRegistered) {
+        showEmailAlreadyRegisteredToast();
+      } else {
         toast({
           title: "Error",
-          description: data.message,
+          description: errorMessage,
           variant: "destructive",
         });
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to resend OTP. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
