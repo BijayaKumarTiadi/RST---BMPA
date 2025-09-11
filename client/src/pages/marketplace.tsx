@@ -992,14 +992,8 @@ export default function Marketplace() {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
+      <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-2 sm:py-4">
 
-        {/* Tagline */}
-        <div className="mb-2">
-          <p className="text-sm sm:text-base text-muted-foreground text-center">
-            Discover stock deals from verified sellers across the printing industry
-          </p>
-        </div>
 
         {/* Precise Search - Hoverable Collapse */}
         <div 
