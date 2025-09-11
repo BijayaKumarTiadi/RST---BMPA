@@ -145,14 +145,18 @@ export default function Login() {
         // Reload to refresh the app state
         window.location.href = '/';
       } else {
-        // Check if it's a pending approval message
-        if (data.message && data.message.toLowerCase().includes('pending') && data.message.toLowerCase().includes('approval')) {
+        // Check if it's a pending approval or not approved message
+        if (data.message && (
+          (data.message.toLowerCase().includes('pending') && data.message.toLowerCase().includes('approval')) ||
+          data.message.toLowerCase().includes('not yet approved') ||
+          data.message.toLowerCase().includes('not approved')
+        )) {
           setShowPendingApproval(true);
           toast({
-            title: "Account Under Review",
-            description: "Your membership is currently being reviewed by our admin team.",
+            title: "Account Not Approved",
+            description: data.message,  // Display the actual message from the API
             variant: "default",
-            duration: 6000,
+            duration: 8000,
           });
         } else {
           // Check if it's an invalid OTP error
@@ -165,7 +169,7 @@ export default function Login() {
           } else {
             toast({
               title: "Login Failed",
-              description: data.message,
+              description: data.message || "Login failed. Please try again.",
               variant: "destructive",
             });
           }
