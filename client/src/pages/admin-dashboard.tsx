@@ -428,18 +428,18 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Registered</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="min-w-[120px]">Name</TableHead>
+                        <TableHead className="min-w-[180px]">Email</TableHead>
+                        <TableHead className="min-w-[110px] hidden sm:table-cell">Phone</TableHead>
+                        <TableHead className="min-w-[150px]">Company</TableHead>
+                        <TableHead className="min-w-[120px] hidden md:table-cell">Location</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[100px] hidden lg:table-cell">Membership</TableHead>
+                        <TableHead className="min-w-[100px] hidden xl:table-cell">Registered</TableHead>
+                        <TableHead className="min-w-[120px] sticky right-0 bg-background z-10 shadow-sm">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -458,34 +458,34 @@ export default function AdminDashboard() {
                       ) : (
                         filteredMembers.map((member) => (
                           <TableRow key={member.member_id} data-testid={`row-member-${member.member_id}`}>
-                            <TableCell className="font-medium" data-testid={`text-name-${member.member_id}`}>
-                              {member.mname}
+                            <TableCell className="font-medium min-w-[120px]" data-testid={`text-name-${member.member_id}`}>
+                              <div className="truncate">{member.mname}</div>
                             </TableCell>
-                            <TableCell data-testid={`text-email-${member.member_id}`}>
-                              {member.email}
+                            <TableCell className="min-w-[180px]" data-testid={`text-email-${member.member_id}`}>
+                              <div className="truncate">{member.email}</div>
                             </TableCell>
-                            <TableCell data-testid={`text-phone-${member.member_id}`}>
+                            <TableCell className="hidden sm:table-cell min-w-[110px]" data-testid={`text-phone-${member.member_id}`}>
                               {member.phone}
                             </TableCell>
-                            <TableCell data-testid={`text-company-${member.member_id}`}>
-                              {member.company_name}
+                            <TableCell className="min-w-[150px]" data-testid={`text-company-${member.member_id}`}>
+                              <div className="truncate">{member.company_name}</div>
                             </TableCell>
-                            <TableCell data-testid={`text-location-${member.member_id}`}>
+                            <TableCell className="hidden md:table-cell min-w-[120px]" data-testid={`text-location-${member.member_id}`}>
                               {member.city}, {member.state}
                             </TableCell>
-                            <TableCell data-testid={`badge-status-${member.member_id}`}>
+                            <TableCell className="min-w-[100px]" data-testid={`badge-status-${member.member_id}`}>
                               {getStatusBadge(member.mstatus)}
                             </TableCell>
-                            <TableCell data-testid={`badge-membership-${member.member_id}`}>
+                            <TableCell className="hidden lg:table-cell min-w-[100px]" data-testid={`badge-membership-${member.member_id}`}>
                               {getMembershipBadge(member.membership_paid)}
                             </TableCell>
-                            <TableCell data-testid={`text-registered-${member.member_id}`}>
+                            <TableCell className="hidden xl:table-cell min-w-[100px]" data-testid={`text-registered-${member.member_id}`}>
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Calendar className="w-3 h-3 mr-1" />
                                 {new Date(member.created_at).toLocaleDateString()}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="sticky right-0 bg-background min-w-[120px] z-10 shadow-sm">
                               <div className="flex space-x-2">
                                 <Dialog>
                                   <DialogTrigger asChild>
@@ -679,16 +679,16 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Registered</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="min-w-[120px]">Name</TableHead>
+                        <TableHead className="min-w-[180px]">Email</TableHead>
+                        <TableHead className="min-w-[110px] hidden sm:table-cell">Phone</TableHead>
+                        <TableHead className="min-w-[150px]">Company</TableHead>
+                        <TableHead className="min-w-[120px] hidden md:table-cell">Location</TableHead>
+                        <TableHead className="min-w-[100px] hidden lg:table-cell">Registered</TableHead>
+                        <TableHead className="min-w-[140px] sticky right-0 bg-background z-10 shadow-sm">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -707,28 +707,28 @@ export default function AdminDashboard() {
                       ) : (
                         filteredMembers.filter(m => m.mstatus === 0).map((member) => (
                           <TableRow key={member.member_id} data-testid={`row-pending-${member.member_id}`}>
-                            <TableCell className="font-medium text-foreground">
-                              {member.mname}
+                            <TableCell className="font-medium text-foreground min-w-[120px]">
+                              <div className="truncate">{member.mname}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
-                              {member.email}
+                            <TableCell className="text-foreground min-w-[180px]">
+                              <div className="truncate">{member.email}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-foreground hidden sm:table-cell min-w-[110px]">
                               {member.phone}
                             </TableCell>
-                            <TableCell className="text-foreground">
-                              {member.company_name}
+                            <TableCell className="text-foreground min-w-[150px]">
+                              <div className="truncate">{member.company_name}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-foreground hidden md:table-cell min-w-[120px]">
                               {member.city}, {member.state}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden lg:table-cell min-w-[100px]">
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Calendar className="w-3 h-3 mr-1" />
                                 {new Date(member.created_at).toLocaleDateString()}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="sticky right-0 bg-background min-w-[140px] z-10 shadow-sm">
                               <div className="flex space-x-2">
                                 <Button 
                                   size="sm" 
@@ -794,17 +794,17 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Last Login</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="min-w-[120px]">Name</TableHead>
+                        <TableHead className="min-w-[180px]">Email</TableHead>
+                        <TableHead className="min-w-[110px] hidden sm:table-cell">Phone</TableHead>
+                        <TableHead className="min-w-[150px]">Company</TableHead>
+                        <TableHead className="min-w-[120px] hidden md:table-cell">Location</TableHead>
+                        <TableHead className="min-w-[100px] hidden lg:table-cell">Membership</TableHead>
+                        <TableHead className="min-w-[100px] hidden xl:table-cell">Last Login</TableHead>
+                        <TableHead className="min-w-[120px] sticky right-0 bg-background z-10 shadow-sm">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -823,30 +823,30 @@ export default function AdminDashboard() {
                       ) : (
                         filteredMembers.filter(m => m.mstatus === 1).map((member) => (
                           <TableRow key={member.member_id} data-testid={`row-approved-${member.member_id}`}>
-                            <TableCell className="font-medium text-foreground">
-                              {member.mname}
+                            <TableCell className="font-medium text-foreground min-w-[120px]">
+                              <div className="truncate">{member.mname}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
-                              {member.email}
+                            <TableCell className="text-foreground min-w-[180px]">
+                              <div className="truncate">{member.email}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-foreground hidden sm:table-cell min-w-[110px]">
                               {member.phone}
                             </TableCell>
-                            <TableCell className="text-foreground">
-                              {member.company_name}
+                            <TableCell className="text-foreground min-w-[150px]">
+                              <div className="truncate">{member.company_name}</div>
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-foreground hidden md:table-cell min-w-[120px]">
                               {member.city}, {member.state}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden lg:table-cell min-w-[100px]">
                               {getMembershipBadge(member.membership_paid)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden xl:table-cell min-w-[100px]">
                               <div className="text-sm text-muted-foreground">
                                 {member.last_login ? new Date(member.last_login).toLocaleDateString() : 'Never'}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="sticky right-0 bg-background min-w-[120px] z-10 shadow-sm">
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button 
