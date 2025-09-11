@@ -1008,7 +1008,7 @@ export default function Marketplace() {
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <p className="text-xs text-muted-foreground" data-testid="text-precise-search-instructions">Ready to find what you need? Fill in the required fields below and click Search.</p>
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400" data-testid="text-precise-search-instructions">Ready to find what you need? Fill in the required fields below and click Search.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
