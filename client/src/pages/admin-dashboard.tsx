@@ -1002,40 +1002,40 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-full">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Member</TableHead>
-                          <TableHead>Company</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Payment Date</TableHead>
-                          <TableHead>Valid Till</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Days Remaining</TableHead>
+                          <TableHead className="min-w-[120px]">Member</TableHead>
+                          <TableHead className="min-w-[150px] hidden md:table-cell">Company</TableHead>
+                          <TableHead className="min-w-[180px]">Email</TableHead>
+                          <TableHead className="min-w-[110px] hidden lg:table-cell">Payment Date</TableHead>
+                          <TableHead className="min-w-[100px] hidden xl:table-cell">Valid Till</TableHead>
+                          <TableHead className="min-w-[100px]">Status</TableHead>
+                          <TableHead className="min-w-[120px] hidden sm:table-cell">Days Remaining</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paymentHistory.map((payment) => (
                           <TableRow key={payment.member_id} data-testid={`payment-row-${payment.member_id}`}>
-                            <TableCell className="font-medium">
-                              {payment.mname}
+                            <TableCell className="font-medium min-w-[120px]">
+                              <div className="truncate">{payment.mname}</div>
                             </TableCell>
-                            <TableCell>
-                              {payment.company_name}
+                            <TableCell className="hidden md:table-cell min-w-[150px]">
+                              <div className="truncate">{payment.company_name}</div>
                             </TableCell>
-                            <TableCell>
-                              {payment.email}
+                            <TableCell className="min-w-[180px]">
+                              <div className="truncate">{payment.email}</div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden lg:table-cell min-w-[110px]">
                               {new Date(payment.payment_date).toLocaleDateString()}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden xl:table-cell min-w-[100px]">
                               {new Date(payment.membership_valid_till).toLocaleDateString()}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="min-w-[100px]">
                               {getExpiryBadge(payment.days_remaining)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell min-w-[120px]">
                               {payment.days_remaining < 0 
                                 ? `${Math.abs(payment.days_remaining)} days overdue`
                                 : `${payment.days_remaining} days left`
