@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Building, Loader2, X } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Loader2, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
@@ -1013,10 +1013,9 @@ export default function Marketplace() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">Precise Search</span>
+                  <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">Hover to search</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Hover to search</span>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${preciseSearchExpanded ? 'rotate-180' : ''}`} />
                 </div>
               </div>
@@ -1876,16 +1875,6 @@ export default function Marketplace() {
                             </div>
                           </div>
 
-                          {/* Seller Info with Icon */}
-                          <div className="flex items-center gap-1 mb-1 p-1.5 bg-gray-50 dark:bg-gray-800 rounded">
-                            <Building className="h-3 w-3 text-gray-500" />
-                            <div>
-                              <span className="text-xs text-gray-500">by </span>
-                              <span className="text-xs font-medium text-foreground" data-testid={`seller-name-${deal.TransID}`}>
-                                {deal.created_by_name || deal.seller_name || deal.seller_company || deal.created_by_company || 'Seller'}
-                              </span>
-                            </div>
-                          </div>
 
 
                           {/* Deal Age */}
