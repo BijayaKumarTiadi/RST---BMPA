@@ -1765,7 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Try to get seller email from database
         try {
           const sellerQuery = `
-            SELECT COALESCE(d.created_by_email, m.email) AS sellerEmail
+            SELECT m.email AS sellerEmail
             FROM deal_master d
             LEFT JOIN bmpa_members m ON m.member_id = COALESCE(d.created_by_member_id, d.memberID)
             WHERE d.TransID = ?
