@@ -313,6 +313,119 @@ export function generateAdminNotificationEmail(memberData: {
   `;
 }
 
+export function generateApprovalEmail(memberData: {
+  mname: string;
+  email: string;
+  company_name: string;
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Account Approved - Stock Laabh</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+            🎉 Congratulations!
+          </h1>
+          <p style="color: #d1fae5; margin: 5px 0 0 0; font-size: 16px;">
+            Your Account Has Been Approved
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
+            Dear ${memberData.mname},
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Great news! Your Stock Laabh account for <strong>${memberData.company_name}</strong> has been approved by our administration team.
+          </p>
+
+          <div style="background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 25px; margin: 25px 0; text-align: center;">
+            <h3 style="color: #065f46; margin: 0 0 10px 0; font-size: 20px;">✅ Account Status: APPROVED</h3>
+            <p style="color: #047857; margin: 0; font-size: 16px;">
+              You now have full access to the Stock Laabh marketplace!
+            </p>
+          </div>
+
+          <h3 style="color: #1f2937; margin: 30px 0 15px 0; font-size: 18px;">🚀 What You Can Do Now:</h3>
+          
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <ul style="color: #4b5563; margin: 0; padding-left: 20px; line-height: 1.8;">
+              <li style="margin-bottom: 10px;">
+                <strong style="color: #1e40af;">Browse & Buy:</strong> Explore thousands of products from verified sellers in the printing industry
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong style="color: #7c3aed;">List Your Products:</strong> Start selling your stock and materials to a wide network of buyers
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong style="color: #dc2626;">Send Inquiries:</strong> Contact sellers directly for quotes and negotiations
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong style="color: #059669;">Manage Orders:</strong> Track all your buying and selling activities in one place
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong style="color: #ea580c;">Access Premium Features:</strong> Enjoy all benefits of your ₹2,499 annual membership
+              </li>
+            </ul>
+          </div>
+
+          <!-- Call to Action -->
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="https://stocklaabh.com/login" 
+               style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);">
+              Login to Your Account
+            </a>
+          </div>
+
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
+            <p style="color: #92400e; margin: 0; font-size: 14px;">
+              <strong>💡 Pro Tip:</strong> Complete your company profile and add your first product listing to get maximum visibility in the marketplace.
+            </p>
+          </div>
+
+          <h3 style="color: #1f2937; margin: 30px 0 15px 0; font-size: 16px;">Need Help Getting Started?</h3>
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0;">
+            Our support team is here to help! Feel free to reach out to us at:
+          </p>
+          <ul style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 10px 0;">
+            <li>Email: <a href="mailto:support@bmpa.org" style="color: #3b82f6;">support@bmpa.org</a></li>
+            <li>Phone: Call our admin team during business hours</li>
+          </ul>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 35px 0;">
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+            Thank you for joining Stock Laabh. We look forward to supporting your business growth in the printing industry!
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 14px; font-weight: bold;">
+            Welcome to the Stock Laabh Community!
+          </p>
+          <p style="color: #9ca3af; margin: 10px 0 0 0; font-size: 12px;">
+            © 2025 Stock Laabh. All rights reserved.
+          </p>
+          <p style="color: #9ca3af; margin: 5px 0 0 0; font-size: 11px;">
+            Powered by Renuka Print ERP Solutions
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 export interface InquiryEmailData {
   buyerName: string;
   buyerCompany: string;

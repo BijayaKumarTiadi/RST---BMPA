@@ -205,15 +205,58 @@ export class AdminService {
   // Approve member
   async approveMember(memberId: number, adminId: number): Promise<{ success: boolean; message: string }> {
     try {
+      // First, get the member details for sending email
+      const memberResult = await executeQuery(`
+        SELECT mname, email, company_name 
+        FROM bmpa_members 
+        WHERE member_id = ?
+      `, [memberId]);
+
+      if (!memberResult || memberResult.length === 0) {
+        return {
+          success: false,
+          message: 'Member not found'
+        };
+      }
+
+      const member = memberResult[0];
+
+      // Update the member status to approved
       await executeQuery(`
         UPDATE bmpa_members 
         SET mstatus = 1, bmpa_approval_id = ?, approval_datetime = NOW()
         WHERE member_id = ?
       `, [adminId, memberId]);
 
+      // Send approval email to the member
+      try {
+        const { sendEmail, generateApprovalEmail } = await import('./emailService');
+        const emailHtml = generateApprovalEmail({
+          mname: member.mname,
+          email: member.email,
+          company_name: member.company_name
+        });
+
+        const emailSent = await sendEmail({
+          to: member.email,
+          subject: '🎉 Your Stock Laabh Account Has Been Approved!',
+          html: emailHtml,
+          text: `Dear ${member.mname}, Great news! Your Stock Laabh account for ${member.company_name} has been approved. You now have full access to the marketplace. Login at https://stocklaabh.com/login to get started.`
+        });
+
+        if (emailSent) {
+          console.log(`Approval email sent successfully to ${member.email}`);
+        } else {
+          console.error(`Failed to send approval email to ${member.email}`);
+        }
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+        // Don't fail the approval if email sending fails
+      }
+
       return {
         success: true,
-        message: 'Member approved successfully'
+        message: 'Member approved successfully and notification sent'
       };
     } catch (error) {
       console.error('Error approving member:', error);
