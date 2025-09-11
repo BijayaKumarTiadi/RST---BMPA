@@ -178,9 +178,16 @@ export default function SellerDashboard() {
 
   // Filter deals based on search and status
   const filteredDeals = deals.filter((deal: any) => {
-    const matchesSearch = deal.Seller_comments?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         deal.GroupName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         deal.TransID.toString().includes(searchTerm);
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = searchTerm === "" || 
+                         deal.Seller_comments?.toLowerCase().includes(searchLower) ||
+                         deal.GroupName?.toLowerCase().includes(searchLower) ||
+                         deal.Make?.toLowerCase().includes(searchLower) ||
+                         deal.Grade?.toLowerCase().includes(searchLower) ||
+                         deal.Brand?.toLowerCase().includes(searchLower) ||
+                         deal.GSM?.toString().includes(searchTerm) ||
+                         deal.TransID.toString().includes(searchTerm) ||
+                         deal.category_name?.toLowerCase().includes(searchLower);
     
     const stockStatus = deal.StockStatus || 1; // Default to Available if null
     const matchesStatus = statusFilter === "all" || 
