@@ -227,66 +227,51 @@ export default function SellerDashboard() {
             >
               <Link href="/add-product">
                 <Plus className="mr-2 h-4 w-4" />
-                Add New Deal
+                <span className="text-xs">Add New Deal</span>
               </Link>
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100">Total Deals</CardTitle>
-              <Package className="h-5 w-5 text-blue-200" />
+              <CardTitle className="text-sm font-medium text-green-100">Active Offers</CardTitle>
+              <TrendingUp className="h-5 w-5 text-green-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" data-testid="stat-total-deals">{stats.totalDeals}</div>
-              <p className="text-xs text-blue-100 mt-1">
-                {stats.activeDeals} active listings
+              <div className="text-3xl font-bold" data-testid="stat-active-offers">{stats.activeDeals}</div>
+              <p className="text-xs text-green-100 mt-1">
+                Currently available
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-100">Total Orders</CardTitle>
-              <TrendingUp className="h-5 w-5 text-green-200" />
+              <CardTitle className="text-sm font-medium text-blue-100">Total Offers</CardTitle>
+              <Package className="h-5 w-5 text-blue-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" data-testid="stat-total-orders">{allOrders.length}</div>
-              <p className="text-xs text-green-100 mt-1">
-                Orders received
+              <div className="text-3xl font-bold" data-testid="stat-total-offers">{stats.totalDeals}</div>
+              <p className="text-xs text-blue-100 mt-1">
+                All time listings
               </p>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-100">Total Revenue</CardTitle>
-              <IndianRupee className="h-5 w-5 text-purple-200" />
+              <CardTitle className="text-sm font-medium text-purple-100">Sold Offers</CardTitle>
+              <ShoppingCart className="h-5 w-5 text-purple-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" data-testid="stat-total-revenue">
-                ₹{allOrders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0).toLocaleString('en-IN')}
+              <div className="text-3xl font-bold" data-testid="stat-sold-offers">
+                {(stats.totalDeals || 0) - (stats.activeDeals || 0)}
               </div>
               <p className="text-xs text-purple-100 mt-1">
-                Gross sales
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-100">Active Products</CardTitle>
-              <Users className="h-5 w-5 text-orange-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold" data-testid="stat-active-products">
-                {stats.activeDeals}
-              </div>
-              <p className="text-xs text-orange-100 mt-1">
-                Available for sale
+                Successfully sold
               </p>
             </CardContent>
           </Card>
