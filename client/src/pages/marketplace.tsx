@@ -1058,7 +1058,7 @@ export default function Marketplace() {
                       value={preciseSearch.gsm}
                       onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
                       data-testid="input-precise-gsm"
-                      className="mt-1 h-9 text-sm"
+                      className="mt-1 h-9 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       disabled={!preciseSearch.category}
                     />
                     {gsmSuggestions.length > 0 && (
