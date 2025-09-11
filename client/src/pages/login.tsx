@@ -155,19 +155,60 @@ export default function Login() {
             duration: 6000,
           });
         } else {
-          toast({
-            title: "Login Failed",
-            description: data.message,
-            variant: "destructive",
-          });
+          // Check if it's an invalid OTP error
+          if (data.message && (data.message.toLowerCase().includes('invalid otp') || data.message.toLowerCase().includes('incorrect otp') || data.message.toLowerCase().includes('wrong otp') || data.message.toLowerCase().includes('invalid code') || data.message.toLowerCase().includes('verification code'))) {
+            toast({
+              title: "Invalid OTP",
+              description: "The verification code you entered is incorrect. Please check and try again.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Login Failed",
+              description: data.message,
+              variant: "destructive",
+            });
+          }
         }
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Login failed. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Check if error response contains invalid OTP message
+      let errorMessage = "Login failed. Please try again.";
+      let errorTitle = "Error";
+      let isInvalidOTP = false;
+      
+      // Handle Response object thrown by apiRequest
+      if (error instanceof Response) {
+        try {
+          const errorData = await error.json();
+          if (errorData.message) {
+            if (errorData.message.toLowerCase().includes('invalid otp') || errorData.message.toLowerCase().includes('incorrect otp') || errorData.message.toLowerCase().includes('wrong otp') || errorData.message.toLowerCase().includes('invalid code') || errorData.message.toLowerCase().includes('verification code')) {
+              isInvalidOTP = true;
+            } else {
+              errorMessage = errorData.message;
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use generic message
+          errorMessage = "Login failed. Please try again.";
+        }
+      } else if (error?.message?.toLowerCase().includes('invalid otp') || error?.message?.toLowerCase().includes('incorrect otp')) {
+        isInvalidOTP = true;
+      }
+      
+      if (isInvalidOTP) {
+        toast({
+          title: "Invalid OTP",
+          description: "The verification code you entered is incorrect. Please check and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
