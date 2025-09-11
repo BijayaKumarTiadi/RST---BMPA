@@ -1765,7 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Try to get seller email from database
         try {
           const sellerQuery = `
-            SELECT email FROM members WHERE id = (
+            SELECT email FROM bmpa_members WHERE member_id = (
               SELECT memberID FROM deal_master WHERE TransID = ?
             )
           `;
