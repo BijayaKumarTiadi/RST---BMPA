@@ -937,10 +937,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRevenue: revenueResult?.revenue || 0
       });
 
-      // Prevent caching of stats data
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      // Prevent caching of stats data and disable ETag
+      res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.removeHeader('ETag');
+      res.removeHeader('Last-Modified');
       
       res.json(stats);
     } catch (error) {
