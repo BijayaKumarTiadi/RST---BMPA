@@ -31,7 +31,7 @@ const dealSchema = z.object({
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
-  stockType: z.string().min(1, "Stock type is required"),
+  stockType: z.string().optional(),
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
@@ -415,18 +415,9 @@ export default function AddDeal() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <Link href="/seller-dashboard">
-              <Button variant="ghost" className="mb-4 text-foreground hover:bg-secondary">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
-            </Link>
+          <div className="mb-6">
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground mb-2">Add Stock</h1>
-              <p className="text-muted-foreground">
-                Add your stock inventory to the marketplace. Fill in the details below to create a new deal that buyers can discover.
-              </p>
             </div>
           </div>
 
@@ -570,33 +561,8 @@ export default function AddDeal() {
                     />
                   </div>
 
-                  {/* Third Row: Stock Type and Description */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="stockType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Stock Type <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={field.value}
-                              onChange={(value) => form.setValue("stockType", value)}
-                              placeholder="Type reel or sheet..."
-                              suggestions={[
-                                { value: "reel", label: "Reel" },
-                                { value: "sheet", label: "Sheet" }
-                              ]}
-                              displayField="label"
-                              valueField="value"
-                              testId="input-stock-type"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
+                  {/* Description Row */}
+                  <div className="grid grid-cols-1 gap-6">
                     <FormField
                       control={form.control}
                       name="deal_description"
@@ -645,7 +611,7 @@ export default function AddDeal() {
                               placeholder="e.g., 180" 
                               {...field}
                               data-testid="input-gsm"
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </FormControl>
                           <FormMessage />
