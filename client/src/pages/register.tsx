@@ -187,8 +187,7 @@ export default function Register() {
           <div className="flex justify-center mb-4">
             <Logo size="lg" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Join Stock Laabh</h1>
-          <p className="text-gray-600 text-sm mt-1">Create your professional trading account</p>
+          <h1 className="text-2xl font-bold text-gray-900">Account Registration</h1>
         </div>
 
         <Card className="shadow-xl border-0">
@@ -446,7 +445,6 @@ export default function Register() {
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
           <p>© 2025 Stock Laabh. All rights reserved.</p>
-          <p className="mt-1">Professional Trading Platform</p>
           <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
         </div>
       </div>

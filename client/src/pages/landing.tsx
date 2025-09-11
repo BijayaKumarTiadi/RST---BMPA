@@ -391,7 +391,6 @@ export default function Landing() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Stock Laabh</h3>
-                  <p className="text-gray-300 text-sm">Professional Trading Platform</p>
                 </div>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed">

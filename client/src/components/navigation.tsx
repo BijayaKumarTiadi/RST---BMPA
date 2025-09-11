@@ -72,7 +72,6 @@ export default function Navigation() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
-              <p className="text-xs text-muted-foreground">Professional Trading Platform</p>
             </div>
             <h1 className="sm:hidden text-lg font-bold text-primary">Stock Laabh</h1>
           </Link>
