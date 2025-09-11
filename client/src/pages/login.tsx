@@ -80,28 +80,37 @@ export default function Login() {
         }
       }
     } catch (error: any) {
-      // Check if error response contains email not found message
+      // Check if error response contains specific messages
       let errorMessage = "Failed to send OTP. Please try again.";
       let errorTitle = "Error";
       let isEmailNotFound = false;
       
-      // Handle Response object thrown by apiRequest
-      if (error instanceof Response) {
-        try {
-          const errorData = await error.json();
-          if (errorData.message) {
-            if (errorData.message.toLowerCase().includes('email not found') || errorData.message.toLowerCase().includes('user not found') || errorData.message.toLowerCase().includes('not registered') || errorData.message.toLowerCase().includes('email does not exist')) {
-              isEmailNotFound = true;
-            } else {
+      // Handle Error object thrown by apiRequest
+      if (error instanceof Error) {
+        // The error message format is "status: response body"
+        // Extract the JSON part after the status code
+        const errorText = error.message;
+        const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
+        
+        if (jsonMatch) {
+          try {
+            const errorData = JSON.parse(jsonMatch[1]);
+            if (errorData.message) {
               errorMessage = errorData.message;
+              
+              // Check for email not found error
+              if (errorMessage.toLowerCase().includes('email not found') || 
+                  errorMessage.toLowerCase().includes('user not found') || 
+                  errorMessage.toLowerCase().includes('not registered') || 
+                  errorMessage.toLowerCase().includes('email does not exist')) {
+                isEmailNotFound = true;
+              }
             }
+          } catch (parseError) {
+            // If we can't parse the JSON, try to extract a meaningful message
+            errorMessage = jsonMatch[1] || "Failed to send OTP. Please try again.";
           }
-        } catch (parseError) {
-          // If we can't parse the error response, use generic message
-          errorMessage = "Failed to send OTP. Please try again.";
         }
-      } else if (error?.message?.toLowerCase().includes('email not found') || error?.message?.toLowerCase().includes('user not found')) {
-        isEmailNotFound = true;
       }
       
       if (isEmailNotFound) {
@@ -176,28 +185,43 @@ export default function Login() {
         }
       }
     } catch (error: any) {
-      // Check if error response contains invalid OTP message
+      // Check if error response contains specific messages
       let errorMessage = "Login failed. Please try again.";
       let errorTitle = "Error";
       let isInvalidOTP = false;
+      let isPendingApproval = false;
       
-      // Handle Response object thrown by apiRequest
-      if (error instanceof Response) {
-        try {
-          const errorData = await error.json();
-          if (errorData.message) {
-            if (errorData.message.toLowerCase().includes('invalid otp') || errorData.message.toLowerCase().includes('incorrect otp') || errorData.message.toLowerCase().includes('wrong otp') || errorData.message.toLowerCase().includes('invalid code') || errorData.message.toLowerCase().includes('verification code')) {
-              isInvalidOTP = true;
-            } else {
+      // Handle Error object thrown by apiRequest
+      if (error instanceof Error) {
+        // The error message format is "status: response body"
+        // Extract the JSON part after the status code
+        const errorText = error.message;
+        const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
+        
+        if (jsonMatch) {
+          try {
+            const errorData = JSON.parse(jsonMatch[1]);
+            if (errorData.message) {
               errorMessage = errorData.message;
+              
+              // Check for specific error types
+              if (errorMessage.toLowerCase().includes('invalid otp') || 
+                  errorMessage.toLowerCase().includes('incorrect otp') || 
+                  errorMessage.toLowerCase().includes('wrong otp') || 
+                  errorMessage.toLowerCase().includes('invalid code') || 
+                  errorMessage.toLowerCase().includes('verification code')) {
+                isInvalidOTP = true;
+              } else if (errorMessage.toLowerCase().includes('not yet approved') ||
+                         errorMessage.toLowerCase().includes('not approved') ||
+                         (errorMessage.toLowerCase().includes('pending') && errorMessage.toLowerCase().includes('approval'))) {
+                isPendingApproval = true;
+              }
             }
+          } catch (parseError) {
+            // If we can't parse the JSON, try to extract a meaningful message
+            errorMessage = jsonMatch[1] || "Login failed. Please try again.";
           }
-        } catch (parseError) {
-          // If we can't parse the error response, use generic message
-          errorMessage = "Login failed. Please try again.";
         }
-      } else if (error?.message?.toLowerCase().includes('invalid otp') || error?.message?.toLowerCase().includes('incorrect otp')) {
-        isInvalidOTP = true;
       }
       
       if (isInvalidOTP) {
@@ -205,6 +229,14 @@ export default function Login() {
           title: "Invalid OTP",
           description: "The verification code you entered is incorrect. Please check and try again.",
           variant: "destructive",
+        });
+      } else if (isPendingApproval) {
+        setShowPendingApproval(true);
+        toast({
+          title: "Account Not Approved",
+          description: errorMessage,
+          variant: "default",
+          duration: 8000,
         });
       } else {
         toast({

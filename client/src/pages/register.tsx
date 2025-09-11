@@ -94,27 +94,36 @@ export default function Register() {
         }
       }
     } catch (error: any) {
-      // Check if error response contains email already registered message
+      // Check if error response contains specific messages
       let errorMessage = "Failed to send OTP. Please try again.";
       let isEmailAlreadyRegistered = false;
       
-      // Handle Response object thrown by apiRequest
-      if (error instanceof Response) {
-        try {
-          const errorData = await error.json();
-          if (errorData.message) {
-            if (errorData.message.toLowerCase().includes('already registered') || errorData.message.toLowerCase().includes('email exists') || errorData.message.toLowerCase().includes('email is already') || errorData.message.toLowerCase().includes('already exists')) {
-              isEmailAlreadyRegistered = true;
-            } else {
+      // Handle Error object thrown by apiRequest
+      if (error instanceof Error) {
+        // The error message format is "status: response body"
+        // Extract the JSON part after the status code
+        const errorText = error.message;
+        const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
+        
+        if (jsonMatch) {
+          try {
+            const errorData = JSON.parse(jsonMatch[1]);
+            if (errorData.message) {
               errorMessage = errorData.message;
+              
+              // Check for email already registered error
+              if (errorMessage.toLowerCase().includes('already registered') || 
+                  errorMessage.toLowerCase().includes('email exists') || 
+                  errorMessage.toLowerCase().includes('email is already') || 
+                  errorMessage.toLowerCase().includes('already exists')) {
+                isEmailAlreadyRegistered = true;
+              }
             }
+          } catch (parseError) {
+            // If we can't parse the JSON, try to extract a meaningful message
+            errorMessage = jsonMatch[1] || "Failed to send OTP. Please try again.";
           }
-        } catch (parseError) {
-          // If we can't parse the error response, use generic message
-          errorMessage = "Failed to send OTP. Please try again.";
         }
-      } else if (error?.message?.toLowerCase().includes('already registered') || error?.message?.toLowerCase().includes('email exists')) {
-        isEmailAlreadyRegistered = true;
       }
       
       if (isEmailAlreadyRegistered) {
@@ -156,27 +165,36 @@ export default function Register() {
         }
       }
     } catch (error: any) {
-      // Check if error response contains email already registered message
+      // Check if error response contains specific messages
       let errorMessage = "Failed to resend OTP. Please try again.";
       let isEmailAlreadyRegistered = false;
       
-      // Handle Response object thrown by apiRequest
-      if (error instanceof Response) {
-        try {
-          const errorData = await error.json();
-          if (errorData.message) {
-            if (errorData.message.toLowerCase().includes('already registered') || errorData.message.toLowerCase().includes('email exists') || errorData.message.toLowerCase().includes('email is already') || errorData.message.toLowerCase().includes('already exists')) {
-              isEmailAlreadyRegistered = true;
-            } else {
+      // Handle Error object thrown by apiRequest
+      if (error instanceof Error) {
+        // The error message format is "status: response body"
+        // Extract the JSON part after the status code
+        const errorText = error.message;
+        const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
+        
+        if (jsonMatch) {
+          try {
+            const errorData = JSON.parse(jsonMatch[1]);
+            if (errorData.message) {
               errorMessage = errorData.message;
+              
+              // Check for email already registered error
+              if (errorMessage.toLowerCase().includes('already registered') || 
+                  errorMessage.toLowerCase().includes('email exists') || 
+                  errorMessage.toLowerCase().includes('email is already') || 
+                  errorMessage.toLowerCase().includes('already exists')) {
+                isEmailAlreadyRegistered = true;
+              }
             }
+          } catch (parseError) {
+            // If we can't parse the JSON, try to extract a meaningful message
+            errorMessage = jsonMatch[1] || "Failed to resend OTP. Please try again.";
           }
-        } catch (parseError) {
-          // If we can't parse the error response, use generic message
-          errorMessage = "Failed to resend OTP. Please try again.";
         }
-      } else if (error?.message?.toLowerCase().includes('already registered') || error?.message?.toLowerCase().includes('email exists')) {
-        isEmailAlreadyRegistered = true;
       }
       
       if (isEmailAlreadyRegistered) {
