@@ -17,14 +17,15 @@ import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
-const dealSchema = z.object({
-  groupID: z.string().min(1, "Stock group is required"),
+// Dynamic validation schema function
+const createDealSchema = (isCraftReelSelected: boolean) => z.object({
+  groupID: z.string().min(1, "Product group is required"),
   MakeID: z.string().optional(),
   GradeID: z.string().optional(),
   BrandID: z.string().optional(),
-  makeText: z.string().min(1, "Stock make is required"),
-  gradeText: z.string().min(1, "Stock grade is required"),
-  brandText: z.string().min(1, "Stock brand is required"),
+  makeText: z.string().min(1, "Product make is required"),
+  gradeText: z.string().min(1, "Grade is required"),
+  brandText: isCraftReelSelected ? z.string().optional() : z.string().min(1, "Brand is required"),
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
   grain_mm: z.coerce.number().min(1, "Grain is required"),
@@ -34,6 +35,9 @@ const dealSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 });
+
+// Base schema for initial form
+const dealSchema = createDealSchema(false);
 
 type DealFormData = z.infer<typeof dealSchema>;
 
@@ -48,6 +52,7 @@ export default function AddDeal() {
   const [gradeText, setGradeText] = useState("");
   const [brandText, setBrandText] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
+  const [isCraftReelSelected, setIsCraftReelSelected] = useState(false);
 
   // Unit state - single unit selector for both Deckle and Grain
   const [dimensionUnit, setDimensionUnit] = useState("cm");
@@ -140,7 +145,7 @@ export default function AddDeal() {
   };
 
   const form = useForm<DealFormData>({
-    resolver: zodResolver(dealSchema),
+    resolver: zodResolver(createDealSchema(isCraftReelSelected)),
     defaultValues: {
       groupID: "",
       MakeID: "",
@@ -178,6 +183,14 @@ export default function AddDeal() {
       setDimensionUnit(userSettings.dimension_unit);
     }
   }, [userSettings, dimensionUnit]);
+
+  // Update form resolver when Craft Reel selection changes
+  useEffect(() => {
+    const newResolver = zodResolver(createDealSchema(isCraftReelSelected));
+    form.clearErrors();
+    // Re-initialize resolver with current schema
+    (form as any)._options.resolver = newResolver;
+  }, [isCraftReelSelected, form]);
 
   // Fetch stock hierarchy
   const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
@@ -243,6 +256,13 @@ export default function AddDeal() {
   const handleMakeChange = (value: string, item: any) => {
     if (item) {
       setSelectedMake(value);
+      
+      // Check if Craft Reel or Craft Paper B.S. is selected
+      const makeText = item.make_Name || value;
+      const isCraftReel = makeText === "Craft Reel" || makeText === "Craft Paper B.S.";
+      
+      setIsCraftReelSelected(isCraftReel);
+      
       // Check if it's a custom text entry (when value equals the display text)
       if (value === item.make_Name) {
         // This is custom text, not an ID
@@ -254,6 +274,18 @@ export default function AddDeal() {
         form.setValue("MakeID", value);
         form.setValue("makeText", item.make_Name || "");
         setMakeText(item.make_Name || "");
+      }
+      
+      // Set default Grade to "Craft Paper" for Craft Reel/Craft Paper B.S.
+      if (isCraftReel) {
+        form.setValue("gradeText", "Craft Paper");
+        form.setValue("GradeID", "");
+        setGradeText("Craft Paper");
+        
+        // Clear brand requirement for Craft Reel
+        form.setValue("brandText", "");
+        form.setValue("BrandID", "");
+        setBrandText("");
       }
     }
   };
@@ -413,7 +445,7 @@ export default function AddDeal() {
           {/* Header */}
           <div className="mb-6">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Add Stock</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Add Offer</h1>
             </div>
           </div>
 
@@ -424,7 +456,7 @@ export default function AddDeal() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <Package className="h-5 w-5" />
-                    Stock Details
+                    Offer Details
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
                   </CardDescription>
@@ -437,7 +469,7 @@ export default function AddDeal() {
                       name="groupID"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Stock Group <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
                               value={field.value}
@@ -459,7 +491,7 @@ export default function AddDeal() {
                       name="makeText"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Stock Make <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel className="text-foreground">Product Make <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <AutocompleteInput
                               value={makeText}
@@ -528,7 +560,9 @@ export default function AddDeal() {
                       name="brandText"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Brand <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel className="text-foreground">
+                            Brand {isCraftReelSelected ? "(Optional)" : <span className="text-red-500">*</span>}
+                          </FormLabel>
                           <FormControl>
                             <AutocompleteInput
                               value={brandText}
@@ -557,8 +591,8 @@ export default function AddDeal() {
                     />
                   </div>
 
-                  {/* Description Row */}
-                  <div className="grid grid-cols-1 gap-6">
+                  {/* Description Row - Hidden but functional for backend */}
+                  <div className="hidden">
                     <FormField
                       control={form.control}
                       name="deal_description"
