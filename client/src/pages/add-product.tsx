@@ -17,15 +17,28 @@ import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
-// Dynamic validation schema function
-const createDealSchema = (isCraftReelSelected: boolean) => z.object({
+// Helper function to normalize make text for craft detection
+const normalizeMakeText = (text: string): string => {
+  return text.toLowerCase().trim().replace(/[.\s]+/g, ' ');
+};
+
+// Helper function to check if make is craft type
+const isCraftMake = (makeText: string): boolean => {
+  const normalized = normalizeMakeText(makeText);
+  return normalized === 'craft reel' || 
+         normalized === 'craft paper b s' || 
+         normalized === 'craft paper bs';
+};
+
+// Single validation schema with conditional validation
+const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
   MakeID: z.string().optional(),
   GradeID: z.string().optional(),
   BrandID: z.string().optional(),
   makeText: z.string().min(1, "Product make is required"),
   gradeText: z.string().min(1, "Grade is required"),
-  brandText: isCraftReelSelected ? z.string().optional() : z.string().min(1, "Brand is required"),
+  brandText: z.string().optional(), // Optional at base level
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
   grain_mm: z.coerce.number().min(1, "Grain is required"),
@@ -34,10 +47,16 @@ const createDealSchema = (isCraftReelSelected: boolean) => z.object({
   OfferUnit: z.string().min(1, "Unit is required"),
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Conditional brand validation
+  if (!isCraftMake(data.makeText) && (!data.brandText || data.brandText.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Brand is required",
+      path: ["brandText"]
+    });
+  }
 });
-
-// Base schema for initial form
-const dealSchema = createDealSchema(false);
 
 type DealFormData = z.infer<typeof dealSchema>;
 
@@ -52,7 +71,7 @@ export default function AddDeal() {
   const [gradeText, setGradeText] = useState("");
   const [brandText, setBrandText] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
-  const [isCraftReelSelected, setIsCraftReelSelected] = useState(false);
+  const [isGradeAutoSet, setIsGradeAutoSet] = useState(false);
 
   // Unit state - single unit selector for both Deckle and Grain
   const [dimensionUnit, setDimensionUnit] = useState("cm");
@@ -145,7 +164,7 @@ export default function AddDeal() {
   };
 
   const form = useForm<DealFormData>({
-    resolver: zodResolver(createDealSchema(isCraftReelSelected)),
+    resolver: zodResolver(dealSchema),
     defaultValues: {
       groupID: "",
       MakeID: "",
@@ -177,20 +196,36 @@ export default function AddDeal() {
     enabled: isAuthenticated,
   });
 
+  // Watch form values for craft detection
+  const currentMakeText = form.watch("makeText");
+  const currentGradeText = form.watch("gradeText");
+  
   // Update dimension unit when user settings are loaded
   useEffect(() => {
     if (userSettings?.dimension_unit && userSettings.dimension_unit !== dimensionUnit) {
       setDimensionUnit(userSettings.dimension_unit);
     }
   }, [userSettings, dimensionUnit]);
-
-  // Update form resolver when Craft Reel selection changes
+  
+  // Handle craft reel/craft paper B.S. auto-grade setting
   useEffect(() => {
-    const newResolver = zodResolver(createDealSchema(isCraftReelSelected));
-    form.clearErrors();
-    // Re-initialize resolver with current schema
-    (form as any)._options.resolver = newResolver;
-  }, [isCraftReelSelected, form]);
+    if (currentMakeText && isCraftMake(currentMakeText)) {
+      // Auto-set Grade to "Craft Paper" if empty or previously auto-set
+      if (!currentGradeText || isGradeAutoSet || currentGradeText === "Craft Paper") {
+        form.setValue("gradeText", "Craft Paper");
+        form.setValue("GradeID", "");
+        setGradeText("Craft Paper");
+        setIsGradeAutoSet(true);
+      }
+    } else if (isGradeAutoSet && currentGradeText === "Craft Paper") {
+      // Clear auto-set grade when not craft type anymore
+      form.setValue("gradeText", "");
+      form.setValue("GradeID", "");
+      setGradeText("");
+      setIsGradeAutoSet(false);
+    }
+  }, [currentMakeText, currentGradeText, isGradeAutoSet, form]);
+
 
   // Fetch stock hierarchy
   const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
@@ -257,35 +292,17 @@ export default function AddDeal() {
     if (item) {
       setSelectedMake(value);
       
-      // Check if Craft Reel or Craft Paper B.S. is selected
-      const makeText = item.make_Name || value;
-      const isCraftReel = makeText === "Craft Reel" || makeText === "Craft Paper B.S.";
-      
-      setIsCraftReelSelected(isCraftReel);
-      
-      // Check if it's a custom text entry (when value equals the display text)
-      if (value === item.make_Name) {
-        // This is custom text, not an ID
+      // Set form values properly for both dropdown and free text
+      if (item.make_ID) {
+        // This is a dropdown selection
+        form.setValue("MakeID", item.make_ID);
+        form.setValue("makeText", item.make_Name || "");
+        setMakeText(item.make_Name || "");
+      } else {
+        // This is free text input
         form.setValue("MakeID", "");
         form.setValue("makeText", value);
         setMakeText(value);
-      } else {
-        // This is a selection from dropdown
-        form.setValue("MakeID", value);
-        form.setValue("makeText", item.make_Name || "");
-        setMakeText(item.make_Name || "");
-      }
-      
-      // Set default Grade to "Craft Paper" for Craft Reel/Craft Paper B.S.
-      if (isCraftReel) {
-        form.setValue("gradeText", "Craft Paper");
-        form.setValue("GradeID", "");
-        setGradeText("Craft Paper");
-        
-        // Clear brand requirement for Craft Reel
-        form.setValue("brandText", "");
-        form.setValue("BrandID", "");
-        setBrandText("");
       }
     }
   };
@@ -561,7 +578,7 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Brand {isCraftReelSelected ? "(Optional)" : <span className="text-red-500">*</span>}
+                            Brand {isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
                           </FormLabel>
                           <FormControl>
                             <AutocompleteInput
