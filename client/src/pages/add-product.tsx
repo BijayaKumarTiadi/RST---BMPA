@@ -462,7 +462,7 @@ export default function AddDeal() {
           {/* Header */}
           <div className="mb-6">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Add Offer</h1>
+              <h1 className="text-xl font-bold text-foreground mb-1">Add Offer</h1>
             </div>
           </div>
 
