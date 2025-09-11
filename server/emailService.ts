@@ -205,6 +205,114 @@ export function generateWelcomeEmail(memberName: string): string {
   `;
 }
 
+export function generateAdminNotificationEmail(memberData: {
+  mname: string;
+  email: string;
+  phone: string;
+  company_name: string;
+  city: string;
+  state: string;
+  registrationTime: string;
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New User Registration - Stock Laabh Admin</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+            ⚠️ New User Registration
+          </h1>
+          <p style="color: #fee2e2; margin: 5px 0 0 0; font-size: 16px;">
+            Admin Action Required
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
+            New Member Awaiting Approval
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            A new user has registered on the Stock Laabh platform and requires your verification and approval.
+          </p>
+
+          <!-- User Details -->
+          <div style="background-color: #fef3c7; border: 2px solid #fbbf24; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">📋 Registration Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold; width: 35%;">Name:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.mname}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Phone:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.phone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Company:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.company_name}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Location:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.city}, ${memberData.state}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Registration Time:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${memberData.registrationTime}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Action Required -->
+          <div style="background-color: #ecfdf5; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #14532d; margin: 0 0 15px 0; font-size: 18px;">✅ Required Actions:</h3>
+            <ol style="color: #166534; margin: 0; padding-left: 20px;">
+              <li style="margin-bottom: 8px;">Verify the user's company details and business credentials</li>
+              <li style="margin-bottom: 8px;">Check membership payment status (₹2,499 annual fee)</li>
+              <li style="margin-bottom: 8px;">Approve or reject the registration in the admin panel</li>
+              <li>Update the user's approval status in the system</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://stocklaabh.com/admin/dashboard" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+              Go to Admin Dashboard
+            </a>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center; font-style: italic;">
+            Please review and process this registration at your earliest convenience. The user is waiting for approval to access the platform.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 14px;">
+            © 2025 Stock Laabh Admin System
+          </p>
+          <p style="color: #9ca3af; margin: 10px 0 0 0; font-size: 12px;">
+            This is an automated notification for admin users only
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 export interface InquiryEmailData {
   buyerName: string;
   buyerCompany: string;

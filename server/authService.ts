@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { executeQuery, executeQuerySingle } from './database';
-import { sendEmail, generateWelcomeEmail } from './emailService';
+import { sendEmail, generateWelcomeEmail, generateAdminNotificationEmail } from './emailService';
 
 export interface Member {
   member_id: number;
@@ -98,7 +98,7 @@ export class AuthService {
       const insertResult = result as any;
       const memberId = insertResult.insertId;
 
-      // Send welcome email
+      // Send welcome email to user
       try {
         const welcomeHtml = generateWelcomeEmail(data.mname);
         await sendEmail({
@@ -110,6 +110,50 @@ export class AuthService {
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
         // Don't fail registration if email fails
+      }
+
+      // Send notification email to all admins
+      try {
+        // Get all active admin emails
+        const admins = await executeQuery<{email: string}>(
+          'SELECT email FROM admin_users WHERE is_active = 1'
+        );
+        
+        if (admins && admins.length > 0) {
+          const registrationTime = new Date().toLocaleString('en-IN', { 
+            timeZone: 'Asia/Kolkata',
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+          
+          const adminNotificationHtml = generateAdminNotificationEmail({
+            mname: data.mname,
+            email: data.email,
+            phone: data.phone,
+            company_name: data.company_name,
+            city: data.city,
+            state: data.state,
+            registrationTime: registrationTime
+          });
+          
+          // Send email to each admin
+          for (const admin of admins) {
+            try {
+              await sendEmail({
+                to: admin.email,
+                subject: '🔔 New User Registration - Approval Required',
+                html: adminNotificationHtml,
+                text: `New user ${data.mname} from ${data.company_name} has registered and needs approval.`
+              });
+              console.log(`Admin notification sent to: ${admin.email}`);
+            } catch (adminEmailError) {
+              console.error(`Failed to send admin notification to ${admin.email}:`, adminEmailError);
+            }
+          }
+        }
+      } catch (adminError) {
+        console.error('Failed to send admin notifications:', adminError);
+        // Don't fail registration if admin notification fails
       }
 
       return {

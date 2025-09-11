@@ -129,7 +129,7 @@ authRouter.post('/verify-login-otp', async (req, res) => {
     if (member.mstatus === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Your membership is pending approval from the admin team'
+        message: 'Your registration is not yet approved by the administration. Please contact support@bmpa.org or call the admin team to get your account approved.'
       });
     }
 
