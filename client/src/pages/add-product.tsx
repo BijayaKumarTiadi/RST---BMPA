@@ -154,7 +154,6 @@ export default function AddDeal() {
       grain_mm: "" as any,
       OfferPrice: "" as any,
       OfferUnit: "",
-      stockType: "",
       quantity: "" as any, // No default value
       Seller_comments: "",
     },
@@ -333,7 +332,6 @@ export default function AddDeal() {
           grain_mm: data.grain_mm,
         },
         location: 'India',
-        stock_type: data.stockType,
       };
       console.log('Payload being sent to backend:', payload);
       return apiRequest("POST", "/api/deals", payload);
@@ -362,7 +360,6 @@ export default function AddDeal() {
           grain_mm: "" as any,
           OfferPrice: "" as any,
           OfferUnit: "",
-          stockType: "",
           quantity: "" as any,
           Seller_comments: "",
         });
