@@ -156,10 +156,35 @@ export default function Register() {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error response contains OTP-related message
+      let errorMessage = "Registration failed. Please try again.";
+      let errorTitle = "Error";
+      
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          if (errorData.message) {
+            if (errorData.message.toLowerCase().includes('otp')) {
+              errorTitle = "Invalid OTP";
+              errorMessage = "The verification code you entered is incorrect. Please check and try again.";
+            } else {
+              errorMessage = errorData.message;
+              errorTitle = "Registration Failed";
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use the original message
+          if (error.message && error.message.toLowerCase().includes('otp')) {
+            errorTitle = "Invalid OTP";
+            errorMessage = "The verification code you entered is incorrect. Please check and try again.";
+          }
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Registration failed. Please try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
