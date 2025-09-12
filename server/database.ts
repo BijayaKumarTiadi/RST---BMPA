@@ -461,6 +461,44 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ Inquiries table created successfully');
     }
 
+    // Create orders table for actual purchase transactions
+    const ordersTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'orders'
+    `);
+
+    if (!ordersTableExists || ordersTableExists.count === 0) {
+      console.log('📦 Creating orders table...');
+      await executeQuery(`
+        CREATE TABLE orders (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          buyer_id INT NOT NULL,
+          seller_id INT NOT NULL,
+          deal_id INT NOT NULL,
+          product_title VARCHAR(500),
+          quantity VARCHAR(100),
+          unit_price DECIMAL(10, 2),
+          total_amount DECIMAL(10, 2),
+          status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+          payment_status ENUM('pending', 'paid', 'refunded') DEFAULT 'pending',
+          shipping_address TEXT,
+          tracking_number VARCHAR(100),
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_buyer_id (buyer_id),
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_deal_id (deal_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at),
+          FOREIGN KEY (deal_id) REFERENCES deal_master(TransID)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Orders table created successfully');
+    }
+
     // Add search_key column to deal_master if it doesn't exist
     const searchKeyColumnExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 

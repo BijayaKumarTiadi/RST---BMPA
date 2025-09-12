@@ -715,7 +715,7 @@ export default function SellerDashboard() {
                         >
                           <TableCell className="py-4">
                             <div className="font-medium text-foreground" data-testid={`inquiry-id-${inquiry.id}`}>
-                              #{inquiry.id?.slice(0, 8)}
+                              #INQ-{inquiry.id}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -836,7 +836,7 @@ export default function SellerDashboard() {
                         >
                           <TableCell className="py-4">
                             <div className="font-medium text-foreground" data-testid={`sent-inquiry-id-${inquiry.id}`}>
-                              #{inquiry.id?.slice(0, 8)}
+                              #INQ-{inquiry.id}
                             </div>
                           </TableCell>
                           <TableCell>
