@@ -1243,20 +1243,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (emailSent) {
         // Log the inquiry to BMPA_inquiries table for tracking
         try {
+          // First, get the seller_id from the product/deal
+          const dealQuery = await executeQuerySingle(`
+            SELECT memberID FROM deal WHERE TransID = ?
+          `, [productId]);
+          
+          const sellerId = dealQuery?.memberID || null;
+          
+          // Insert inquiry with both buyer and seller tracking
           await executeQuery(`
-            INSERT INTO BMPA_inquiries (product_id, buyer_name, buyer_email, buyer_company, buyer_phone, quoted_price, quantity, message, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO BMPA_inquiries (
+              product_id, 
+              buyer_id,
+              buyer_name, 
+              buyer_email, 
+              buyer_company, 
+              buyer_phone, 
+              seller_id,
+              seller_name,
+              seller_company,
+              quoted_price, 
+              quantity, 
+              message, 
+              status,
+              created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
           `, [
             productId,
+            buyerId, // Use the authenticated user's ID
             buyerName,
             buyerEmail,
             buyerCompany || null,
             buyerPhone || null,
+            sellerId,
+            sellerName || null,
+            sellerCompany || null,
             buyerQuotedPrice || null,
             quantity || null,
             message || null
           ]);
-          console.log('✅ Inquiry logged to BMPA_inquiries table');
+          
+          console.log('✅ Inquiry logged to BMPA_inquiries table with buyer and seller tracking');
+          
+          // Update buyer's inquiry count in their profile
+          await executeQuery(`
+            UPDATE BMPA_members 
+            SET total_inquiries_sent = COALESCE(total_inquiries_sent, 0) + 1,
+                last_inquiry_date = NOW()
+            WHERE memberID = ?
+          `, [buyerId]);
+          
+          console.log('✅ Updated buyer profile with inquiry count');
+          
+          // Create notification for seller (if seller exists)
+          if (sellerId) {
+            await executeQuery(`
+              INSERT INTO BMPA_seller_notifications (
+                seller_id,
+                notification_type,
+                inquiry_id,
+                buyer_name,
+                product_id,
+                message,
+                is_read,
+                created_at
+              )
+              VALUES (?, 'new_inquiry', LAST_INSERT_ID(), ?, ?, ?, 0, NOW())
+            `, [sellerId, buyerName, productId, `New inquiry for your product from ${buyerName}`]);
+            
+            console.log('✅ Created notification for seller');
+          }
         } catch (dbError) {
           console.error('❌ Error logging inquiry to database:', dbError);
           // Don't fail the request if DB logging fails

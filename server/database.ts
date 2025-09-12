@@ -480,6 +480,79 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ BMPA_inquiries table created successfully');
     }
 
+    // Add columns to BMPA_inquiries for enhanced tracking
+    const inquiryColumnsCheck = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'BMPA_inquiries' 
+      AND column_name = 'buyer_id'
+    `);
+    
+    if (inquiryColumnsCheck && inquiryColumnsCheck.count === 0) {
+      console.log('🔧 Adding enhanced tracking columns to BMPA_inquiries...');
+      await executeQuery(`
+        ALTER TABLE BMPA_inquiries 
+        ADD COLUMN buyer_id INT AFTER id,
+        ADD COLUMN seller_id INT AFTER buyer_phone,
+        ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
+        ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
+        ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
+        ADD INDEX idx_buyer_id (buyer_id),
+        ADD INDEX idx_seller_id (seller_id),
+        ADD INDEX idx_status (status)
+      `);
+      console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
+    }
+    
+    // Add tracking columns to BMPA_members
+    const memberTrackingCheck = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'BMPA_members' 
+      AND column_name = 'total_inquiries_sent'
+    `);
+    
+    if (memberTrackingCheck && memberTrackingCheck.count === 0) {
+      console.log('🔧 Adding inquiry tracking columns to BMPA_members...');
+      await executeQuery(`
+        ALTER TABLE BMPA_members 
+        ADD COLUMN total_inquiries_sent INT DEFAULT 0,
+        ADD COLUMN last_inquiry_date TIMESTAMP NULL
+      `);
+      console.log('✅ Inquiry tracking columns added to BMPA_members');
+    }
+    
+    // Create BMPA_seller_notifications table
+    const notificationsTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'BMPA_seller_notifications'
+    `);
+    
+    if (!notificationsTableExists || notificationsTableExists.count === 0) {
+      console.log('🔔 Creating BMPA_seller_notifications table...');
+      await executeQuery(`
+        CREATE TABLE BMPA_seller_notifications (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          seller_id INT NOT NULL,
+          notification_type VARCHAR(50) NOT NULL,
+          inquiry_id INT,
+          buyer_name VARCHAR(255),
+          product_id INT,
+          message TEXT,
+          is_read BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_is_read (is_read),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ BMPA_seller_notifications table created successfully');
+    }
+
     // Create BMPA_orders table for actual purchase transactions
     const ordersTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
