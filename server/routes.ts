@@ -1215,10 +1215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Send email using emailService
-      const emailSent = await emailService.sendEmail({
-        to,
-        subject,
+      // Generate inquiry email HTML
+      const inquiryData: InquiryEmailData = {
         buyerName,
         buyerCompany,
         buyerEmail,
@@ -1231,6 +1229,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message,
         sellerName,
         sellerCompany
+      };
+      
+      const emailHtml = generateInquiryEmail(inquiryData);
+      
+      // Send email using emailService
+      const emailSent = await sendEmail({
+        to,
+        subject,
+        html: emailHtml
       });
       
       if (emailSent) {
