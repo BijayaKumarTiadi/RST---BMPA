@@ -22,7 +22,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
     buyerName: user?.name || "",
     buyerCompany: user?.company || "",
     buyerEmail: user?.email || "",
-    buyerPhone: "",
+    buyerPhone: user?.phone || "",
     quotedPrice: "",
     quantity: "",
     message: ""
@@ -86,7 +86,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
           buyerName: user?.name || "",
           buyerCompany: user?.company || "",
           buyerEmail: user?.email || "",
-          buyerPhone: "",
+          buyerPhone: user?.phone || "",
           quotedPrice: "",
           quantity: "",
           message: ""
