@@ -1850,7 +1850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get inquiries received by seller
   app.get('/api/inquiries/seller', requireAuth, async (req: any, res) => {
     try {
-      const sellerId = req.session.replit?.user?.id;
+      const sellerId = req.session.memberId;
       
       if (!sellerId) {
         return res.status(401).json({
@@ -1873,7 +1873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get inquiries sent by buyer
   app.get('/api/inquiries/buyer', requireAuth, async (req: any, res) => {
     try {
-      const buyerId = req.session.replit?.user?.id;
+      const buyerId = req.session.memberId;
       
       if (!buyerId) {
         return res.status(401).json({
