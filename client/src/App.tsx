@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { TutorialOverlay } from "@/components/tutorial-overlay";
+import { getTutorialSteps, TUTORIAL_STORAGE_KEYS } from "@/config/tutorial-steps";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Home from "@/pages/home";
@@ -27,7 +30,30 @@ import Membership from "@/pages/membership";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [tutorialSteps, setTutorialSteps] = useState<any[]>([]);
+  const [tutorialKey, setTutorialKey] = useState("");
+  const isMobile = window.innerWidth < 768;
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Determine which tutorial to show based on user role
+      const userRole = user.role || 'buyer';
+      const steps = getTutorialSteps(userRole, isMobile);
+      setTutorialSteps(steps);
+      
+      // Set appropriate storage key
+      if (isMobile) {
+        setTutorialKey(TUTORIAL_STORAGE_KEYS.MOBILE);
+      } else if (userRole === 'admin') {
+        setTutorialKey(TUTORIAL_STORAGE_KEYS.ADMIN);
+      } else if (userRole === 'seller' || userRole === 'both') {
+        setTutorialKey(TUTORIAL_STORAGE_KEYS.SELLER);
+      } else {
+        setTutorialKey(TUTORIAL_STORAGE_KEYS.NEW_USER);
+      }
+    }
+  }, [isAuthenticated, user, isMobile]);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -39,7 +65,8 @@ function Router() {
   }
 
   return (
-    <Switch>
+    <>
+      <Switch>
       {/* Public routes - accessible without authentication */}
       <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminLogin} />
@@ -75,7 +102,16 @@ function Router() {
           <Route component={Login} />
         </>
       )}
-    </Switch>
+      </Switch>
+      {/* Tutorial Overlay - only show when authenticated */}
+      {isAuthenticated && tutorialSteps.length > 0 && (
+        <TutorialOverlay 
+          steps={tutorialSteps} 
+          storageKey={tutorialKey}
+          onComplete={() => console.log('Tutorial completed')}
+        />
+      )}
+    </>
   );
 }
 
