@@ -511,6 +511,60 @@ export class AdminService {
       };
     }
   }
+
+  // Create new admin user
+  async createAdmin(userData: {
+    username: string;
+    email: string;
+    fullName: string;
+    password: string;
+    role?: string;
+  }): Promise<{ success: boolean; message: string; adminId?: number }> {
+    try {
+      // Check if username or email already exists
+      const existingAdmin = await executeQuerySingle<AdminUser>(
+        'SELECT admin_id FROM admin_users WHERE username = ? OR email = ?',
+        [userData.username, userData.email]
+      );
+
+      if (existingAdmin) {
+        return {
+          success: false,
+          message: 'Username or email already exists'
+        };
+      }
+
+      // Hash password
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(userData.password, 12);
+
+      // Insert new admin
+      const result = await executeQuery(`
+        INSERT INTO admin_users (username, password_hash, full_name, email, role, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, 1, NOW())
+      `, [
+        userData.username,
+        passwordHash,
+        userData.fullName,
+        userData.email,
+        userData.role || 'admin'
+      ]);
+
+      const insertId = (result as any).insertId;
+
+      return {
+        success: true,
+        message: 'Admin user created successfully',
+        adminId: insertId
+      };
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      return {
+        success: false,
+        message: 'Failed to create admin user'
+      };
+    }
+  }
 }
 
 export const adminService = new AdminService();
