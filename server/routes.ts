@@ -1121,7 +1121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             bm.mname as buyer_name,
             bm.company_name as buyer_company,
             bm.email as buyer_email
-          FROM orders o
+          FROM BMPA_orders o
           LEFT JOIN deal_master d ON o.deal_id = d.TransID
           LEFT JOIN bmpa_members bm ON o.buyer_id = bm.member_id
           WHERE o.seller_id = ?
@@ -1138,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               d.TransID as deal_id,
               m.mname as seller_name,
               m.company_name as seller_company
-            FROM inquiries i
+            FROM BMPA_inquiries i
             LEFT JOIN deal_master d ON i.product_id = d.TransID
             LEFT JOIN bmpa_members m ON d.memberID = m.member_id
             WHERE d.memberID = ? OR d.created_by_member_id = ?
@@ -1155,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             d.TransID as deal_id,
             sm.mname as seller_name,
             sm.company_name as seller_company
-          FROM orders o
+          FROM BMPA_orders o
           LEFT JOIN deal_master d ON o.deal_id = d.TransID
           LEFT JOIN bmpa_members sm ON o.seller_id = sm.member_id
           WHERE o.buyer_id = ?
@@ -1181,6 +1181,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error fetching orders:', error);
       res.status(500).json({ 
         message: 'Failed to fetch orders',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Send inquiry endpoint
+  app.post('/api/inquiries/send', requireAuth, async (req: any, res) => {
+    try {
+      const {
+        to,
+        subject,
+        buyerName,
+        buyerCompany,
+        buyerEmail,
+        buyerPhone,
+        productId,
+        productTitle,
+        productDetails,
+        buyerQuotedPrice,
+        quantity,
+        message,
+        sellerName,
+        sellerCompany
+      } = req.body;
+
+      // Get authenticated user
+      const buyerId = req.session.memberId;
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Send email using emailService
+      const emailSent = await emailService.sendEmail({
+        to,
+        subject,
+        buyerName,
+        buyerCompany,
+        buyerEmail,
+        buyerPhone,
+        productId,
+        productTitle,
+        productDetails,
+        buyerQuotedPrice,
+        quantity,
+        message,
+        sellerName,
+        sellerCompany
+      });
+      
+      if (emailSent) {
+        // Log the inquiry to BMPA_inquiries table for tracking
+        try {
+          await executeQuery(`
+            INSERT INTO BMPA_inquiries (product_id, buyer_name, buyer_email, buyer_company, buyer_phone, quoted_price, quantity, message, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+          `, [
+            productId,
+            buyerName,
+            buyerEmail,
+            buyerCompany || null,
+            buyerPhone || null,
+            buyerQuotedPrice || null,
+            quantity || null,
+            message || null
+          ]);
+          console.log('✅ Inquiry logged to BMPA_inquiries table');
+        } catch (dbError) {
+          console.error('❌ Error logging inquiry to database:', dbError);
+          // Don't fail the request if DB logging fails
+        }
+
+        res.json({
+          success: true,
+          message: 'Inquiry sent successfully'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to send inquiry email'
+        });
+      }
+    } catch (error) {
+      console.error('Error sending inquiry:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send inquiry',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

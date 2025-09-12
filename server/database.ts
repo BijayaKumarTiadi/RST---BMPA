@@ -431,18 +431,18 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ User identification columns added to deal_master successfully');
     }
 
-    // Check if inquiries table exists
+    // Check if BMPA_inquiries table exists
     const inquiriesTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
-      AND table_name = 'inquiries'
+      AND table_name = 'BMPA_inquiries'
     `);
 
     if (!inquiriesTableExists || inquiriesTableExists.count === 0) {
-      console.log('📧 Creating inquiries table...');
+      console.log('📧 Creating BMPA_inquiries table...');
       await executeQuery(`
-        CREATE TABLE inquiries (
+        CREATE TABLE BMPA_inquiries (
           id INT PRIMARY KEY AUTO_INCREMENT,
           product_id INT NOT NULL,
           buyer_name VARCHAR(255) NOT NULL,
@@ -458,21 +458,21 @@ export async function initializeDatabase(): Promise<void> {
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Inquiries table created successfully');
+      console.log('✅ BMPA_inquiries table created successfully');
     }
 
-    // Create orders table for actual purchase transactions
+    // Create BMPA_orders table for actual purchase transactions
     const ordersTableExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
-      AND table_name = 'orders'
+      AND table_name = 'BMPA_orders'
     `);
 
     if (!ordersTableExists || ordersTableExists.count === 0) {
-      console.log('📦 Creating orders table...');
+      console.log('📦 Creating BMPA_orders table...');
       await executeQuery(`
-        CREATE TABLE orders (
+        CREATE TABLE BMPA_orders (
           id INT PRIMARY KEY AUTO_INCREMENT,
           buyer_id INT NOT NULL,
           seller_id INT NOT NULL,
@@ -496,7 +496,7 @@ export async function initializeDatabase(): Promise<void> {
           FOREIGN KEY (deal_id) REFERENCES deal_master(TransID)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
-      console.log('✅ Orders table created successfully');
+      console.log('✅ BMPA_orders table created successfully');
     }
 
     // Add search_key column to deal_master if it doesn't exist
