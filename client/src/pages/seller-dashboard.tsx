@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ export default function SellerDashboard() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
@@ -720,17 +722,17 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="font-medium text-foreground">
-                              {inquiry.buyerName || 'Anonymous'}
+                              {inquiry.buyer_name || 'Anonymous'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="text-foreground">
-                              {inquiry.buyerCompany || '-'}
+                              {inquiry.buyer_company || '-'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="font-semibold text-foreground" data-testid={`inquiry-price-${inquiry.id}`}>
-                              {inquiry.quotedPrice ? `₹${inquiry.quotedPrice}` : '-'}
+                              {inquiry.price_offered ? `₹${parseFloat(inquiry.price_offered).toLocaleString('en-IN')}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -742,18 +744,18 @@ export default function SellerDashboard() {
                             <Badge 
                               className={
                                 inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                inquiry.status === 'converted' ? 'bg-blue-100 text-blue-700' :
+                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                 'bg-gray-100 text-gray-700'
                               }
                               data-testid={`inquiry-status-${inquiry.id}`}
                             >
-                              {inquiry.status}
+                              {inquiry.status || 'open'}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-foreground">
-                              {new Date(inquiry.createdAt).toLocaleDateString('en-IN')}
+                              {inquiry.created_at ? new Date(inquiry.created_at).toLocaleDateString('en-IN') : '-'}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -762,8 +764,8 @@ export default function SellerDashboard() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => {
-                                  // TODO: Add inquiry details modal
-                                  alert(`Inquiry details:\n\nBuyer: ${inquiry.buyerName}\nCompany: ${inquiry.buyerCompany || 'Not provided'}\nEmail: ${inquiry.buyerEmail}\nPhone: ${inquiry.buyerPhone || 'Not provided'}\nMessage: ${inquiry.message || 'No message'}`);
+                                  setSelectedInquiry(inquiry);
+                                  setInquiryModalOpen(true);
                                 }}
                                 data-testid={`button-view-${inquiry.id}`}
                               >
@@ -841,17 +843,20 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="font-medium text-foreground">
-                              {inquiry.sellerName || 'Unknown Seller'}
+                              {inquiry.seller_name || 'Unknown Seller'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="text-foreground">
-                              {inquiry.productTitle || '-'}
+                              <div className="font-medium">Product #{inquiry.product_id}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {inquiry.product_details || ''}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="font-semibold text-foreground" data-testid={`sent-inquiry-price-${inquiry.id}`}>
-                              {inquiry.quotedPrice ? `₹${inquiry.quotedPrice}` : '-'}
+                              {inquiry.quoted_price ? `₹${parseFloat(inquiry.quoted_price).toLocaleString('en-IN')}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -863,18 +868,18 @@ export default function SellerDashboard() {
                             <Badge 
                               className={
                                 inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                inquiry.status === 'converted' ? 'bg-blue-100 text-blue-700' :
+                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                 'bg-gray-100 text-gray-700'
                               }
                               data-testid={`sent-inquiry-status-${inquiry.id}`}
                             >
-                              {inquiry.status}
+                              {inquiry.status || 'open'}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-foreground">
-                              {new Date(inquiry.createdAt).toLocaleDateString('en-IN')}
+                              {inquiry.created_at ? new Date(inquiry.created_at).toLocaleDateString('en-IN') : '-'}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -883,8 +888,8 @@ export default function SellerDashboard() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => {
-                                  // TODO: Add sent inquiry details modal
-                                  alert(`Sent inquiry details:\n\nSeller: ${inquiry.sellerName || 'Unknown'}\nProduct: ${inquiry.productTitle || 'Not specified'}\nQuoted Price: ${inquiry.quotedPrice || 'Not provided'}\nQuantity: ${inquiry.quantity || 'Not specified'}\nMessage: ${inquiry.message || 'No message'}`);
+                                  setSelectedInquiry(inquiry);
+                                  setInquiryModalOpen(true);
                                 }}
                                 data-testid={`button-view-sent-${inquiry.id}`}
                               >
@@ -1222,6 +1227,152 @@ export default function SellerDashboard() {
                   <Button 
                     variant="outline" 
                     onClick={() => setViewModalOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Inquiry Details Modal */}
+        <Dialog open={inquiryModalOpen} onOpenChange={setInquiryModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                Inquiry Details #{selectedInquiry?.id}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedInquiry?.inquiry_ref ? `Reference: ${selectedInquiry.inquiry_ref}` : 'View complete inquiry information'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedInquiry && (
+              <div className="space-y-6">
+                {/* Buyer Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <User className="h-5 w-5 text-blue-600" />
+                    Buyer Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Name</p>
+                      <p className="font-semibold">{selectedInquiry.buyer_name || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Company</p>
+                      <p className="font-semibold">{selectedInquiry.buyer_company || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Email</p>
+                      <p className="font-semibold text-blue-600">{selectedInquiry.buyer_email || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                      <p className="font-semibold">{selectedInquiry.buyer_phone || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5 text-green-600" />
+                    Product Information
+                  </h3>
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Product ID</p>
+                        <p className="font-semibold">#{selectedInquiry.product_id}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Product Title</p>
+                        <p className="font-semibold">{selectedInquiry.product_title || selectedInquiry.product_details || 'Product'}</p>
+                      </div>
+                    </div>
+                    {selectedInquiry.seller_name && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-medium text-muted-foreground">Seller</p>
+                        <p className="font-semibold">{selectedInquiry.seller_name} {selectedInquiry.seller_company ? `(${selectedInquiry.seller_company})` : ''}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inquiry Details */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-purple-600" />
+                    Inquiry Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Quoted Price</p>
+                      <p className="font-semibold text-green-600">
+                        {selectedInquiry.price_offered || selectedInquiry.quoted_price ? 
+                          `₹${parseFloat(selectedInquiry.price_offered || selectedInquiry.quoted_price).toLocaleString('en-IN')}` : 
+                          'Not provided'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Quantity</p>
+                      <p className="font-semibold">{selectedInquiry.quantity || 'Not specified'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Status</p>
+                      <Badge className={
+                        selectedInquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                        selectedInquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                        selectedInquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }>
+                        {selectedInquiry.status || 'open'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Date</p>
+                      <p className="font-semibold">
+                        {selectedInquiry.created_at ? 
+                          new Date(selectedInquiry.created_at).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 
+                          'Not available'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {selectedInquiry.message && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Message</p>
+                      <div className="p-4 border rounded-lg bg-white">
+                        <p className="text-sm whitespace-pre-wrap">{selectedInquiry.message}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  {selectedInquiry.buyer_email && (
+                    <Button 
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        window.location.href = `mailto:${selectedInquiry.buyer_email}?subject=Re: Inquiry for Product #${selectedInquiry.product_id}`;
+                      }}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Reply via Email
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setInquiryModalOpen(false)}
                   >
                     Close
                   </Button>
