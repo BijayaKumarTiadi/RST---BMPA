@@ -101,6 +101,19 @@ export default function SellerDashboard() {
     enabled: isAuthenticated,
   });
 
+  // Fetch inquiries received by seller (new Drizzle-based system)
+  const { data: sellerInquiries, isLoading: inquiriesLoading } = useQuery({
+    queryKey: ["/api/inquiries/seller"],
+    queryFn: async () => {
+      const response = await fetch(`/api/inquiries/seller`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch seller inquiries');
+      return response.json();
+    },
+    enabled: isAuthenticated && !!user?.id,
+  });
+
   // Mark deal as sold mutation
   const markAsSoldMutation = useMutation({
     mutationFn: async (dealId: string) => {
@@ -287,14 +300,15 @@ export default function SellerDashboard() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-background border shadow-sm">
-            <TabsTrigger value="products" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">My Products</TabsTrigger>
-            <TabsTrigger value="orders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
+        <Tabs defaultValue="offers" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-background border shadow-sm">
+            <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
+            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Inquiries</TabsTrigger>
+            <TabsTrigger value="counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
           </TabsList>
 
-          {/* Products Tab */}
-          <TabsContent value="products" className="space-y-6">
+          {/* Offers Tab */}
+          <TabsContent value="offers" className="space-y-6">
             <Card className="border-2 border-border shadow-lg bg-card">
               <CardHeader className="bg-muted border-b-2 border-border">
                 <div className="flex items-center justify-between">
@@ -645,77 +659,88 @@ export default function SellerDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-6">
+          {/* Inquiries Tab */}
+          <TabsContent value="inquiries" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
-                <CardTitle className="text-foreground">Order Management</CardTitle>
+                <CardTitle className="text-foreground">Inquiry Management</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Orders and inquiries from buyers
+                  Track and manage buyer inquiries for your products
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                {allOrders.length === 0 ? (
+                {inquiriesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                  </div>
+                ) : !sellerInquiries?.inquiries || sellerInquiries.inquiries.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
-                    <p className="text-muted-foreground">Orders will appear here once buyers start purchasing</p>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No inquiries yet</h3>
+                    <p className="text-muted-foreground">Buyer inquiries will appear here once customers start showing interest in your products</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted border-b-4 border-primary/20">
-                        <TableHead className="font-semibold text-foreground">Order ID</TableHead>
-                        <TableHead className="font-semibold text-foreground">Product</TableHead>
-                        <TableHead className="font-semibold text-foreground">Customer</TableHead>
-                        <TableHead className="font-semibold text-foreground">Amount</TableHead>
+                        <TableHead className="font-semibold text-foreground">Inquiry ID</TableHead>
+                        <TableHead className="font-semibold text-foreground">Buyer</TableHead>
+                        <TableHead className="font-semibold text-foreground">Company</TableHead>
+                        <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
+                        <TableHead className="font-semibold text-foreground">Quantity</TableHead>
                         <TableHead className="font-semibold text-foreground">Status</TableHead>
                         <TableHead className="font-semibold text-foreground">Date</TableHead>
                         <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {allOrders.map((order: any) => (
+                      {sellerInquiries.inquiries.map((inquiry: any) => (
                         <TableRow 
-                          key={order.id} 
+                          key={inquiry.id} 
                           className="hover:bg-muted/50 transition-colors"
-                          data-testid={`order-row-${order.id}`}
+                          data-testid={`inquiry-row-${inquiry.id}`}
                         >
                           <TableCell className="py-4">
-                            <div className="font-medium text-foreground" data-testid={`order-id-${order.id}`}>
-                              #{order.id?.slice(0, 8)}
+                            <div className="font-medium text-foreground" data-testid={`inquiry-id-${inquiry.id}`}>
+                              #{inquiry.id?.slice(0, 8)}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="font-medium text-foreground">
-                              {order.product_title || 'N/A'}
+                              {inquiry.buyerName || 'Anonymous'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="text-foreground">
-                              {order.customer_name || 'Anonymous'}
+                              {inquiry.buyerCompany || '-'}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-semibold text-foreground" data-testid={`order-amount-${order.id}`}>
-                              ₹{order.total_amount?.toLocaleString('en-IN')}
+                            <div className="font-semibold text-foreground" data-testid={`inquiry-price-${inquiry.id}`}>
+                              {inquiry.quotedPrice ? `₹${inquiry.quotedPrice}` : '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-foreground">
+                              {inquiry.quantity || '-'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge 
                               className={
-                                order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-blue-100 text-blue-700'
+                                inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                inquiry.status === 'converted' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
                               }
-                              data-testid={`order-status-${order.id}`}
+                              data-testid={`inquiry-status-${inquiry.id}`}
                             >
-                              {order.status}
+                              {inquiry.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-foreground">
-                              {new Date(order.created_at).toLocaleDateString('en-IN')}
+                              {new Date(inquiry.createdAt).toLocaleDateString('en-IN')}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -724,21 +749,21 @@ export default function SellerDashboard() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedOrder(order);
-                                  setIsOrderModalOpen(true);
+                                  // TODO: Add inquiry details modal
+                                  alert(`Inquiry details:\n\nBuyer: ${inquiry.buyerName}\nCompany: ${inquiry.buyerCompany || 'Not provided'}\nEmail: ${inquiry.buyerEmail}\nPhone: ${inquiry.buyerPhone || 'Not provided'}\nMessage: ${inquiry.message || 'No message'}`);
                                 }}
-                                data-testid={`button-view-${order.id}`}
+                                data-testid={`button-view-${inquiry.id}`}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
                               
-                              {order.customer_email && (
+                              {inquiry.buyerEmail && (
                                 <Button 
                                   size="sm" 
                                   className="bg-blue-600 hover:bg-blue-700 text-white"
-                                  onClick={() => window.location.href = `mailto:${order.customer_email}?subject=Regarding your inquiry for ${order.product_title}&body=Dear ${order.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${order.product_title}.%0D%0A%0D%0ABest regards`}
-                                  data-testid={`button-contact-${order.id}`}
+                                  onClick={() => window.location.href = `mailto:${inquiry.buyerEmail}?subject=Regarding your inquiry&body=Dear ${inquiry.buyerName},%0D%0A%0D%0AThank you for your inquiry.%0D%0A%0D%0ABest regards`}
+                                  data-testid={`button-contact-${inquiry.id}`}
                                 >
                                   <MessageCircle className="h-4 w-4 mr-1" />
                                   Contact
@@ -751,6 +776,25 @@ export default function SellerDashboard() {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Counter Offers Tab */}
+          <TabsContent value="counter-offers" className="space-y-6">
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+                <CardTitle className="text-foreground">Counter Offers Management</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Manage counter offers and negotiations with buyers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="text-center py-12">
+                  <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Counter Offers Coming Soon</h3>
+                  <p className="text-muted-foreground">Counter offer functionality will be available in a future update</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
