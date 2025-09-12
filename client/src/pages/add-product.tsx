@@ -30,14 +30,20 @@ const isCraftMake = (makeText: string): boolean => {
          normalized === 'craft paper bs';
 };
 
+// Helper function to check if group is Kraft Reel
+const isKraftReelGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'kraft reel';
+};
+
 // Single validation schema with conditional validation
 const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
+  groupName: z.string().optional(), // Add group name for Kraft Reel logic
   MakeID: z.string().optional(),
   GradeID: z.string().optional(),
   BrandID: z.string().optional(),
   makeText: z.string().min(1, "Product make is required"),
-  gradeText: z.string().min(1, "Grade is required"),
+  gradeText: z.string().optional(), // Made optional for conditional validation
   brandText: z.string().optional(), // Optional at base level
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
@@ -48,8 +54,19 @@ const dealSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity is required"),
   Seller_comments: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Conditional brand validation
-  if (!isCraftMake(data.makeText) && (!data.brandText || data.brandText.trim() === '')) {
+  const isKraftReel = isKraftReelGroup(data.groupName || '');
+  
+  // Grade validation - required unless Kraft Reel
+  if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Grade is required",
+      path: ["gradeText"]
+    });
+  }
+  
+  // Brand validation - not required for Kraft Reel or craft makes
+  if (!isKraftReel && !isCraftMake(data.makeText) && (!data.brandText || data.brandText.trim() === '')) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Brand is required",
@@ -66,12 +83,14 @@ export default function AddDeal() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroupName, setSelectedGroupName] = useState(""); // Track group name for Kraft Reel logic
   const [selectedMake, setSelectedMake] = useState("");
   const [makeText, setMakeText] = useState("");
   const [gradeText, setGradeText] = useState("");
   const [brandText, setBrandText] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
   const [isGradeAutoSet, setIsGradeAutoSet] = useState(false);
+  const [isKraftReelAutoSet, setIsKraftReelAutoSet] = useState(false); // Track Kraft Reel auto-fill
 
   // Unit state - single unit selector for both Deckle and Grain
   const [dimensionUnit, setDimensionUnit] = useState("cm");
@@ -167,6 +186,7 @@ export default function AddDeal() {
     resolver: zodResolver(dealSchema),
     defaultValues: {
       groupID: "",
+      groupName: "",
       MakeID: "",
       GradeID: "",
       BrandID: "",
@@ -196,9 +216,10 @@ export default function AddDeal() {
     enabled: isAuthenticated,
   });
 
-  // Watch form values for craft detection
+  // Watch form values for craft detection and Kraft Reel logic
   const currentMakeText = form.watch("makeText");
   const currentGradeText = form.watch("gradeText");
+  const currentGroupName = form.watch("groupName");
   
   // Update dimension unit when user settings are loaded
   useEffect(() => {
@@ -209,7 +230,8 @@ export default function AddDeal() {
   
   // Handle craft reel/craft paper B.S. auto-grade setting
   useEffect(() => {
-    if (currentMakeText && isCraftMake(currentMakeText)) {
+    // Don't run craft logic if Kraft Reel group is selected
+    if (currentMakeText && isCraftMake(currentMakeText) && !isKraftReelGroup(currentGroupName || '')) {
       // Auto-set Grade to "Craft Paper" if empty or previously auto-set
       if (!currentGradeText || isGradeAutoSet || currentGradeText === "Craft Paper") {
         form.setValue("gradeText", "Craft Paper");
@@ -224,7 +246,28 @@ export default function AddDeal() {
       setGradeText("");
       setIsGradeAutoSet(false);
     }
-  }, [currentMakeText, currentGradeText, isGradeAutoSet, form]);
+  }, [currentMakeText, currentGradeText, isGradeAutoSet, currentGroupName, form]);
+
+  // Handle Kraft Reel Group auto-grade setting
+  useEffect(() => {
+    if (currentGroupName && isKraftReelGroup(currentGroupName || '')) {
+      // Auto-set Grade to "Kraft Paper" when Kraft Reel is selected
+      if (!currentGradeText || isKraftReelAutoSet || currentGradeText === "Kraft Paper") {
+        form.setValue("gradeText", "Kraft Paper");
+        form.setValue("GradeID", "");
+        setGradeText("Kraft Paper");
+        setIsKraftReelAutoSet(true);
+        // Clear craft auto-set flag to prevent conflicts
+        setIsGradeAutoSet(false);
+      }
+    } else if (isKraftReelAutoSet && currentGradeText === "Kraft Paper") {
+      // Clear auto-set grade when not Kraft Reel anymore
+      form.setValue("gradeText", "");
+      form.setValue("GradeID", "");
+      setGradeText("");
+      setIsKraftReelAutoSet(false);
+    }
+  }, [currentGroupName, currentGradeText, isKraftReelAutoSet, form]);
 
 
   // Fetch stock hierarchy
@@ -283,9 +326,14 @@ export default function AddDeal() {
   }, [form, makes, grades, brands]);
 
   // Handle selection changes
-  const handleGroupChange = (value: string) => {
+  const handleGroupChange = (value: string, item?: any) => {
     setSelectedGroup(value);
     form.setValue("groupID", value);
+    
+    // Set group name for Kraft Reel logic
+    const groupName = item?.GroupName || value;
+    setSelectedGroupName(groupName);
+    form.setValue("groupName", groupName);
   };
 
   const handleMakeChange = (value: string, item: any) => {
@@ -398,6 +446,7 @@ export default function AddDeal() {
         // Reset form for next entry
         form.reset({
           groupID: "",
+          groupName: "",
           MakeID: "",
           GradeID: "",
           BrandID: "",
@@ -413,12 +462,15 @@ export default function AddDeal() {
           Seller_comments: "",
         });
         setSelectedGroup("");
+        setSelectedGroupName("");
         setSelectedMake("");
         setMakeText("");
         setGradeText("");
         setBrandText("");
         setDeckleInputValue("");
         setGrainInputValue("");
+        setIsGradeAutoSet(false);
+        setIsKraftReelAutoSet(false);
         setSaveAndAddAnother(false);
       } else {
         toast({
@@ -490,12 +542,26 @@ export default function AddDeal() {
                           <FormControl>
                             <AutocompleteInput
                               value={field.value}
-                              onChange={handleGroupChange}
+                              onChange={(value) => {
+                                // Handle value change for form binding
+                                setSelectedGroup(value);
+                                form.setValue("groupID", value);
+                              }}
+                              onSelect={(value, item) => {
+                                // Handle item selection with full data
+                                handleGroupChange(value, item);
+                              }}
+                              onTextChange={(text) => {
+                                // Handle free text entry
+                                setSelectedGroupName(text);
+                                form.setValue("groupName", text);
+                              }}
                               placeholder="Type to search groups..."
                               suggestions={groups}
                               displayField="GroupName"
                               valueField="GroupID"
                               testId="input-group"
+                              allowFreeText={true}
                             />
                           </FormControl>
                           <FormMessage />
@@ -544,27 +610,34 @@ export default function AddDeal() {
                       name="gradeText"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Grade <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel className="text-foreground">
+                            Grade {isKraftReelGroup(currentGroupName || '') ? "(Auto-filled)" : <span className="text-red-500">*</span>}
+                          </FormLabel>
                           <FormControl>
                             <AutocompleteInput
                               value={gradeText}
                               onChange={(value) => {
-                                form.setValue("GradeID", value);
-                                form.setValue("gradeText", value);
-                                setGradeText(value);
+                                if (!isKraftReelGroup(currentGroupName || '')) {
+                                  form.setValue("GradeID", value);
+                                  form.setValue("gradeText", value);
+                                  setGradeText(value);
+                                }
                               }}
                               onSelect={handleGradeChange}
                               onTextChange={(text) => {
-                                form.setValue("gradeText", text);
-                                form.setValue("GradeID", "");
-                                setGradeText(text);
+                                if (!isKraftReelGroup(currentGroupName || '')) {
+                                  form.setValue("gradeText", text);
+                                  form.setValue("GradeID", "");
+                                  setGradeText(text);
+                                }
                               }}
-                              placeholder="Type to search or enter grade..."
+                              placeholder={isKraftReelGroup(currentGroupName || '') ? "Kraft Paper (auto-filled)" : "Type to search or enter grade..."}
                               suggestions={filteredGrades}
                               displayField="GradeName"
                               valueField="gradeID"
                               testId="input-grade"
                               allowFreeText={true}
+                              disabled={isKraftReelGroup(currentGroupName || '')}
                             />
                           </FormControl>
                           <FormMessage />
@@ -578,28 +651,33 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Brand {isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
+                            Brand {isKraftReelGroup(currentGroupName || '') || isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
                           </FormLabel>
                           <FormControl>
                             <AutocompleteInput
                               value={brandText}
                               onChange={(value) => {
-                                form.setValue("BrandID", value);
-                                form.setValue("brandText", value);
-                                setBrandText(value);
+                                if (!isKraftReelGroup(currentGroupName || '')) {
+                                  form.setValue("BrandID", value);
+                                  form.setValue("brandText", value);
+                                  setBrandText(value);
+                                }
                               }}
                               onSelect={handleBrandChange}
                               onTextChange={(text) => {
-                                form.setValue("brandText", text);
-                                form.setValue("BrandID", "");
-                                setBrandText(text);
+                                if (!isKraftReelGroup(currentGroupName || '')) {
+                                  form.setValue("brandText", text);
+                                  form.setValue("BrandID", "");
+                                  setBrandText(text);
+                                }
                               }}
-                              placeholder="Type to search or enter brand..."
+                              placeholder={isKraftReelGroup(currentGroupName || '') ? "Not required for Kraft Reel" : "Type to search or enter brand..."}
                               suggestions={filteredBrands}
                               displayField="brandname"
                               valueField="brandID"
                               testId="input-brand"
                               allowFreeText={true}
+                              disabled={isKraftReelGroup(currentGroupName || '')}
                             />
                           </FormControl>
                           <FormMessage />
