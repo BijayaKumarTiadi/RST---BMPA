@@ -28,14 +28,50 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
     quantity: "",
     message: ""
   });
+  const [quantityError, setQuantityError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Special handling for quantity field
+    if (name === 'quantity') {
+      const numValue = parseInt(value);
+      const availableQty = deal?.quantity || 0;
+      
+      if (value && numValue > availableQty) {
+        setQuantityError(`Cannot exceed available quantity (${availableQty} ${deal?.OfferUnit || 'units'})`);
+      } else if (value && numValue <= 0) {
+        setQuantityError("Quantity must be greater than 0");
+      } else {
+        setQuantityError("");
+      }
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate quantity before submitting
+    const quantityNum = parseInt(formData.quantity);
+    const availableQty = deal?.quantity || 0;
+    
+    if (!formData.quantity) {
+      setQuantityError("Quantity is required");
+      return;
+    }
+    
+    if (quantityNum > availableQty) {
+      setQuantityError(`Cannot exceed available quantity (${availableQty} ${deal?.OfferUnit || 'units'})`);
+      return;
+    }
+    
+    if (quantityNum <= 0) {
+      setQuantityError("Quantity must be greater than 0");
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -137,6 +173,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
             <div className="text-sm text-muted-foreground space-y-1">
               <div>Product ID: {deal.TransID}</div>
               <div>Seller Price: ₹{deal.OfferPrice?.toLocaleString('en-IN')} per {deal.OfferUnit}</div>
+              <div>Available Quantity: {deal.quantity || 0} {deal.OfferUnit}</div>
               <div>Seller: {deal.created_by_name || deal.seller_name} ({deal.created_by_company || deal.seller_company})</div>
             </div>
           </div>
@@ -206,14 +243,22 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
                 />
               </div>
               <div>
-                <Label htmlFor="quantity">Quantity Required</Label>
+                <Label htmlFor="quantity">Quantity Required *</Label>
                 <Input
                   id="quantity"
                   name="quantity"
+                  type="number"
                   value={formData.quantity}
                   onChange={handleInputChange}
-                  placeholder={`Quantity in ${deal.OfferUnit}`}
+                  placeholder={`Quantity in ${deal.OfferUnit} (Max: ${deal.quantity || 0})`}
+                  required
+                  max={deal.quantity || 0}
+                  min="1"
+                  className={quantityError ? "border-red-500" : ""}
                 />
+                {quantityError && (
+                  <p className="text-xs text-red-500 mt-1">{quantityError}</p>
+                )}
               </div>
             </div>
 

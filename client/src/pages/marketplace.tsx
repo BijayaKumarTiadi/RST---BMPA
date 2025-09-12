@@ -1970,24 +1970,26 @@ export default function Marketplace() {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex flex-col items-center mt-8 space-y-4">
-                    <p className="text-muted-foreground text-sm">
+                  <div className="flex flex-col items-center mt-8 mb-20 lg:mb-8 space-y-4">
+                    <p className="text-muted-foreground text-xs sm:text-sm text-center">
                       Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
                     </p>
-                    <div className="flex items-center justify-center space-x-2">
+                    <div className="flex items-center justify-center space-x-1 sm:space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
+                      className="text-xs sm:text-sm px-2 sm:px-3"
                     >
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
+                      <span className="sm:hidden">Prev</span>
                     </Button>
                     
-                    {/* Page Numbers */}
+                    {/* Page Numbers - Show fewer on mobile */}
                     <div className="flex space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                      {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, Math.min(totalPages - (isMobile ? 2 : 4), currentPage - (isMobile ? 1 : 2))) + i;
                         if (pageNum <= totalPages) {
                           return (
                             <Button
@@ -1995,7 +1997,7 @@ export default function Marketplace() {
                               variant={currentPage === pageNum ? "default" : "outline"}
                               size="sm"
                               onClick={() => handlePageChange(pageNum)}
-                              className="w-8 h-8 p-0"
+                              className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
                             >
                               {pageNum}
                             </Button>
@@ -2010,6 +2012,7 @@ export default function Marketplace() {
                       size="sm"
                       onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
+                      className="text-xs sm:text-sm px-2 sm:px-3"
                     >
                       Next
                     </Button>
