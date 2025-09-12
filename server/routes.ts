@@ -1326,10 +1326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update buyer's inquiry count in their profile
           await executeQuery(`
-            UPDATE BMPA_members 
+            UPDATE bmpa_members 
             SET total_inquiries_sent = COALESCE(total_inquiries_sent, 0) + 1,
                 last_inquiry_date = NOW()
-            WHERE memberID = ?
+            WHERE member_id = ?
           `, [buyerId]);
           
           console.log('✅ Updated buyer profile with inquiry count');

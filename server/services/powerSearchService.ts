@@ -142,7 +142,8 @@ export class PowerSearchService {
       SELECT 
         dm.*,
         m.mname as created_by_name,
-        m.company_name as created_by_company
+        m.company_name as created_by_company,
+        m.email as seller_email
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       WHERE ${whereClause}
