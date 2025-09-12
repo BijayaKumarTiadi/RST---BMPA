@@ -57,13 +57,10 @@ export function MobileFilterDrawer({
 
   // Count active filters
   const activeFilterCount = 
-    appliedFilters.selectedMakes.length +
-    appliedFilters.selectedGrades.length +
-    appliedFilters.selectedBrands.length +
-    appliedFilters.selectedCategories.length +
-    appliedFilters.selectedLocations.length +
-    (appliedFilters.gsmRange.min || appliedFilters.gsmRange.max ? 1 : 0) +
-    (appliedFilters.priceRange.min || appliedFilters.priceRange.max ? 1 : 0);
+    clientFilters.makes.length +
+    clientFilters.grades.length +
+    clientFilters.brands.length +
+    clientFilters.gsm.length;
 
   const handleApply = () => {
     onApplySearch();
@@ -168,49 +165,6 @@ export function MobileFilterDrawer({
               </Select>
             </div>
 
-            {/* GSM Range */}
-            <FilterSection title="GSM Range" type="gsm">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={appliedFilters.gsmRange.min}
-                    onChange={(e) => onRangeFilterChange('gsm', { ...appliedFilters.gsmRange, min: e.target.value })}
-                    className="h-10"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={appliedFilters.gsmRange.max}
-                    onChange={(e) => onRangeFilterChange('gsm', { ...appliedFilters.gsmRange, max: e.target.value })}
-                    className="h-10"
-                  />
-                </div>
-              </div>
-            </FilterSection>
-
-            {/* Price Range */}
-            <FilterSection title="Price Range (₹)" type="price">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={appliedFilters.priceRange.min}
-                    onChange={(e) => onRangeFilterChange('price', { ...appliedFilters.priceRange, min: e.target.value })}
-                    className="h-10"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={appliedFilters.priceRange.max}
-                    onChange={(e) => onRangeFilterChange('price', { ...appliedFilters.priceRange, max: e.target.value })}
-                    className="h-10"
-                  />
-                </div>
-              </div>
-            </FilterSection>
 
             {/* Makes */}
             <FilterSection title={`Makes ${clientFilters.makes.length > 0 ? `(${clientFilters.makes.length})` : ''}`} type="makes">
@@ -286,6 +240,33 @@ export function MobileFilterDrawer({
                     {brand.count > 0 && (
                       <Badge variant="secondary" className="text-xs">
                         {brand.count}
+                      </Badge>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
+
+            {/* GSM */}
+            <FilterSection title={`GSM ${clientFilters.gsm.length > 0 ? `(${clientFilters.gsm.length})` : ''}`} type="gsm">
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                  getUniqueValues('gsm') : 
+                  (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
+                    value: gsm.GSM || gsm.name || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown'),
+                    count: gsm.count || 0
+                  }))
+                ).map((gsm: any, index: number) => (
+                  <label key={index} className="flex items-center space-x-3 py-2">
+                    <Checkbox 
+                      checked={clientFilters.gsm.includes(gsm.value)}
+                      onCheckedChange={(checked) => onFilterChange('gsm', gsm.value, checked as boolean)}
+                      data-testid={`checkbox-mobile-gsm-${gsm.value}`}
+                    />
+                    <span className="flex-1 text-sm">{gsm.value} GSM</span>
+                    {gsm.count > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {gsm.count}
                       </Badge>
                     )}
                   </label>

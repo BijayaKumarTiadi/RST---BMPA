@@ -650,25 +650,16 @@ export default function Marketplace() {
 
   // Remove filter
   const removeFilter = (type: string, value: string) => {
-    const newFilters = { ...appliedFilters };
-    switch (type) {
-      case 'makes':
-        newFilters.selectedMakes = newFilters.selectedMakes.filter(item => item !== value);
-        break;
-      case 'grades':
-        newFilters.selectedGrades = newFilters.selectedGrades.filter(item => item !== value);
-        break;
-      case 'brands':
-        newFilters.selectedBrands = newFilters.selectedBrands.filter(item => item !== value);
-        break;
-      case 'categories':
-        newFilters.selectedCategories = newFilters.selectedCategories.filter(item => item !== value);
-        break;
-      case 'locations':
-        newFilters.selectedLocations = newFilters.selectedLocations.filter(item => item !== value);
-        break;
-    }
-    applyFilters(newFilters);
+    setClientFilters(prev => {
+      const newFilters = { ...prev };
+      const filterArray = newFilters[type as keyof typeof newFilters];
+      
+      if (Array.isArray(filterArray)) {
+        newFilters[type as keyof typeof newFilters] = filterArray.filter(item => item !== value);
+      }
+      
+      return newFilters;
+    });
   };
 
   // Set range filter
@@ -1310,9 +1301,8 @@ export default function Marketplace() {
 
         {/* Quick Filter Chips for Mobile */}
         <QuickFilterChips
-          appliedFilters={appliedFilters}
+          clientFilters={clientFilters}
           onRemoveFilter={removeFilter}
-          onClearRange={(type) => setRangeFilter(type, { min: '', max: '' })}
           onClearAll={clearAllFilters}
         />
 
