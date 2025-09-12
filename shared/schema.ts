@@ -152,6 +152,24 @@ export const searchQueries = pgTable("search_queries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Inquiries from buyers to sellers
+export const inquiries = pgTable("inquiries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  stockListingId: varchar("stock_listing_id").references(() => stockListings.id).notNull(),
+  buyerId: varchar("buyer_id").references(() => users.id).notNull(),
+  sellerId: varchar("seller_id").references(() => users.id).notNull(),
+  buyerName: varchar("buyer_name", { length: 255 }).notNull(),
+  buyerEmail: varchar("buyer_email", { length: 255 }).notNull(),
+  buyerCompany: varchar("buyer_company", { length: 255 }),
+  buyerPhone: varchar("buyer_phone", { length: 20 }),
+  quotedPrice: varchar("quoted_price", { length: 50 }),
+  quantity: varchar("quantity", { length: 100 }),
+  message: text("message"),
+  isRead: boolean("is_read").default(false),
+  status: varchar("status", { length: 20 }).default('pending'), // 'pending', 'responded', 'converted', 'declined'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Schema definitions for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -199,6 +217,17 @@ export const insertOtpVerificationSchema = createInsertSchema(otpVerifications).
   type: true,
 });
 
+export const insertInquirySchema = createInsertSchema(inquiries).pick({
+  stockListingId: true,
+  buyerName: true,
+  buyerEmail: true,
+  buyerCompany: true,
+  buyerPhone: true,
+  quotedPrice: true,
+  quantity: true,
+  message: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -214,6 +243,8 @@ export type OtpVerification = typeof otpVerifications.$inferSelect;
 export type InsertOtpVerification = z.infer<typeof insertOtpVerificationSchema>;
 export type Payment = typeof payments.$inferSelect;
 export type SearchQuery = typeof searchQueries.$inferSelect;
+export type Inquiry = typeof inquiries.$inferSelect;
+export type InsertInquiry = z.infer<typeof insertInquirySchema>;
 
 // Relations
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -239,6 +270,12 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedMessages: many(messages, {
     relationName: "receivedMessages",
   }),
+  buyerInquiries: many(inquiries, {
+    relationName: "buyerInquiries",
+  }),
+  sellerInquiries: many(inquiries, {
+    relationName: "sellerInquiries",
+  }),
   payments: many(payments),
   searchQueries: many(searchQueries),
   otpVerifications: many(otpVerifications),
@@ -255,6 +292,7 @@ export const stockListingsRelations = relations(stockListings, ({ one, many }) =
   }),
   orders: many(orders),
   messages: many(messages),
+  inquiries: many(inquiries),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -319,5 +357,22 @@ export const searchQueriesRelations = relations(searchQueries, ({ one }) => ({
   user: one(users, {
     fields: [searchQueries.userId],
     references: [users.id],
+  }),
+}));
+
+export const inquiriesRelations = relations(inquiries, ({ one }) => ({
+  buyer: one(users, {
+    fields: [inquiries.buyerId],
+    references: [users.id],
+    relationName: "buyerInquiries",
+  }),
+  seller: one(users, {
+    fields: [inquiries.sellerId],
+    references: [users.id],
+    relationName: "sellerInquiries",
+  }),
+  stockListing: one(stockListings, {
+    fields: [inquiries.stockListingId],
+    references: [stockListings.id],
   }),
 }));
