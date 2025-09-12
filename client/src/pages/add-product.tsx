@@ -963,22 +963,20 @@ export default function AddDeal() {
                       type="button"
                       variant="secondary"
                       onClick={form.handleSubmit(onSubmitAndAddAnother)}
-                      disabled={createDealMutation.isPending || !isAuthenticated}
+                      disabled={createDealMutation.isPending}
                       className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                       data-testid="button-save-add"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      {!isAuthenticated ? "Please Login First" : "Save & Add Another"}
+                      Save & Add Another
                     </Button>
                     <Button
                       type="submit"
-                      disabled={createDealMutation.isPending || !isAuthenticated}
+                      disabled={createDealMutation.isPending}
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
                       data-testid="button-save"
                     >
-                      {!isAuthenticated ? (
-                        "Please Login First"
-                      ) : createDealMutation.isPending ? (
+                      {createDealMutation.isPending ? (
                         <>
                           <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                           Saving...
