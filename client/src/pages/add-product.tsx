@@ -281,20 +281,10 @@ export default function AddDeal() {
   // Handle Kraft Reel Group specific auto-settings
   useEffect(() => {
     if (currentGroupName && isKraftReelGroup(currentGroupName || '')) {
-      // Auto-fill Grain (inch) = "B.S."
-      setGrainInputValue("B.S.");
-      form.setValue("grain_mm", 0); // Set to 0 for "B.S." since it's not a numeric value
-      
       // Auto-select Unit = "Kg" 
       form.setValue("OfferUnit", "Kg");
-    } else {
-      // Clear Kraft Reel specific auto-fills when switching away
-      if (grainInputValue === "B.S.") {
-        setGrainInputValue("");
-        form.setValue("grain_mm", "" as any);
-      }
     }
-  }, [currentGroupName, form, grainInputValue]);
+  }, [currentGroupName, form]);
 
 
   // Fetch stock hierarchy
@@ -805,8 +795,8 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            Grain ({dimensionUnit}) <span className="text-red-500">*</span>
-                            {grainInputValue && (
+                            {isKraftReelGroup(currentGroupName || '') ? 'B.S.' : `Grain (${dimensionUnit})`} <span className="text-red-500">*</span>
+                            {grainInputValue && !isKraftReelGroup(currentGroupName || '') && (
                               <span className="text-xs text-muted-foreground ml-2">
                                 = {getGrainDimensions()}
                               </span>
