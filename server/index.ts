@@ -46,7 +46,7 @@ try {
 app.use(session({
   key: 'stock_laabh_session',
   secret: 'stock-laabh-secret-key-2025',
-  store: new MemStore({
+  store: sessionStore || new MemStore({
     checkPeriod: 15 * 60 * 1000 // prune expired entries every 15 minutes
   }),
   resave: false,
@@ -54,7 +54,8 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours session validity
     httpOnly: true,
-    secure: false // Set to true in production with HTTPS
+    secure: false, // Set to true in production with HTTPS
+    sameSite: 'lax' // Add sameSite for better cookie handling
   }
 }));
 
