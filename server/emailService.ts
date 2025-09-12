@@ -537,7 +537,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
               Please respond to this buyer directly using the contact information provided above.
             </p>
-            <a href="mailto:${data.buyerEmail}?subject=Re: Inquiry for ${data.productTitle} (ID: ${data.productId})" 
+            <a href="mailto:${data.buyerEmail}?subject=Re: Inquiry for ${data.productTitle}" 
                style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
               Reply to Buyer
             </a>
