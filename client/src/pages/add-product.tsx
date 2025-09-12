@@ -359,8 +359,8 @@ export default function AddDeal() {
       
       // Set form values properly for both dropdown and free text
       if (item.make_ID) {
-        // This is a dropdown selection
-        form.setValue("MakeID", item.make_ID);
+        // This is a dropdown selection - convert ID to string
+        form.setValue("MakeID", String(item.make_ID));
         form.setValue("makeText", item.make_Name || "");
         setMakeText(item.make_Name || "");
       } else {
@@ -381,8 +381,8 @@ export default function AddDeal() {
         form.setValue("gradeText", value);
         setGradeText(value);
       } else {
-        // This is a selection from dropdown
-        form.setValue("GradeID", value);
+        // This is a selection from dropdown - convert ID to string
+        form.setValue("GradeID", String(value));
         form.setValue("gradeText", item.GradeName || "");
         setGradeText(item.GradeName || "");
       }
@@ -398,8 +398,8 @@ export default function AddDeal() {
         form.setValue("brandText", value);
         setBrandText(value);
       } else {
-        // This is a selection from dropdown
-        form.setValue("BrandID", value);
+        // This is a selection from dropdown - convert ID to string
+        form.setValue("BrandID", String(value));
         form.setValue("brandText", item.brandname || "");
         setBrandText(item.brandname || "");
       }
