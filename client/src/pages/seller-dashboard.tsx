@@ -320,9 +320,9 @@ export default function SellerDashboard() {
         {/* Main Content Tabs */}
         <Tabs defaultValue="offers" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-background border shadow-sm">
-            <TabsTrigger value="offers" data-testid="tab-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
-            <TabsTrigger value="inquiries" data-testid="tab-inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Inquiries</TabsTrigger>
-            <TabsTrigger value="counter-offers" data-testid="tab-counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
+            <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
+            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Inquiries</TabsTrigger>
+            <TabsTrigger value="counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
           </TabsList>
 
           {/* Offers Tab */}
