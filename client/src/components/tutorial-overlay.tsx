@@ -155,12 +155,12 @@ export function TutorialOverlay({ steps, onComplete, storageKey = "tutorial_comp
 
   return (
     <div className="tutorial-overlay">
-      {/* Dark overlay with highlight cutout */}
+      {/* Semi-transparent overlay with highlight cutout */}
       <div 
         className="fixed inset-0 z-[9998] pointer-events-none"
         style={{ 
-          background: "rgba(0, 20, 50, 0.85)",
-          backdropFilter: "blur(2px)"
+          background: "rgba(0, 20, 50, 0.4)",
+          backdropFilter: "none"
         }}
       >
         {highlightRect && (
@@ -175,7 +175,7 @@ export function TutorialOverlay({ steps, onComplete, storageKey = "tutorial_comp
                 height: highlightRect.height + 8,
                 border: "3px solid #3b82f6",
                 borderRadius: "8px",
-                boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.4)"
+                boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.3), 0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.3)"
               }}
             />
             {/* Clear area for highlighted element */}
@@ -188,8 +188,8 @@ export function TutorialOverlay({ steps, onComplete, storageKey = "tutorial_comp
                 height: highlightRect.height,
                 background: "transparent",
                 boxShadow: `
-                  0 0 0 9999px rgba(0, 20, 50, 0.85),
-                  inset 0 0 10px rgba(59, 130, 246, 0.2)
+                  0 0 0 9999px rgba(0, 20, 50, 0.4),
+                  inset 0 0 10px rgba(59, 130, 246, 0.3)
                 `,
                 borderRadius: "4px"
               }}
@@ -200,7 +200,7 @@ export function TutorialOverlay({ steps, onComplete, storageKey = "tutorial_comp
 
       {/* Tutorial Card */}
       <Card 
-        className="fixed z-[9999] bg-gradient-to-br from-blue-50 to-white border-blue-200 shadow-2xl max-w-md w-[90%] md:w-96"
+        className="fixed z-[9999] bg-gradient-to-br from-blue-50 via-white to-blue-50/50 border-blue-300 shadow-2xl max-w-md w-[90%] md:w-96 backdrop-blur-sm"
         style={getTooltipPosition()}
       >
         <div className="p-6">

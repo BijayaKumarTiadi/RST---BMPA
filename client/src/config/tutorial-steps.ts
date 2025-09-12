@@ -84,8 +84,8 @@ export const sellerTutorialSteps: TutorialStep[] = [
     id: "add-product",
     title: "Add New Products",
     description: "Click here to list a new product for sale. You'll need to provide details like quantity, price, and specifications.",
-    selector: "[href='/seller-dashboard/add-product']",
-    mobileSelector: "button:has-text('Add Product')",
+    selector: "[href='/add-product']",
+    mobileSelector: "[href='/add-product']",
     position: "bottom"
   },
   {
@@ -99,14 +99,14 @@ export const sellerTutorialSteps: TutorialStep[] = [
     id: "inquiries-tab",
     title: "Customer Inquiries",
     description: "View and respond to customer inquiries here. Quick responses lead to more sales!",
-    selector: "button:has-text('Inquiries')",
+    selector: "[data-testid='tab-inquiries']",
     position: "bottom"
   },
   {
     id: "orders-tab",
     title: "Your Orders",
     description: "Track all your confirmed orders and their status. You can see order details and buyer information.",
-    selector: "button:has-text('Orders')",
+    selector: "[data-testid='tab-orders']",
     position: "bottom"
   },
   {
@@ -159,7 +159,7 @@ export const adminTutorialSteps: TutorialStep[] = [
     id: "payment-history",
     title: "Payment Tracking",
     description: "Monitor all membership payments and transaction history across the platform.",
-    selector: "button:has-text('Payment History')",
+    selector: "[data-testid='tab-payment-history']",
     position: "bottom"
   }
 ];
