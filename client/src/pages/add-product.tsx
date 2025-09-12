@@ -404,7 +404,9 @@ export default function AddDeal() {
         deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
         stock_description: stockDescription,
         search_key: searchKey,
-        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+        deal_description: data.Seller_comments || (isCraftMake(data.makeText) 
+          ? `${data.Deckle_mm}x${data.grain_text}, ${data.GSM}GSM`
+          : `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`),
         price: data.OfferPrice,
         quantity: data.quantity,
         unit: data.OfferUnit,
@@ -412,7 +414,9 @@ export default function AddDeal() {
         deal_specifications: {
           GSM: data.GSM,
           Deckle_mm: data.Deckle_mm,
-          grain_mm: data.grain_mm,
+          ...(isCraftMake(data.makeText) 
+            ? { grain_text: data.grain_text } 
+            : { grain_mm: data.grain_mm }),
         },
         location: 'India',
       };
@@ -441,6 +445,7 @@ export default function AddDeal() {
           GSM: "" as any,
           Deckle_mm: "" as any,
           grain_mm: "" as any,
+          grain_text: "",
           OfferPrice: "" as any,
           OfferUnit: "",
           quantity: "" as any,
