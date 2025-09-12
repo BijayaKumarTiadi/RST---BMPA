@@ -181,7 +181,12 @@ class DealService {
     offset?: number;
   }): Promise<{ deals: Deal[]; total: number }> {
     try {
-      let whereConditions = ['d.StockStatus = 1']; // Only show available deals (1 = Available for sale)
+      // If seller_id is provided (seller viewing their own products), don't filter by StockStatus
+      // Otherwise, only show available deals to regular users
+      let whereConditions: string[] = [];
+      if (!filters?.seller_id) {
+        whereConditions.push('d.StockStatus = 1'); // Only show available deals for marketplace
+      }
       let params: any[] = [];
 
       if (filters?.group_id) {
