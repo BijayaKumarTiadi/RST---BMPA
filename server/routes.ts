@@ -1092,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Orders - fetch from MySQL orders table
+  // Orders/Inquiries - fetch from MySQL inquiries table (used for tabs display)
   app.get('/api/orders', async (req: any, res) => {
     try {
       // Check if user is authenticated via session (not Replit auth)
@@ -1106,61 +1106,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const memberId = req.session.memberId;
       const role = req.query.role as 'buyer' | 'seller' || 'seller';
       
-      console.log(`🔍 Fetching orders for member ${memberId} with role ${role}`);
+      console.log(`🔍 Fetching inquiries for member ${memberId} with role ${role}`);
       
       let orders = [];
       
       if (role === 'seller') {
-        // Get actual orders where this member is the seller
+        // Get inquiries where this member is the seller (inquiries received FROM buyers)
         orders = await executeQuery(`
           SELECT 
-            o.*,
+            i.*,
+            i.product_id as deal_id,
             d.Seller_comments as product_title,
             d.OfferPrice,
-            d.TransID as deal_id,
-            bm.mname as buyer_name,
-            bm.company_name as buyer_company,
-            bm.email as buyer_email
-          FROM BMPA_orders o
-          LEFT JOIN deal_master d ON o.deal_id = d.TransID
-          LEFT JOIN bmpa_members bm ON o.buyer_id = bm.member_id
-          WHERE o.seller_id = ?
-          ORDER BY o.created_at DESC
+            d.TransID,
+            i.buyer_name,
+            i.buyer_company,
+            i.buyer_email,
+            i.quoted_price,
+            i.quantity,
+            i.message,
+            i.status
+          FROM BMPA_inquiries i
+          LEFT JOIN deal_master d ON i.product_id = d.TransID
+          WHERE d.memberID = ? OR d.created_by_member_id = ? OR i.seller_id = ?
+          ORDER BY i.created_at DESC
+        `, [memberId, memberId, memberId]);
+        
+      } else if (role === 'buyer') {
+        // Get inquiries sent BY this member TO sellers (Counter Offers)
+        // First get the member's email to match inquiries
+        const memberInfo = await executeQuerySingle(`
+          SELECT email FROM bmpa_members WHERE member_id = ?
         `, [memberId]);
-
-        // If no orders found, also include inquiries for backward compatibility
-        if (orders.length === 0) {
+        
+        if (memberInfo && memberInfo.email) {
           orders = await executeQuery(`
             SELECT 
               i.*,
+              i.product_id as deal_id,
               d.Seller_comments as product_title,
               d.OfferPrice,
-              d.TransID as deal_id,
+              d.TransID,
               m.mname as seller_name,
-              m.company_name as seller_company
+              m.company_name as seller_company,
+              i.quoted_price,
+              i.quantity,
+              i.message,
+              i.status
             FROM BMPA_inquiries i
             LEFT JOIN deal_master d ON i.product_id = d.TransID
             LEFT JOIN bmpa_members m ON d.memberID = m.member_id
-            WHERE d.memberID = ? OR d.created_by_member_id = ?
+            WHERE i.buyer_email = ? OR i.buyer_id = ?
             ORDER BY i.created_at DESC
-          `, [memberId, memberId]);
+          `, [memberInfo.email, memberId]);
         }
-      } else if (role === 'buyer') {
-        // Get orders where this member is the buyer
-        orders = await executeQuery(`
-          SELECT 
-            o.*,
-            d.Seller_comments as product_title,
-            d.OfferPrice,
-            d.TransID as deal_id,
-            sm.mname as seller_name,
-            sm.company_name as seller_company
-          FROM BMPA_orders o
-          LEFT JOIN deal_master d ON o.deal_id = d.TransID
-          LEFT JOIN bmpa_members sm ON o.seller_id = sm.member_id
-          WHERE o.buyer_id = ?
-          ORDER BY o.created_at DESC
-        `, [memberId]);
       }
 
       // Format orders for frontend
