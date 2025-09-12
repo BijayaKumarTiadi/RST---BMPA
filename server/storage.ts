@@ -7,6 +7,7 @@ import {
   otpVerifications,
   payments,
   searchQueries,
+  inquiries,
   type User,
   type UpsertUser,
   type StockListing,
@@ -20,6 +21,8 @@ import {
   type InsertOtpVerification,
   type Payment,
   type SearchQuery,
+  type Inquiry,
+  type InsertInquiry,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, ilike, count, sql } from "drizzle-orm";
@@ -76,6 +79,13 @@ export interface IStorage {
     paymentType: string;
     metadata?: any;
   }): Promise<Payment>;
+  
+  // Inquiry operations
+  getInquiriesBySeller(sellerId: string): Promise<Inquiry[]>;
+  getInquiriesByBuyer(buyerId: string): Promise<Inquiry[]>;
+  createInquiry(data: InsertInquiry & { buyerId: string; sellerId: string }): Promise<Inquiry>;
+  markInquiryAsRead(id: string): Promise<Inquiry | undefined>;
+  updateInquiryStatus(id: string, status: string): Promise<Inquiry | undefined>;
   
   // Analytics
   getAnalytics(userId?: string): Promise<{
@@ -409,6 +419,51 @@ export class DatabaseStorage implements IStorage {
       .values(data)
       .returning();
     return searchQuery;
+  }
+
+  // Inquiry operations
+  async getInquiriesBySeller(sellerId: string): Promise<Inquiry[]> {
+    const result = await db
+      .select()
+      .from(inquiries)
+      .where(eq(inquiries.sellerId, sellerId))
+      .orderBy(desc(inquiries.createdAt));
+    return result;
+  }
+
+  async getInquiriesByBuyer(buyerId: string): Promise<Inquiry[]> {
+    const result = await db
+      .select()
+      .from(inquiries)
+      .where(eq(inquiries.buyerId, buyerId))
+      .orderBy(desc(inquiries.createdAt));
+    return result;
+  }
+
+  async createInquiry(data: InsertInquiry & { buyerId: string; sellerId: string }): Promise<Inquiry> {
+    const [inquiry] = await db
+      .insert(inquiries)
+      .values(data)
+      .returning();
+    return inquiry;
+  }
+
+  async markInquiryAsRead(id: string): Promise<Inquiry | undefined> {
+    const [inquiry] = await db
+      .update(inquiries)
+      .set({ isRead: true })
+      .where(eq(inquiries.id, id))
+      .returning();
+    return inquiry;
+  }
+
+  async updateInquiryStatus(id: string, status: string): Promise<Inquiry | undefined> {
+    const [inquiry] = await db
+      .update(inquiries)
+      .set({ status })
+      .where(eq(inquiries.id, id))
+      .returning();
+    return inquiry;
   }
 }
 

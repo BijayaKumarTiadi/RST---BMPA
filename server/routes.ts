@@ -1883,6 +1883,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // New Drizzle-based inquiry routes for seller dashboard
+  
+  // Get inquiries received by seller
+  app.get('/api/inquiries/seller', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.replit?.user?.id;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const inquiries = await storage.getInquiriesBySeller(sellerId);
+      res.json({ success: true, inquiries });
+    } catch (error) {
+      console.error('Error fetching seller inquiries:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch inquiries' 
+      });
+    }
+  });
+
+  // Get inquiries sent by buyer
+  app.get('/api/inquiries/buyer', requireAuth, async (req: any, res) => {
+    try {
+      const buyerId = req.session.replit?.user?.id;
+      
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const inquiries = await storage.getInquiriesByBuyer(buyerId);
+      res.json({ success: true, inquiries });
+    } catch (error) {
+      console.error('Error fetching buyer inquiries:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch inquiries' 
+      });
+    }
+  });
+
+  // Create new inquiry
+  app.post('/api/inquiries', requireAuth, async (req: any, res) => {
+    try {
+      const buyerId = req.session.replit?.user?.id;
+      
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const inquiryData = req.body;
+      
+      // Get stock listing to find seller
+      const stockListing = await storage.getStockListingById(inquiryData.stockListingId);
+      if (!stockListing) {
+        return res.status(404).json({
+          success: false,
+          message: 'Stock listing not found'
+        });
+      }
+
+      const inquiry = await storage.createInquiry({
+        ...inquiryData,
+        buyerId,
+        sellerId: stockListing.sellerId
+      });
+
+      res.json({ success: true, inquiry });
+    } catch (error) {
+      console.error('Error creating inquiry:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create inquiry' 
+      });
+    }
+  });
+
+  // Mark inquiry as read
+  app.patch('/api/inquiries/:id/read', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const inquiry = await storage.markInquiryAsRead(id);
+      
+      if (!inquiry) {
+        return res.status(404).json({
+          success: false,
+          message: 'Inquiry not found'
+        });
+      }
+
+      res.json({ success: true, inquiry });
+    } catch (error) {
+      console.error('Error marking inquiry as read:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to update inquiry' 
+      });
+    }
+  });
+
+  // Update inquiry status
+  app.patch('/api/inquiries/:id/status', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      const inquiry = await storage.updateInquiryStatus(id, status);
+      
+      if (!inquiry) {
+        return res.status(404).json({
+          success: false,
+          message: 'Inquiry not found'
+        });
+      }
+
+      res.json({ success: true, inquiry });
+    } catch (error) {
+      console.error('Error updating inquiry status:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to update inquiry status' 
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
