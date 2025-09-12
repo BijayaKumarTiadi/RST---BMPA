@@ -41,7 +41,8 @@ const dealSchema = z.object({
   brandText: z.string().optional(), // Optional at base level
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
-  grain_mm: z.coerce.number().min(1, "Grain is required"),
+  grain_mm: z.coerce.number().optional(), // Optional - used for non-craft products
+  grain_text: z.string().optional(), // Optional - used for craft products  
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -55,6 +56,27 @@ const dealSchema = z.object({
       message: "Brand is required",
       path: ["brandText"]
     });
+  }
+  
+  // Conditional grain validation
+  if (isCraftMake(data.makeText)) {
+    // For craft products, require grain_text to be "Craft Paper B.S."
+    if (!data.grain_text || data.grain_text !== "Craft Paper B.S.") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain text is required for craft products",
+        path: ["grain_text"]
+      });
+    }
+  } else {
+    // For non-craft products, require numeric grain_mm
+    if (!data.grain_mm || data.grain_mm <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain is required",
+        path: ["grain_mm"]
+      });
+    }
   }
 });
 
@@ -176,6 +198,7 @@ export default function AddDeal() {
       GSM: "" as any,
       Deckle_mm: "" as any,
       grain_mm: "" as any,
+      grain_text: "",
       OfferPrice: "" as any,
       OfferUnit: "",
       quantity: "" as any, // No default value
@@ -207,7 +230,7 @@ export default function AddDeal() {
     }
   }, [userSettings, dimensionUnit]);
   
-  // Handle craft reel/craft paper B.S. auto-grade setting
+  // Handle craft reel/craft paper B.S. auto-grade and grain setting
   useEffect(() => {
     if (currentMakeText && isCraftMake(currentMakeText)) {
       // Auto-set Grade to "Craft Paper" if empty or previously auto-set
@@ -217,12 +240,23 @@ export default function AddDeal() {
         setGradeText("Craft Paper");
         setIsGradeAutoSet(true);
       }
+      
+      // Auto-set Grain to "Craft Paper B.S." for craft products
+      form.setValue("grain_text", "Craft Paper B.S.");
+      form.setValue("grain_mm", "" as any); // Clear numeric grain
+      setGrainInputValue(""); // Clear input display
+      
     } else if (isGradeAutoSet && currentGradeText === "Craft Paper") {
       // Clear auto-set grade when not craft type anymore
       form.setValue("gradeText", "");
       form.setValue("GradeID", "");
       setGradeText("");
       setIsGradeAutoSet(false);
+      
+      // Clear grain text and enable numeric grain input
+      form.setValue("grain_text", "");
+      form.setValue("grain_mm", "" as any);
+      setGrainInputValue("");
     }
   }, [currentMakeText, currentGradeText, isGradeAutoSet, form]);
 
@@ -694,33 +728,57 @@ export default function AddDeal() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="grain_mm"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            Grain ({dimensionUnit}) <span className="text-red-500">*</span>
-                            {grainInputValue && (
-                              <span className="text-xs text-muted-foreground ml-2">
-                                = {getGrainDimensions()}
-                              </span>
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder={dimensionUnit === "cm" ? "100" : "39.37"} 
-                              value={grainInputValue}
-                              onChange={(e) => handleGrainChange(e.target.value)}
-                              data-testid="input-grain"
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Conditional Grain Field */}
+                    {isCraftMake(currentMakeText) ? (
+                      <FormField
+                        control={form.control}
+                        name="grain_text"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">
+                              Grain <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <div 
+                                className="flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground"
+                                data-testid="text-grain-craft"
+                              >
+                                Craft Paper B.S.
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="grain_mm"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">
+                              Grain ({dimensionUnit}) <span className="text-red-500">*</span>
+                              {grainInputValue && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  = {getGrainDimensions()}
+                                </span>
+                              )}
+                            </FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder={dimensionUnit === "cm" ? "100" : "39.37"} 
+                                value={grainInputValue}
+                                onChange={(e) => handleGrainChange(e.target.value)}
+                                data-testid="input-grain"
+                                className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormItem>
                       <FormLabel className="text-foreground">Dimension Unit</FormLabel>
