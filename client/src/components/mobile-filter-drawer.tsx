@@ -19,7 +19,7 @@ interface MobileFilterDrawerProps {
   availableGsm: any[];
   availableLocations: any[];
   onSearchChange: (value: string) => void;
-  onFilterChange: (type: string, value: any, checked?: boolean) => void;
+  onFilterChange: (type: string, value: string, checked: boolean) => void;
   onRangeFilterChange: (type: string, range: any) => void;
   onSortChange: (value: string) => void;
   onApplySearch: () => void;
