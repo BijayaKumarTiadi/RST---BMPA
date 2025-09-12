@@ -654,7 +654,6 @@ export default function AddDeal() {
                               valueField="gradeID"
                               testId="input-grade"
                               allowFreeText={true}
-                              disabled={isKraftReelGroup(currentGroupName || '')}
                             />
                           </FormControl>
                           <FormMessage />
@@ -694,7 +693,6 @@ export default function AddDeal() {
                               valueField="brandID"
                               testId="input-brand"
                               allowFreeText={true}
-                              disabled={isKraftReelGroup(currentGroupName || '')}
                             />
                           </FormControl>
                           <FormMessage />
