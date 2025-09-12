@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from 'express-session';
-import MySQLStore from 'express-mysql-session';
+import connectPgSimple from 'connect-pg-simple';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./database";
@@ -11,32 +11,22 @@ const app = express();
 // Initialize database
 initializeDatabase().catch(console.error);
 
-// Setup session store with in-memory fallback for admin
+// Setup session store with PostgreSQL
 import MemoryStore from 'memorystore';
 const MemStore = MemoryStore(session);
+const PgSession = connectPgSimple(session);
 
 let sessionStore;
 try {
-  // Try to use MySQL store for regular user sessions
-  const MySQLStoreSession = MySQLStore(session);
-  sessionStore = new MySQLStoreSession({
-    host: '103.155.204.186',
-    port: 3306,
-    user: 'manish',
-    password: 'manish',
-    database: 'spmis2425ppm',
-    createDatabaseTable: true,
-    schema: {
-      tableName: 'bmpa_sessions',
-      columnNames: {
-        session_id: 'session_id',
-        expires: 'expires_at',
-        data: 'session_data'
-      }
-    }
+  // Use PostgreSQL store for sessions (BMPS_sessions table)
+  sessionStore = new PgSession({
+    tableName: 'BMPS_sessions',
+    createTableIfMissing: true,
+    conString: process.env.DATABASE_URL,
   });
+  console.log('✅ PostgreSQL session store initialized');
 } catch (error) {
-  console.log('⚠️ MySQL session store failed, using memory store');
+  console.log('⚠️ PostgreSQL session store failed, using memory store:', error);
   sessionStore = new MemStore({
     checkPeriod: 86400000 // prune expired entries every 24h
   });
