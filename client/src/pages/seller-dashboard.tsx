@@ -114,6 +114,19 @@ export default function SellerDashboard() {
     enabled: isAuthenticated && !!user?.id,
   });
 
+  // Fetch inquiries sent by current user (for Counter Offers tab)
+  const { data: buyerInquiries, isLoading: buyerInquiriesLoading } = useQuery({
+    queryKey: ["/api/inquiries/buyer"],
+    queryFn: async () => {
+      const response = await fetch(`/api/inquiries/buyer`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch buyer inquiries');
+      return response.json();
+    },
+    enabled: isAuthenticated && !!user?.id,
+  });
+
   // Mark deal as sold mutation
   const markAsSoldMutation = useMutation({
     mutationFn: async (dealId: string) => {
@@ -784,17 +797,119 @@ export default function SellerDashboard() {
           <TabsContent value="counter-offers" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
-                <CardTitle className="text-foreground">Counter Offers Management</CardTitle>
+                <CardTitle className="text-foreground">My Sent Inquiries</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Manage counter offers and negotiations with buyers
+                  Track inquiries you have sent to other sellers
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="text-center py-12">
-                  <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">Counter Offers Coming Soon</h3>
-                  <p className="text-muted-foreground">Counter offer functionality will be available in a future update</p>
-                </div>
+                {buyerInquiriesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                  </div>
+                ) : !buyerInquiries?.inquiries || buyerInquiries.inquiries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No sent inquiries yet</h3>
+                    <p className="text-muted-foreground">Inquiries you send to other sellers will appear here</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted border-b-4 border-primary/20">
+                        <TableHead className="font-semibold text-foreground">Inquiry ID</TableHead>
+                        <TableHead className="font-semibold text-foreground">Seller</TableHead>
+                        <TableHead className="font-semibold text-foreground">Product</TableHead>
+                        <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
+                        <TableHead className="font-semibold text-foreground">Quantity</TableHead>
+                        <TableHead className="font-semibold text-foreground">Status</TableHead>
+                        <TableHead className="font-semibold text-foreground">Date</TableHead>
+                        <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {buyerInquiries.inquiries.map((inquiry: any) => (
+                        <TableRow 
+                          key={inquiry.id} 
+                          className="hover:bg-muted/50 transition-colors"
+                          data-testid={`sent-inquiry-row-${inquiry.id}`}
+                        >
+                          <TableCell className="py-4">
+                            <div className="font-medium text-foreground" data-testid={`sent-inquiry-id-${inquiry.id}`}>
+                              #{inquiry.id?.slice(0, 8)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium text-foreground">
+                              {inquiry.sellerName || 'Unknown Seller'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-foreground">
+                              {inquiry.productTitle || '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-semibold text-foreground" data-testid={`sent-inquiry-price-${inquiry.id}`}>
+                              {inquiry.quotedPrice ? `₹${inquiry.quotedPrice}` : '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-foreground">
+                              {inquiry.quantity || '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              className={
+                                inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                inquiry.status === 'converted' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
+                              }
+                              data-testid={`sent-inquiry-status-${inquiry.id}`}
+                            >
+                              {inquiry.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-foreground">
+                              {new Date(inquiry.createdAt).toLocaleDateString('en-IN')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  // TODO: Add sent inquiry details modal
+                                  alert(`Sent inquiry details:\n\nSeller: ${inquiry.sellerName || 'Unknown'}\nProduct: ${inquiry.productTitle || 'Not specified'}\nQuoted Price: ${inquiry.quotedPrice || 'Not provided'}\nQuantity: ${inquiry.quantity || 'Not specified'}\nMessage: ${inquiry.message || 'No message'}`);
+                                }}
+                                data-testid={`button-view-sent-${inquiry.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              
+                              {inquiry.sellerEmail && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => window.location.href = `mailto:${inquiry.sellerEmail}?subject=Follow up on inquiry&body=Dear Seller,%0D%0A%0D%0AI would like to follow up on my inquiry.%0D%0A%0D%0ABest regards`}
+                                  data-testid={`button-followup-${inquiry.id}`}
+                                >
+                                  <MessageCircle className="h-4 w-4 mr-1" />
+                                  Follow Up
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
