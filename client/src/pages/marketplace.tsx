@@ -18,6 +18,8 @@ import ProductDetailsModal from "@/components/product-details-modal";
 import InquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
 import PowerSearch from "@/components/power-search";
+import { MobileFilterDrawer } from "@/components/mobile-filter-drawer";
+import { QuickFilterChips } from "@/components/quick-filter-chips";
 
 export default function Marketplace() {
   const { user, isAuthenticated } = useAuth();
@@ -1306,8 +1308,41 @@ export default function Marketplace() {
           </div>
         )}
 
-        {/* Mobile Filter Button */}
-        <div className="lg:hidden mb-4">
+        {/* Quick Filter Chips for Mobile */}
+        <QuickFilterChips
+          appliedFilters={appliedFilters}
+          onRemoveFilter={removeFilter}
+          onClearRange={(type) => setRangeFilter(type, { min: '', max: '' })}
+          onClearAll={clearAllFilters}
+        />
+
+        {/* Mobile Filter Drawer */}
+        {isMobile && (
+          <MobileFilterDrawer
+            appliedFilters={appliedFilters}
+            pendingSearchTerm={pendingSearchTerm}
+            sortBy={sortBy}
+            availableMakes={availableMakes}
+            availableGrades={availableGrades}
+            availableBrands={availableBrands}
+            availableGsm={availableGsm}
+            availableLocations={availableLocations}
+            onSearchChange={handleSearchChange}
+            onFilterChange={handleFilterChange}
+            onRangeFilterChange={setRangeFilter}
+            onSortChange={setSortBy}
+            onApplySearch={applySearch}
+            onClearFilters={clearAllFilters}
+            clientFilters={clientFilters}
+            searchAggregations={searchAggregations}
+            searchResults={searchResults}
+            allPreciseSearchResults={allPreciseSearchResults}
+            getUniqueValues={getUniqueValues}
+          />
+        )}
+
+        {/* Old Mobile Filter Button - Hidden */}
+        <div className="hidden">
           <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" className="w-full">
@@ -1785,7 +1820,7 @@ export default function Marketplace() {
           <div className="flex-1 min-w-0">
             {/* Results */}
             {dealsLoading || hierarchyLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 pb-20 lg:pb-0">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <div className="h-48 bg-muted rounded-t-lg"></div>
