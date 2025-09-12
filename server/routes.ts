@@ -1240,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (emailSent) {
-        // Log the inquiry to BMPA_inquiries table for tracking
+        // Log the inquiry to both tables for tracking
         try {
           // First, get the seller_id from the product/deal
           const dealQuery = await executeQuerySingle(`
@@ -1249,9 +1249,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const sellerId = dealQuery?.memberID || null;
           
-          // Insert inquiry with both buyer and seller tracking
+          // Generate unique inquiry reference
+          const inquiryRef = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Insert into BMPA_inquiries (for the buyer - Counter Offers tab)
           await executeQuery(`
             INSERT INTO BMPA_inquiries (
+              inquiry_ref,
               product_id, 
               buyer_id,
               buyer_name, 
@@ -1267,8 +1271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status,
               created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
           `, [
+            inquiryRef,
             productId,
             buyerId, // Use the authenticated user's ID
             buyerName,
@@ -1283,7 +1288,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || null
           ]);
           
-          console.log('✅ Inquiry logged to BMPA_inquiries table with buyer and seller tracking');
+          // Insert into bmpa_received_inquiries (for the seller - Inquiries tab)
+          await executeQuery(`
+            INSERT INTO bmpa_received_inquiries (
+              inquiry_ref,
+              seller_id,
+              buyer_id,
+              buyer_name,
+              buyer_email,
+              buyer_company,
+              buyer_phone,
+              product_id,
+              product_title,
+              price_offered,
+              quantity,
+              message,
+              status,
+              created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
+          `, [
+            inquiryRef,
+            sellerId,
+            buyerId,
+            buyerName,
+            buyerEmail,
+            buyerCompany || null,
+            buyerPhone || null,
+            productId,
+            productTitle || '',
+            buyerQuotedPrice || null,
+            quantity || null,
+            message || null
+          ]);
+          
+          console.log('✅ Inquiry logged to both BMPA_inquiries and bmpa_received_inquiries tables');
           
           // Update buyer's inquiry count in their profile
           await executeQuery(`
@@ -1350,21 +1389,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get inquiries for deals that belong to this seller
+      // Get inquiries received by this seller from bmpa_received_inquiries table
       const inquiries = await executeQuery(`
         SELECT 
           i.*,
-          d.Seller_comments as product_title,
+          d.Seller_comments as product_details,
           d.OfferPrice,
           d.TransID as deal_id,
           m.mname as seller_name,
           m.company_name as seller_company
-        FROM BMPA_inquiries i
+        FROM bmpa_received_inquiries i
         LEFT JOIN deal_master d ON i.product_id = d.TransID
-        LEFT JOIN bmpa_members m ON d.memberID = m.member_id
-        WHERE d.memberID = ? OR d.created_by_member_id = ?
+        LEFT JOIN bmpa_members m ON i.seller_id = m.member_id
+        WHERE i.seller_id = ?
         ORDER BY i.created_at DESC
-      `, [sellerId, sellerId]);
+      `, [sellerId]);
 
       res.json({ success: true, inquiries });
     } catch (error) {
@@ -1388,23 +1427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get the member's email to match against buyer_email in inquiries
-      const member = await executeQuerySingle(`
-        SELECT email FROM bmpa_members WHERE member_id = ?
-      `, [buyerId]);
-
-      if (!member) {
-        return res.status(404).json({
-          success: false,
-          message: 'Member not found'
-        });
-      }
-
-      // Get inquiries sent by this buyer (using their email)
+      // Get inquiries sent by this buyer from BMPA_inquiries table
       const inquiries = await executeQuery(`
         SELECT 
           i.*,
-          d.Seller_comments as product_title,
+          d.Seller_comments as product_details,
           d.OfferPrice,
           d.TransID as deal_id,
           sm.mname as seller_name,
@@ -1412,10 +1439,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sm.email as seller_email
         FROM BMPA_inquiries i
         LEFT JOIN deal_master d ON i.product_id = d.TransID
-        LEFT JOIN bmpa_members sm ON d.memberID = sm.member_id
-        WHERE i.buyer_email = ?
+        LEFT JOIN bmpa_members sm ON i.seller_id = sm.member_id
+        WHERE i.buyer_id = ?
         ORDER BY i.created_at DESC
-      `, [member.email]);
+      `, [buyerId]);
 
       res.json({ success: true, inquiries });
     } catch (error) {
