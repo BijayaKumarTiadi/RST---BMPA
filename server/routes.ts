@@ -1244,7 +1244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // First, get the seller_id from the product/deal
           const dealQuery = await executeQuerySingle(`
-            SELECT memberID FROM deal WHERE TransID = ?
+            SELECT memberID FROM deal_master WHERE TransID = ?
           `, [productId]);
           
           const sellerId = dealQuery?.memberID || null;
