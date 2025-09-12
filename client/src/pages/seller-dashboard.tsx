@@ -188,9 +188,9 @@ export default function SellerDashboard() {
   const getStatusText = (stockStatus: number) => {
     switch (stockStatus) {
       case 0: return 'Inactive';
-      case 1: return 'Available';
+      case 1: return 'Active';
       case 2: return 'Sold';
-      default: return 'Available';
+      default: return 'Active';
     }
   };
 
@@ -198,7 +198,7 @@ export default function SellerDashboard() {
   const getStatusColor = (stockStatus: number) => {
     switch (stockStatus) {
       case 0: return 'bg-gray-100 text-gray-700'; // Inactive
-      case 1: return 'bg-green-100 text-green-700'; // Available
+      case 1: return 'bg-green-100 text-green-700'; // Active
       case 2: return 'bg-red-100 text-red-700'; // Sold
       default: return 'bg-green-100 text-green-700';
     }
@@ -209,15 +209,18 @@ export default function SellerDashboard() {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = searchTerm === "" || 
                          deal.Seller_comments?.toLowerCase().includes(searchLower) ||
+                         deal.stock_description?.toLowerCase().includes(searchLower) ||
                          deal.GroupName?.toLowerCase().includes(searchLower) ||
                          deal.Make?.toLowerCase().includes(searchLower) ||
                          deal.Grade?.toLowerCase().includes(searchLower) ||
                          deal.Brand?.toLowerCase().includes(searchLower) ||
                          deal.GSM?.toString().includes(searchTerm) ||
+                         deal.Deckle_mm?.toString().includes(searchTerm) ||
+                         deal.grain_mm?.toString().includes(searchTerm) ||
                          deal.TransID.toString().includes(searchTerm) ||
                          deal.category_name?.toLowerCase().includes(searchLower);
     
-    const stockStatus = deal.StockStatus || 1; // Default to Available if null
+    const stockStatus = deal.StockStatus || 1; // Default to Active if null
     const matchesStatus = statusFilter === "all" || 
                          (statusFilter === "active" && stockStatus === 1) ||
                          (statusFilter === "sold" && stockStatus === 2) ||
@@ -350,7 +353,7 @@ export default function SellerDashboard() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Available</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="sold">Sold</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
