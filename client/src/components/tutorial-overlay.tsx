@@ -108,7 +108,7 @@ export function TutorialOverlay({ steps, onComplete, storageKey = "tutorial_comp
         data-testid="button-tutorial-help"
       >
         <HelpCircle className="h-4 w-4 mr-2" />
-        Help Tour
+        Platform Guide
       </Button>
     );
   }
