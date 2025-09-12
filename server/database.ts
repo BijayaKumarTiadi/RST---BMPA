@@ -431,15 +431,34 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ User identification columns added to deal_master successfully');
     }
 
-    // Check if BMPA_inquiries table exists
-    const inquiriesTableExists = await executeQuerySingle(`
+    // Check if we need to rename inquiries table to BMPA_inquiries
+    const oldInquiriesExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'inquiries'
+    `);
+
+    const newInquiriesExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
       AND table_name = 'BMPA_inquiries'
     `);
 
-    if (!inquiriesTableExists || inquiriesTableExists.count === 0) {
+    if (oldInquiriesExists && oldInquiriesExists.count > 0) {
+      if (newInquiriesExists && newInquiriesExists.count > 0) {
+        // Drop the new empty BMPA_inquiries table if it exists
+        console.log('🗑️ Dropping empty BMPA_inquiries table...');
+        await executeQuery('DROP TABLE BMPA_inquiries');
+      }
+      
+      // Rename the existing inquiries table to BMPA_inquiries
+      console.log('🔄 Renaming inquiries table to BMPA_inquiries...');
+      await executeQuery('RENAME TABLE inquiries TO BMPA_inquiries');
+      console.log('✅ Successfully renamed inquiries table to BMPA_inquiries');
+    } else if (!newInquiriesExists || newInquiriesExists.count === 0) {
+      // Create BMPA_inquiries table if neither exists
       console.log('📧 Creating BMPA_inquiries table...');
       await executeQuery(`
         CREATE TABLE BMPA_inquiries (

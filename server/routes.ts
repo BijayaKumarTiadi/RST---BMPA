@@ -1275,6 +1275,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get inquiries received by seller (MySQL)
+  app.get('/api/inquiries/seller', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Get inquiries for deals that belong to this seller
+      const inquiries = await executeQuery(`
+        SELECT 
+          i.*,
+          d.Seller_comments as product_title,
+          d.OfferPrice,
+          d.TransID as deal_id,
+          m.mname as seller_name,
+          m.company_name as seller_company
+        FROM BMPA_inquiries i
+        LEFT JOIN deal_master d ON i.product_id = d.TransID
+        LEFT JOIN bmpa_members m ON d.memberID = m.member_id
+        WHERE d.memberID = ? OR d.created_by_member_id = ?
+        ORDER BY i.created_at DESC
+      `, [sellerId, sellerId]);
+
+      res.json({ success: true, inquiries });
+    } catch (error) {
+      console.error('Error fetching seller inquiries:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch inquiries' 
+      });
+    }
+  });
+
+  // Get inquiries sent by buyer (MySQL) - Counter Offers
+  app.get('/api/inquiries/buyer', requireAuth, async (req: any, res) => {
+    try {
+      const buyerId = req.session.memberId;
+      
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Get the member's email to match against buyer_email in inquiries
+      const member = await executeQuerySingle(`
+        SELECT email FROM bmpa_members WHERE member_id = ?
+      `, [buyerId]);
+
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: 'Member not found'
+        });
+      }
+
+      // Get inquiries sent by this buyer (using their email)
+      const inquiries = await executeQuery(`
+        SELECT 
+          i.*,
+          d.Seller_comments as product_title,
+          d.OfferPrice,
+          d.TransID as deal_id,
+          sm.mname as seller_name,
+          sm.company_name as seller_company,
+          sm.email as seller_email
+        FROM BMPA_inquiries i
+        LEFT JOIN deal_master d ON i.product_id = d.TransID
+        LEFT JOIN bmpa_members sm ON d.memberID = sm.member_id
+        WHERE i.buyer_email = ?
+        ORDER BY i.created_at DESC
+      `, [member.email]);
+
+      res.json({ success: true, inquiries });
+    } catch (error) {
+      console.error('Error fetching buyer inquiries:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch inquiries' 
+      });
+    }
+  });
+
   // Create HTTP server
   return createServer(app);
 }
