@@ -40,13 +40,13 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
     try {
       const emailData = {
         to: deal.seller_email || `seller${deal.memberID}@stocklaabh.com`, // Default email format
-        subject: `Inquiry for Product: ${deal.DealTitle} (ID: ${deal.TransID})`,
+        subject: `Inquiry for Product: ${deal.stock_description || deal.DealTitle || `${deal.MakeName || ''} ${deal.BrandName || ''} ${deal.GradeName || ''}`.trim() || 'Product'}`,
         buyerName: formData.buyerName,
         buyerCompany: formData.buyerCompany,
         buyerEmail: formData.buyerEmail,
         buyerPhone: formData.buyerPhone,
         productId: deal.TransID,
-        productTitle: deal.DealTitle,
+        productTitle: deal.stock_description || deal.DealTitle || `${deal.MakeName || ''} ${deal.BrandName || ''} ${deal.GradeName || ''}`.trim() || 'Product',
         productDetails: {
           make: deal.MakeName,
           grade: deal.GradeName,

@@ -488,11 +488,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Product:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.productTitle}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Product ID:</td>
-                <td style="padding: 8px 0; color: #1f2937;">#${data.productId}</td>
+                <td style="padding: 8px 0; color: #1f2937;">${data.productTitle || 'Product'}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Your Price:</td>
