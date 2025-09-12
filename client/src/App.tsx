@@ -46,35 +46,61 @@ function Router() {
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/register" component={Register} />
       
-      {/* Routes that require authentication */}
-      {isAuthenticated ? (
-        <>
-          <Route path="/" component={Marketplace} />
-          <Route path="/home" component={Home} />
-          <Route path="/marketplace" component={Marketplace} />
-          <Route path="/buyer-dashboard" component={BuyerDashboard} />
-          <Route path="/seller-dashboard" component={SellerDashboard} />
-          <Route path="/add-product" component={AddProduct} />
-          <Route path="/edit-deal/:id" component={EditProduct} />
-          <Route path="/edit-product/:id" component={EditProduct} />
-          <Route path="/product/:id" component={ProductDetails} />
-          <Route path="/orders" component={Orders} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/membership" component={Membership} />
-          <Route path="/api-docs" component={ApiDocs} />
-          <Route path="/welcome" component={Landing} />
-          <Route path="/subscribe" component={Subscribe} />
-          <Route path="/about" component={About} />
-          <Route component={NotFound} />
-        </>
-      ) : (
-        <>
-          {/* Redirect all unauthenticated users to login */}
-          <Route path="/" component={Login} />
-          <Route component={Login} />
-        </>
-      )}
+      {/* Protected routes - require authentication */}
+      <Route path="/">
+        {isAuthenticated ? <Marketplace /> : <Login />}
+      </Route>
+      <Route path="/home">
+        {isAuthenticated ? <Home /> : <Login />}
+      </Route>
+      <Route path="/marketplace">
+        {isAuthenticated ? <Marketplace /> : <Login />}
+      </Route>
+      <Route path="/buyer-dashboard">
+        {isAuthenticated ? <BuyerDashboard /> : <Login />}
+      </Route>
+      <Route path="/seller-dashboard">
+        {isAuthenticated ? <SellerDashboard /> : <Login />}
+      </Route>
+      <Route path="/add-product">
+        {isAuthenticated ? <AddProduct /> : <Login />}
+      </Route>
+      <Route path="/edit-deal/:id">
+        {isAuthenticated ? <EditProduct /> : <Login />}
+      </Route>
+      <Route path="/edit-product/:id">
+        {isAuthenticated ? <EditProduct /> : <Login />}
+      </Route>
+      <Route path="/product/:id">
+        {isAuthenticated ? <ProductDetails /> : <Login />}
+      </Route>
+      <Route path="/orders">
+        {isAuthenticated ? <Orders /> : <Login />}
+      </Route>
+      <Route path="/profile">
+        {isAuthenticated ? <Profile /> : <Login />}
+      </Route>
+      <Route path="/settings">
+        {isAuthenticated ? <Settings /> : <Login />}
+      </Route>
+      <Route path="/membership">
+        {isAuthenticated ? <Membership /> : <Login />}
+      </Route>
+      <Route path="/api-docs">
+        {isAuthenticated ? <ApiDocs /> : <Login />}
+      </Route>
+      <Route path="/welcome">
+        {isAuthenticated ? <Landing /> : <Login />}
+      </Route>
+      <Route path="/subscribe">
+        {isAuthenticated ? <Subscribe /> : <Login />}
+      </Route>
+      <Route path="/about">
+        {isAuthenticated ? <About /> : <Login />}
+      </Route>
+      
+      {/* 404 - Not Found */}
+      <Route component={NotFound} />
     </Switch>
   );
 }
