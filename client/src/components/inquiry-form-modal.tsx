@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Mail, X, Send } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 
 interface InquiryFormModalProps {
   isOpen: boolean;
@@ -80,6 +81,12 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
           title: "Inquiry Sent Successfully!",
           description: "Your inquiry has been sent to the seller. They will contact you soon.",
         });
+        
+        // Invalidate inquiry queries to refresh dashboard immediately
+        await queryClient.invalidateQueries({ queryKey: ['/api/inquiries/buyer'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/inquiries/seller'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/seller/stats'] });
+        
         onClose();
         // Reset form
         setFormData({
