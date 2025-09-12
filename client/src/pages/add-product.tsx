@@ -287,8 +287,14 @@ export default function AddDeal() {
       
       // Auto-select Unit = "Kg" 
       form.setValue("OfferUnit", "Kg");
+    } else {
+      // Clear Kraft Reel specific auto-fills when switching away
+      if (grainInputValue === "B.S.") {
+        setGrainInputValue("");
+        form.setValue("grain_mm", "" as any);
+      }
     }
-  }, [currentGroupName, form]);
+  }, [currentGroupName, form, grainInputValue]);
 
 
   // Fetch stock hierarchy
