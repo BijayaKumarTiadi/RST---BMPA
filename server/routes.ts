@@ -773,10 +773,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasGrade = grade_id || grade_text;
       const hasBrand = brand_id || brand_text;
       
-      if (!group_id || !hasMake || !hasGrade || !hasBrand || !deal_title || !price || !quantity || !unit) {
+      // Check if this is a Kraft Reel group (Brand is optional for Kraft Reel)
+      let isKraftReel = false;
+      if (group_id) {
+        try {
+          const groupResult = await executeQuerySingle('SELECT GroupName FROM stock_groups WHERE GroupID = ?', [group_id]);
+          isKraftReel = groupResult?.GroupName?.toLowerCase().trim() === 'kraft reel';
+        } catch (error) {
+          console.error('Error checking group name:', error);
+        }
+      }
+      
+      // Brand is optional for Kraft Reel, required for all other groups
+      const brandRequired = !isKraftReel;
+      
+      if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !price || !quantity || !unit) {
+        const missingFields = [];
+        if (!group_id) missingFields.push('group_id');
+        if (!hasMake) missingFields.push('make_id');
+        if (!hasGrade) missingFields.push('grade_id');
+        if (brandRequired && !hasBrand) missingFields.push('brand_id');
+        if (!deal_title) missingFields.push('deal_title');
+        if (!price) missingFields.push('price');
+        if (!quantity) missingFields.push('quantity');
+        if (!unit) missingFields.push('unit');
+        
         return res.status(400).json({
           success: false,
-          message: 'Required fields are missing: group_id, make_id, grade_id, brand_id, deal_title, price, quantity, unit'
+          message: `Required fields are missing: ${missingFields.join(', ')}`
         });
       }
 

@@ -47,7 +47,7 @@ const dealSchema = z.object({
   brandText: z.string().optional(), // Optional at base level
   GSM: z.coerce.number().min(1, "GSM is required"),
   Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
-  grain_mm: z.coerce.number().min(1, "Grain is required"),
+  grain_mm: z.coerce.number().min(0, "Grain is required"),
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -65,8 +65,17 @@ const dealSchema = z.object({
     });
   }
   
-  // Brand validation - not required for Kraft Reel or craft makes
-  if (!isKraftReel && !isCraftMake(data.makeText) && (!data.brandText || data.brandText.trim() === '')) {
+  // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
+  if (!isKraftReel && data.grain_mm <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Grain must be greater than 0",
+      path: ["grain_mm"]
+    });
+  }
+
+  // Brand validation - not required for Kraft Reel only
+  if (!isKraftReel && (!data.brandText || data.brandText.trim() === '')) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Brand is required",
@@ -268,6 +277,18 @@ export default function AddDeal() {
       setIsKraftReelAutoSet(false);
     }
   }, [currentGroupName, currentGradeText, isKraftReelAutoSet, form]);
+
+  // Handle Kraft Reel Group specific auto-settings
+  useEffect(() => {
+    if (currentGroupName && isKraftReelGroup(currentGroupName || '')) {
+      // Auto-fill Grain (inch) = "B.S."
+      setGrainInputValue("B.S.");
+      form.setValue("grain_mm", 0); // Set to 0 for "B.S." since it's not a numeric value
+      
+      // Auto-select Unit = "Kg" 
+      form.setValue("OfferUnit", "Kg");
+    }
+  }, [currentGroupName, form]);
 
 
   // Fetch stock hierarchy
