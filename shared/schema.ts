@@ -17,7 +17,7 @@ import { z } from "zod";
 
 // Session storage table for Replit Auth
 export const sessions = pgTable(
-  "sessions",
+  "BMPS_sessions",
   {
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
@@ -33,7 +33,7 @@ export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', '
 export const stockStatusEnum = pgEnum('stock_status', ['available', 'low_stock', 'out_of_stock', 'discontinued']);
 
 // Users table for Replit Auth
-export const users = pgTable("users", {
+export const users = pgTable("BMPS_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
@@ -56,7 +56,7 @@ export const users = pgTable("users", {
 });
 
 // Categories for stock items
-export const categories = pgTable("categories", {
+export const categories = pgTable("BMPS_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
@@ -65,7 +65,7 @@ export const categories = pgTable("categories", {
 });
 
 // Stock listings
-export const stockListings = pgTable("stock_listings", {
+export const stockListings = pgTable("BMPS_stock_listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sellerId: varchar("seller_id").references(() => users.id).notNull(),
   categoryId: varchar("category_id").references(() => categories.id).notNull(),
@@ -86,7 +86,7 @@ export const stockListings = pgTable("stock_listings", {
 });
 
 // Orders
-export const orders = pgTable("orders", {
+export const orders = pgTable("BMPS_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   buyerId: varchar("buyer_id").references(() => users.id).notNull(),
   sellerId: varchar("seller_id").references(() => users.id).notNull(),
@@ -103,7 +103,7 @@ export const orders = pgTable("orders", {
 });
 
 // Messages between users
-export const messages = pgTable("messages", {
+export const messages = pgTable("BMPS_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   senderId: varchar("sender_id").references(() => users.id).notNull(),
   receiverId: varchar("receiver_id").references(() => users.id).notNull(),
@@ -116,7 +116,7 @@ export const messages = pgTable("messages", {
 });
 
 // OTP verifications
-export const otpVerifications = pgTable("otp_verifications", {
+export const otpVerifications = pgTable("BMPS_otp_verifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
   email: varchar("email"),
@@ -129,7 +129,7 @@ export const otpVerifications = pgTable("otp_verifications", {
 });
 
 // Payments
-export const payments = pgTable("payments", {
+export const payments = pgTable("BMPS_payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   orderId: varchar("order_id").references(() => orders.id),
@@ -143,7 +143,7 @@ export const payments = pgTable("payments", {
 });
 
 // Search queries for analytics
-export const searchQueries = pgTable("search_queries", {
+export const searchQueries = pgTable("BMPS_search_queries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
   query: text("query").notNull(),
@@ -153,7 +153,7 @@ export const searchQueries = pgTable("search_queries", {
 });
 
 // Inquiries from buyers to sellers
-export const inquiries = pgTable("inquiries", {
+export const inquiries = pgTable("BMPS_inquiries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   stockListingId: varchar("stock_listing_id").references(() => stockListings.id).notNull(),
   buyerId: varchar("buyer_id").references(() => users.id).notNull(),

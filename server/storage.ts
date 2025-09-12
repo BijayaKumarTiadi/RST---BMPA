@@ -272,7 +272,11 @@ export class DatabaseStorage implements IStorage {
   }): Promise<Order> {
     const [order] = await db
       .insert(orders)
-      .values([data])
+      .values([{
+        ...data,
+        unitPrice: data.unitPrice.toString(),
+        totalAmount: data.totalAmount.toString()
+      }])
       .returning();
     return order;
   }
@@ -371,7 +375,10 @@ export class DatabaseStorage implements IStorage {
   }): Promise<Payment> {
     const [payment] = await db
       .insert(payments)
-      .values([data])
+      .values([{
+        ...data,
+        amount: data.amount.toString()
+      }])
       .returning();
     return payment;
   }
