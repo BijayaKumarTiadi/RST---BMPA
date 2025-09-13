@@ -1189,7 +1189,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/inquiries/send', requireAuth, async (req: any, res) => {
     try {
       const {
-        to,
         subject,
         buyerName,
         buyerCompany,
@@ -1214,6 +1213,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // First, get the seller information including email from the database
+      const sellerQuery = await executeQuerySingle(`
+        SELECT 
+          d.memberID as seller_id,
+          mb.email as seller_email,
+          mb.mname as seller_name,
+          mb.company_name as seller_company
+        FROM deal_master d
+        LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
+        WHERE d.TransID = ?
+      `, [productId]);
+      
+      if (!sellerQuery) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+      }
+
+      const sellerId = sellerQuery.seller_id;
+      const sellerEmail = sellerQuery.seller_email;
+      
+      if (!sellerEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Seller email not found. Cannot send inquiry.'
+        });
+      }
+
+      console.log(`📧 Sending inquiry to seller email: ${sellerEmail}`);
+
       // Generate inquiry email HTML
       const inquiryData: InquiryEmailData = {
         buyerName,
@@ -1226,15 +1256,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         buyerQuotedPrice,
         quantity,
         message,
-        sellerName,
-        sellerCompany
+        sellerName: sellerQuery.seller_name || sellerName,
+        sellerCompany: sellerQuery.seller_company || sellerCompany
       };
       
       const emailHtml = generateInquiryEmail(inquiryData);
       
-      // Send email using emailService
+      // Send email using emailService to the actual seller's email
       const emailSent = await sendEmail({
-        to,
+        to: sellerEmail, // Use the actual seller email from database
         subject,
         html: emailHtml
       });
@@ -1242,12 +1272,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (emailSent) {
         // Log the inquiry to both tables for tracking
         try {
-          // First, get the seller_id from the product/deal
-          const dealQuery = await executeQuerySingle(`
-            SELECT memberID FROM deal_master WHERE TransID = ?
-          `, [productId]);
-          
-          const sellerId = dealQuery?.memberID || null;
           
           // Generate unique inquiry reference
           const inquiryRef = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

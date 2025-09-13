@@ -76,7 +76,6 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
 
     try {
       const emailData = {
-        to: deal.seller_email || `seller${deal.memberID}@stocklaabh.com`, // Default email format
         subject: `Inquiry for Product: ${deal.stock_description || deal.DealTitle || `${deal.MakeName || ''} ${deal.BrandName || ''} ${deal.GradeName || ''}`.trim() || 'Product'}`,
         buyerName: formData.buyerName,
         buyerCompany: formData.buyerCompany,
