@@ -60,7 +60,8 @@ export function MobileFilterDrawer({
     clientFilters.makes.length +
     clientFilters.grades.length +
     clientFilters.brands.length +
-    clientFilters.gsm.length;
+    clientFilters.gsm.length +
+    clientFilters.categories.length;
 
   const handleApply = () => {
     onApplySearch();
@@ -128,20 +129,6 @@ export function MobileFilterDrawer({
               )}
             </div>
           </SheetHeader>
-          
-          {/* Search Bar */}
-          <div className="px-4 pb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={pendingSearchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10"
-                data-testid="input-mobile-search"
-              />
-            </div>
-          </div>
         </div>
 
         {/* Filter Content */}
@@ -161,10 +148,43 @@ export function MobileFilterDrawer({
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
                   <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
                   <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
+                  <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
+                  <SelectItem value="quantity-high">Quantity: High to Low</SelectItem>
+                  <SelectItem value="size-small">Size: Small to Large</SelectItem>
+                  <SelectItem value="size-large">Size: Large to Small</SelectItem>
+                  <SelectItem value="location">Location (A-Z)</SelectItem>
+                  <SelectItem value="company">Company (A-Z)</SelectItem>
+                  <SelectItem value="category">Category (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Categories */}
+            <FilterSection title={`Categories ${clientFilters.categories.length > 0 ? `(${clientFilters.categories.length})` : ''}`} type="categories">
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
+                  getUniqueValues('categories') : 
+                  (searchAggregations?.categories || []).map((category: any) => ({
+                    value: category.category_name || category.name || category.value || (typeof category === 'string' ? category : 'Unknown'),
+                    count: category.count || 0
+                  }))
+                ).map((category: any, index: number) => (
+                  <label key={index} className="flex items-center space-x-3 py-2">
+                    <Checkbox 
+                      checked={clientFilters.categories.includes(category.value)}
+                      onCheckedChange={(checked) => onFilterChange('categories', category.value, checked as boolean)}
+                      data-testid={`checkbox-mobile-category-${category.value}`}
+                    />
+                    <span className="flex-1 text-sm">{category.value}</span>
+                    {category.count > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {category.count}
+                      </Badge>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
 
             {/* Makes */}
             <FilterSection title={`Makes ${clientFilters.makes.length > 0 ? `(${clientFilters.makes.length})` : ''}`} type="makes">
