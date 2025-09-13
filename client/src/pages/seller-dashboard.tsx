@@ -29,6 +29,12 @@ export default function SellerDashboard() {
   const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
+  // Fetch user settings to get dimension preference
+  const { data: userSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    enabled: isAuthenticated
+  });
+
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -48,6 +54,69 @@ export default function SellerDashboard() {
       return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
     } else {
       return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    }
+  };
+
+  // Helper function to format dimensions based on user preference
+  const formatDimensions = (deckle_mm?: number, grain_mm?: number) => {
+    if (!deckle_mm || !grain_mm) return 'N/A';
+    
+    const userUnit = (userSettings as any)?.dimension_unit || 'cm';
+    
+    if (userUnit === 'inch') {
+      const deckleInch = (deckle_mm / 25.4).toFixed(2);
+      const grainInch = (grain_mm / 25.4).toFixed(2);
+      return `${deckleInch}" × ${grainInch}"`;
+    } else {
+      const deckleCm = (deckle_mm / 10).toFixed(1);
+      const grainCm = (grain_mm / 10).toFixed(1);
+      return `${deckleCm} × ${grainCm} cm`;
+    }
+  };
+
+  // Helper function to get product description
+  const getProductDescription = (deal: any) => {
+    // First try stock_description
+    if (deal.stock_description) {
+      return deal.stock_description;
+    }
+    // Then try building from Make, Brand, Grade
+    const parts = [];
+    if (deal.Make) parts.push(deal.Make);
+    if (deal.Brand) parts.push(deal.Brand);
+    if (deal.Grade) parts.push(deal.Grade);
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+    // Fall back to Seller_comments first line if available
+    if (deal.Seller_comments) {
+      return deal.Seller_comments.split('\n')[0];
+    }
+    // Finally, use a default
+    return `Deal #${deal.TransID}`;
+  };
+
+  // Helper function to calculate product age
+  const getProductAge = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInDays === 0) {
+      return 'Today';
+    } else if (diffInDays === 1) {
+      return 'Yesterday';
+    } else if (diffInDays < 7) {
+      return `${diffInDays} days ago`;
+    } else if (diffInDays < 30) {
+      const weeks = Math.floor(diffInDays / 7);
+      return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+    } else {
+      const months = Math.floor(diffInDays / 30);
+      return `${months} month${months === 1 ? '' : 's'} ago`;
     }
   };
 
@@ -411,7 +480,7 @@ export default function SellerDashboard() {
                                   </div>
                                   <div>
                                     <div className="font-medium text-foreground" data-testid={`deal-title-${deal.TransID}`}>
-                                      {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                                      {getProductDescription(deal)}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
                                       ID: {deal.TransID}
@@ -427,7 +496,7 @@ export default function SellerDashboard() {
                               <TableCell>
                                 <div className="space-y-1 text-sm">
                                   <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
-                                  <div><span className="text-muted-foreground">Size:</span> <span className="font-medium">{deal.Deckle_mm}×{deal.grain_mm}mm</span></div>
+                                  <div><span className="text-muted-foreground">Dim:</span> <span className="font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm)}</span></div>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -447,17 +516,12 @@ export default function SellerDashboard() {
                                   >
                                     {getStatusText(deal.StockStatus || 1)}
                                   </Badge>
-                                  {deal.StockAge > 30 && (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Old Stock
-                                    </Badge>
-                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2 text-sm text-foreground">
                                   <Clock className="h-4 w-4 text-muted-foreground" />
-                                  {getRelativeTime(deal.deal_created_at)}
+                                  {getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
@@ -534,7 +598,7 @@ export default function SellerDashboard() {
                                 </div>
                                 <div className="flex-1">
                                   <h3 className="font-semibold text-foreground text-sm leading-tight" data-testid={`deal-title-${deal.TransID}`}>
-                                    {deal.Seller_comments?.split('\n')[0] || `Deal #${deal.TransID}`}
+                                    {getProductDescription(deal)}
                                   </h3>
                                   <p className="text-xs text-muted-foreground mt-1">ID: {deal.TransID}</p>
                                 </div>
@@ -547,11 +611,6 @@ export default function SellerDashboard() {
                                 >
                                   {getStatusText(deal.StockStatus || 1)}
                                 </Badge>
-                                {deal.StockAge > 30 && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    Old Stock
-                                  </Badge>
-                                )}
                               </div>
                             </div>
 
@@ -572,9 +631,9 @@ export default function SellerDashboard() {
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground">Size:</span>
+                                  <span className="text-muted-foreground">Dim:</span>
                                   <span className="font-medium text-foreground ml-1">
-                                    {deal.Deckle_mm}×{deal.grain_mm}mm
+                                    {formatDimensions(deal.Deckle_mm, deal.grain_mm)}
                                   </span>
                                 </div>
                                 <div>
@@ -607,7 +666,7 @@ export default function SellerDashboard() {
                                 <p className="text-xs text-muted-foreground">Offer Age</p>
                                 <div className="flex items-center gap-1 text-xs text-foreground">
                                   <Clock className="h-3 w-3 text-muted-foreground" />
-                                  {getRelativeTime(deal.deal_created_at)}
+                                  {getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}
                                 </div>
                               </div>
                             </div>
