@@ -23,17 +23,19 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
   if (!deal) return null;
 
   // Helper function to format dimensions based on user preference
-  const formatDimensions = (mmValue: number) => {
+  const formatDimensions = (deckle_mm?: number, grain_mm?: number) => {
+    if (!deckle_mm || !grain_mm) return null;
+    
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
     
     if (userUnit === 'inch') {
-      const inchValue = (mmValue / 25.4).toFixed(2);
-      const cmValue = (mmValue / 10).toFixed(1);
-      return `${inchValue}" (${cmValue} cm)`;
+      const deckleInch = (deckle_mm / 25.4).toFixed(2);
+      const grainInch = (grain_mm / 25.4).toFixed(2);
+      return `${deckleInch}" × ${grainInch}"`;
     } else {
-      const cmValue = (mmValue / 10).toFixed(1);
-      const inchValue = (mmValue / 25.4).toFixed(2);
-      return `${cmValue} cm (${inchValue}")`;
+      const deckleCm = (deckle_mm / 10).toFixed(1);
+      const grainCm = (grain_mm / 10).toFixed(1);
+      return `${deckleCm} × ${grainCm} cm`;
     }
   };
 
@@ -90,16 +92,10 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                   <span className="ml-2 font-medium">{deal.GSM}</span>
                 </div>
               )}
-              {deal.Deckle_mm && (
+              {deal.Deckle_mm && deal.grain_mm && (
                 <div>
-                  <span className="text-muted-foreground">Deckle:</span>
-                  <span className="ml-2 font-medium">{formatDimensions(deal.Deckle_mm)}</span>
-                </div>
-              )}
-              {deal.grain_mm && (
-                <div>
-                  <span className="text-muted-foreground">Grain:</span>
-                  <span className="ml-2 font-medium">{formatDimensions(deal.grain_mm)}</span>
+                  <span className="text-muted-foreground">Dim (Deckle × Grain):</span>
+                  <span className="ml-2 font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm)}</span>
                 </div>
               )}
               {deal.quantity && (

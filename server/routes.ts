@@ -1216,12 +1216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First, get the seller information including email from the database
       const sellerQuery = await executeQuerySingle(`
         SELECT 
-          d.memberID as seller_id,
+          d.created_by_member_id as seller_id,
           mb.email as seller_email,
           mb.mname as seller_name,
           mb.company_name as seller_company
         FROM deal_master d
-        LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
+        LEFT JOIN bmpa_members mb ON d.created_by_member_id = mb.member_id
         WHERE d.TransID = ?
       `, [productId]);
       
