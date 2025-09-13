@@ -1387,8 +1387,7 @@ export default function Marketplace() {
             onFilterChange={handleFilterChange}
             onRangeFilterChange={setRangeFilter}
             onSortChange={setSortBy}
-            onApplySearch={applySearch}
-            onClearFilters={clearAllFilters}
+            onClearFilters={clearClientFilters}
             clientFilters={clientFilters}
             searchAggregations={searchAggregations}
             searchResults={searchResults}

@@ -22,7 +22,6 @@ interface MobileFilterDrawerProps {
   onFilterChange: (type: string, value: string, checked: boolean) => void;
   onRangeFilterChange: (type: string, range: any) => void;
   onSortChange: (value: string) => void;
-  onApplySearch: () => void;
   onClearFilters: () => void;
   clientFilters: any;
   searchAggregations: any;
@@ -44,7 +43,6 @@ export function MobileFilterDrawer({
   onFilterChange,
   onRangeFilterChange,
   onSortChange,
-  onApplySearch,
   onClearFilters,
   clientFilters,
   searchAggregations,
@@ -64,7 +62,6 @@ export function MobileFilterDrawer({
     clientFilters.categories.length;
 
   const handleApply = () => {
-    onApplySearch();
     setIsOpen(false);
   };
 
@@ -302,15 +299,18 @@ export function MobileFilterDrawer({
             variant="outline" 
             className="flex-1"
             onClick={handleClear}
+            data-testid="button-mobile-clear-filters"
           >
             Clear All
           </Button>
-          <Button 
-            className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white"
-            onClick={handleApply}
-          >
-            Apply Filters
-          </Button>
+          <SheetClose asChild>
+            <Button 
+              className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white"
+              data-testid="button-mobile-apply-filters"
+            >
+              Apply Filters
+            </Button>
+          </SheetClose>
         </div>
       </SheetContent>
     </Sheet>
