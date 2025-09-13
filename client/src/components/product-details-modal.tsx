@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { User, Building, Mail, MessageSquare, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { formatPostingDate } from "@/lib/utils";
 
 interface ProductDetailsModalProps {
   isOpen: boolean;
@@ -167,11 +168,9 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                     </a>
                   </div>
                 )}
-                {deal.uplaodDate && (
-                  <div className="text-muted-foreground text-xs">
-                    Listed on {new Date(deal.uplaodDate).toLocaleDateString()}
-                  </div>
-                )}
+                <div className="text-muted-foreground text-xs">
+                  Posted on {formatPostingDate(deal)}
+                </div>
               </div>
             </div>
           </div>

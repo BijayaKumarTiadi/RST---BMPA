@@ -14,6 +14,7 @@ import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatPostingDate } from "@/lib/utils";
 
 export default function SellerDashboard() {
   const { user, isAuthenticated } = useAuth();
@@ -96,29 +97,6 @@ export default function SellerDashboard() {
     return `Deal #${deal.TransID}`;
   };
 
-  // Helper function to calculate product age
-  const getProductAge = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) {
-      return 'Today';
-    } else if (diffInDays === 1) {
-      return 'Yesterday';
-    } else if (diffInDays < 7) {
-      return `${diffInDays} days ago`;
-    } else if (diffInDays < 30) {
-      const weeks = Math.floor(diffInDays / 7);
-      return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
-    } else {
-      const months = Math.floor(diffInDays / 30);
-      return `${months} month${months === 1 ? '' : 's'} ago`;
-    }
-  };
 
   // Helper function to format stock age from API's StockAge field (days)
   const formatStockAge = (stockAgeDays: number) => {
@@ -484,7 +462,7 @@ export default function SellerDashboard() {
                             <TableHead className="font-semibold text-foreground">Specifications</TableHead>
                             <TableHead className="font-semibold text-foreground">Price</TableHead>
                             <TableHead className="font-semibold text-foreground">Status</TableHead>
-                            <TableHead className="font-semibold text-foreground">Offer Age</TableHead>
+                            <TableHead className="font-semibold text-foreground">Posted on</TableHead>
                             <TableHead className="font-semibold text-foreground">Stock Age</TableHead>
                             <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                           </TableRow>
@@ -544,7 +522,7 @@ export default function SellerDashboard() {
                               <TableCell>
                                 <div className="flex items-center gap-2 text-sm text-foreground" title="When offer was created">
                                   <Clock className="h-4 w-4 text-muted-foreground" />
-                                  {getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}
+                                  {formatPostingDate(deal)}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -692,11 +670,11 @@ export default function SellerDashboard() {
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Offer/Stock Age</p>
+                                <p className="text-xs text-muted-foreground">Posted/Stock Age</p>
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-1 text-xs text-foreground" title="When offer was created">
                                     <Clock className="h-3 w-3 text-muted-foreground" />
-                                    <span>{getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}</span>
+                                    <span>{formatPostingDate(deal)}</span>
                                   </div>
                                   <div className="flex items-center gap-1 text-xs text-foreground" title="Actual stock age">
                                     <Package className="h-3 w-3 text-muted-foreground" />

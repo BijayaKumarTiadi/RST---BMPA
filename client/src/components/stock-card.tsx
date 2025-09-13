@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Heart, Share2, MapPin, Building, Star } from "lucide-react";
+import { formatPostingDate } from "@/lib/utils";
 
 interface StockListing {
   id: string;
@@ -15,6 +16,17 @@ interface StockListing {
   sellerId: string;
   imageUrls?: string[];
   createdAt: string;
+  // Additional properties from deal_master table
+  Make?: string;
+  Brand?: string;
+  Grade?: string;
+  GSM?: number;
+  Deckle_mm?: number;
+  grain_mm?: number;
+  stock_description?: string;
+  // Additional date fields for fallback logic
+  deal_created_at?: string;
+  uplaodDate?: string;
 }
 
 interface StockCardProps {
@@ -23,6 +35,7 @@ interface StockCardProps {
 }
 
 export default function StockCard({ listing, viewMode = 'grid' }: StockCardProps) {
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available':
@@ -64,9 +77,12 @@ export default function StockCard({ listing, viewMode = 'grid' }: StockCardProps
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground truncate" data-testid={`title-${listing.id}`}>
-                    {listing.Make} {listing.Brand} {listing.Grade}
+                    {listing.Make && listing.Brand && listing.Grade ? `${listing.Make} ${listing.Brand} ${listing.Grade}` : listing.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{listing.stock_description || `${listing.GSM} GSM, ${listing.Deckle_mm}x${listing.grain_mm}mm`}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {listing.stock_description || 
+                     (listing.GSM && listing.Deckle_mm ? `${listing.GSM} GSM, ${listing.Deckle_mm}${listing.grain_mm ? `x${listing.grain_mm}` : ''}mm` : listing.description)}
+                  </p>
                 </div>
                 <Badge variant={getStatusColor(listing.status)} className="ml-2">
                   {getStatusText(listing.status)}
@@ -170,7 +186,7 @@ export default function StockCard({ listing, viewMode = 'grid' }: StockCardProps
             <span className="text-sm text-muted-foreground">4.8 (24 reviews)</span>
           </div>
           <span className="text-xs text-muted-foreground">
-            Listed {new Date(listing.createdAt).toLocaleDateString()}
+            Posted on {formatPostingDate(listing)}
           </span>
         </div>
         
