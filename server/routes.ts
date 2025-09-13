@@ -733,6 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location,
         seller_id,
         seller_only,
+        exclude_member_id,
         status,
         sort,
         page = 1,
@@ -745,9 +746,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actualSellerId = req.session.memberId;
       }
 
-      // If not viewing seller-specific products and user is logged in, exclude their own products
+      // Handle exclude_member_id from query parameter or session
       let excludeMemberId = undefined;
-      if (!actualSellerId && req.session?.memberId) {
+      
+      // First check if exclude_member_id is explicitly provided in query
+      if (exclude_member_id) {
+        excludeMemberId = parseInt(exclude_member_id as string);
+      } 
+      // Otherwise, if not viewing seller-specific products and user is logged in, exclude their own products
+      else if (!actualSellerId && req.session?.memberId) {
         excludeMemberId = req.session.memberId;
       }
 
@@ -1177,7 +1184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SELECT 
             i.*,
             i.product_id as deal_id,
-            d.Seller_comments as product_title,
+            COALESCE(d.stock_description, CONCAT(d.Make, ' ', d.Brand, ' ', d.Grade)) as product_title,
             d.OfferPrice,
             d.TransID,
             i.buyer_name,
@@ -1205,7 +1212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             SELECT 
               i.*,
               i.product_id as deal_id,
-              d.Seller_comments as product_title,
+              COALESCE(d.stock_description, CONCAT(d.Make, ' ', d.Brand, ' ', d.Grade)) as product_title,
               d.OfferPrice,
               d.TransID,
               m.mname as seller_name,
@@ -1516,7 +1523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inquiries = await executeQuery(`
         SELECT 
           i.*,
-          d.Seller_comments as product_details,
+          COALESCE(d.stock_description, CONCAT(d.Make, ' ', d.Brand, ' ', d.Grade)) as product_details,
           d.OfferPrice,
           d.TransID as deal_id,
           sm.mname as seller_name,
