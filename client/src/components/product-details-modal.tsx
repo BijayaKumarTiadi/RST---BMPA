@@ -93,7 +93,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                 </div>
               )}
               {deal.Deckle_mm && deal.grain_mm && (
-                <div>
+                <div className="col-span-2">
                   <span className="text-muted-foreground">Dim (Deckle × Grain):</span>
                   <span className="ml-2 font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm)}</span>
                 </div>

@@ -173,6 +173,7 @@ class DealService {
     units?: string;
     stock_status?: string;
     seller_id?: number;
+    exclude_member_id?: number;
     status?: string;
     search?: string;
     location?: string;
@@ -253,6 +254,12 @@ class DealService {
       if (filters?.seller_id) {
         whereConditions.push('d.memberID = ?');
         params.push(filters.seller_id);
+      }
+
+      // Exclude products from a specific member (for marketplace view)
+      if (filters?.exclude_member_id) {
+        whereConditions.push('(d.memberID != ? AND d.created_by_member_id != ?)');
+        params.push(filters.exclude_member_id, filters.exclude_member_id);
       }
 
       // Status filtering disabled for now

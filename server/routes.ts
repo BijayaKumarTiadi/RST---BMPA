@@ -691,6 +691,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actualSellerId = req.session.memberId;
       }
 
+      // If not viewing seller-specific products and user is logged in, exclude their own products
+      let excludeMemberId = undefined;
+      if (!actualSellerId && req.session?.memberId) {
+        excludeMemberId = req.session.memberId;
+      }
+
       const filters = {
         group_id: group_id ? parseInt(group_id as string) : undefined,
         make_id: make_id ? parseInt(make_id as string) : undefined,
@@ -705,6 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search: search as string,
         location: location as string,
         seller_id: actualSellerId,
+        exclude_member_id: excludeMemberId,
         status: status as string,
         sort: sort as string,
         limit: parseInt(limit as string),
