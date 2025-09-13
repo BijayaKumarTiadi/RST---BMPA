@@ -27,7 +27,7 @@ export default function Register() {
   const [registering, setRegistering] = useState(false);
   const [formData, setFormData] = useState({
     mname: '',
-    phone: '',
+    phone: '917788966532',
     company_name: '',
     address1: '',
     address2: '',
@@ -225,7 +225,7 @@ export default function Register() {
       return;
     }
     
-    if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
+    if (!formData.mname.trim() || !formData.company_name.trim() || 
         !formData.address1.trim() || !formData.city.trim() || !formData.state.trim()) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
@@ -314,22 +314,42 @@ export default function Register() {
                 Account created for <strong>{email}</strong>
               </p>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Next Steps:</strong><br />
-                  1. Pay membership fee (₹2,499)<br />
-                  2. Wait for admin approval<br />
-                  3. Start trading!
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-blue-800">Account Pending Approval</span>
+                </div>
+                <p className="text-blue-700 mb-4">
+                  Your registration has been submitted successfully! Here's what happens next:
                 </p>
+                <div className="space-y-2 text-sm text-blue-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <span>Pay membership fee (₹2,499)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <span>Admin will review your application</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <span>You'll receive email notification once approved</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <span>Start trading on Stock Laabh!</span>
+                  </div>
+                </div>
               </div>
 
-              <Button 
-                onClick={() => window.location.href = '/'}
-                className="w-full"
-                data-testid="button-login"
-              >
-                Go to Login
-              </Button>
+              <div className="text-center">
+                <p className="text-gray-600 text-sm mb-4">
+                  Please allow 1-2 business days for approval process.
+                </p>
+                <p className="text-gray-500 text-xs">
+                  For urgent matters, contact our support team.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -454,31 +474,17 @@ export default function Register() {
                   Member Information
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your full name"
-                      value={formData.mname}
-                      onChange={(e) => setFormData({...formData, mname: e.target.value})}
-                      data-testid="input-name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Your phone number"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      data-testid="input-phone"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your full name"
+                    value={formData.mname}
+                    onChange={(e) => setFormData({...formData, mname: e.target.value})}
+                    data-testid="input-name"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
