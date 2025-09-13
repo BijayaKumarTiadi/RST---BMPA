@@ -22,20 +22,26 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
   if (!deal) return null;
 
+  // Helper function to check if group is Kraft Reel
+  const isKraftReelGroup = (groupName: string): boolean => {
+    return groupName?.toLowerCase().trim() === 'kraft reel';
+  };
+
   // Helper function to format dimensions based on user preference
   const formatDimensions = (deckle_mm?: number, grain_mm?: number) => {
     if (!deckle_mm || !grain_mm) return null;
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
+    const isKraftReel = isKraftReelGroup(deal.GroupName || '');
     
     if (userUnit === 'inch') {
       const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      const grainInch = (grain_mm / 25.4).toFixed(2);
-      return `${deckleInch}" × ${grainInch}"`;
+      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 25.4).toFixed(2)}"`;
+      return `${deckleInch}" × ${grainDisplay}`;
     } else {
       const deckleCm = (deckle_mm / 10).toFixed(1);
-      const grainCm = (grain_mm / 10).toFixed(1);
-      return `${deckleCm} × ${grainCm} cm`;
+      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 10).toFixed(1)} cm`;
+      return `${deckleCm} × ${grainDisplay}`;
     }
   };
 

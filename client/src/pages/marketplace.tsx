@@ -240,24 +240,31 @@ export default function Marketplace() {
     }
   }, [userSettings]);
 
+  // Helper function to check if group is Kraft Reel
+  const isKraftReelGroup = (groupName: string): boolean => {
+    return groupName?.toLowerCase().trim() === 'kraft reel';
+  };
+
   // Helper function to format dimensions based on user preference
-  const formatDimensions = (deckle_mm: number, grain_mm: number) => {
+  const formatDimensions = (deckle_mm: number, grain_mm: number, groupName?: string) => {
     const userUnit = userSettings?.dimension_unit || 'cm';
+    const isKraftReel = isKraftReelGroup(groupName || '');
     
     if (userUnit === 'inch') {
       const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      const grainInch = (grain_mm / 25.4).toFixed(2);
+      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 25.4).toFixed(2)}"`;
       return (
         <>
-          <div>{deckleInch}" × {grainInch}"</div>
-          <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+          <div>{deckleInch}" × {grainDisplay}</div>
+          <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {isKraftReel ? 'B.S' : `${(grain_mm/10).toFixed(1)} cm`}</div>
         </>
       );
     } else {
+      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm/10).toFixed(1)} cm`;
       return (
         <>
-          <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
-          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
+          <div>{(deckle_mm/10).toFixed(1)} × {grainDisplay}</div>
+          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {isKraftReel ? 'B.S' : `${(grain_mm/25.4).toFixed(2)}"`}</div>
         </>
       );
     }
@@ -1913,7 +1920,7 @@ export default function Marketplace() {
                                 <span className="font-medium text-gray-500">Dimensions:</span>
                                 <div className="font-semibold text-foreground">
                                   {(deal.Deckle_mm && deal.grain_mm) ? 
-                                    formatDimensions(deal.Deckle_mm, deal.grain_mm)
+                                    formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName)
                                   : 'N/A'}
                                 </div>
                               </div>
