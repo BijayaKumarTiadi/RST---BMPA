@@ -19,7 +19,7 @@ const dealSchema = z.object({
   groupID: z.string().min(1, "Stock group is required"),
   MakeID: z.string().min(1, "Stock make is required"),
   GradeID: z.string().min(1, "Stock grade is required"),
-  BrandID: z.string().min(1, "Stock brand is required"),
+  BrandID: z.string().optional(), // Brand can be empty, make it optional
   GSM: z.number().min(1, "GSM is required"),
   Deckle_mm: z.number().min(1, "Deckle (mm) is required"),
   grain_mm: z.number().min(1, "Grain (mm) is required"),
@@ -38,6 +38,24 @@ export default function EditDeal() {
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
+
+  // Guard clause: redirect if no dealId is provided
+  if (!dealId) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Invalid Deal ID</h1>
+            <p className="text-muted-foreground mb-4">No deal ID was provided in the URL.</p>
+            <Button onClick={() => setLocation('/seller-dashboard')} data-testid="button-back-dashboard">
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Unit conversion state
   const [deckleUnit, setDeckleUnit] = useState("mm");
@@ -106,9 +124,9 @@ export default function EditDeal() {
 
   // Fetch deal data for editing
   const { data: dealData, isLoading: dealLoading } = useQuery({
-    queryKey: ["/api/deals", dealId],
+    queryKey: ["/api/deals", dealId!],
     queryFn: async () => {
-      const response = await fetch(`/api/deals/${dealId}`, {
+      const response = await fetch(`/api/deals/${dealId!}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch deal');
@@ -167,31 +185,37 @@ export default function EditDeal() {
       
       // Set selected values for cascading dropdowns FIRST
       const groupId = deal.groupID?.toString() || "";
-      const makeId = deal.MakeID?.toString() || "";
+      const makeId = deal.MakeID || ""; // MakeID is already a string, don't call toString()
+      const gradeId = deal.GradeID || ""; // GradeID is already a string
+      const brandId = deal.BrandID || ""; // BrandID is already a string, can be empty
       
       setSelectedGroup(groupId);
       setSelectedMake(makeId);
       
-      // Then set form values
-      form.reset({
+      // Set form values with proper type conversions
+      const formValues = {
         groupID: groupId,
         MakeID: makeId,
-        GradeID: deal.GradeID?.toString() || "",
-        BrandID: deal.BrandID?.toString() || "",
-        GSM: deal.GSM || 0,
-        Deckle_mm: deal.Deckle_mm || 0,
-        grain_mm: deal.grain_mm || 0,
-        OfferPrice: deal.OfferPrice || 0,
+        GradeID: gradeId,
+        BrandID: brandId,
+        GSM: Number(deal.GSM) || 0,
+        Deckle_mm: Number(deal.Deckle_mm) || 0,
+        grain_mm: Number(deal.grain_mm) || 0,
+        OfferPrice: Number(deal.OfferPrice) || 0,
         OfferUnit: deal.OfferUnit || "",
         Seller_comments: deal.Seller_comments || "",
-      });
+      };
+      
+      form.reset(formValues);
 
-      // Set unit conversion input values (assuming data is stored in mm)
+      // Set unit conversion input values (data is stored in mm)
       if (deal.Deckle_mm) {
-        setDeckleInputValue(deal.Deckle_mm.toString());
+        const deckleValue = deal.Deckle_mm.toString();
+        setDeckleInputValue(deckleValue);
       }
       if (deal.grain_mm) {
-        setGrainInputValue(deal.grain_mm.toString());
+        const grainValue = deal.grain_mm.toString();
+        setGrainInputValue(grainValue);
       }
     }
   }, [dealData, form]);
@@ -204,9 +228,9 @@ export default function EditDeal() {
         groupID: parseInt(data.groupID),
         MakeID: parseInt(data.MakeID),
         GradeID: parseInt(data.GradeID),
-        BrandID: parseInt(data.BrandID),
+        BrandID: parseInt(data.BrandID || "0"),
       };
-      return apiRequest("PUT", `/api/deals/${dealId}`, payload);
+      return apiRequest("PUT", `/api/deals/${dealId!}`, payload);
     },
     onSuccess: () => {
       toast({
