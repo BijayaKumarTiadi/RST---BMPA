@@ -28,34 +28,40 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
     return groupName?.toLowerCase().trim() === 'kraft reel';
   };
 
-  // Helper function to format dimensions based on user preference
-  const formatDimensions = (deckle_mm?: number, grain_mm?: number) => {
-    if (!deckle_mm || !grain_mm) return null;
+  // Helper function to format Deckle with conversions
+  const formatDeckleWithConversions = (deckle_mm?: number) => {
+    if (!deckle_mm) return null;
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
-    const isKraftReel = isKraftReelGroup(deal.GroupName || '');
+    const deckleCm = (deckle_mm / 10).toFixed(1);
+    const deckleInch = (deckle_mm / 25.4).toFixed(2);
     
-    if (isKraftReel) {
-      // For Kraft Reel: use "x" separator and show original grain_mm value with "B.S" suffix
-      if (userUnit === 'inch') {
-        const deckleInch = (deckle_mm / 25.4).toFixed(2);
-        return `${deckleInch}" x ${grain_mm} B.S`;
-      } else {
-        const deckleCm = (deckle_mm / 10).toFixed(1);
-        return `${deckleCm} x ${grain_mm} B.S`;
-      }
+    if (userUnit === 'inch') {
+      return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
     } else {
-      // For regular products: use "×" separator and normal conversions
-      if (userUnit === 'inch') {
-        const deckleInch = (deckle_mm / 25.4).toFixed(2);
-        const grainInch = (grain_mm / 25.4).toFixed(2);
-        return `${deckleInch}" × ${grainInch}"`;
-      } else {
-        const deckleCm = (deckle_mm / 10).toFixed(1);
-        const grainCm = (grain_mm / 10).toFixed(1);
-        return `${deckleCm} × ${grainCm} cm`;
-      }
+      return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
     }
+  };
+
+  // Helper function to format Grain with conversions (for normal products)
+  const formatGrainWithConversions = (grain_mm?: number) => {
+    if (!grain_mm) return null;
+    
+    const userUnit = (userSettings as any)?.dimension_unit || 'cm';
+    const grainCm = (grain_mm / 10).toFixed(1);
+    const grainInch = (grain_mm / 25.4).toFixed(2);
+    
+    if (userUnit === 'inch') {
+      return `${grain_mm}mm(${grainCm}cm / ${grainInch}in)`;
+    } else {
+      return `${grain_mm}mm(${grainCm}cm / ${grainInch}in)`;
+    }
+  };
+
+  // Helper function to format Grain for Kraft Reel (B.S - no conversions)
+  const formatGrainKraftReel = (grain_mm?: number) => {
+    if (!grain_mm) return null;
+    return `${grain_mm}mm`;
   };
 
   return (
@@ -111,10 +117,26 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                   <span className="ml-2 font-medium">{deal.GSM}</span>
                 </div>
               )}
-              {deal.Deckle_mm && deal.grain_mm && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Dim (Deckle × Grain):</span>
-                  <span className="ml-2 font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm)}</span>
+              {/* Separate Deckle and Grain/B.S lines */}
+              {deal.Deckle_mm && (
+                <div>
+                  <span className="text-muted-foreground">Deckle:</span>
+                  <span className="ml-2 font-medium">{formatDeckleWithConversions(deal.Deckle_mm)}</span>
+                </div>
+              )}
+              {deal.grain_mm && (
+                <div>
+                  {isKraftReelGroup(deal.GroupName || '') ? (
+                    <>
+                      <span className="text-muted-foreground">B.S:</span>
+                      <span className="ml-2 font-medium">{formatGrainKraftReel(deal.grain_mm)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground">Grain:</span>
+                      <span className="ml-2 font-medium">{formatGrainWithConversions(deal.grain_mm)}</span>
+                    </>
+                  )}
                 </div>
               )}
               {deal.quantity && (
