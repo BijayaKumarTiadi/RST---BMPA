@@ -34,14 +34,26 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
     const isKraftReel = isKraftReelGroup(deal.GroupName || '');
     
-    if (userUnit === 'inch') {
-      const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 25.4).toFixed(2)}"`;
-      return `${deckleInch}" × ${grainDisplay}`;
+    if (isKraftReel) {
+      // For Kraft Reel: use "x" separator and show original grain_mm value with "B.S" suffix
+      if (userUnit === 'inch') {
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        return `${deckleInch}" x ${grain_mm} B.S`;
+      } else {
+        const deckleCm = (deckle_mm / 10).toFixed(1);
+        return `${deckleCm} x ${grain_mm} B.S`;
+      }
     } else {
-      const deckleCm = (deckle_mm / 10).toFixed(1);
-      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 10).toFixed(1)} cm`;
-      return `${deckleCm} × ${grainDisplay}`;
+      // For regular products: use "×" separator and normal conversions
+      if (userUnit === 'inch') {
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        const grainInch = (grain_mm / 25.4).toFixed(2);
+        return `${deckleInch}" × ${grainInch}"`;
+      } else {
+        const deckleCm = (deckle_mm / 10).toFixed(1);
+        const grainCm = (grain_mm / 10).toFixed(1);
+        return `${deckleCm} × ${grainCm} cm`;
+      }
     }
   };
 

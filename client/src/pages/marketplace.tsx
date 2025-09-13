@@ -250,23 +250,43 @@ export default function Marketplace() {
     const userUnit = userSettings?.dimension_unit || 'cm';
     const isKraftReel = isKraftReelGroup(groupName || '');
     
-    if (userUnit === 'inch') {
-      const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm / 25.4).toFixed(2)}"`;
-      return (
-        <>
-          <div>{deckleInch}" × {grainDisplay}</div>
-          <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {isKraftReel ? 'B.S' : `${(grain_mm/10).toFixed(1)} cm`}</div>
-        </>
-      );
+    if (isKraftReel) {
+      // For Kraft Reel: use "x" separator and show original grain_mm value with "B.S" suffix
+      if (userUnit === 'inch') {
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        return (
+          <>
+            <div>{deckleInch}" x {grain_mm} B.S</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} x {grain_mm} B.S</div>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <div>{(deckle_mm/10).toFixed(1)} x {grain_mm} B.S</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" x {grain_mm} B.S</div>
+          </>
+        );
+      }
     } else {
-      const grainDisplay = isKraftReel ? 'B.S' : `${(grain_mm/10).toFixed(1)} cm`;
-      return (
-        <>
-          <div>{(deckle_mm/10).toFixed(1)} × {grainDisplay}</div>
-          <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {isKraftReel ? 'B.S' : `${(grain_mm/25.4).toFixed(2)}"`}</div>
-        </>
-      );
+      // For regular products: use "×" separator and normal conversions
+      if (userUnit === 'inch') {
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        const grainInch = (grain_mm / 25.4).toFixed(2);
+        return (
+          <>
+            <div>{deckleInch}" × {grainInch}"</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
+          </>
+        );
+      }
     }
   };
 
