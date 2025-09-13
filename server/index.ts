@@ -34,7 +34,7 @@ try {
 
 // Session configuration with fallback to memory store
 app.use(session({
-  key: 'stock_laabh_session',
+  name: 'stock_laabh_session',
   secret: 'stock-laabh-secret-key-2025',
   store: sessionStore || new MemStore({
     checkPeriod: 15 * 60 * 1000 // prune expired entries every 15 minutes

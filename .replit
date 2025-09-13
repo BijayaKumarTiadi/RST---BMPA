@@ -34,6 +34,9 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [agent]
 integrations = ["javascript_stripe==1.0.0", "javascript_log_in_with_replit==1.0.0", "javascript_database==1.0.0", "javascript_object_storage==1.0.0", "javascript_websocket==1.0.0", "javascript_sendgrid==1.0.0"]
 expertMode = true
@@ -41,10 +44,6 @@ expertMode = true
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 35299
-externalPort = 3000
 
 [[ports]]
 localPort = 38135
