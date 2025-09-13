@@ -1265,10 +1265,12 @@ export default function SellerDashboard() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Grain</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {isKraftReelGroup(selectedDeal.GroupName) ? 'B.S' : 'Grain'}
+                      </p>
                       <p className="font-semibold">
                         {selectedDeal.grain_mm}mm
-                        {selectedDeal.grain_mm && (
+                        {selectedDeal.grain_mm && !isKraftReelGroup(selectedDeal.GroupName) && (
                           <span className="text-xs text-muted-foreground ml-1">
                             ({(selectedDeal.grain_mm / 10).toFixed(1)}cm / {(selectedDeal.grain_mm / 25.4).toFixed(2)}in)
                           </span>
