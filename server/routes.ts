@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { authRouter } from "./authRoutes";
 import { otpService } from "./otpService";
 import { adminService } from "./adminService";
@@ -32,6 +33,32 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
   }
   next();
 };
+
+// Zod schema for inquiry validation
+const inquirySchema = z.object({
+  subject: z.string().min(1, "Subject is required").max(200, "Subject too long"),
+  buyerName: z.string().min(1, "Buyer name is required").max(100, "Name too long"),
+  buyerCompany: z.string().optional(),
+  buyerEmail: z.string().email("Valid email is required"),
+  buyerPhone: z.string().optional(),
+  productId: z.number().int().positive("Valid product ID is required"),
+  productTitle: z.string().min(1, "Product title is required"),
+  productDetails: z.object({
+    make: z.string().optional(),
+    grade: z.string().optional(),
+    brand: z.string().optional(),
+    gsm: z.number().optional(),
+    deckle: z.number().optional(),
+    grain: z.number().optional(),
+    sellerPrice: z.number().positive("Valid seller price is required"),
+    unit: z.string().min(1, "Unit is required")
+  }),
+  buyerQuotedPrice: z.string().optional(),
+  quantity: z.string().min(1, "Quantity is required"),
+  message: z.string().min(1, "Message is required").max(1000, "Message too long"),
+  sellerName: z.string().optional(),
+  sellerCompany: z.string().optional()
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Clean up expired OTPs periodically
@@ -1253,9 +1280,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Send inquiry endpoint
+  // Send inquiry endpoint - SECURED VERSION
   app.post('/api/inquiries/send', requireAuth, async (req: any, res) => {
     try {
+      // 🔒 SECURITY: Always get buyerId from authenticated session, never trust client
+      const buyerId = req.session.memberId;
+      if (!buyerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // 🛡️ SECURITY: Validate request payload with Zod schema
+      const validationResult = inquirySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid request data',
+          errors: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+
       const {
         subject,
         buyerName,
@@ -1270,69 +1319,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message,
         sellerName,
         sellerCompany
-      } = req.body;
+      } = validationResult.data;
 
-      // Get authenticated user
-      const buyerId = req.session.memberId;
-      if (!buyerId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
-      }
-
-      // First, get the seller information including email from the database
-      const sellerQuery = await executeQuerySingle(`
+      // 🔒 SECURITY: Fetch deal and get BOTH seller IDs (memberID and created_by_member_id)
+      const dealQuery = await executeQuerySingle(`
         SELECT 
-          d.created_by_member_id as seller_id,
-          mb.email as seller_email,
-          mb.mname as seller_name,
-          mb.company_name as seller_company
+          d.memberID as primary_seller_id,
+          d.created_by_member_id as created_by_seller_id,
+          mb1.email as primary_seller_email,
+          mb1.mname as primary_seller_name,
+          mb1.company_name as primary_seller_company,
+          mb2.email as created_by_seller_email,
+          mb2.mname as created_by_seller_name,
+          mb2.company_name as created_by_seller_company
         FROM deal_master d
-        LEFT JOIN bmpa_members mb ON d.created_by_member_id = mb.member_id
+        LEFT JOIN bmpa_members mb1 ON d.memberID = mb1.member_id
+        LEFT JOIN bmpa_members mb2 ON d.created_by_member_id = mb2.member_id
         WHERE d.TransID = ?
       `, [productId]);
       
-      if (!sellerQuery) {
+      if (!dealQuery) {
         return res.status(404).json({
           success: false,
           message: 'Product not found'
         });
       }
 
-      const sellerId = sellerQuery.seller_id;
-      const sellerEmail = sellerQuery.seller_email;
+      // 🛡️ SECURITY: Complete self-inquiry prevention - check BOTH seller ID fields
+      const primarySellerId = dealQuery.primary_seller_id;
+      const createdBySellerId = dealQuery.created_by_seller_id;
+      const sessionBuyerId = parseInt(buyerId.toString());
+      
+      // Check if buyer is the same as either seller
+      const isSelfInquiry = 
+        (primarySellerId && sessionBuyerId === parseInt(primarySellerId.toString())) ||
+        (createdBySellerId && sessionBuyerId === parseInt(createdBySellerId.toString()));
+      
+      if (isSelfInquiry) {
+        console.log('🚫 [SECURITY] Self-inquiry attempt blocked:', {
+          buyerId: sessionBuyerId,
+          primarySellerId,
+          createdBySellerId,
+          productId
+        });
+        return res.status(403).json({
+          success: false,
+          message: 'You cannot send inquiries to your own product listings. This is a policy violation.',
+          code: 'SELF_INQUIRY_FORBIDDEN'
+        });
+      }
+
+      // Determine which seller email to use (prefer primary, fallback to created_by)
+      const sellerEmail = dealQuery.primary_seller_email || dealQuery.created_by_seller_email;
+      const actualSellerName = dealQuery.primary_seller_name || dealQuery.created_by_seller_name;
+      const actualSellerCompany = dealQuery.primary_seller_company || dealQuery.created_by_seller_company;
+      const actualSellerId = primarySellerId || createdBySellerId;
       
       if (!sellerEmail) {
         return res.status(400).json({
           success: false,
-          message: 'Seller email not found. Cannot send inquiry.'
+          message: 'Seller contact information not found. Cannot send inquiry.'
         });
       }
 
-      console.log(`📧 Sending inquiry to seller email: ${sellerEmail}`);
+      console.log(`📧 [SECURE INQUIRY] Sending inquiry from member ${sessionBuyerId} to seller ${actualSellerId} at ${sellerEmail}`);
 
       // Generate inquiry email HTML
       const inquiryData: InquiryEmailData = {
         buyerName,
-        buyerCompany,
+        buyerCompany: buyerCompany || '',
         buyerEmail,
-        buyerPhone,
+        buyerPhone: buyerPhone || '',
         productId,
         productTitle,
         productDetails,
-        buyerQuotedPrice,
+        buyerQuotedPrice: buyerQuotedPrice || '',
         quantity,
         message,
-        sellerName: sellerQuery.seller_name || sellerName,
-        sellerCompany: sellerQuery.seller_company || sellerCompany
+        sellerName: actualSellerName || sellerName || '',
+        sellerCompany: actualSellerCompany || sellerCompany || ''
       };
       
       const emailHtml = generateInquiryEmail(inquiryData);
       
       // Send email using emailService to the actual seller's email
       const emailSent = await sendEmail({
-        to: sellerEmail, // Use the actual seller email from database
+        to: sellerEmail,
         subject,
         html: emailHtml
       });
@@ -1340,7 +1412,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (emailSent) {
         // Log the inquiry to both tables for tracking
         try {
-          
           // Generate unique inquiry reference
           const inquiryRef = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           
@@ -1367,14 +1438,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `, [
             inquiryRef,
             productId,
-            buyerId, // Use the authenticated user's ID
+            sessionBuyerId, // Use the authenticated session user ID
             buyerName,
             buyerEmail,
             buyerCompany || null,
             buyerPhone || null,
-            sellerId,
-            sellerName || null,
-            sellerCompany || null,
+            actualSellerId,
+            actualSellerName || null,
+            actualSellerCompany || null,
             buyerQuotedPrice || null,
             quantity || null,
             message || null
@@ -1401,8 +1472,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
           `, [
             inquiryRef,
-            sellerId,
-            buyerId,
+            actualSellerId,
+            sessionBuyerId,
             buyerName,
             buyerEmail,
             buyerCompany || null,
@@ -1414,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || null
           ]);
           
-          console.log('✅ Inquiry logged to both BMPA_inquiries and bmpa_received_inquiries tables');
+          console.log('✅ [SECURE] Inquiry logged to both BMPA_inquiries and bmpa_received_inquiries tables');
           
           // Update buyer's inquiry count in their profile
           await executeQuery(`
@@ -1422,12 +1493,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             SET total_inquiries_sent = COALESCE(total_inquiries_sent, 0) + 1,
                 last_inquiry_date = NOW()
             WHERE member_id = ?
-          `, [buyerId]);
+          `, [sessionBuyerId]);
           
-          console.log('✅ Updated buyer profile with inquiry count');
+          console.log('✅ [SECURE] Updated buyer profile with inquiry count');
           
           // Create notification for seller (if seller exists)
-          if (sellerId) {
+          if (actualSellerId) {
             await executeQuery(`
               INSERT INTO BMPA_seller_notifications (
                 seller_id,
@@ -1440,13 +1511,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 created_at
               )
               VALUES (?, 'new_inquiry', LAST_INSERT_ID(), ?, ?, ?, 0, NOW())
-            `, [sellerId, buyerName, productId, `New inquiry for your product from ${buyerName}`]);
+            `, [actualSellerId, buyerName, productId, `New inquiry for your product from ${buyerName}`]);
             
-            console.log('✅ Created notification for seller');
+            console.log('✅ [SECURE] Created notification for seller');
           }
         } catch (dbError) {
           console.error('❌ Error logging inquiry to database:', dbError);
-          // Don't fail the request if DB logging fails
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to log inquiry to database'
+          });
         }
 
         res.json({
@@ -1460,7 +1534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error('Error sending inquiry:', error);
+      console.error('❌ [SECURITY ERROR] Inquiry endpoint error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to send inquiry',
