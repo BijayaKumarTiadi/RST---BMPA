@@ -27,7 +27,7 @@ export default function Register() {
   const [registering, setRegistering] = useState(false);
   const [formData, setFormData] = useState({
     mname: '',
-    phone: '917788966532',
+    phone: '',
     company_name: '',
     address1: '',
     address2: '',
@@ -225,18 +225,30 @@ export default function Register() {
       return;
     }
     
-    if (!formData.mname.trim() || !formData.company_name.trim() || 
+    if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
         !formData.address1.trim() || !formData.city.trim() || !formData.state.trim()) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
+    // Validate phone number is exactly 10 digits
+    if (!/^\d{10}$/.test(formData.phone)) {
+      toast({ title: "Error", description: "Please enter a valid 10-digit phone number", variant: "destructive" });
+      return;
+    }
+
     setRegistering(true);
     try {
+      // Add 91 prefix to phone number before sending to backend
+      const registrationDataWithPrefix = {
+        ...formData,
+        phone: `91${formData.phone}`
+      };
+
       const response = await apiRequest("POST", "/api/auth/complete-registration", {
         email,
         otp,
-        registrationData: formData
+        registrationData: registrationDataWithPrefix
       });
       const data = await response.json();
 
@@ -474,17 +486,37 @@ export default function Register() {
                   Member Information
                 </h3>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Your full name"
-                    value={formData.mname}
-                    onChange={(e) => setFormData({...formData, mname: e.target.value})}
-                    data-testid="input-name"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={formData.mname}
+                      onChange={(e) => setFormData({...formData, mname: e.target.value})}
+                      data-testid="input-name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        // Only allow digits and limit to 10 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({...formData, phone: value});
+                      }}
+                      data-testid="input-phone"
+                      maxLength={10}
+                      required
+                    />
+                    <p className="text-xs text-gray-500">Enter 10-digit number (will be saved as 91xxxxxxxxxx)</p>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
