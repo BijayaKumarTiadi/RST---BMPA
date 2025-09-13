@@ -240,6 +240,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check inquiry table structures
+  app.get('/api/debug/inquiry-tables', async (req, res) => {
+    try {
+      // Check BMPA_inquiries structure
+      const bmpaInquiriesColumns = await executeQuery(`
+        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() 
+        AND table_name = 'BMPA_inquiries'
+        ORDER BY ORDINAL_POSITION
+      `);
+      
+      // Check bmpa_received_inquiries structure  
+      const receivedInquiriesColumns = await executeQuery(`
+        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() 
+        AND table_name = 'bmpa_received_inquiries'
+        ORDER BY ORDINAL_POSITION
+      `);
+      
+      // Get sample data from each table
+      const bmpaInquiriesSample = await executeQuery(`
+        SELECT * FROM BMPA_inquiries LIMIT 5
+      `);
+      
+      const receivedInquiriesSample = await executeQuery(`
+        SELECT * FROM bmpa_received_inquiries LIMIT 5
+      `);
+      
+      res.json({
+        success: true,
+        tables: {
+          BMPA_inquiries: {
+            columns: bmpaInquiriesColumns,
+            sampleData: bmpaInquiriesSample,
+            rowCount: (await executeQuerySingle(`SELECT COUNT(*) as count FROM BMPA_inquiries`))?.count || 0
+          },
+          bmpa_received_inquiries: {
+            columns: receivedInquiriesColumns,
+            sampleData: receivedInquiriesSample,
+            rowCount: (await executeQuerySingle(`SELECT COUNT(*) as count FROM bmpa_received_inquiries`))?.count || 0
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error checking inquiry tables:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+  
   // Debug endpoint to check table structures
   app.get('/api/debug/table-structure', async (req, res) => {
     try {

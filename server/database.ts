@@ -493,16 +493,78 @@ export async function initializeDatabase(): Promise<void> {
       console.log('🔧 Adding enhanced tracking columns to BMPA_inquiries...');
       await executeQuery(`
         ALTER TABLE BMPA_inquiries 
-        ADD COLUMN buyer_id INT AFTER id,
+        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+        ADD COLUMN buyer_id INT AFTER inquiry_ref,
         ADD COLUMN seller_id INT AFTER buyer_phone,
         ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
         ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
         ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
         ADD INDEX idx_buyer_id (buyer_id),
         ADD INDEX idx_seller_id (seller_id),
-        ADD INDEX idx_status (status)
+        ADD INDEX idx_status (status),
+        ADD INDEX idx_inquiry_ref (inquiry_ref)
       `);
       console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
+    }
+    
+    // Check if inquiry_ref column exists in BMPA_inquiries
+    const inquiryRefCheck = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'BMPA_inquiries' 
+      AND column_name = 'inquiry_ref'
+    `);
+    
+    if (inquiryRefCheck && inquiryRefCheck.count === 0) {
+      console.log('🔧 Adding inquiry_ref column to BMPA_inquiries...');
+      await executeQuery(`
+        ALTER TABLE BMPA_inquiries 
+        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+        ADD INDEX idx_inquiry_ref (inquiry_ref)
+      `);
+      console.log('✅ inquiry_ref column added to BMPA_inquiries');
+    }
+    
+    // Create bmpa_received_inquiries table for sellers to track received inquiries
+    const receivedInquiriesExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'bmpa_received_inquiries'
+    `);
+    
+    if (!receivedInquiriesExists || receivedInquiriesExists.count === 0) {
+      console.log('📨 Creating bmpa_received_inquiries table...');
+      await executeQuery(`
+        CREATE TABLE bmpa_received_inquiries (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          inquiry_ref VARCHAR(100) UNIQUE,
+          seller_id INT NOT NULL,
+          buyer_id INT NOT NULL,
+          buyer_name VARCHAR(255) NOT NULL,
+          buyer_email VARCHAR(255) NOT NULL,
+          buyer_company VARCHAR(255),
+          buyer_phone VARCHAR(20),
+          product_id INT NOT NULL,
+          product_title VARCHAR(500),
+          price_offered VARCHAR(50),
+          quantity VARCHAR(100),
+          message TEXT,
+          status VARCHAR(50) DEFAULT 'open',
+          is_read BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_buyer_id (buyer_id),
+          INDEX idx_product_id (product_id),
+          INDEX idx_status (status),
+          INDEX idx_is_read (is_read),
+          INDEX idx_created_at (created_at),
+          INDEX idx_inquiry_ref (inquiry_ref)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ bmpa_received_inquiries table created successfully');
     }
     
     // Add tracking columns to BMPA_members
