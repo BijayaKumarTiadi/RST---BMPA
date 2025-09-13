@@ -73,15 +73,23 @@ export class PowerSearchService {
     query?: string;
     page?: number;
     pageSize?: number;
+    exclude_member_id?: number;
   }): Promise<any> {
     const { 
       query = '', 
       page = 1,
-      pageSize = 20 
+      pageSize = 20,
+      exclude_member_id 
     } = params;
 
     const queryParams: any[] = [];
     let whereConditions = ['dm.StockStatus = 1'];
+    
+    // Exclude user's own products from marketplace view
+    if (exclude_member_id) {
+      whereConditions.push('(dm.memberID != ? AND dm.created_by_member_id != ?)');
+      queryParams.push(exclude_member_id, exclude_member_id);
+    }
     
     if (query && query.trim()) {
       // Split the query into individual terms for flexible matching

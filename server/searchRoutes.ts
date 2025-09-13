@@ -6,7 +6,12 @@ const searchRouter = Router();
 // Fast normalization-based search
 searchRouter.post('/search', async (req, res) => {
   try {
-    const results = await powerSearchService.searchDeals(req.body);
+    // Pass the exclude_member_id from the request body to the search service
+    const searchParams = {
+      ...req.body,
+      exclude_member_id: req.body.exclude_member_id
+    };
+    const results = await powerSearchService.searchDeals(searchParams);
     res.json(results);
   } catch (error) {
     console.error('Search error:', error);
@@ -53,12 +58,18 @@ searchRouter.get('/health', async (req, res) => {
 searchRouter.post('/precise', async (req, res) => {
   try {
     const { executeQuery } = await import('./database');
-    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance } = req.body;
+    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, exclude_member_id } = req.body;
     
     console.log('Precise search - fetching ALL records:', req.body);
     
     let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
+    
+    // Exclude user's own products from marketplace view
+    if (exclude_member_id) {
+      whereClause += ` AND (dm.memberID != ? AND dm.created_by_member_id != ?)`;
+      queryParams.push(exclude_member_id, exclude_member_id);
+    }
     
     // Add category filter using stock_groups table
     if (category && category.trim() && category !== 'all') {

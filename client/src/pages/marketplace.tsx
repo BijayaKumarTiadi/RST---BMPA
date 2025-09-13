@@ -265,7 +265,7 @@ export default function Marketplace() {
 
   // Fetch deals - initial load only, sorting is client-side
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals"],
+    queryKey: ["/api/deals", user?.member_id],
     queryFn: async () => {
       // If we have search results, use them instead
       if (searchResults && searchResults.data) {
@@ -280,6 +280,11 @@ export default function Marketplace() {
       const params = new URLSearchParams();
       params.append('limit', '100'); // Get more data for client-side sorting
       params.append('page', '1');
+      
+      // Exclude user's own products from marketplace view
+      if (user?.member_id) {
+        params.append('exclude_member_id', user.member_id.toString());
+      }
       
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
@@ -412,7 +417,8 @@ export default function Marketplace() {
         body: JSON.stringify({
           query: '', // Empty query to get all data
           page: 1,
-          pageSize: 1 // Just need aggregations, not all results
+          pageSize: 1, // Just need aggregations, not all results
+          exclude_member_id: user?.member_id // Exclude user's own products
         })
       });
       
@@ -452,7 +458,8 @@ export default function Marketplace() {
         body: JSON.stringify({
           query: query.trim(),
           page: currentPage,
-          pageSize: itemsPerPage
+          pageSize: itemsPerPage,
+          exclude_member_id: user?.member_id // Exclude user's own products
         })
       });
       
@@ -515,7 +522,8 @@ export default function Marketplace() {
           body: JSON.stringify({
             query: value.trim(),
             page: 1,
-            pageSize: itemsPerPage
+            pageSize: itemsPerPage,
+            exclude_member_id: user?.member_id // Exclude user's own products
           })
         });
         
@@ -909,7 +917,10 @@ export default function Marketplace() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(preciseSearch) // No pagination params - fetch all
+        body: JSON.stringify({
+          ...preciseSearch,
+          exclude_member_id: user?.member_id // Exclude user's own products
+        })
       });
       
       if (response.ok) {
