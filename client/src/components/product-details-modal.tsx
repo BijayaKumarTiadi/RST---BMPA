@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { User, Building, Mail, MessageSquare, Phone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProductDetailsModalProps {
   isOpen: boolean;
@@ -13,7 +14,28 @@ interface ProductDetailsModalProps {
 }
 
 export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInquiry, onSendWhatsApp }: ProductDetailsModalProps) {
+  // Fetch user settings to get dimension preference
+  const { data: userSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    enabled: isOpen // Only fetch when modal is open
+  });
+
   if (!deal) return null;
+
+  // Helper function to format dimensions based on user preference
+  const formatDimensions = (mmValue: number) => {
+    const userUnit = (userSettings as any)?.dimension_unit || 'cm';
+    
+    if (userUnit === 'inch') {
+      const inchValue = (mmValue / 25.4).toFixed(2);
+      const cmValue = (mmValue / 10).toFixed(1);
+      return `${inchValue}" (${cmValue} cm)`;
+    } else {
+      const cmValue = (mmValue / 10).toFixed(1);
+      const inchValue = (mmValue / 25.4).toFixed(2);
+      return `${cmValue} cm (${inchValue}")`;
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -71,13 +93,13 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
               {deal.Deckle_mm && (
                 <div>
                   <span className="text-muted-foreground">Deckle:</span>
-                  <span className="ml-2 font-medium">{deal.Deckle_mm}mm</span>
+                  <span className="ml-2 font-medium">{formatDimensions(deal.Deckle_mm)}</span>
                 </div>
               )}
               {deal.grain_mm && (
                 <div>
                   <span className="text-muted-foreground">Grain:</span>
-                  <span className="ml-2 font-medium">{deal.grain_mm}mm</span>
+                  <span className="ml-2 font-medium">{formatDimensions(deal.grain_mm)}</span>
                 </div>
               )}
               {deal.quantity && (
