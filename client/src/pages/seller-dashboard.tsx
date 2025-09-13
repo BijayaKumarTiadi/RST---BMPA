@@ -120,6 +120,28 @@ export default function SellerDashboard() {
     }
   };
 
+  // Helper function to format stock age from API's StockAge field (days)
+  const formatStockAge = (stockAgeDays: number) => {
+    if (stockAgeDays === undefined || stockAgeDays === null) return 'N/A';
+    
+    if (stockAgeDays === 0) {
+      return 'Fresh';
+    } else if (stockAgeDays === 1) {
+      return '1 day';
+    } else if (stockAgeDays < 7) {
+      return `${stockAgeDays} days`;
+    } else if (stockAgeDays < 30) {
+      const weeks = Math.floor(stockAgeDays / 7);
+      return `${weeks} week${weeks === 1 ? '' : 's'}`;
+    } else if (stockAgeDays < 365) {
+      const months = Math.floor(stockAgeDays / 30);
+      return `${months} month${months === 1 ? '' : 's'}`;
+    } else {
+      const years = Math.floor(stockAgeDays / 365);
+      return `${years} year${years === 1 ? '' : 's'}`;
+    }
+  };
+
   // Fetch seller's deals (products)
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["/api/deals", "seller_only"],
@@ -463,6 +485,7 @@ export default function SellerDashboard() {
                             <TableHead className="font-semibold text-foreground">Price</TableHead>
                             <TableHead className="font-semibold text-foreground">Status</TableHead>
                             <TableHead className="font-semibold text-foreground">Offer Age</TableHead>
+                            <TableHead className="font-semibold text-foreground">Stock Age</TableHead>
                             <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -519,9 +542,15 @@ export default function SellerDashboard() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2 text-sm text-foreground">
+                                <div className="flex items-center gap-2 text-sm text-foreground" title="When offer was created">
                                   <Clock className="h-4 w-4 text-muted-foreground" />
                                   {getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2 text-sm text-foreground" title="Actual stock age">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                  {formatStockAge(deal.StockAge)}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
@@ -663,10 +692,16 @@ export default function SellerDashboard() {
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Offer Age</p>
-                                <div className="flex items-center gap-1 text-xs text-foreground">
-                                  <Clock className="h-3 w-3 text-muted-foreground" />
-                                  {getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}
+                                <p className="text-xs text-muted-foreground">Offer/Stock Age</p>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1 text-xs text-foreground" title="When offer was created">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span>{getProductAge(deal.deal_created_at || deal.uplaodDate || deal.createdAt)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-xs text-foreground" title="Actual stock age">
+                                    <Package className="h-3 w-3 text-muted-foreground" />
+                                    <span>{formatStockAge(deal.StockAge)}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>

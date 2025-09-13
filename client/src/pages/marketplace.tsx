@@ -980,6 +980,34 @@ export default function Marketplace() {
     return years === 1 ? '1 year ago' : `${years} years ago`;
   };
 
+  // Helper function to format stock age from API's StockAge field (days)
+  const formatStockAge = (stockAgeDays: number) => {
+    if (stockAgeDays === undefined || stockAgeDays === null) return 'N/A';
+    
+    if (stockAgeDays === 0) {
+      return 'Fresh stock';
+    } else if (stockAgeDays === 1) {
+      return '1 day old';
+    } else if (stockAgeDays < 7) {
+      return `${stockAgeDays} days old`;
+    } else if (stockAgeDays < 30) {
+      const weeks = Math.floor(stockAgeDays / 7);
+      return `${weeks} week${weeks === 1 ? '' : 's'} old`;
+    } else if (stockAgeDays < 365) {
+      const months = Math.floor(stockAgeDays / 30);
+      if (months === 1) {
+        return '1 month old';
+      }
+      return `${months} months old`;
+    } else {
+      const years = Math.floor(stockAgeDays / 365);
+      if (years === 1) {
+        return '1 year old';
+      }
+      return `${years} years old`;
+    }
+  };
+
   const handleSendWhatsApp = (deal: any) => {
     setSelectedDeal(deal);
     setIsWhatsAppModalOpen(true);
@@ -1909,13 +1937,11 @@ export default function Marketplace() {
 
 
 
-                          {/* Deal Age */}
-                          {deal.deal_created_at && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>{getRelativeTime(deal.deal_created_at)}</span>
-                            </div>
-                          )}
+                          {/* Stock Age - from API */}
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>Stock: {formatStockAge(deal.StockAge)}</span>
+                          </div>
 
                           {/* Action Buttons */}
                           <div className="mt-auto">
