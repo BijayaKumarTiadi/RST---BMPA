@@ -8,8 +8,7 @@ import searchRouter from "./searchRoutes";
 
 const app = express();
 
-// Initialize database
-initializeDatabase().catch(console.error);
+// Database initialization will be moved to run after server starts
 
 // Setup session store with PostgreSQL
 import MemoryStore from 'memorystore';
@@ -90,7 +89,8 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    log(`Error handled: ${status} - ${message}`);
+    // Don't rethrow to prevent server crashes
   });
 
   // importantly only setup vite in development and after
@@ -113,5 +113,19 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Initialize database in background after server is already listening
+    // This ensures health checks can respond immediately while database initializes
+    setTimeout(() => {
+      initializeDatabase()
+        .then(() => {
+          log('✅ Database initialization completed successfully');
+        })
+        .catch((error) => {
+          log('⚠️ Database initialization failed, but server continues running:', error.message);
+          // Don't crash the server if database init fails
+          // The app can still serve health checks and static content
+        });
+    }, 100); // Small delay to ensure server is fully ready
   });
 })();
