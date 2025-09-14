@@ -49,30 +49,34 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
         return `${deckleCm}cm`;
       }
     } else {
-      // For regular products: show all conversions
-      const deckleCm = (deckle_mm / 10).toFixed(1);
-      const deckleInch = (deckle_mm / 25.4).toFixed(2);
-      
+      // For regular products: show only user's preferred unit
       if (userUnit === 'inch') {
-        return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        return `${deckleInch}"`;
+      } else if (userUnit === 'mm') {
+        return `${deckle_mm}mm`;
       } else {
-        return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+        const deckleCm = (deckle_mm / 10).toFixed(1);
+        return `${deckleCm}cm`;
       }
     }
   };
 
-  // Helper function to format Grain with conversions (for normal products)
+  // Helper function to format Grain (for normal products)
   const formatGrainWithConversions = (grain_mm?: number) => {
     if (!grain_mm) return null;
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
-    const grainCm = (grain_mm / 10).toFixed(1);
-    const grainInch = (grain_mm / 25.4).toFixed(2);
     
+    // Show only user's preferred unit
     if (userUnit === 'inch') {
-      return `${grain_mm}mm(${grainCm}cm / ${grainInch}in)`;
+      const grainInch = (grain_mm / 25.4).toFixed(2);
+      return `${grainInch}"`;
+    } else if (userUnit === 'mm') {
+      return `${grain_mm}mm`;
     } else {
-      return `${grain_mm}mm(${grainCm}cm / ${grainInch}in)`;
+      const grainCm = (grain_mm / 10).toFixed(1);
+      return `${grainCm}cm`;
     }
   };
 
