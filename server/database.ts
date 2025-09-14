@@ -9,9 +9,8 @@ const dbConfig = {
   database: 'trade_bmpa25',
   charset: 'utf8mb4',
   timezone: '+00:00',
-  connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000
+  connectTimeout: 60000
+  // Note: acquireTimeout and timeout removed - not valid MySQL2 options
 };
 
 // Create connection pool for better performance
@@ -678,13 +677,25 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('✅ Backfilled search_key for existing records');
 
-    // Add index for performance
-    try {
-      await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key)');
-      console.log('✅ Search key index created');
-    } catch (indexError) {
-      // Index might already exist, that's OK
-      console.log('ℹ️ Search key index may already exist');
+    // Check if index exists before creating
+    const searchKeyIndexExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.statistics 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'deal_master' 
+      AND index_name = 'idx_search_key'
+    `);
+
+    if (!searchKeyIndexExists || searchKeyIndexExists.count === 0) {
+      try {
+        console.log('🔍 Creating search key index...');
+        await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key(255))');
+        console.log('✅ Search key index created');
+      } catch (indexError) {
+        console.log('⚠️ Could not create search key index:', indexError.message);
+      }
+    } else {
+      console.log('✅ Search key index already exists');
     }
 
   } catch (error) {
