@@ -1256,24 +1256,44 @@ export default function SellerDashboard() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Deckle</p>
                       <p className="font-semibold">
-                        {selectedDeal.Deckle_mm}mm
-                        {selectedDeal.Deckle_mm && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({(selectedDeal.Deckle_mm / 10).toFixed(1)}cm / {(selectedDeal.Deckle_mm / 25.4).toFixed(2)}in)
-                          </span>
+                        {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? (
+                          // For Kraft Reel: show only user's preferred unit
+                          userSettings?.dimension_unit === 'inch' ? (
+                            `${(selectedDeal.Deckle_mm / 25.4).toFixed(2)}"`
+                          ) : (
+                            `${(selectedDeal.Deckle_mm / 10).toFixed(1)}cm`
+                          )
+                        ) : (
+                          // For regular products: show all conversions
+                          <>
+                            {selectedDeal.Deckle_mm}mm
+                            {selectedDeal.Deckle_mm && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({(selectedDeal.Deckle_mm / 10).toFixed(1)}cm / {(selectedDeal.Deckle_mm / 25.4).toFixed(2)}in)
+                              </span>
+                            )}
+                          </>
                         )}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        {isKraftReelGroup(selectedDeal.GroupName) ? 'B.S' : 'Grain'}
+                        {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? 'B.S' : 'Grain'}
                       </p>
                       <p className="font-semibold">
-                        {selectedDeal.grain_mm}mm
-                        {selectedDeal.grain_mm && !isKraftReelGroup(selectedDeal.GroupName) && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({(selectedDeal.grain_mm / 10).toFixed(1)}cm / {(selectedDeal.grain_mm / 25.4).toFixed(2)}in)
-                          </span>
+                        {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? (
+                          // For Kraft Reel B.S: show raw value without mm suffix
+                          selectedDeal.grain_mm
+                        ) : (
+                          // For regular products: show with mm and conversions
+                          <>
+                            {selectedDeal.grain_mm}mm
+                            {selectedDeal.grain_mm && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({(selectedDeal.grain_mm / 10).toFixed(1)}cm / {(selectedDeal.grain_mm / 25.4).toFixed(2)}in)
+                              </span>
+                            )}
+                          </>
                         )}
                       </p>
                     </div>
