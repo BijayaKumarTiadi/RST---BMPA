@@ -61,7 +61,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
   // Helper function to format Grain for Kraft Reel (B.S - no conversions)
   const formatGrainKraftReel = (grain_mm?: number) => {
     if (!grain_mm) return null;
-    return `${grain_mm}mm`;
+    return `${grain_mm}`;
   };
 
   return (
