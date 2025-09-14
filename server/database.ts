@@ -1,17 +1,17 @@
 import mysql from 'mysql2/promise';
 
-// Database configuration
+// Database configuration with environment variable fallbacks
 const dbConfig = {
-  host: '103.155.204.186',
-  port: 23306,
-  user: 'manish',
-  password: 'manish',
-  database: 'trade_bmpa25',
+  host: process.env.DB_HOST || '103.155.204.186',
+  port: parseInt(process.env.DB_PORT || '23306'),
+  user: process.env.DB_USER || 'manish',
+  password: process.env.DB_PASSWORD || 'manish',
+  database: process.env.DB_NAME || 'trade_bmpa25',
   charset: 'utf8mb4',
   timezone: '+00:00',
-  connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000
+  connectTimeout: 30000, // Reduced timeout for faster deployment
+  acquireTimeout: 30000,
+  timeout: 30000
 };
 
 // Create connection pool for better performance
