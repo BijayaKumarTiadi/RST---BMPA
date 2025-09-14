@@ -743,12 +743,20 @@ export async function initializeDatabase(): Promise<void> {
       await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key)');
       console.log('✅ Search key index created');
     } catch (indexError) {
-      // Index might already exist, that's OK
-      console.log('ℹ️ Search key index may already exist');
+      // Index might already exist, that's OK - specifically handle duplicate key error
+      const error = indexError as any;
+      if (error.code === 'ER_DUP_KEYNAME' || error.errno === 1061) {
+        console.log('ℹ️ Search key index already exists, skipping creation');
+      } else {
+        console.log('ℹ️ Index creation error (non-critical):', error.message);
+      }
     }
 
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
-    throw error;
+    // Don't throw error to prevent server startup failure
+    // The server should continue running even if database initialization fails
+    console.log('⚠️ Database not available, but server will continue running');
+    return;
   }
 }

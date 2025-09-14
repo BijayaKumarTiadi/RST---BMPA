@@ -31,8 +31,8 @@ try {
   });
 }
 
-// Production-ready session configuration
-let sessionSecret = process.env.SESSION_SECRET;
+// Production-ready session configuration  
+let sessionSecret: string = process.env.SESSION_SECRET || '';
 if (!sessionSecret) {
   console.error('⚠️ SESSION_SECRET environment variable not set, generating ephemeral secret');
   console.error('🔐 For production, set SESSION_SECRET environment variable to a strong random value');
