@@ -5,7 +5,7 @@ import { otpService } from "./otpService";
 import { adminService } from "./adminService";
 import { dealService } from "./dealService";
 import { storage } from "./storage";
-import { executeQuery, executeQuerySingle } from "./database";
+import { executeQuery, executeQuerySingle, getPool } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
@@ -64,10 +64,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Clean up expired OTPs periodically
-  setInterval(() => {
-    otpService.cleanupExpiredOTPs().catch(console.error);
-  }, 5 * 60 * 1000); // Every 5 minutes
+  // Clean up expired OTPs periodically (only if database is available)
+  // Delay initial execution to avoid startup issues
+  setTimeout(() => {
+    setInterval(async () => {
+      try {
+        // Only attempt cleanup if database is available
+        const pool = getPool();
+        if (pool) {
+          await otpService.cleanupExpiredOTPs();
+        }
+      } catch (error) {
+        // Silently ignore cleanup errors to prevent log spam
+        // Database might not be available yet
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+  }, 30000); // Start after 30 seconds to allow database initialization
 
   // Auth routes
   app.use('/api/auth', authRouter);
