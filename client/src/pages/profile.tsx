@@ -83,9 +83,18 @@ export default function Profile() {
   });
 
   const handleEdit = () => {
-    if (profileData) {
-      setEditedProfile({ ...profileData });
+    // Use profileData if available, otherwise use user data from auth
+    const dataToEdit = profileData || user;
+    
+    if (dataToEdit) {
+      setEditedProfile({ ...dataToEdit });
       setIsEditing(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "Unable to load profile data. Please refresh the page.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -382,6 +391,8 @@ export default function Profile() {
             <Button
               onClick={handleEdit}
               className="flex items-center gap-2"
+              data-testid="button-edit-profile"
+              type="button"
             >
               <Edit className="h-4 w-4" />
               Edit Profile

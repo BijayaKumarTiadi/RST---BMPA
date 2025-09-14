@@ -153,7 +153,7 @@ export default function EditDeal() {
   });
 
   // Fetch stock hierarchy
-  const { data: stockHierarchy, isLoading: hierarchyLoading } = useQuery({
+  const { data: stockHierarchy, isLoading: hierarchyLoading, error: hierarchyError } = useQuery({
     queryKey: ["/api/stock/hierarchy"],
     queryFn: async () => {
       const response = await fetch('/api/stock/hierarchy');
@@ -466,11 +466,17 @@ export default function EditDeal() {
                                 <SelectValue placeholder="Select group" />
                               </SelectTrigger>
                               <SelectContent>
-                                {groups.map((group: any) => (
-                                  <SelectItem key={group.GroupID} value={group.GroupID.toString()}>
-                                    {group.GroupName}
-                                  </SelectItem>
-                                ))}
+                                {hierarchyLoading ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">Loading groups...</div>
+                                ) : groups.length === 0 ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">No groups available</div>
+                                ) : (
+                                  groups.map((group: any) => (
+                                    <SelectItem key={group.GroupID} value={group.GroupID?.toString() || ''}>
+                                      {group.GroupName || 'Unnamed Group'}
+                                    </SelectItem>
+                                  ))
+                                )}
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -496,13 +502,24 @@ export default function EditDeal() {
                                 <SelectValue placeholder="Select make" />
                               </SelectTrigger>
                               <SelectContent>
-                                {filteredMakes.map((make: any) => (
-                                  make.make_ID != null ? (
-                                    <SelectItem key={make.make_ID} value={make.make_ID.toString()}>
-                                      {make.make_Name || `Make ${make.make_ID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
+                                {hierarchyLoading ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">Loading makes...</div>
+                                ) : filteredMakes.length === 0 ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">No makes available</div>
+                                ) : (
+                                  filteredMakes.map((make: any) => {
+                                    const makeId = make.make_ID?.toString() || '';
+                                    const makeName = make.make_Name || `Make ${makeId}`;
+                                    if (makeId) {
+                                      return (
+                                        <SelectItem key={makeId} value={makeId}>
+                                          {makeName}
+                                        </SelectItem>
+                                      );
+                                    }
+                                    return null;
+                                  })
+                                )}
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -528,13 +545,24 @@ export default function EditDeal() {
                                 <SelectValue placeholder="Select grade" />
                               </SelectTrigger>
                               <SelectContent>
-                                {filteredGrades.map((grade: any) => (
-                                  grade.gradeID != null ? (
-                                    <SelectItem key={grade.gradeID} value={grade.gradeID.toString()}>
-                                      {grade.GradeName || `Grade ${grade.gradeID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
+                                {hierarchyLoading ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">Loading grades...</div>
+                                ) : filteredGrades.length === 0 ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">No grades available</div>
+                                ) : (
+                                  filteredGrades.map((grade: any) => {
+                                    const gradeId = grade.gradeID?.toString() || '';
+                                    const gradeName = grade.GradeName || `Grade ${gradeId}`;
+                                    if (gradeId) {
+                                      return (
+                                        <SelectItem key={gradeId} value={gradeId}>
+                                          {gradeName}
+                                        </SelectItem>
+                                      );
+                                    }
+                                    return null;
+                                  })
+                                )}
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -560,13 +588,24 @@ export default function EditDeal() {
                                 <SelectValue placeholder="Select brand" />
                               </SelectTrigger>
                               <SelectContent>
-                                {filteredBrands.map((brand: any) => (
-                                  brand.brandID != null ? (
-                                    <SelectItem key={brand.brandID} value={brand.brandID.toString()}>
-                                      {brand.brandname || `Brand ${brand.brandID}`}
-                                    </SelectItem>
-                                  ) : null
-                                ))}
+                                {hierarchyLoading ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">Loading brands...</div>
+                                ) : filteredBrands.length === 0 ? (
+                                  <div className="px-2 py-1 text-sm text-muted-foreground">No brands available</div>
+                                ) : (
+                                  filteredBrands.map((brand: any) => {
+                                    const brandId = brand.brandID?.toString() || '';
+                                    const brandName = brand.brandname || `Brand ${brandId}`;
+                                    if (brandId) {
+                                      return (
+                                        <SelectItem key={brandId} value={brandId}>
+                                          {brandName}
+                                        </SelectItem>
+                                      );
+                                    }
+                                    return null;
+                                  })
+                                )}
                               </SelectContent>
                             </Select>
                           </FormControl>
