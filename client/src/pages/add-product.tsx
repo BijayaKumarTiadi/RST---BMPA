@@ -314,10 +314,25 @@ export default function AddDeal() {
     const gradeValue = formValues.gradeText || gradeText || "";
     const brandValue = formValues.brandText || brandText || "";
     const gsmValue = formValues.GSM;
+    const groupName = formValues.groupName || selectedGroupName || "";
 
-    if (makeValue && gradeValue && brandValue && gsmValue) {
-      // Use spaces between components
-      return `${makeValue} ${gradeValue} ${brandValue} ${gsmValue}gsm`;
+    // Special handling for Kraft Reel products
+    if (isKraftReelGroup(groupName)) {
+      // For Kraft Reel, brand is optional, so generate description without it if not provided
+      if (makeValue && gradeValue && gsmValue) {
+        if (brandValue) {
+          return `${makeValue} ${gradeValue} ${brandValue} ${gsmValue}gsm`;
+        } else {
+          // Generate without brand for Kraft Reel
+          return `${makeValue} ${gradeValue} ${gsmValue}gsm`;
+        }
+      }
+    } else {
+      // For regular products, all fields are required
+      if (makeValue && gradeValue && brandValue && gsmValue) {
+        // Use spaces between components
+        return `${makeValue} ${gradeValue} ${brandValue} ${gsmValue}gsm`;
+      }
     }
     return '';
   };
