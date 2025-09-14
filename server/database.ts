@@ -227,38 +227,48 @@ export async function initializeDatabase(): Promise<void> {
           ) ENGINE=InnoDB DEFAULT CHARSET=latin1
         `);
 
-        // Create default admin user
-        const bcrypt = await import('bcryptjs');
-        const defaultAdminPassword = await bcrypt.hash('admin', 12);
-        
-        await executeQuery(`
-          INSERT INTO admin_users (username, password_hash, full_name, email, role)
-          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-        `, [defaultAdminPassword]);
+        // Create default admin user only if ADMIN_PASSWORD is provided
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (adminPassword) {
+          const bcrypt = await import('bcryptjs');
+          const hashedPassword = await bcrypt.hash(adminPassword, 12);
+          
+          await executeQuery(`
+            INSERT INTO admin_users (username, password_hash, full_name, email, role)
+            VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+          `, [hashedPassword]);
 
-        console.log('✅ Admin table created successfully');
-        console.log('🔑 Default admin user created (username: admin, password: admin)');
+          console.log('✅ Admin table created successfully');
+          console.log('🔑 Default admin user created with provided password');
+        } else {
+          console.log('⚠️  Admin table created but no admin user created. Set ADMIN_PASSWORD environment variable to create default admin.');
+        }
       } else {
         console.log('✅ Admin table already exists');
         
-        // Ensure default admin user exists
-        try {
-          const bcrypt = await import('bcryptjs');
-          const defaultAdminPassword = await bcrypt.hash('admin', 12);
-          
-          await executeQuery(`
-            INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-            VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-          `, [defaultAdminPassword]);
+        // Ensure default admin user exists only if ADMIN_PASSWORD is provided
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (adminPassword) {
+          try {
+            const bcrypt = await import('bcryptjs');
+            const hashedPassword = await bcrypt.hash(adminPassword, 12);
+            
+            await executeQuery(`
+              INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+              VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+            `, [hashedPassword]);
 
-          // Update admin email if needed
-          await executeQuery(`
-            UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
-          `);
-          
-          console.log('✅ Default admin user verified');
-        } catch (error) {
-          console.log('ℹ️ Default admin user already exists');
+            // Update admin email if needed
+            await executeQuery(`
+              UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
+            `);
+            
+            console.log('✅ Default admin user verified');
+          } catch (error) {
+            console.log('ℹ️ Default admin user already exists');
+          }
+        } else {
+          console.log('ℹ️ No ADMIN_PASSWORD provided, skipping admin user creation');
         }
       }
     }
@@ -516,7 +526,8 @@ export async function initializeDatabase(): Promise<void> {
         `);
         console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
       } catch (alterError) {
-        console.log('ℹ️ Enhanced tracking columns may already exist or schema differs:', alterError.message);
+        const errorMessage = alterError instanceof Error ? alterError.message : String(alterError);
+        console.log('ℹ️ Enhanced tracking columns may already exist or schema differs:', errorMessage);
         // Don't throw - continue with initialization
       }
     }
@@ -540,7 +551,8 @@ export async function initializeDatabase(): Promise<void> {
         `);
         console.log('✅ inquiry_ref column added to BMPA_inquiries');
       } catch (alterError) {
-        console.log('ℹ️ inquiry_ref column may already exist or index already created:', alterError.message);
+        const errorMessage = alterError instanceof Error ? alterError.message : String(alterError);
+        console.log('ℹ️ inquiry_ref column may already exist or index already created:', errorMessage);
         // Don't throw - continue with initialization
       }
     }

@@ -11,6 +11,16 @@ import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
 
+// Extend express-session module
+declare module 'express-session' {
+  interface SessionData {
+    memberId?: number;
+    memberEmail?: string;
+    isAuthenticated?: boolean;
+    adminId?: number;
+  }
+}
+
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
   if (!req.session.memberId) {
@@ -87,7 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true, deals });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -107,7 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Test data created successfully' });
     } catch (error) {
       console.error('Error creating test data:', error);
-      res.status(500).json({ success: false, error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ success: false, error: errorMessage });
     }
   });
 
@@ -131,7 +143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Search key column ready' });
     } catch (error) {
       console.error('Error adding search_key column:', error);
-      res.status(500).json({ error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -155,7 +168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error backfilling search keys:', error);
-      res.status(500).json({ error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -166,7 +180,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Search key index created' });
     } catch (error) {
       // Index might already exist, that's OK
-      console.log('Index may already exist:', error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('Index may already exist:', errorMessage);
       res.json({ success: true, message: 'Search key index ready' });
     }
   });
@@ -307,9 +322,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error checking inquiry tables:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({ 
         success: false, 
-        error: error.message 
+        error: errorMessage 
       });
     }
   });
@@ -325,13 +341,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const columns = await executeQuery(`DESCRIBE ${table}`);
           results[table] = columns;
         } catch (error) {
-          results[table] = { error: error.message };
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          results[table] = { error: errorMessage };
         }
       }
       
       res.json({ success: true, tables: results });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -391,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]);
         
         createdDeals.push({
-          id: result.insertId,
+          id: (result as any).insertId,
           title: deal.Seller_comments.split('\n')[0]
         });
       }
@@ -407,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to create demo deals',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
@@ -696,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/categories', async (req, res) => {
     try {
       // Categories are now handled differently - return empty array
-      const categories = [];
+      const categories: any[] = [];
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
