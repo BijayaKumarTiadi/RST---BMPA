@@ -32,10 +32,12 @@ try {
 }
 
 // Production-ready session configuration
-const sessionSecret = process.env.SESSION_SECRET;
+let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
-  console.error('❌ SESSION_SECRET environment variable is required');
-  process.exit(1);
+  console.error('⚠️ SESSION_SECRET environment variable not set, generating ephemeral secret');
+  console.error('🔐 For production, set SESSION_SECRET environment variable to a strong random value');
+  // Generate a cryptographically random ephemeral secret
+  sessionSecret = require('crypto').randomBytes(32).toString('hex');
 }
 
 // Set trust proxy for production deployment behind proxies (like Cloud Run)

@@ -174,17 +174,22 @@ export async function initializeDatabase(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1
       `);
 
-      // Create default admin user (username: admin, password: admin)
-      const bcrypt = await import('bcryptjs');
-      const defaultAdminPassword = await bcrypt.hash('admin', 12);
-      
-      await executeQuery(`
-        INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-        VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-      `, [defaultAdminPassword]);
+      // Only create admin user if ADMIN_PASSWORD is provided
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (adminPassword) {
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.hash(adminPassword, 12);
+        
+        await executeQuery(`
+          INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+        `, [hashedPassword]);
+        console.log('🔑 Default admin user created with provided password');
+      } else {
+        console.log('⚠️ No ADMIN_PASSWORD provided, skipping admin user creation');
+      }
 
       console.log('✅ Database tables created successfully');
-      console.log('🔑 Default admin user created (username: admin, password: admin)');
     } else {
       console.log('✅ Database tables already exist');
       
