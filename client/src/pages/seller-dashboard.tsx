@@ -59,25 +59,25 @@ export default function SellerDashboard() {
   };
 
   // Helper function to check if group is Kraft Reel
-  const isKraftReelGroup = (groupName: string): boolean => {
-    return groupName?.toLowerCase().trim() === 'kraft reel';
+  const isKraftReelGroup = (groupName: string, groupID?: number): boolean => {
+    return groupName?.toLowerCase().trim() === 'kraft reel' || groupID === 3;
   };
 
   // Helper function to format dimensions based on user preference
-  const formatDimensions = (deckle_mm?: number, grain_mm?: number, groupName?: string) => {
+  const formatDimensions = (deckle_mm?: number, grain_mm?: number, groupName?: string, groupID?: number) => {
     if (!deckle_mm || !grain_mm) return 'N/A';
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
-    const isKraftReel = isKraftReelGroup(groupName || '');
+    const isKraftReel = isKraftReelGroup(groupName || '', groupID);
     
     if (isKraftReel) {
-      // For Kraft Reel: use "x" separator and show original grain_mm value with "B.S" suffix
+      // For Kraft Reel: use "," separator and show original grain_mm value with "B.S" suffix
       if (userUnit === 'inch') {
         const deckleInch = (deckle_mm / 25.4).toFixed(2);
-        return `${deckleInch}" x ${grain_mm} B.S`;
+        return `${deckleInch}", ${grain_mm} B.S`;
       } else {
         const deckleCm = (deckle_mm / 10).toFixed(1);
-        return `${deckleCm} x ${grain_mm} B.S`;
+        return `${deckleCm}cm, ${grain_mm} B.S`;
       }
     } else {
       // For regular products: use "×" separator and normal conversions
@@ -515,7 +515,7 @@ export default function SellerDashboard() {
                               <TableCell>
                                 <div className="space-y-1 text-sm">
                                   <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
-                                  <div><span className="text-muted-foreground">Dim:</span> <span className="font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName)}</span></div>
+                                  <div><span className="text-muted-foreground">Dim:</span> <span className="font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.groupID)}</span></div>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -658,7 +658,7 @@ export default function SellerDashboard() {
                                 <div>
                                   <span className="text-muted-foreground">Dim:</span>
                                   <span className="font-medium text-foreground ml-1">
-                                    {formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName)}
+                                    {formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.groupID)}
                                   </span>
                                 </div>
                                 <div>
