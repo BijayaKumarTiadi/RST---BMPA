@@ -24,12 +24,16 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
   if (!deal) return null;
 
   // Helper function to check if group is Kraft Reel
-  const isKraftReelGroup = (groupName: string, groupID?: number): boolean => {
-    return groupName?.toLowerCase().trim() === 'kraft reel' || groupID === 3;
+  const isKraftReelGroup = (groupName: string, groupID?: number | string): boolean => {
+    // Check by group name (case insensitive)
+    const nameMatch = groupName?.toLowerCase().trim() === 'kraft reel';
+    // Check by GroupID (handle both number and string)
+    const idMatch = groupID === 3 || groupID === '3' || String(groupID) === '3';
+    return nameMatch || idMatch;
   };
 
   // Helper function to format Deckle with conversions
-  const formatDeckleWithConversions = (deckle_mm?: number, groupName?: string, groupID?: number) => {
+  const formatDeckleWithConversions = (deckle_mm?: number, groupName?: string, groupID?: number | string) => {
     if (!deckle_mm) return null;
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
