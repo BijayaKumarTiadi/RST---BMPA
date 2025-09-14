@@ -491,20 +491,25 @@ export async function initializeDatabase(): Promise<void> {
     
     if (inquiryColumnsCheck && inquiryColumnsCheck.count === 0) {
       console.log('🔧 Adding enhanced tracking columns to BMPA_inquiries...');
-      await executeQuery(`
-        ALTER TABLE BMPA_inquiries 
-        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-        ADD COLUMN buyer_id INT AFTER inquiry_ref,
-        ADD COLUMN seller_id INT AFTER buyer_phone,
-        ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
-        ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
-        ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
-        ADD INDEX idx_buyer_id (buyer_id),
-        ADD INDEX idx_seller_id (seller_id),
-        ADD INDEX idx_status (status),
-        ADD INDEX idx_inquiry_ref (inquiry_ref)
-      `);
-      console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
+      try {
+        await executeQuery(`
+          ALTER TABLE BMPA_inquiries 
+          ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+          ADD COLUMN buyer_id INT AFTER inquiry_ref,
+          ADD COLUMN seller_id INT AFTER buyer_phone,
+          ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
+          ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
+          ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
+          ADD INDEX idx_buyer_id (buyer_id),
+          ADD INDEX idx_seller_id (seller_id),
+          ADD INDEX idx_status (status),
+          ADD INDEX idx_inquiry_ref (inquiry_ref)
+        `);
+        console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
+      } catch (alterError) {
+        console.log('ℹ️ Enhanced tracking columns may already exist or schema differs:', alterError.message);
+        // Don't throw - continue with initialization
+      }
     }
     
     // Check if inquiry_ref column exists in BMPA_inquiries
@@ -518,12 +523,17 @@ export async function initializeDatabase(): Promise<void> {
     
     if (inquiryRefCheck && inquiryRefCheck.count === 0) {
       console.log('🔧 Adding inquiry_ref column to BMPA_inquiries...');
-      await executeQuery(`
-        ALTER TABLE BMPA_inquiries 
-        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-        ADD INDEX idx_inquiry_ref (inquiry_ref)
-      `);
-      console.log('✅ inquiry_ref column added to BMPA_inquiries');
+      try {
+        await executeQuery(`
+          ALTER TABLE BMPA_inquiries 
+          ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+          ADD INDEX idx_inquiry_ref (inquiry_ref)
+        `);
+        console.log('✅ inquiry_ref column added to BMPA_inquiries');
+      } catch (alterError) {
+        console.log('ℹ️ inquiry_ref column may already exist or index already created:', alterError.message);
+        // Don't throw - continue with initialization
+      }
     }
     
     // Create bmpa_received_inquiries table for sellers to track received inquiries
