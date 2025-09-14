@@ -44,21 +44,12 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Root health check endpoint for Cloud Run deployment
-  app.get('/', (req, res) => {
-    res.status(200).json({
-      status: 'ok',
-      message: 'BMPA Trading Platform is running',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
-
-  // Dedicated API health check endpoint - bypasses frontend routing
+  // Health check endpoint for Cloud Run deployment
+  // Note: Using /api/health instead of / to allow frontend to be served at root
   app.get('/api/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
-      message: 'Application is healthy',
+      message: 'BMPA Trading Platform is healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime()
     });
