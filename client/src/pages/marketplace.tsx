@@ -241,30 +241,30 @@ export default function Marketplace() {
   }, [userSettings]);
 
   // Helper function to check if group is Kraft Reel
-  const isKraftReelGroup = (groupName: string): boolean => {
-    return groupName?.toLowerCase().trim() === 'kraft reel';
+  const isKraftReelGroup = (groupName: string, groupID?: number): boolean => {
+    return groupName?.toLowerCase().trim() === 'kraft reel' || groupID === 3;
   };
 
   // Helper function to format dimensions based on user preference
-  const formatDimensions = (deckle_mm: number, grain_mm: number, groupName?: string) => {
+  const formatDimensions = (deckle_mm: number, grain_mm: number, groupName?: string, groupID?: number) => {
     const userUnit = userSettings?.dimension_unit || 'cm';
-    const isKraftReel = isKraftReelGroup(groupName || '');
+    const isKraftReel = isKraftReelGroup(groupName || '', groupID);
     
     if (isKraftReel) {
-      // For Kraft Reel: use "x" separator and show original grain_mm value with "B.S" suffix
+      // For Kraft Reel: use "," separator and show original grain_mm value with "B.S" suffix
       if (userUnit === 'inch') {
         const deckleInch = (deckle_mm / 25.4).toFixed(2);
         return (
           <>
-            <div>{deckleInch}" x {grain_mm} B.S</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} x {grain_mm} B.S</div>
+            <div>{deckleInch}", {grain_mm} B.S</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.S</div>
           </>
         );
       } else {
         return (
           <>
-            <div>{(deckle_mm/10).toFixed(1)} x {grain_mm} B.S</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" x {grain_mm} B.S</div>
+            <div>{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.S</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}", {grain_mm} B.S</div>
           </>
         );
       }
@@ -1939,7 +1939,7 @@ export default function Marketplace() {
                                 <span className="font-medium text-gray-500">Dimensions:</span>
                                 <div className="font-semibold text-foreground">
                                   {(deal.Deckle_mm && deal.grain_mm) ? 
-                                    formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName)
+                                    formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
                                   : 'N/A'}
                                 </div>
                               </div>

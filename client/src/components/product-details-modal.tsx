@@ -24,22 +24,36 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
   if (!deal) return null;
 
   // Helper function to check if group is Kraft Reel
-  const isKraftReelGroup = (groupName: string): boolean => {
-    return groupName?.toLowerCase().trim() === 'kraft reel';
+  const isKraftReelGroup = (groupName: string, groupID?: number): boolean => {
+    return groupName?.toLowerCase().trim() === 'kraft reel' || groupID === 3;
   };
 
   // Helper function to format Deckle with conversions
-  const formatDeckleWithConversions = (deckle_mm?: number) => {
+  const formatDeckleWithConversions = (deckle_mm?: number, groupName?: string, groupID?: number) => {
     if (!deckle_mm) return null;
     
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
-    const deckleCm = (deckle_mm / 10).toFixed(1);
-    const deckleInch = (deckle_mm / 25.4).toFixed(2);
+    const isKraftReel = isKraftReelGroup(groupName || '', groupID);
     
-    if (userUnit === 'inch') {
-      return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+    if (isKraftReel) {
+      // For Kraft Reel: show only user's preferred unit, no conversions
+      if (userUnit === 'inch') {
+        const deckleInch = (deckle_mm / 25.4).toFixed(2);
+        return `${deckleInch}in`;
+      } else {
+        const deckleCm = (deckle_mm / 10).toFixed(1);
+        return `${deckleCm}cm`;
+      }
     } else {
-      return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+      // For regular products: show all conversions
+      const deckleCm = (deckle_mm / 10).toFixed(1);
+      const deckleInch = (deckle_mm / 25.4).toFixed(2);
+      
+      if (userUnit === 'inch') {
+        return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+      } else {
+        return `${deckle_mm}mm(${deckleCm}cm / ${deckleInch}in)`;
+      }
     }
   };
 
@@ -121,12 +135,12 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
               {deal.Deckle_mm && (
                 <div>
                   <span className="text-muted-foreground">Deckle:</span>
-                  <span className="ml-2 font-medium">{formatDeckleWithConversions(deal.Deckle_mm)}</span>
+                  <span className="ml-2 font-medium">{formatDeckleWithConversions(deal.Deckle_mm, deal.GroupName, deal.GroupID)}</span>
                 </div>
               )}
               {deal.grain_mm && (
                 <div>
-                  {isKraftReelGroup(deal.GroupName || '') ? (
+                  {isKraftReelGroup(deal.GroupName || '', deal.GroupID) ? (
                     <>
                       <span className="text-muted-foreground">B.S:</span>
                       <span className="ml-2 font-medium">{formatGrainKraftReel(deal.grain_mm)}</span>
