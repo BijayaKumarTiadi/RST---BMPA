@@ -691,8 +691,8 @@ export async function initializeDatabase(): Promise<void> {
         console.log('🔍 Creating search key index...');
         await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key(255))');
         console.log('✅ Search key index created');
-      } catch (indexError) {
-        console.log('⚠️ Could not create search key index:', indexError.message);
+      } catch (indexError: any) {
+        console.log('⚠️ Could not create search key index:', indexError.message || indexError);
       }
     } else {
       console.log('✅ Search key index already exists');
