@@ -17,18 +17,32 @@ import Navigation from "@/components/navigation";
 
 const dealSchema = z.object({
   groupID: z.string().min(1, "Stock group is required"),
-  MakeID: z.string().min(1, "Stock make is required"),
-  GradeID: z.string().min(1, "Stock grade is required"),
-  BrandID: z.string().optional(), // Brand can be empty, make it optional
+  MakeID: z.string().optional(),
+  GradeID: z.string().optional(),
+  BrandID: z.string().optional(),
+  make_text: z.string().optional(),
+  grade_text: z.string().optional(),
+  brand_text: z.string().optional(),
   GSM: z.number().min(1, "GSM is required"),
   Deckle_mm: z.number().min(1, "Deckle (mm) is required"),
   grain_mm: z.number().min(1, "Grain (mm) is required"),
   OfferPrice: z.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
   Seller_comments: z.string().optional(),
+  stock_description: z.string().optional(),
 });
 
 type DealFormData = z.infer<typeof dealSchema>;
+
+// Helper function to generate stock description
+function generateStockDescription(makeText: string, gradeText: string, brandText: string, gsm: number): string {
+  const parts = [];
+  if (makeText) parts.push(makeText);
+  if (gradeText) parts.push(gradeText);
+  if (brandText) parts.push(brandText);
+  if (gsm > 0) parts.push(`${gsm} GSM`);
+  return parts.join(' - ');
+}
 
 export default function EditDeal() {
   const params = useParams();
@@ -38,6 +52,9 @@ export default function EditDeal() {
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
+  const [makeText, setMakeText] = useState("");
+  const [gradeText, setGradeText] = useState("");
+  const [brandText, setBrandText] = useState("");
 
   // Guard clause: redirect if no dealId is provided
   if (!dealId) {
@@ -170,27 +187,85 @@ export default function EditDeal() {
     form.setValue("MakeID", "");
     form.setValue("GradeID", "");
     form.setValue("BrandID", "");
+    form.setValue("make_text", "");
+    form.setValue("grade_text", "");
+    form.setValue("brand_text", "");
+    setMakeText("");
+    setGradeText("");
+    setBrandText("");
   };
 
   const handleMakeChange = (value: string) => {
     setSelectedMake(value);
     form.setValue("MakeID", value);
     form.setValue("BrandID", "");
+    form.setValue("brand_text", "");
+    setBrandText("");
+    
+    // Set make text
+    const selectedMakeObj = filteredMakes.find((m: any) => m.make_ID?.toString() === value);
+    const makeTextValue = selectedMakeObj?.make_Name || value;
+    setMakeText(makeTextValue);
+    form.setValue("make_text", makeTextValue);
+  };
+
+  const handleGradeChange = (value: string) => {
+    form.setValue("GradeID", value);
+    
+    // Set grade text
+    const selectedGradeObj = filteredGrades.find((g: any) => g.gradeID?.toString() === value);
+    const gradeTextValue = selectedGradeObj?.GradeName || value;
+    setGradeText(gradeTextValue);
+    form.setValue("grade_text", gradeTextValue);
+  };
+
+  const handleBrandChange = (value: string) => {
+    form.setValue("BrandID", value);
+    
+    // Set brand text
+    const selectedBrandObj = filteredBrands.find((b: any) => b.brandID?.toString() === value);
+    const brandTextValue = selectedBrandObj?.brandname || value;
+    setBrandText(brandTextValue);
+    form.setValue("brand_text", brandTextValue);
   };
 
   // Update form when deal data is loaded
   useEffect(() => {
-    if (dealData) {
+    if (dealData && stockHierarchy) {
       const deal = dealData;
       
       // Set selected values for cascading dropdowns FIRST
       const groupId = deal.groupID?.toString() || "";
-      const makeId = deal.MakeID || ""; // MakeID is already a string, don't call toString()
-      const gradeId = deal.GradeID || ""; // GradeID is already a string
-      const brandId = deal.BrandID || ""; // BrandID is already a string, can be empty
+      const makeId = deal.MakeID || deal.Make || ""; // Try both MakeID and Make
+      const gradeId = deal.GradeID || deal.Grade || ""; // Try both GradeID and Grade
+      const brandId = deal.BrandID || deal.Brand || ""; // Try both BrandID and Brand
       
       setSelectedGroup(groupId);
       setSelectedMake(makeId);
+      
+      // Extract text values from the deal data or lookup from hierarchy
+      let makeTextValue = deal.MakeName || deal.Make || "";
+      let gradeTextValue = deal.GradeName || deal.Grade || "";
+      let brandTextValue = deal.BrandName || deal.Brand || "";
+      
+      // If we have IDs but no text values, lookup from hierarchy
+      if (!makeTextValue && makeId) {
+        const makeObj = makes.find((m: any) => m.make_ID?.toString() === makeId);
+        makeTextValue = makeObj?.make_Name || makeId;
+      }
+      if (!gradeTextValue && gradeId) {
+        const gradeObj = grades.find((g: any) => g.gradeID?.toString() === gradeId);
+        gradeTextValue = gradeObj?.GradeName || gradeId;
+      }
+      if (!brandTextValue && brandId) {
+        const brandObj = brands.find((b: any) => b.brandID?.toString() === brandId);
+        brandTextValue = brandObj?.brandname || brandId;
+      }
+      
+      // Set text state values
+      setMakeText(makeTextValue);
+      setGradeText(gradeTextValue);
+      setBrandText(brandTextValue);
       
       // Set form values with proper type conversions
       const formValues = {
@@ -198,12 +273,16 @@ export default function EditDeal() {
         MakeID: makeId,
         GradeID: gradeId,
         BrandID: brandId,
+        make_text: makeTextValue,
+        grade_text: gradeTextValue,
+        brand_text: brandTextValue,
         GSM: Number(deal.GSM) || 0,
         Deckle_mm: Number(deal.Deckle_mm) || 0,
         grain_mm: Number(deal.grain_mm) || 0,
         OfferPrice: Number(deal.OfferPrice) || 0,
         OfferUnit: deal.OfferUnit || "",
         Seller_comments: deal.Seller_comments || "",
+        stock_description: deal.stock_description || "",
       };
       
       form.reset(formValues);
@@ -218,17 +297,32 @@ export default function EditDeal() {
         setGrainInputValue(grainValue);
       }
     }
-  }, [dealData, form]);
+  }, [dealData, stockHierarchy, form, makes, grades, brands]);
 
   // Update deal mutation
   const updateDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
+      // Generate stock description if not provided
+      let stockDescription = data.stock_description;
+      if (!stockDescription) {
+        stockDescription = generateStockDescription(
+          data.make_text || makeText || "",
+          data.grade_text || gradeText || "",
+          data.brand_text || brandText || "",
+          data.GSM
+        );
+      }
+      
       const payload = {
         ...data,
         groupID: parseInt(data.groupID),
-        MakeID: parseInt(data.MakeID),
-        GradeID: parseInt(data.GradeID),
-        BrandID: parseInt(data.BrandID || "0"),
+        MakeID: isNaN(parseInt(data.MakeID || "")) ? data.MakeID : parseInt(data.MakeID || "0"),
+        GradeID: isNaN(parseInt(data.GradeID || "")) ? data.GradeID : parseInt(data.GradeID || "0"),
+        BrandID: isNaN(parseInt(data.BrandID || "")) ? data.BrandID : parseInt(data.BrandID || "0"),
+        make_text: data.make_text || makeText || "",
+        grade_text: data.grade_text || gradeText || "",
+        brand_text: data.brand_text || brandText || "",
+        stock_description: stockDescription,
       };
       return apiRequest("PUT", `/api/deals/${dealId!}`, payload);
     },
@@ -385,7 +479,7 @@ export default function EditDeal() {
                           <FormControl>
                             <Select 
                               value={field.value} 
-                              onValueChange={field.onChange}
+                              onValueChange={handleGradeChange}
                               disabled={!selectedMake}
                               data-testid="select-grade"
                             >
@@ -417,7 +511,7 @@ export default function EditDeal() {
                           <FormControl>
                             <Select 
                               value={field.value} 
-                              onValueChange={field.onChange}
+                              onValueChange={handleBrandChange}
                               disabled={!selectedMake}
                               data-testid="select-brand"
                             >

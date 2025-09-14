@@ -553,41 +553,132 @@ class DealService {
         };
       }
 
-      const allowedFields = [
-        'deal_title', 'deal_description', 'price', 'quantity', 'unit',
-        'min_order_quantity', 'location', 'deal_specifications', 'expires_at', 'stock_description'
-      ];
-      
+      // Extract main product fields from updateData
+      const {
+        group_id, groupID,
+        make_id, MakeID, make_text,
+        grade_id, GradeID, grade_text,
+        brand_id, BrandID, brand_text,
+        GSM,
+        Deckle_mm,
+        grain_mm,
+        OfferPrice,
+        OfferUnit,
+        Seller_comments,
+        quantity,
+        stock_description,
+        deal_title,
+        deal_description,
+        price,
+        unit,
+        min_order_quantity,
+        location,
+        deal_specifications,
+        expires_at
+      } = updateData as any;
+
       const updateFields = [];
       const updateValues = [];
       let updateStockDescription = false;
       
-      for (const field of allowedFields) {
-        if (updateData[field] !== undefined) {
-          if (field === 'stock_description') {
-            updateFields.push(`stock_description = ?`);
-            updateValues.push(updateData[field]);
-            updateStockDescription = true;
-          } else if (field === 'deal_specifications') {
-            updateFields.push(`DealSpecifications = ?`);
-            updateValues.push(JSON.stringify(updateData[field]));
-          } else if (field === 'deal_title') {
-            updateFields.push(`DealTitle = ?`);
-            updateValues.push(updateData[field]);
-          } else if (field === 'deal_description') {
-            updateFields.push(`DealDescription = ?`);
-            updateValues.push(updateData[field]);
-          } else if (field === 'min_order_quantity') {
-            updateFields.push(`MinOrderQuantity = ?`);
-            updateValues.push(updateData[field]);
-          } else if (field === 'expires_at') {
-            updateFields.push(`ExpiresAt = ?`);
-            updateValues.push(updateData[field]);
-          } else {
-            updateFields.push(`${field.charAt(0).toUpperCase() + field.slice(1)} = ?`);
-            updateValues.push(updateData[field]);
-          }
-        }
+      // Handle main product fields
+      if (group_id !== undefined || groupID !== undefined) {
+        updateFields.push(`groupID = ?`);
+        updateValues.push(group_id || groupID);
+      }
+      
+      // Handle Make field - could be ID or text
+      if (make_id !== undefined || MakeID !== undefined || make_text !== undefined) {
+        updateFields.push(`Make = ?`);
+        // Use make_text if no ID is provided, otherwise use ID
+        const makeValue = make_text || make_id || MakeID || '';
+        updateValues.push(makeValue);
+      }
+      
+      // Handle Grade field - could be ID or text
+      if (grade_id !== undefined || GradeID !== undefined || grade_text !== undefined) {
+        updateFields.push(`Grade = ?`);
+        // Use grade_text if no ID is provided, otherwise use ID
+        const gradeValue = grade_text || grade_id || GradeID || '';
+        updateValues.push(gradeValue);
+      }
+      
+      // Handle Brand field - could be ID or text
+      if (brand_id !== undefined || BrandID !== undefined || brand_text !== undefined) {
+        updateFields.push(`Brand = ?`);
+        // Use brand_text if no ID is provided, otherwise use ID
+        const brandValue = brand_text || brand_id || BrandID || '';
+        updateValues.push(brandValue);
+      }
+      
+      // Handle technical specifications
+      if (GSM !== undefined) {
+        updateFields.push(`GSM = ?`);
+        updateValues.push(GSM);
+      }
+      
+      if (Deckle_mm !== undefined) {
+        updateFields.push(`Deckle_mm = ?`);
+        updateValues.push(Deckle_mm);
+      }
+      
+      if (grain_mm !== undefined) {
+        updateFields.push(`grain_mm = ?`);
+        updateValues.push(grain_mm);
+      }
+      
+      // Handle pricing and quantity
+      if (OfferPrice !== undefined || price !== undefined) {
+        updateFields.push(`OfferPrice = ?`);
+        updateValues.push(OfferPrice || price);
+      }
+      
+      if (OfferUnit !== undefined || unit !== undefined) {
+        updateFields.push(`OfferUnit = ?`);
+        updateValues.push(OfferUnit || unit);
+      }
+      
+      if (quantity !== undefined) {
+        updateFields.push(`quantity = ?`);
+        updateValues.push(quantity);
+      }
+      
+      if (Seller_comments !== undefined || deal_description !== undefined) {
+        updateFields.push(`Seller_comments = ?`);
+        updateValues.push(Seller_comments || deal_description);
+      }
+      
+      // Handle stock description
+      if (stock_description !== undefined) {
+        updateFields.push(`stock_description = ?`);
+        updateValues.push(stock_description);
+        updateStockDescription = true;
+      }
+      
+      // Handle other optional fields
+      if (deal_title !== undefined) {
+        updateFields.push(`DealTitle = ?`);
+        updateValues.push(deal_title);
+      }
+      
+      if (deal_specifications !== undefined) {
+        updateFields.push(`DealSpecifications = ?`);
+        updateValues.push(JSON.stringify(deal_specifications));
+      }
+      
+      if (min_order_quantity !== undefined) {
+        updateFields.push(`MinOrderQuantity = ?`);
+        updateValues.push(min_order_quantity);
+      }
+      
+      if (location !== undefined) {
+        updateFields.push(`Location = ?`);
+        updateValues.push(location);
+      }
+      
+      if (expires_at !== undefined) {
+        updateFields.push(`ExpiresAt = ?`);
+        updateValues.push(expires_at);
       }
 
       // If stock_description is updated, also update search_key
