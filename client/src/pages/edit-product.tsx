@@ -236,30 +236,71 @@ export default function EditDeal() {
       
       // Set selected values for cascading dropdowns FIRST
       const groupId = deal.groupID?.toString() || "";
-      const makeId = deal.MakeID || deal.Make || ""; // Try both MakeID and Make
-      const gradeId = deal.GradeID || deal.Grade || ""; // Try both GradeID and Grade
-      const brandId = deal.BrandID || deal.Brand || ""; // Try both BrandID and Brand
+      
+      // Extract text values from the deal data
+      let makeTextValue = deal.Make || "";
+      let gradeTextValue = deal.Grade || "";
+      let brandTextValue = deal.Brand || "";
+      
+      // Find IDs from hierarchy based on text values
+      let makeId = "";
+      let gradeId = "";
+      let brandId = "";
+      
+      // Find makeId from text
+      if (makeTextValue) {
+        const makeObj = makes.find((m: any) => 
+          m.make_Name?.toLowerCase() === makeTextValue.toLowerCase()
+        );
+        makeId = makeObj?.make_ID?.toString() || "";
+      }
+      
+      // If no makeId found, try using MakeID field if it exists
+      if (!makeId && deal.MakeID) {
+        makeId = deal.MakeID.toString();
+        const makeObj = makes.find((m: any) => m.make_ID?.toString() === makeId);
+        if (makeObj) {
+          makeTextValue = makeObj.make_Name || makeTextValue;
+        }
+      }
       
       setSelectedGroup(groupId);
       setSelectedMake(makeId);
       
-      // Extract text values from the deal data or lookup from hierarchy
-      let makeTextValue = deal.MakeName || deal.Make || "";
-      let gradeTextValue = deal.GradeName || deal.Grade || "";
-      let brandTextValue = deal.BrandName || deal.Brand || "";
+      // Find gradeId from text
+      if (gradeTextValue && makeId) {
+        const gradeObj = grades.find((g: any) => 
+          g.GradeName?.toLowerCase() === gradeTextValue.toLowerCase() && 
+          g.Make_ID?.toString() === makeId
+        );
+        gradeId = gradeObj?.gradeID?.toString() || "";
+      }
       
-      // If we have IDs but no text values, lookup from hierarchy
-      if (!makeTextValue && makeId) {
-        const makeObj = makes.find((m: any) => m.make_ID?.toString() === makeId);
-        makeTextValue = makeObj?.make_Name || makeId;
-      }
-      if (!gradeTextValue && gradeId) {
+      // If no gradeId found, try using GradeID field if it exists
+      if (!gradeId && deal.GradeID) {
+        gradeId = deal.GradeID.toString();
         const gradeObj = grades.find((g: any) => g.gradeID?.toString() === gradeId);
-        gradeTextValue = gradeObj?.GradeName || gradeId;
+        if (gradeObj) {
+          gradeTextValue = gradeObj.GradeName || gradeTextValue;
+        }
       }
-      if (!brandTextValue && brandId) {
+      
+      // Find brandId from text
+      if (brandTextValue && makeId) {
+        const brandObj = brands.find((b: any) => 
+          b.brandname?.toLowerCase() === brandTextValue.toLowerCase() && 
+          b.make_ID?.toString() === makeId
+        );
+        brandId = brandObj?.brandID?.toString() || "";
+      }
+      
+      // If no brandId found, try using BrandID field if it exists
+      if (!brandId && deal.BrandID) {
+        brandId = deal.BrandID.toString();
         const brandObj = brands.find((b: any) => b.brandID?.toString() === brandId);
-        brandTextValue = brandObj?.brandname || brandId;
+        if (brandObj) {
+          brandTextValue = brandObj.brandname || brandTextValue;
+        }
       }
       
       // Set text state values
@@ -270,9 +311,9 @@ export default function EditDeal() {
       // Set form values with proper type conversions
       const formValues = {
         groupID: groupId,
-        MakeID: makeId,
-        GradeID: gradeId,
-        BrandID: brandId,
+        MakeID: makeId || makeTextValue,  // Use text value as fallback if no ID found
+        GradeID: gradeId || gradeTextValue,  // Use text value as fallback if no ID found
+        BrandID: brandId || brandTextValue,  // Use text value as fallback if no ID found
         make_text: makeTextValue,
         grade_text: gradeTextValue,
         brand_text: brandTextValue,

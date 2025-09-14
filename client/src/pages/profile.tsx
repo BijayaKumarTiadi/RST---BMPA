@@ -83,8 +83,10 @@ export default function Profile() {
   });
 
   const handleEdit = () => {
-    setIsEditing(true);
-    setEditedProfile(profileData || {});
+    if (profileData) {
+      setEditedProfile({ ...profileData });
+      setIsEditing(true);
+    }
   };
 
   const handleSave = () => {
@@ -93,12 +95,19 @@ export default function Profile() {
 
   const handleCancel = () => {
     setIsEditing(false);
-    setEditedProfile({});
+    setEditedProfile(profileData || {});
   };
 
   const handleInputChange = (field: keyof UserProfile, value: string) => {
     setEditedProfile(prev => ({ ...prev, [field]: value }));
   };
+  
+  // Initialize editedProfile when profileData loads
+  useEffect(() => {
+    if (profileData && !isEditing) {
+      setEditedProfile(profileData);
+    }
+  }, [profileData, isEditing]);
 
   if (!isAuthenticated) {
     return null;
