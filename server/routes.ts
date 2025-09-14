@@ -34,6 +34,25 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Basic health check endpoint - responds immediately without database checks
+  app.get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      message: 'Application is healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
+  // Root endpoint health check
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      message: 'BMPA Trade Platform is running',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Clean up expired OTPs periodically
   setInterval(() => {
     otpService.cleanupExpiredOTPs().catch(console.error);
