@@ -5,21 +5,11 @@ import { otpService } from "./otpService";
 import { adminService } from "./adminService";
 import { dealService } from "./dealService";
 import { storage } from "./storage";
-import { executeQuery, executeQuerySingle, getPool } from "./database";
+import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
-
-// Extend express-session module
-declare module 'express-session' {
-  interface SessionData {
-    memberId?: number;
-    memberEmail?: string;
-    isAuthenticated?: boolean;
-    adminId?: number;
-  }
-}
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -44,33 +34,10 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for Cloud Run deployment
-  // Note: Using /api/health instead of / to allow frontend to be served at root
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({
-      status: 'ok',
-      message: 'BMPA Trading Platform is healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
-
-  // Clean up expired OTPs periodically (only if database is available)
-  // Delay initial execution to avoid startup issues
-  setTimeout(() => {
-    setInterval(async () => {
-      try {
-        // Only attempt cleanup if database is available
-        const pool = getPool();
-        if (pool) {
-          await otpService.cleanupExpiredOTPs();
-        }
-      } catch (error) {
-        // Silently ignore cleanup errors to prevent log spam
-        // Database might not be available yet
-      }
-    }, 5 * 60 * 1000); // Every 5 minutes
-  }, 30000); // Start after 30 seconds to allow database initialization
+  // Clean up expired OTPs periodically
+  setInterval(() => {
+    otpService.cleanupExpiredOTPs().catch(console.error);
+  }, 5 * 60 * 1000); // Every 5 minutes
 
   // Auth routes
   app.use('/api/auth', authRouter);
@@ -100,8 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true, deals });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: errorMessage });
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -121,8 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Test data created successfully' });
     } catch (error) {
       console.error('Error creating test data:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ success: false, error: errorMessage });
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 
@@ -146,8 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Search key column ready' });
     } catch (error) {
       console.error('Error adding search_key column:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: errorMessage });
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -171,8 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error backfilling search keys:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: errorMessage });
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -183,8 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Search key index created' });
     } catch (error) {
       // Index might already exist, that's OK
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log('Index may already exist:', errorMessage);
+      console.log('Index may already exist:', error.message);
       res.json({ success: true, message: 'Search key index ready' });
     }
   });
@@ -325,10 +287,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error checking inquiry tables:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({ 
         success: false, 
-        error: errorMessage 
+        error: error.message 
       });
     }
   });
@@ -344,15 +305,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const columns = await executeQuery(`DESCRIBE ${table}`);
           results[table] = columns;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          results[table] = { error: errorMessage };
+          results[table] = { error: error.message };
         }
       }
       
       res.json({ success: true, tables: results });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: errorMessage });
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -412,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]);
         
         createdDeals.push({
-          id: (result as any).insertId,
+          id: result.insertId,
           title: deal.Seller_comments.split('\n')[0]
         });
       }
@@ -428,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to create demo deals',
-        error: error instanceof Error ? error.message : String(error)
+        error: error.message
       });
     }
   });
@@ -717,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/categories', async (req, res) => {
     try {
       // Categories are now handled differently - return empty array
-      const categories: any[] = [];
+      const categories = [];
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);

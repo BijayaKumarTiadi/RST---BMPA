@@ -1,56 +1,31 @@
 import mysql from 'mysql2/promise';
 
-// Database configuration - will be initialized when needed
-let pool: mysql.Pool | null = null;
-
-function initializePool() {
-  if (pool) return pool;
-  
-  const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-  if (missingEnvVars.length > 0) {
-    console.error('❌ Missing required database environment variables:', missingEnvVars.join(', '));
-    console.error('Please set these environment variables for database connection.');
-    throw new Error(`Missing database environment variables: ${missingEnvVars.join(', ')}`);
-  }
-
-  const dbConfig = {
-    host: process.env.DB_HOST!,
-    port: parseInt(process.env.DB_PORT!),
-    user: process.env.DB_USER!,
-    password: process.env.DB_PASSWORD!,
-    database: process.env.DB_NAME!,
-    charset: 'utf8mb4',
-    timezone: '+00:00',
-    connectTimeout: 30000, // Reduced timeout for faster deployment
-    acquireTimeout: 30000,
-    timeout: 30000
-  };
-
-  // Create connection pool for better performance
-  pool = mysql.createPool({
-    ...dbConfig,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
-  
-  return pool;
-}
-
-export const getPool = () => {
-  if (!pool) {
-    pool = initializePool();
-  }
-  return pool;
+// Database configuration
+const dbConfig = {
+  host: '103.155.204.186',
+  port: 23306,
+  user: 'manish',
+  password: 'manish',
+  database: 'trade_bmpa25',
+  charset: 'utf8mb4',
+  timezone: '+00:00',
+  connectTimeout: 60000,
+  acquireTimeout: 60000,
+  timeout: 60000
 };
+
+// Create connection pool for better performance
+export const pool = mysql.createPool({
+  ...dbConfig,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
 // Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
-    const currentPool = getPool();
-    const connection = await currentPool.getConnection();
+    const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
     console.log('✅ MySQL database connected successfully');
@@ -67,8 +42,7 @@ export async function executeQuery<T = any>(
   params: any[] = []
 ): Promise<T[]> {
   try {
-    const currentPool = getPool();
-    const [rows] = await currentPool.execute(query, params);
+    const [rows] = await pool.execute(query, params);
     return rows as T[];
   } catch (error) {
     console.error('Database query error:', error);
@@ -90,17 +64,10 @@ export async function initializeDatabase(): Promise<void> {
   try {
     console.log('🔄 Initializing database...');
     
-    // Test connection first - if DB is not available, log and return early
-    try {
-      const isConnected = await testConnection();
-      if (!isConnected) {
-        console.log('⚠️ Database not available, skipping initialization. Server will continue running.');
-        return;
-      }
-    } catch (error) {
-      console.log('⚠️ Database connection failed, skipping initialization. Server will continue running.');
-      console.log('Database error:', error instanceof Error ? error.message : String(error));
-      return;
+    // Test connection first
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      throw new Error('Failed to connect to database');
     }
 
     // Check if bmpa_members table exists, if not create it
@@ -174,22 +141,17 @@ export async function initializeDatabase(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1
       `);
 
-      // Only create admin user if ADMIN_PASSWORD is provided
-      const adminPassword = process.env.ADMIN_PASSWORD;
-      if (adminPassword) {
-        const bcrypt = await import('bcryptjs');
-        const hashedPassword = await bcrypt.hash(adminPassword, 12);
-        
-        await executeQuery(`
-          INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-        `, [hashedPassword]);
-        console.log('🔑 Default admin user created with provided password');
-      } else {
-        console.log('⚠️ No ADMIN_PASSWORD provided, skipping admin user creation');
-      }
+      // Create default admin user (username: admin, password: admin)
+      const bcrypt = await import('bcryptjs');
+      const defaultAdminPassword = await bcrypt.hash('admin', 12);
+      
+      await executeQuery(`
+        INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+        VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+      `, [defaultAdminPassword]);
 
       console.log('✅ Database tables created successfully');
+      console.log('🔑 Default admin user created (username: admin, password: admin)');
     } else {
       console.log('✅ Database tables already exist');
       
@@ -256,48 +218,38 @@ export async function initializeDatabase(): Promise<void> {
           ) ENGINE=InnoDB DEFAULT CHARSET=latin1
         `);
 
-        // Create default admin user only if ADMIN_PASSWORD is provided
-        const adminPassword = process.env.ADMIN_PASSWORD;
-        if (adminPassword) {
-          const bcrypt = await import('bcryptjs');
-          const hashedPassword = await bcrypt.hash(adminPassword, 12);
-          
-          await executeQuery(`
-            INSERT INTO admin_users (username, password_hash, full_name, email, role)
-            VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-          `, [hashedPassword]);
+        // Create default admin user
+        const bcrypt = await import('bcryptjs');
+        const defaultAdminPassword = await bcrypt.hash('admin', 12);
+        
+        await executeQuery(`
+          INSERT INTO admin_users (username, password_hash, full_name, email, role)
+          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+        `, [defaultAdminPassword]);
 
-          console.log('✅ Admin table created successfully');
-          console.log('🔑 Default admin user created with provided password');
-        } else {
-          console.log('⚠️  Admin table created but no admin user created. Set ADMIN_PASSWORD environment variable to create default admin.');
-        }
+        console.log('✅ Admin table created successfully');
+        console.log('🔑 Default admin user created (username: admin, password: admin)');
       } else {
         console.log('✅ Admin table already exists');
         
-        // Ensure default admin user exists only if ADMIN_PASSWORD is provided
-        const adminPassword = process.env.ADMIN_PASSWORD;
-        if (adminPassword) {
-          try {
-            const bcrypt = await import('bcryptjs');
-            const hashedPassword = await bcrypt.hash(adminPassword, 12);
-            
-            await executeQuery(`
-              INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-              VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
-            `, [hashedPassword]);
+        // Ensure default admin user exists
+        try {
+          const bcrypt = await import('bcryptjs');
+          const defaultAdminPassword = await bcrypt.hash('admin', 12);
+          
+          await executeQuery(`
+            INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+            VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+          `, [defaultAdminPassword]);
 
-            // Update admin email if needed
-            await executeQuery(`
-              UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
-            `);
-            
-            console.log('✅ Default admin user verified');
-          } catch (error) {
-            console.log('ℹ️ Default admin user already exists');
-          }
-        } else {
-          console.log('ℹ️ No ADMIN_PASSWORD provided, skipping admin user creation');
+          // Update admin email if needed
+          await executeQuery(`
+            UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
+          `);
+          
+          console.log('✅ Default admin user verified');
+        } catch (error) {
+          console.log('ℹ️ Default admin user already exists');
         }
       }
     }
@@ -539,26 +491,20 @@ export async function initializeDatabase(): Promise<void> {
     
     if (inquiryColumnsCheck && inquiryColumnsCheck.count === 0) {
       console.log('🔧 Adding enhanced tracking columns to BMPA_inquiries...');
-      try {
-        await executeQuery(`
-          ALTER TABLE BMPA_inquiries 
-          ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-          ADD COLUMN buyer_id INT AFTER inquiry_ref,
-          ADD COLUMN seller_id INT AFTER buyer_phone,
-          ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
-          ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
-          ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
-          ADD INDEX idx_buyer_id (buyer_id),
-          ADD INDEX idx_seller_id (seller_id),
-          ADD INDEX idx_status (status),
-          ADD INDEX idx_inquiry_ref (inquiry_ref)
-        `);
-        console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
-      } catch (alterError) {
-        const errorMessage = alterError instanceof Error ? alterError.message : String(alterError);
-        console.log('ℹ️ Enhanced tracking columns may already exist or schema differs:', errorMessage);
-        // Don't throw - continue with initialization
-      }
+      await executeQuery(`
+        ALTER TABLE BMPA_inquiries 
+        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+        ADD COLUMN buyer_id INT AFTER inquiry_ref,
+        ADD COLUMN seller_id INT AFTER buyer_phone,
+        ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
+        ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
+        ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
+        ADD INDEX idx_buyer_id (buyer_id),
+        ADD INDEX idx_seller_id (seller_id),
+        ADD INDEX idx_status (status),
+        ADD INDEX idx_inquiry_ref (inquiry_ref)
+      `);
+      console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
     }
     
     // Check if inquiry_ref column exists in BMPA_inquiries
@@ -572,18 +518,12 @@ export async function initializeDatabase(): Promise<void> {
     
     if (inquiryRefCheck && inquiryRefCheck.count === 0) {
       console.log('🔧 Adding inquiry_ref column to BMPA_inquiries...');
-      try {
-        await executeQuery(`
-          ALTER TABLE BMPA_inquiries 
-          ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-          ADD INDEX idx_inquiry_ref (inquiry_ref)
-        `);
-        console.log('✅ inquiry_ref column added to BMPA_inquiries');
-      } catch (alterError) {
-        const errorMessage = alterError instanceof Error ? alterError.message : String(alterError);
-        console.log('ℹ️ inquiry_ref column may already exist or index already created:', errorMessage);
-        // Don't throw - continue with initialization
-      }
+      await executeQuery(`
+        ALTER TABLE BMPA_inquiries 
+        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
+        ADD INDEX idx_inquiry_ref (inquiry_ref)
+      `);
+      console.log('✅ inquiry_ref column added to BMPA_inquiries');
     }
     
     // Create bmpa_received_inquiries table for sellers to track received inquiries
@@ -743,20 +683,12 @@ export async function initializeDatabase(): Promise<void> {
       await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key)');
       console.log('✅ Search key index created');
     } catch (indexError) {
-      // Index might already exist, that's OK - specifically handle duplicate key error
-      const error = indexError as any;
-      if (error.code === 'ER_DUP_KEYNAME' || error.errno === 1061) {
-        console.log('ℹ️ Search key index already exists, skipping creation');
-      } else {
-        console.log('ℹ️ Index creation error (non-critical):', error.message);
-      }
+      // Index might already exist, that's OK
+      console.log('ℹ️ Search key index may already exist');
     }
 
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
-    // Don't throw error to prevent server startup failure
-    // The server should continue running even if database initialization fails
-    console.log('⚠️ Database not available, but server will continue running');
-    return;
+    throw error;
   }
 }

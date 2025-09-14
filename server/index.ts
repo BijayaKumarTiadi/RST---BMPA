@@ -8,7 +8,8 @@ import searchRouter from "./searchRoutes";
 
 const app = express();
 
-// Database initialization will be moved to run after server starts
+// Initialize database
+initializeDatabase().catch(console.error);
 
 // Setup session store with PostgreSQL
 import MemoryStore from 'memorystore';
@@ -31,21 +32,10 @@ try {
   });
 }
 
-// Production-ready session configuration  
-let sessionSecret: string = process.env.SESSION_SECRET || '';
-if (!sessionSecret) {
-  console.error('⚠️ SESSION_SECRET environment variable not set, generating ephemeral secret');
-  console.error('🔐 For production, set SESSION_SECRET environment variable to a strong random value');
-  // Generate a cryptographically random ephemeral secret
-  sessionSecret = require('crypto').randomBytes(32).toString('hex');
-}
-
-// Set trust proxy for production deployment behind proxies (like Cloud Run)
-app.set('trust proxy', 1);
-
+// Session configuration with fallback to memory store
 app.use(session({
   name: 'stock_laabh_session',
-  secret: sessionSecret,
+  secret: 'stock-laabh-secret-key-2025',
   store: sessionStore || new MemStore({
     checkPeriod: 15 * 60 * 1000 // prune expired entries every 15 minutes
   }),
@@ -54,7 +44,7 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours session validity
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    secure: false, // Set to true in production with HTTPS
     sameSite: 'lax' // Add sameSite for better cookie handling
   }
 }));
@@ -100,8 +90,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    log(`Error handled: ${status} - ${message}`);
-    // Don't rethrow to prevent server crashes
+    throw err;
   });
 
   // importantly only setup vite in development and after
@@ -124,19 +113,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
-    
-    // Initialize database in background after server is already listening
-    // This ensures health checks can respond immediately while database initializes
-    setTimeout(() => {
-      initializeDatabase()
-        .then(() => {
-          log('✅ Database initialization completed successfully');
-        })
-        .catch((error) => {
-          log('⚠️ Database initialization failed, but server continues running:', error.message);
-          // Don't crash the server if database init fails
-          // The app can still serve health checks and static content
-        });
-    }, 100); // Small delay to ensure server is fully ready
   });
 })();
