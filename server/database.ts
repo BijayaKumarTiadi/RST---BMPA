@@ -1,12 +1,21 @@
 import mysql from 'mysql2/promise';
 
-// Database configuration with environment variable fallbacks
+// Database configuration - requires environment variables
+const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required database environment variables:', missingEnvVars.join(', '));
+  console.error('Please set these environment variables for database connection.');
+  process.exit(1);
+}
+
 const dbConfig = {
-  host: process.env.DB_HOST || '103.155.204.186',
-  port: parseInt(process.env.DB_PORT || '23306'),
-  user: process.env.DB_USER || 'manish',
-  password: process.env.DB_PASSWORD || 'manish',
-  database: process.env.DB_NAME || 'trade_bmpa25',
+  host: process.env.DB_HOST!,
+  port: parseInt(process.env.DB_PORT!),
+  user: process.env.DB_USER!,
+  password: process.env.DB_PASSWORD!,
+  database: process.env.DB_NAME!,
   charset: 'utf8mb4',
   timezone: '+00:00',
   connectTimeout: 30000, // Reduced timeout for faster deployment
