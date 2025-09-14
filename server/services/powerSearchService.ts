@@ -149,11 +149,14 @@ export class PowerSearchService {
     const searchQueryText = `
       SELECT 
         dm.*,
+        dm.groupID as GroupID,
+        sg.GroupName,
         m.mname as created_by_name,
         m.company_name as created_by_company,
         m.email as seller_email
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
+      LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
       WHERE ${whereClause}
       ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?

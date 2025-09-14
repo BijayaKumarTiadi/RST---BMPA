@@ -10,10 +10,13 @@ router.post('/advanced', async (req, res) => {
     
     let query = `
       SELECT DISTINCT d.*, 
+             d.groupID as GroupID,
+             sg.GroupName,
              m.mname as created_by_name,
              m.company_name as created_by_company
       FROM deal_master d
       LEFT JOIN bmpa_members m ON d.created_by_member_id = m.member_id
+      LEFT JOIN stock_groups sg ON d.groupID = sg.GroupID
       WHERE d.StockStatus = 1
     `;
     
@@ -168,7 +171,7 @@ router.post('/advanced', async (req, res) => {
         query += ' ORDER BY m.company_name ASC';
         break;
       case 'category':
-        query += ' ORDER BY g.GroupName ASC';
+        query += ' ORDER BY sg.GroupName ASC';
         break;
       case 'oldest':
         query += ' ORDER BY d.deal_created_at ASC';
@@ -184,6 +187,7 @@ router.post('/advanced', async (req, res) => {
       SELECT COUNT(DISTINCT d.TransID) as total
       FROM deal_master d
       LEFT JOIN bmpa_members m ON d.created_by_member_id = m.member_id
+      LEFT JOIN stock_groups sg ON d.groupID = sg.GroupID
       WHERE d.StockStatus = 1
       ${conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : ''}
     `;

@@ -140,6 +140,8 @@ searchRouter.post('/precise', async (req, res) => {
     const searchQuery = `
       SELECT 
         dm.*,
+        dm.groupID as GroupID,
+        sg.GroupName,
         sg.GroupName as category_name,
         m.mname as created_by_name,
         m.company_name as created_by_company
