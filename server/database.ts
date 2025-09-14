@@ -1,40 +1,56 @@
 import mysql from 'mysql2/promise';
 
-// Database configuration - requires environment variables
-const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+// Database configuration - will be initialized when needed
+let pool: mysql.Pool | null = null;
 
-if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required database environment variables:', missingEnvVars.join(', '));
-  console.error('Please set these environment variables for database connection.');
-  process.exit(1);
+function initializePool() {
+  if (pool) return pool;
+  
+  const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+  if (missingEnvVars.length > 0) {
+    console.error('❌ Missing required database environment variables:', missingEnvVars.join(', '));
+    console.error('Please set these environment variables for database connection.');
+    throw new Error(`Missing database environment variables: ${missingEnvVars.join(', ')}`);
+  }
+
+  const dbConfig = {
+    host: process.env.DB_HOST!,
+    port: parseInt(process.env.DB_PORT!),
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_NAME!,
+    charset: 'utf8mb4',
+    timezone: '+00:00',
+    connectTimeout: 30000, // Reduced timeout for faster deployment
+    acquireTimeout: 30000,
+    timeout: 30000
+  };
+
+  // Create connection pool for better performance
+  pool = mysql.createPool({
+    ...dbConfig,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+  
+  return pool;
 }
 
-const dbConfig = {
-  host: process.env.DB_HOST!,
-  port: parseInt(process.env.DB_PORT!),
-  user: process.env.DB_USER!,
-  password: process.env.DB_PASSWORD!,
-  database: process.env.DB_NAME!,
-  charset: 'utf8mb4',
-  timezone: '+00:00',
-  connectTimeout: 30000, // Reduced timeout for faster deployment
-  acquireTimeout: 30000,
-  timeout: 30000
+export const getPool = () => {
+  if (!pool) {
+    pool = initializePool();
+  }
+  return pool;
 };
-
-// Create connection pool for better performance
-export const pool = mysql.createPool({
-  ...dbConfig,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
 
 // Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
-    const connection = await pool.getConnection();
+    const currentPool = getPool();
+    const connection = await currentPool.getConnection();
     await connection.ping();
     connection.release();
     console.log('✅ MySQL database connected successfully');
@@ -51,7 +67,8 @@ export async function executeQuery<T = any>(
   params: any[] = []
 ): Promise<T[]> {
   try {
-    const [rows] = await pool.execute(query, params);
+    const currentPool = getPool();
+    const [rows] = await currentPool.execute(query, params);
     return rows as T[];
   } catch (error) {
     console.error('Database query error:', error);
@@ -73,10 +90,17 @@ export async function initializeDatabase(): Promise<void> {
   try {
     console.log('🔄 Initializing database...');
     
-    // Test connection first
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      throw new Error('Failed to connect to database');
+    // Test connection first - if DB is not available, log and return early
+    try {
+      const isConnected = await testConnection();
+      if (!isConnected) {
+        console.log('⚠️ Database not available, skipping initialization. Server will continue running.');
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️ Database connection failed, skipping initialization. Server will continue running.');
+      console.log('Database error:', error instanceof Error ? error.message : String(error));
+      return;
     }
 
     // Check if bmpa_members table exists, if not create it

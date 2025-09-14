@@ -31,12 +31,15 @@ try {
   });
 }
 
-// Session configuration with fallback to memory store
+// Production-ready session configuration
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
   console.error('❌ SESSION_SECRET environment variable is required');
   process.exit(1);
 }
+
+// Set trust proxy for production deployment behind proxies (like Cloud Run)
+app.set('trust proxy', 1);
 
 app.use(session({
   name: 'stock_laabh_session',
@@ -49,7 +52,7 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours session validity
     httpOnly: true,
-    secure: false, // Set to true in production with HTTPS
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     sameSite: 'lax' // Add sameSite for better cookie handling
   }
 }));
