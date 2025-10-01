@@ -75,8 +75,11 @@ authRouter.post('/send-login-otp', async (req, res) => {
       });
     }
 
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if email exists
-    const emailExists = await authService.emailExists(email);
+    const emailExists = await authService.emailExists(normalizedEmail);
     if (!emailExists) {
       return res.status(400).json({
         success: false,
@@ -85,7 +88,7 @@ authRouter.post('/send-login-otp', async (req, res) => {
     }
 
     // Send OTP
-    const result = await otpService.createAndSendOTP(email, 'login');
+    const result = await otpService.createAndSendOTP(normalizedEmail, 'login');
     res.json(result);
 
   } catch (error) {
@@ -100,24 +103,27 @@ authRouter.post('/send-login-otp', async (req, res) => {
 // Verify OTP and login
 authRouter.post('/verify-login-otp', async (req, res) => {
   try {
-    console.log('=== NEW CODE RUNNING ===', req.body);
     const { email, otp } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'OBVIOUSLY NEW CODE - EMAIL AND OTP ONLY REQUIRED'
+        message: 'Email and OTP are required'
       });
     }
 
+    // Trim and normalize inputs
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedOtp = otp.trim();
+
     // Verify OTP first
-    const otpResult = await otpService.verifyOTP(email, otp, 'login');
+    const otpResult = await otpService.verifyOTP(normalizedEmail, normalizedOtp, 'login');
     if (!otpResult.success) {
       return res.status(400).json(otpResult);
     }
 
     // Get member by email for OTP-only login
-    const member = await authService.getMemberByEmail(email);
+    const member = await authService.getMemberByEmail(normalizedEmail);
     if (!member) {
       return res.status(400).json({
         success: false,
@@ -321,7 +327,10 @@ authRouter.post('/admin-send-otp', async (req, res) => {
       });
     }
 
-    const otpResult = await adminService.sendAdminOTP(identifier);
+    // Trim identifier
+    const normalizedIdentifier = identifier.trim();
+
+    const otpResult = await adminService.sendAdminOTP(normalizedIdentifier);
     res.json(otpResult);
 
   } catch (error) {
@@ -345,8 +354,15 @@ authRouter.post('/admin-login', async (req, res) => {
       });
     }
 
-    const loginResult = await adminService.verifyAdminOTP(identifier, otp);
+    // Trim inputs to avoid whitespace issues
+    const normalizedIdentifier = identifier.trim();
+    const normalizedOtp = otp.trim();
+
+    console.log(`Admin login attempt for: ${normalizedIdentifier}`);
+
+    const loginResult = await adminService.verifyAdminOTP(normalizedIdentifier, normalizedOtp);
     if (!loginResult.success) {
+      console.log(`Admin login failed: ${loginResult.message}`);
       return res.status(400).json(loginResult);
     }
 

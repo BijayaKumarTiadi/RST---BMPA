@@ -1,4 +1,4 @@
-import { executeQuery, executeQuerySingle } from './database';
+ import { executeQuery, executeQuerySingle } from './database';
 import { sendEmail, generateOTPEmail } from './emailService';
 
 export interface OTPRecord {
@@ -20,26 +20,33 @@ export class OTPService {
   // Create and send OTP
   async createAndSendOTP(email: string, purpose: 'login' | 'registration'): Promise<{ success: boolean; message: string }> {
     try {
+      // Normalize email
+      const normalizedEmail = email.trim().toLowerCase();
+      
       // Generate OTP
       const otp = this.generateOTP();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Clean up old OTPs for this email and purpose
+      console.log(`Creating OTP for ${normalizedEmail}, purpose: ${purpose}`);
+
+      // Clean up old OTPs for this email and purpose - use LOWER() for comparison
       await executeQuery(
-        'DELETE FROM bmpa_otp_verification WHERE email = ? AND purpose = ?',
-        [email, purpose]
+        'DELETE FROM bmpa_otp_verification WHERE LOWER(email) = LOWER(?) AND purpose = ?',
+        [normalizedEmail, purpose]
       );
 
-      // Store OTP in database
+      // Store OTP in database - store original email but we'll compare case-insensitive
       await executeQuery(
         'INSERT INTO bmpa_otp_verification (email, otp_code, purpose, expires_at) VALUES (?, ?, ?, ?)',
-        [email, otp, purpose, expiresAt]
+        [normalizedEmail, otp, purpose, expiresAt]
       );
+
+      console.log(`OTP stored for ${normalizedEmail}: ${otp}`);
 
       // Send email
       const emailHtml = generateOTPEmail(otp, purpose);
-      const subject = purpose === 'login' 
-        ? 'BMPA Login Verification Code' 
+      const subject = purpose === 'login'
+        ? 'BMPA Login Verification Code'
         : 'BMPA Registration Verification Code';
 
       const emailSent = await sendEmail({
@@ -53,6 +60,7 @@ export class OTPService {
         throw new Error('Failed to send email');
       }
 
+      console.log(`OTP email sent successfully to ${email}`);
       return {
         success: true,
         message: 'OTP sent successfully to your email'
@@ -60,6 +68,13 @@ export class OTPService {
 
     } catch (error) {
       console.error('Error creating/sending OTP:', error);
+      // Check if it's a database connection error
+      if ((error as any).code === 'EACCES' || (error as any).code === 'ETIMEDOUT') {
+        return {
+          success: false,
+          message: 'Database connection issue. Please try again in a moment.'
+        };
+      }
       return {
         success: false,
         message: 'Failed to send OTP. Please try again.'
@@ -70,23 +85,46 @@ export class OTPService {
   // Verify OTP
   async verifyOTP(email: string, otp: string, purpose: 'login' | 'registration'): Promise<{ success: boolean; message: string }> {
     try {
-      // Find OTP record
+      // Normalize inputs - trim whitespace and convert email to lowercase
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedOtp = otp.trim();
+      
+      console.log(`Verifying OTP for email: ${normalizedEmail}, purpose: ${purpose}`);
+      
+      // Find OTP record - also check with LOWER() for email comparison
       const otpRecord = await executeQuerySingle<OTPRecord>(
-        `SELECT * FROM bmpa_otp_verification 
-         WHERE email = ? AND otp_code = ? AND purpose = ? AND verified = 0 
+        `SELECT * FROM bmpa_otp_verification
+         WHERE LOWER(email) = LOWER(?) AND otp_code = ? AND purpose = ? AND verified = 0
          ORDER BY created_at DESC LIMIT 1`,
-        [email, otp, purpose]
+        [normalizedEmail, normalizedOtp, purpose]
       );
 
       if (!otpRecord) {
+        // Try to find if there's any OTP for this email to provide better error message
+        const anyOtp = await executeQuerySingle(
+          `SELECT * FROM bmpa_otp_verification
+           WHERE LOWER(email) = LOWER(?) AND purpose = ? AND verified = 0
+           ORDER BY created_at DESC LIMIT 1`,
+          [normalizedEmail, purpose]
+        );
+        
+        if (anyOtp) {
+          console.log(`OTP mismatch for ${normalizedEmail}. Expected: ${anyOtp.otp_code}, Got: ${normalizedOtp}`);
+          return {
+            success: false,
+            message: 'Invalid OTP code. Please check and try again.'
+          };
+        }
+        
         return {
           success: false,
-          message: 'Invalid OTP code'
+          message: 'No valid OTP found. Please request a new one.'
         };
       }
 
       // Check if OTP has expired
       if (new Date() > new Date(otpRecord.expires_at)) {
+        console.log(`OTP expired for ${normalizedEmail}. Expired at: ${otpRecord.expires_at}`);
         return {
           success: false,
           message: 'OTP has expired. Please request a new one.'
@@ -99,6 +137,7 @@ export class OTPService {
         [otpRecord.id]
       );
 
+      console.log(`OTP verified successfully for ${normalizedEmail}`);
       return {
         success: true,
         message: 'OTP verified successfully'
@@ -106,6 +145,13 @@ export class OTPService {
 
     } catch (error) {
       console.error('Error verifying OTP:', error);
+      // Check if it's a database connection error
+      if ((error as any).code === 'EACCES' || (error as any).code === 'ETIMEDOUT') {
+        return {
+          success: false,
+          message: 'Database connection issue. Please try again in a moment.'
+        };
+      }
       return {
         success: false,
         message: 'Failed to verify OTP. Please try again.'

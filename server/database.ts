@@ -35,26 +35,55 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-// Helper function to execute queries
+// Helper function to execute queries with retry logic
 export async function executeQuery<T = any>(
-  query: string, 
-  params: any[] = []
+  query: string,
+  params: any[] = [],
+  retries: number = 3
 ): Promise<T[]> {
-  try {
-    const [rows] = await pool.execute(query, params);
-    return rows as T[];
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
+  let lastError: any;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      const [rows] = await pool.execute(query, params);
+      return rows as T[];
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Database query error (attempt ${i + 1}/${retries}):`, error.message || error);
+      
+      // Check if it's a connection error that we should retry
+      if (error.code === 'EACCES' ||
+          error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNREFUSED' ||
+          error.code === 'ENOTFOUND' ||
+          error.code === 'PROTOCOL_CONNECTION_LOST') {
+        
+        // Wait before retrying (exponential backoff)
+        if (i < retries - 1) {
+          const waitTime = Math.min(1000 * Math.pow(2, i), 5000); // Max 5 seconds
+          console.log(`Retrying database connection in ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+      } else {
+        // For non-connection errors, don't retry
+        throw error;
+      }
+    }
   }
+  
+  // If we've exhausted all retries, throw the last error
+  console.error('Database query failed after all retries');
+  throw lastError;
 }
 
-// Helper function for single row queries
+// Helper function for single row queries with retry logic
 export async function executeQuerySingle<T = any>(
-  query: string, 
-  params: any[] = []
+  query: string,
+  params: any[] = [],
+  retries: number = 3
 ): Promise<T | null> {
-  const rows = await executeQuery<T>(query, params);
+  const rows = await executeQuery<T>(query, params, retries);
   return rows.length > 0 ? rows[0] : null;
 }
 

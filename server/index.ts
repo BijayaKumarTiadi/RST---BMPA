@@ -17,16 +17,24 @@ const MemStore = MemoryStore(session);
 const PgSession = connectPgSimple(session);
 
 let sessionStore;
-try {
-  // Use PostgreSQL store for sessions (BMPS_sessions table)
-  sessionStore = new PgSession({
-    tableName: 'BMPS_sessions',
-    createTableIfMissing: true,
-    conString: process.env.DATABASE_URL,
-  });
-  console.log('✅ PostgreSQL session store initialized');
-} catch (error) {
-  console.log('⚠️ PostgreSQL session store failed, using memory store:', error);
+// Only use PostgreSQL if DATABASE_URL is configured
+if (process.env.DATABASE_URL) {
+  try {
+    // Use PostgreSQL store for sessions (BMPS_sessions table)
+    sessionStore = new PgSession({
+      tableName: 'BMPS_sessions',
+      createTableIfMissing: true,
+      conString: process.env.DATABASE_URL,
+    });
+    console.log('✅ PostgreSQL session store initialized');
+  } catch (error) {
+    console.log('⚠️ PostgreSQL session store failed, using memory store:', error);
+    sessionStore = new MemStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+  }
+} else {
+  console.log('ℹ️ No DATABASE_URL configured, using memory store for sessions');
   sessionStore = new MemStore({
     checkPeriod: 86400000 // prune expired entries every 24h
   });

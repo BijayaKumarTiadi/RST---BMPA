@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -187,6 +187,8 @@ export default function Marketplace() {
     dimensionRange: false
   });
   const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchCardRef = useRef<HTMLDivElement | null>(null);
   
   // Modal states
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
@@ -905,7 +907,7 @@ export default function Marketplace() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('[data-testid="input-precise-gsm"]') && 
+      if (!target.closest('[data-testid="input-precise-gsm"]') &&
           !target.closest('.absolute.z-50')) {
         setGsmSuggestions([]);
       }
@@ -919,6 +921,49 @@ export default function Marketplace() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [gsmSuggestions.length]);
+
+  // Click outside handler for precise search card
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Check if click is on the search card itself
+      if (searchCardRef.current && searchCardRef.current.contains(target)) {
+        return;
+      }
+      
+      // Check if click is on a Select dropdown (Radix UI portals)
+      // These render outside the component tree
+      const isSelectDropdown = target.closest('[role="listbox"]') ||
+                              target.closest('[data-radix-select-content]') ||
+                              target.closest('[data-radix-popper-content-wrapper]');
+      
+      if (isSelectDropdown) {
+        return; // Don't close if clicking on dropdown
+      }
+      
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      
+      // Close immediately when clicked outside
+      setPreciseSearchExpanded(false);
+    };
+
+    if (preciseSearchExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+    };
+  }, [preciseSearchExpanded]);
 
 
   // Handle precise search field changes
@@ -1055,10 +1100,24 @@ export default function Marketplace() {
 
 
         {/* Precise Search - Hoverable Collapse */}
-        <div 
+        <div
+          ref={searchCardRef}
           className="mb-3"
-          onMouseEnter={() => setPreciseSearchExpanded(true)}
-          onMouseLeave={() => setPreciseSearchExpanded(false)}
+          onMouseEnter={() => {
+            // Clear any existing timeout
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+              hoverTimeoutRef.current = null;
+            }
+            setPreciseSearchExpanded(true);
+          }}
+          onMouseLeave={() => {
+            // Set timeout to close after 3 seconds
+            hoverTimeoutRef.current = setTimeout(() => {
+              setPreciseSearchExpanded(false);
+              hoverTimeoutRef.current = null;
+            }, 3000);
+          }}
         >
           <Card className="w-full transition-all duration-300 hover:shadow-lg border-blue-200 dark:border-blue-800">
             {/* Always visible header */}
