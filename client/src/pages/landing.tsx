@@ -19,7 +19,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Stock Laabh Trading Platform
+              STOCK LAABH Trading Platform
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
               Connect traders and investors in the professional marketplace
@@ -390,7 +390,7 @@ export default function Landing() {
                   <Printer className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">Stock Laabh</h3>
+                  <h3 className="text-xl font-bold">STOCK LAABH</h3>
                 </div>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed">
@@ -433,7 +433,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-primary" />
-                  <span>info@stocklaabh.com</span>
+                  <span>info@STOCKLAABH.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <ClockIcon className="h-4 w-4 text-primary" />
@@ -447,7 +447,7 @@ export default function Landing() {
           
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-300 text-sm">
-              © 2025 Stock Laabh. All rights reserved.
+              © 2025 STOCK LAABH. All rights reserved.
             </p>
             <p className="text-gray-300 text-sm">
               Designed by Renuka Print ERP Solutions

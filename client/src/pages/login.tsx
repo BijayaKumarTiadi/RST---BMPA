@@ -25,7 +25,7 @@ export default function Login() {
   // Helper function to show email not found toast
   const showEmailNotFoundToast = () => {
     toast({
-      title: "Welcome to Stock Laabh!",
+      title: "Welcome to STOCK LAABH!",
       description: (
         <div className="space-y-2">
           <p>We're excited to have you on board! Unfortunately, we couldn't find your email address.</p>
@@ -149,7 +149,7 @@ export default function Login() {
       if (data.success) {
         toast({
           title: "Login Successful",
-          description: "Welcome back to Stock Laabh!",
+          description: "Welcome back to STOCK LAABH!",
         });
         // Reload to refresh the app state
         window.location.href = '/';
@@ -561,7 +561,7 @@ export default function Login() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
-          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p>© 2025 STOCK LAABH. All rights reserved.</p>
           <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
         </div>
       </div>

@@ -321,7 +321,7 @@ export default function Register() {
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
               
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Stock Laabh! 🎉</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to STOCK LAABH! 🎉</h1>
               <p className="text-gray-600 mb-6">
                 Account created for <strong>{email}</strong>
               </p>
@@ -349,7 +349,7 @@ export default function Register() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                    <span>Start trading on Stock Laabh!</span>
+                    <span>Start trading on STOCK LAABH!</span>
                   </div>
                 </div>
               </div>
@@ -640,7 +640,7 @@ export default function Register() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
-          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p>© 2025 STOCK LAABH. All rights reserved.</p>
           <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
         </div>
       </div>

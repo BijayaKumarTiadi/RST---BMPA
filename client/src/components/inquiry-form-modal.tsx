@@ -154,23 +154,17 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Send Inquiry
-            </DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Send Inquiry
+          </DialogTitle>
         </DialogHeader>
 
         <div className="mt-6">
           {/* Product Summary */}
           <div className="bg-muted p-4 rounded-lg mb-6">
-            <h4 className="font-semibold mb-2">Product: {deal.DealTitle}</h4>
+            <h4 className="font-semibold mb-2">Product: {deal.stock_description || `${deal.Make} ${deal.Brand} ${deal.Grade}`.trim() || 'Product Details'}</h4>
             <div className="text-sm text-muted-foreground space-y-1">
-              <div>Product ID: {deal.TransID}</div>
               <div>Seller Price: ₹{deal.OfferPrice?.toLocaleString('en-IN')} per {deal.OfferUnit}</div>
               <div>Available Quantity: {deal.quantity || 0} {deal.OfferUnit}</div>
               <div>Seller: {deal.created_by_name || deal.seller_name} ({deal.created_by_company || deal.seller_company})</div>
@@ -231,7 +225,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="quotedPrice">Your Quoted Price (₹)</Label>
+                <Label htmlFor="quotedPrice">Enter your Offer Price (₹)</Label>
                 <Input
                   id="quotedPrice"
                   name="quotedPrice"
@@ -239,6 +233,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
                   value={formData.quotedPrice}
                   onChange={handleInputChange}
                   placeholder="Enter your price offer"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div>
@@ -253,7 +248,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
                   required
                   max={deal.quantity || 0}
                   min="1"
-                  className={quantityError ? "border-red-500" : ""}
+                  className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${quantityError ? "border-red-500" : ""}`}
                 />
                 {quantityError && (
                   <p className="text-xs text-red-500 mt-1">{quantityError}</p>

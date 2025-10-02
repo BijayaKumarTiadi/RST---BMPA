@@ -48,7 +48,7 @@ const CheckoutForm = () => {
     } else {
       toast({
         title: "Payment Successful",
-        description: "Your Stock Laabh membership is now active!",
+        description: "Your STOCK LAABH membership is now active!",
       });
       // Redirect will happen automatically via return_url
     }
@@ -206,7 +206,7 @@ export default function Subscribe() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Stock Laabh Annual Membership</span>
+                    <span className="text-sm">STOCK LAABH Annual Membership</span>
                     <span className="font-medium">₹2,118</span>
                   </div>
                   <div className="flex justify-between items-center">

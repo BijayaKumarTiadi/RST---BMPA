@@ -57,10 +57,10 @@ export default function ApiDocs() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="api-docs-title">
-            Stock Laabh API Documentation
+            STOCK LAABH API Documentation
           </h1>
           <p className="text-muted-foreground">
-            Complete API reference for the Stock Laabh trading platform
+            Complete API reference for the STOCK LAABH trading platform
           </p>
         </div>
 
@@ -297,7 +297,7 @@ export default function ApiDocs() {
         
         {/* Footer */}
         <div className="mt-12 text-center text-xs text-muted-foreground">
-          <p>© 2025 Stock Laabh. All rights reserved.</p>
+          <p>© 2025 STOCK LAABH. All rights reserved.</p>
           <p className="mt-1">Designed by Renuka Print ERP Solutions</p>
         </div>
       </div>

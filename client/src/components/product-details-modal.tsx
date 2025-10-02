@@ -90,22 +90,15 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-2xl font-bold text-center">
             {deal.stock_description || `${deal.Make} ${deal.Brand} ${deal.Grade}`.trim() || 'Product Details'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pb-4">
-          {/* Status and Category */}
-          <div className="flex gap-2 justify-center">
-            <Badge variant="secondary" className="bg-blue-600 text-white">
-              {deal.GroupName}
-            </Badge>
-          </div>
-
-          {/* Price */}
+          {/* Price - No Board text or blue price */}
           <div className="text-center">
-            <span className="text-2xl font-bold text-primary">
+            <span className="text-2xl font-bold text-foreground">
               ₹{deal.OfferPrice?.toLocaleString('en-IN')}
             </span>
             <span className="text-lg text-muted-foreground ml-2">per {deal.OfferUnit}</span>
@@ -113,8 +106,14 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
           {/* Product Specifications */}
           <div>
-            <h4 className="font-semibold mb-3 text-center">Product Specifications</h4>
+            <h4 className="font-semibold text-lg mb-3 text-center">Product Specifications</h4>
             <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+              {deal.GroupName && (
+                <div>
+                  <span className="text-muted-foreground">Category:</span>
+                  <span className="ml-2 font-medium">{deal.GroupName}</span>
+                </div>
+              )}
               {deal.Make && (
                 <div>
                   <span className="text-muted-foreground">Make:</span>
@@ -167,18 +166,12 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
                   <span className="ml-2 font-medium">{deal.quantity} {deal.Unit}</span>
                 </div>
               )}
-              {deal.GroupName && (
-                <div>
-                  <span className="text-muted-foreground">Category:</span>
-                  <span className="ml-2 font-medium">{deal.GroupName}</span>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Seller Information */}
           <div>
-            <h4 className="font-semibold mb-3 flex items-center justify-center gap-2">
+            <h4 className="font-semibold text-lg mb-3 flex items-center justify-center gap-2">
               <User className="h-4 w-4" />
               Seller Information
             </h4>

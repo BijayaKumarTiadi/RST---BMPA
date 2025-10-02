@@ -13,7 +13,7 @@ export default function About() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4" data-testid="about-heading">
-            About Stock Laabh
+            About STOCK LAABH
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             A comprehensive B2B ecommerce marketplace for the printing and paper industry, developed in 
@@ -27,18 +27,18 @@ export default function About() {
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4">Who We Are</h2>
             <p className="text-muted-foreground mb-4">
-              Stock Laabh is a well-networked association of print providers, pre-press, pre-media specialists, 
+              STOCK LAABH is a well-networked association of print providers, pre-press, pre-media specialists, 
               post-press and converting, package printing, agencies; and printers' suppliers including manufacturers and traders.
             </p>
             <p className="text-muted-foreground mb-4">
               In this age of cross-technology solutions and a communication cycle that is ultra dynamic; one that is 
-              continuously pushing the limits and reinventing the means; Stock Laabh acknowledges the growing 
+              continuously pushing the limits and reinventing the means; STOCK LAABH acknowledges the growing 
               inter-dependence amongst printing technologies and allied media and communication processes.
             </p>
             <p className="text-muted-foreground">
               We realize that to nurture, grow and promote this industry, it becomes essential to understand the 
               importance of togetherness as opposed to isolation and importance of cohesiveness as opposed to fragmentation. 
-              Stock Laabh is a body that promotes, protects and unites the printing industry. It functions as a common 
+              STOCK LAABH is a body that promotes, protects and unites the printing industry. It functions as a common 
               force that updates and disseminates info and know-how to facilitate industry growth.
             </p>
           </CardContent>

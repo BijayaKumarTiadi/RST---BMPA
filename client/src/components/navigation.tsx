@@ -71,9 +71,15 @@ export default function Navigation() {
               />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
+              <div>
+                <h1 className="text-xl font-bold text-primary">STOCK LAABH</h1>
+                <p className="text-xs text-muted-foreground">Don't waste it—trade it.</p>
+              </div>
             </div>
-            <h1 className="sm:hidden text-lg font-bold text-primary">Stock Laabh</h1>
+            <div className="sm:hidden">
+              <h1 className="text-lg font-bold text-primary">STOCK LAABH</h1>
+              <p className="text-[10px] text-muted-foreground">Don't waste it—trade it.</p>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

@@ -1966,17 +1966,11 @@ export default function Marketplace() {
                 {/* Deal Cards Grid - Responsive */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {deals.map((deal: any) => (
-                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col border-l-4 border-l-blue-500">
+                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
                         {/* Header with badges - No Board/Reel */}
                         <div className="flex items-center justify-between mb-1">
-                          {/* Status Badge */}
-                          <Badge 
-                            variant={deal.Status === 'active' ? 'default' : 'secondary'}
-                            className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          >
-                            {deal.Status === 'active' ? 'Available' : deal.Status}
-                          </Badge>
+                          {/* Status Badge removed */}
                         </div>
                         
                         {/* Product Description in Header */}
@@ -1995,9 +1989,8 @@ export default function Marketplace() {
                                 <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
                               </div>
                               <div className="text-right">
-                                <span className="font-medium text-gray-500">Dimensions:</span>
                                 <div className="font-semibold text-foreground">
-                                  {(deal.Deckle_mm && deal.grain_mm) ? 
+                                  {(deal.Deckle_mm && deal.grain_mm) ?
                                     formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
                                   : 'N/A'}
                                 </div>

@@ -25,7 +25,8 @@ export function Logo({ className = "", size = 'md', showText = true }: LogoProps
       </div>
       {showText && (
         <div>
-          <h1 className="text-xl font-bold text-primary">Stock Laabh</h1>
+          <h1 className="text-xl font-bold text-primary">STOCK LAABH</h1>
+          <p className="text-xs text-muted-foreground">Don't waste it—trade it.</p>
         </div>
       )}
     </div>

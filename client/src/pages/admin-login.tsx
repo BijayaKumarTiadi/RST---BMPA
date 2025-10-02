@@ -147,7 +147,7 @@ export default function AdminLogin() {
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Admin Portal</h1>
           <p className="text-muted-foreground">
-            Administrative access for Stock Laabh
+            Administrative access for STOCK LAABH
           </p>
         </div>
 
