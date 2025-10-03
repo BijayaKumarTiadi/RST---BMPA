@@ -73,6 +73,7 @@ export interface CreateDealData {
   deal_title: string;
   deal_description?: string;
   stock_description?: string;
+  stock_age?: string;
   price: number;
   quantity: number;
   unit: string;
@@ -439,9 +440,9 @@ class DealService {
   }
 
   // Create a new deal
-  async createDeal(dealData: CreateDealData & { 
-    make_text?: string; 
-    grade_text?: string; 
+  async createDeal(dealData: CreateDealData & {
+    make_text?: string;
+    grade_text?: string;
     brand_text?: string;
     search_key?: string;
     stock_type?: string;
@@ -459,6 +460,7 @@ class DealService {
         deal_title,
         deal_description,
         stock_description,
+        stock_age,
         search_key,
         price,
         quantity,
@@ -490,11 +492,11 @@ class DealService {
 
       const result = await executeQuery(`
         INSERT INTO deal_master (
-          groupID, Make, Grade, Brand, memberID, 
+          groupID, Make, Grade, Brand, memberID,
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
-          GSM, Deckle_mm, grain_mm, search_key,
+          GSM, Deckle_mm, grain_mm, search_key, stockage,
           created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         finalMake,
@@ -510,6 +512,7 @@ class DealService {
         deckle_mm,
         grain_mm,
         final_search_key,
+        stock_age || '',
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || ''
@@ -567,6 +570,7 @@ class DealService {
         Seller_comments,
         quantity,
         stock_description,
+        stock_age,
         deal_title,
         deal_description,
         price,
@@ -653,6 +657,12 @@ class DealService {
         updateFields.push(`stock_description = ?`);
         updateValues.push(stock_description);
         updateStockDescription = true;
+      }
+      
+      // Handle stock age
+      if (stock_age !== undefined) {
+        updateFields.push(`stockage = ?`);
+        updateValues.push(stock_age);
       }
       
       // Handle other optional fields

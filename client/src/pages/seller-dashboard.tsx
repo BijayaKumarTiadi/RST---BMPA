@@ -408,7 +408,7 @@ export default function SellerDashboard() {
         <Tabs defaultValue="offers" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-background border shadow-sm">
             <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
-            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Inquiries</TabsTrigger>
+            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
             <TabsTrigger value="counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
           </TabsList>
 
@@ -500,9 +500,6 @@ export default function SellerDashboard() {
                                   <div>
                                     <div className="font-medium text-foreground" data-testid={`deal-title-${deal.TransID}`}>
                                       {getProductDescription(deal)}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      ID: {deal.TransID}
                                     </div>
                                   </div>
                                 </div>
@@ -625,7 +622,6 @@ export default function SellerDashboard() {
                                   <h3 className="font-semibold text-foreground text-sm leading-tight" data-testid={`deal-title-${deal.TransID}`}>
                                     {getProductDescription(deal)}
                                   </h3>
-                                  <p className="text-xs text-muted-foreground mt-1">ID: {deal.TransID}</p>
                                 </div>
                               </div>
                               <div className="flex flex-col gap-1 items-end">
@@ -771,9 +767,9 @@ export default function SellerDashboard() {
           <TabsContent value="inquiries" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
-                <CardTitle className="text-foreground">Inquiry Management</CardTitle>
+                <CardTitle className="text-foreground">Enquiry Management</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Track and manage buyer inquiries for your products
+                  Track and manage buyer enquiries for your products
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -784,14 +780,13 @@ export default function SellerDashboard() {
                 ) : !sellerInquiries?.inquiries || sellerInquiries.inquiries.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No inquiries yet</h3>
-                    <p className="text-muted-foreground">Buyer inquiries will appear here once customers start showing interest in your products</p>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No enquiries yet</h3>
+                    <p className="text-muted-foreground">Buyer enquiries will appear here once customers start showing interest in your products</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted border-b-4 border-primary/20">
-                        <TableHead className="font-semibold text-foreground">Inquiry ID</TableHead>
                         <TableHead className="font-semibold text-foreground">Buyer</TableHead>
                         <TableHead className="font-semibold text-foreground">Company</TableHead>
                         <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
@@ -809,11 +804,6 @@ export default function SellerDashboard() {
                           data-testid={`inquiry-row-${inquiry.id}`}
                         >
                           <TableCell className="py-4">
-                            <div className="font-medium text-foreground" data-testid={`inquiry-id-${inquiry.id}`}>
-                              #INQ-{inquiry.id}
-                            </div>
-                          </TableCell>
-                          <TableCell>
                             <div className="font-medium text-foreground">
                               {inquiry.buyer_name || 'Anonymous'}
                             </div>
@@ -834,13 +824,13 @@ export default function SellerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge 
-                              className={
+                            <Badge
+                              className={`text-base font-medium ${
                                 inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
                                 inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
                                 inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                 'bg-gray-100 text-gray-700'
-                              }
+                              }`}
                               data-testid={`inquiry-status-${inquiry.id}`}
                             >
                               {inquiry.status || 'open'}
@@ -867,10 +857,14 @@ export default function SellerDashboard() {
                               </Button>
                               
                               {inquiry.buyerEmail && (
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   className="bg-blue-600 hover:bg-blue-700 text-white"
-                                  onClick={() => window.location.href = `mailto:${inquiry.buyerEmail}?subject=Regarding your inquiry&body=Dear ${inquiry.buyerName},%0D%0A%0D%0AThank you for your inquiry.%0D%0A%0D%0ABest regards`}
+                                  onClick={() => {
+                                    const subject = encodeURIComponent(`Regarding your enquiry`);
+                                    const body = encodeURIComponent(`Dear ${inquiry.buyerName || 'Customer'},\n\nThank you for your enquiry.\n\nBest regards`);
+                                    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${inquiry.buyerEmail}&su=${subject}&body=${body}`, '_blank');
+                                  }}
                                   data-testid={`button-contact-${inquiry.id}`}
                                 >
                                   <MessageCircle className="h-4 w-4 mr-1" />
@@ -892,9 +886,9 @@ export default function SellerDashboard() {
           <TabsContent value="counter-offers" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
-                <CardTitle className="text-foreground">My Sent Inquiries</CardTitle>
+                <CardTitle className="text-foreground">My Sent Enquiries</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Track inquiries you have sent to other sellers
+                  Track enquiries you have sent to other sellers
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -905,14 +899,13 @@ export default function SellerDashboard() {
                 ) : !buyerInquiries?.inquiries || buyerInquiries.inquiries.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No sent inquiries yet</h3>
-                    <p className="text-muted-foreground">Inquiries you send to other sellers will appear here</p>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No sent enquiries yet</h3>
+                    <p className="text-muted-foreground">Enquiries you send to other sellers will appear here</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted border-b-4 border-primary/20">
-                        <TableHead className="font-semibold text-foreground">Inquiry ID</TableHead>
                         <TableHead className="font-semibold text-foreground">Seller</TableHead>
                         <TableHead className="font-semibold text-foreground">Product</TableHead>
                         <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
@@ -930,11 +923,6 @@ export default function SellerDashboard() {
                           data-testid={`sent-inquiry-row-${inquiry.id}`}
                         >
                           <TableCell className="py-4">
-                            <div className="font-medium text-foreground" data-testid={`sent-inquiry-id-${inquiry.id}`}>
-                              #INQ-{inquiry.id}
-                            </div>
-                          </TableCell>
-                          <TableCell>
                             <div className="font-medium text-foreground">
                               {inquiry.seller_name || 'Unknown Seller'}
                             </div>
@@ -958,13 +946,13 @@ export default function SellerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge 
-                              className={
+                            <Badge
+                              className={`text-base font-medium ${
                                 inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
                                 inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
                                 inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                 'bg-gray-100 text-gray-700'
-                              }
+                              }`}
                               data-testid={`sent-inquiry-status-${inquiry.id}`}
                             >
                               {inquiry.status || 'open'}
@@ -991,10 +979,14 @@ export default function SellerDashboard() {
                               </Button>
                               
                               {inquiry.sellerEmail && (
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   className="bg-green-600 hover:bg-green-700 text-white"
-                                  onClick={() => window.location.href = `mailto:${inquiry.sellerEmail}?subject=Follow up on inquiry&body=Dear Seller,%0D%0A%0D%0AI would like to follow up on my inquiry.%0D%0A%0D%0ABest regards`}
+                                  onClick={() => {
+                                    const subject = encodeURIComponent('Follow up on enquiry');
+                                    const body = encodeURIComponent('Dear Seller,\n\nI would like to follow up on my enquiry.\n\nBest regards');
+                                    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${inquiry.sellerEmail}&su=${subject}&body=${body}`, '_blank');
+                                  }}
                                   data-testid={`button-followup-${inquiry.id}`}
                                 >
                                   <MessageCircle className="h-4 w-4 mr-1" />
@@ -1022,7 +1014,7 @@ export default function SellerDashboard() {
                 Order Details
               </DialogTitle>
               <DialogDescription>
-                Complete information about this inquiry/order
+                Complete information about this enquiry/order
               </DialogDescription>
             </DialogHeader>
 
@@ -1041,8 +1033,8 @@ export default function SellerDashboard() {
                       selectedOrder.status === 'sent' ? 'bg-purple-100 text-purple-700' :
                       'bg-gray-100 text-gray-700'
                     }>
-                      {selectedOrder.status === 'inquiry' ? 'Received Inquiry' : 
-                       selectedOrder.status === 'sent' ? 'Sent Inquiry' :
+                      {selectedOrder.status === 'inquiry' ? 'Received Enquiry' :
+                       selectedOrder.status === 'sent' ? 'Sent Enquiry' :
                        selectedOrder.status}
                     </Badge>
                   </div>
@@ -1121,9 +1113,9 @@ export default function SellerDashboard() {
                   </div>
                 </div>
 
-                {/* Inquiry Details */}
+                {/* Enquiry Details */}
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">Inquiry Details</h3>
+                  <h3 className="text-lg font-semibold">Enquiry Details</h3>
                   <div className="p-4 border rounded-lg space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1154,17 +1146,17 @@ export default function SellerDashboard() {
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t">
                   {selectedOrder.customer_email && (
-                    <Button 
+                    <Button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
-                        const subject = `Regarding your inquiry for ${selectedOrder.product_title}`;
-                        const body = `Dear ${selectedOrder.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${selectedOrder.product_title}.%0D%0A%0D%0ABest regards`;
-                        window.location.href = `mailto:${selectedOrder.customer_email}?subject=${subject}&body=${body}`;
+                        const subject = encodeURIComponent(`Regarding your enquiry for ${selectedOrder.product_title}`);
+                        const body = encodeURIComponent(`Dear ${selectedOrder.customer_name},\n\nThank you for your enquiry about ${selectedOrder.product_title}.\n\nBest regards`);
+                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedOrder.customer_email}&su=${subject}&body=${body}`, '_blank');
                         setIsOrderModalOpen(false);
                       }}
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
-                      Reply via Email
+                      Reply via Gmail
                     </Button>
                   )}
                   
@@ -1351,15 +1343,15 @@ export default function SellerDashboard() {
           </DialogContent>
         </Dialog>
         
-        {/* Inquiry Details Modal */}
+        {/* Enquiry Details Modal */}
         <Dialog open={inquiryModalOpen} onOpenChange={setInquiryModalOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">
-                Inquiry Details #{selectedInquiry?.id}
+                Enquiry Details
               </DialogTitle>
               <DialogDescription>
-                {selectedInquiry?.inquiry_ref ? `Reference: ${selectedInquiry.inquiry_ref}` : 'View complete inquiry information'}
+                View complete enquiry information
               </DialogDescription>
             </DialogHeader>
             
@@ -1373,20 +1365,20 @@ export default function SellerDashboard() {
                   </h3>
                   <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Name</p>
-                      <p className="font-semibold">{selectedInquiry.buyer_name || 'Not provided'}</p>
+                      <p className="text-base font-medium text-muted-foreground">Name</p>
+                      <p className="text-lg font-semibold">{selectedInquiry.buyer_name || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Company</p>
-                      <p className="font-semibold">{selectedInquiry.buyer_company || 'Not provided'}</p>
+                      <p className="text-base font-medium text-muted-foreground">Company</p>
+                      <p className="text-lg font-semibold">{selectedInquiry.buyer_company || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p className="font-semibold text-blue-600">{selectedInquiry.buyer_email || 'Not provided'}</p>
+                      <p className="text-base font-medium text-muted-foreground">Email</p>
+                      <p className="text-lg font-semibold text-blue-600">{selectedInquiry.buyer_email || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                      <p className="font-semibold">{selectedInquiry.buyer_phone || 'Not provided'}</p>
+                      <p className="text-base font-medium text-muted-foreground">Phone</p>
+                      <p className="text-lg font-semibold">{selectedInquiry.buyer_phone || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -1398,64 +1390,58 @@ export default function SellerDashboard() {
                     Product Information
                   </h3>
                   <div className="p-4 border rounded-lg bg-muted/30">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Product ID</p>
-                        <p className="font-semibold">#{selectedInquiry.product_id}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Product Title</p>
-                        <p className="font-semibold">{selectedInquiry.product_title || selectedInquiry.product_details || 'Product'}</p>
-                      </div>
+                    <div>
+                      <p className="text-base font-medium text-muted-foreground">Product Title</p>
+                      <p className="text-lg font-semibold">{selectedInquiry.product_title || selectedInquiry.product_details || 'Product'}</p>
                     </div>
                     {selectedInquiry.seller_name && (
                       <div className="mt-4 pt-4 border-t">
-                        <p className="text-sm font-medium text-muted-foreground">Seller</p>
-                        <p className="font-semibold">{selectedInquiry.seller_name} {selectedInquiry.seller_company ? `(${selectedInquiry.seller_company})` : ''}</p>
+                        <p className="text-base font-medium text-muted-foreground">Seller</p>
+                        <p className="text-lg font-semibold">{selectedInquiry.seller_name} {selectedInquiry.seller_company ? `(${selectedInquiry.seller_company})` : ''}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Inquiry Details */}
+                {/* Enquiry Details */}
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-purple-600" />
-                    Inquiry Details
+                    Enquiry Details
                   </h3>
                   <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Quoted Price</p>
-                      <p className="font-semibold text-green-600">
-                        {selectedInquiry.price_offered || selectedInquiry.quoted_price ? 
-                          `₹${parseFloat(selectedInquiry.price_offered || selectedInquiry.quoted_price).toLocaleString('en-IN')}` : 
+                      <p className="text-base font-medium text-muted-foreground">Quoted Price</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {selectedInquiry.price_offered || selectedInquiry.quoted_price ?
+                          `₹${parseFloat(selectedInquiry.price_offered || selectedInquiry.quoted_price).toLocaleString('en-IN')}` :
                           'Not provided'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Quantity</p>
-                      <p className="font-semibold">{selectedInquiry.quantity || 'Not specified'}</p>
+                      <p className="text-base font-medium text-muted-foreground">Quantity</p>
+                      <p className="text-lg font-semibold">{selectedInquiry.quantity || 'Not specified'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Status</p>
-                      <Badge className={
+                      <p className="text-base font-medium text-muted-foreground">Status</p>
+                      <Badge className={`text-lg font-medium px-3 py-1 ${
                         selectedInquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
                         selectedInquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
                         selectedInquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
-                      }>
+                      }`}>
                         {selectedInquiry.status || 'open'}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Date</p>
-                      <p className="font-semibold">
-                        {selectedInquiry.created_at ? 
+                      <p className="text-base font-medium text-muted-foreground">Date</p>
+                      <p className="text-lg font-semibold">
+                        {selectedInquiry.created_at ?
                           new Date(selectedInquiry.created_at).toLocaleDateString('en-IN', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
-                          }) : 
+                          }) :
                           'Not available'}
                       </p>
                     </div>
@@ -1463,9 +1449,9 @@ export default function SellerDashboard() {
                   
                   {selectedInquiry.message && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Message</p>
+                      <p className="text-base font-medium text-muted-foreground mb-2">Message</p>
                       <div className="p-4 border rounded-lg bg-white">
-                        <p className="text-sm whitespace-pre-wrap">{selectedInquiry.message}</p>
+                        <p className="text-base whitespace-pre-wrap">{selectedInquiry.message}</p>
                       </div>
                     </div>
                   )}
@@ -1474,14 +1460,16 @@ export default function SellerDashboard() {
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t">
                   {selectedInquiry.buyer_email && (
-                    <Button 
+                    <Button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
-                        window.location.href = `mailto:${selectedInquiry.buyer_email}?subject=Re: Inquiry for Product #${selectedInquiry.product_id}`;
+                        const subject = encodeURIComponent(`Re: Enquiry for ${selectedInquiry.product_title || 'Product'}`);
+                        const body = encodeURIComponent(`Dear ${selectedInquiry.buyer_name || 'Customer'},\n\nThank you for your enquiry.\n\nBest regards`);
+                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedInquiry.buyer_email}&su=${subject}&body=${body}`, '_blank');
                       }}
                     >
                       <Mail className="h-4 w-4 mr-2" />
-                      Reply via Email
+                      Reply via Gmail
                     </Button>
                   )}
                   

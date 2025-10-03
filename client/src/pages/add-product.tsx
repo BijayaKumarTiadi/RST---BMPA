@@ -52,6 +52,7 @@ const dealSchema = z.object({
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
   quantity: z.coerce.number().min(1, "Quantity is required"),
+  stockAge: z.coerce.number().min(0, "Stock Age must be 0 or greater").optional(),
   Seller_comments: z.string().optional(),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
@@ -208,6 +209,7 @@ export default function AddDeal() {
       OfferPrice: "" as any,
       OfferUnit: "",
       quantity: "" as any, // No default value
+      stockAge: "" as any, // No default value for stock age
       Seller_comments: "",
     },
   });
@@ -455,6 +457,7 @@ export default function AddDeal() {
         quantity: data.quantity,
         unit: data.OfferUnit,
         min_order_quantity: 100,
+        stock_age: data.stockAge || 0, // Add stock age to payload
         deal_specifications: {
           GSM: data.GSM,
           Deckle_mm: data.Deckle_mm,
@@ -491,6 +494,7 @@ export default function AddDeal() {
           OfferPrice: "" as any,
           OfferUnit: "",
           quantity: "" as any,
+          stockAge: "" as any,
           Seller_comments: "",
         });
         setSelectedGroup("");
@@ -546,7 +550,7 @@ export default function AddDeal() {
           {/* Header */}
           <div className="mb-3">
             <div className="text-center">
-              <h1 className="text-xl font-bold text-foreground mb-1">Add Offer</h1>
+              <h1 className="text-xl font-bold text-foreground mb-1">Add an Offer</h1>
             </div>
           </div>
 
@@ -858,7 +862,7 @@ export default function AddDeal() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <FormField
                       control={form.control}
                       name="OfferPrice"
@@ -866,10 +870,10 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               step="0.01"
-                              placeholder="Enter price" 
+                              placeholder="Enter price"
                               {...field}
                               data-testid="input-price"
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -887,8 +891,8 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Select 
-                              value={field.value} 
+                            <Select
+                              value={field.value}
                               onValueChange={field.onChange}
                               data-testid="select-unit"
                             >
@@ -905,7 +909,9 @@ export default function AddDeal() {
                         </FormItem>
                       )}
                     />
-
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="quantity"
@@ -913,12 +919,35 @@ export default function AddDeal() {
                         <FormItem>
                           <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Enter quantity" 
+                            <Input
+                              type="number"
+                              placeholder="Enter quantity"
                               {...field}
                               data-testid="input-quantity"
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="stockAge"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">
+                            Stock Age (days)
+                            <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Enter stock age in days (e.g., 30)"
+                              {...field}
+                              data-testid="input-stock-age"
+                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </FormControl>
                           <FormMessage />
@@ -997,7 +1026,7 @@ export default function AddDeal() {
                           Saving...
                         </>
                       ) : (
-                        "Save Deal"
+                        "Save Offer"
                       )}
                     </Button>
                   </div>

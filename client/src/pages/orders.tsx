@@ -179,7 +179,11 @@ export default function Orders() {
                               <Button 
                                 size="sm" 
                                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => window.location.href = `mailto:${order.customer_email}?subject=Regarding your inquiry for ${order.product_title}&body=Dear ${order.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${order.product_title}.%0D%0A%0D%0ABest regards`}
+                                onClick={() => {
+                                  const subject = encodeURIComponent(`Regarding your inquiry for ${order.product_title}`);
+                                  const body = encodeURIComponent(`Dear ${order.customer_name},\n\nThank you for your inquiry about ${order.product_title}.\n\nBest regards`);
+                                  window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${order.customer_email}&su=${subject}&body=${body}`, '_blank');
+                                }}
                                 data-testid={`button-contact-${order.id}`}
                               >
                                 <MessageCircle className="h-4 w-4 mr-1" />
@@ -341,9 +345,9 @@ export default function Orders() {
                     <Button 
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
-                        const subject = `Regarding your inquiry for ${selectedOrder.product_title}`;
-                        const body = `Dear ${selectedOrder.customer_name},%0D%0A%0D%0AThank you for your inquiry about ${selectedOrder.product_title}.%0D%0A%0D%0ABest regards`;
-                        window.location.href = `mailto:${selectedOrder.customer_email}?subject=${subject}&body=${body}`;
+                        const subject = encodeURIComponent(`Regarding your inquiry for ${selectedOrder.product_title}`);
+                        const body = encodeURIComponent(`Dear ${selectedOrder.customer_name},\n\nThank you for your inquiry about ${selectedOrder.product_title}.\n\nBest regards`);
+                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedOrder.customer_email}&su=${subject}&body=${body}`, '_blank');
                         setIsOrderModalOpen(false);
                       }}
                     >
