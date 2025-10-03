@@ -2,11 +2,11 @@ import mysql from 'mysql2/promise';
 
 // Database configuration
 const dbConfig = {
-  host: process.env.MYSQL_HOST,
+  host: process.env.MYSQL_HOST!,
   port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : undefined,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
+  user: process.env.MYSQL_USER!,
+  password: process.env.MYSQL_PASSWORD!,
+  database: process.env.MYSQL_DATABASE!,
   charset: 'utf8mb4',
   timezone: '+00:00',
   connectTimeout: 60000
