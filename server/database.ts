@@ -2,15 +2,14 @@ import mysql from 'mysql2/promise';
 
 // Database configuration
 const dbConfig = {
-  host: '103.155.204.186',
-  port: 23306,
-  user: 'manish',
-  password: 'manish',
-  database: 'trade_bmpa25',
+  host: process.env.DB_HOST || '103.155.204.186',
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+  user: process.env.DB_USER || 'manish',
+  password: process.env.DB_PASSWORD || 'manish',
+  database: process.env.DB_NAME || 'trade_bmpa25',
   charset: 'utf8mb4',
   timezone: '+00:00',
   connectTimeout: 60000
-  // Note: acquireTimeout and timeout removed - not valid MySQL2 options
 };
 
 // Create connection pool for better performance
@@ -175,7 +174,7 @@ export async function initializeDatabase(): Promise<void> {
       
       await executeQuery(`
         INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
-        VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+        VALUES ('admin', ?, 'System Administrator', process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com', 'super_admin')
       `, [defaultAdminPassword]);
 
       console.log('✅ Database tables created successfully');

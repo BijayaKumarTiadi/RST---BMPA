@@ -231,5 +231,5 @@ COMMIT;
 -- 2. Check that the database user has all necessary permissions:
 --    GRANT ALL PRIVILEGES ON your_database.* TO 'your_user'@'%';
 -- 3. Verify the connection details in your .env or database config
--- 4. Test connection manually: mysql -h 103.155.204.186 -u your_user -p
+-- 4. Test connection manually: mysql -h $DB_HOST -u $DB_USER -p
 -- ========================================
