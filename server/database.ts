@@ -2,11 +2,11 @@ import mysql from 'mysql2/promise';
 
 // Database configuration
 const dbConfig = {
-  host: process.env.DB_HOST || '103.155.204.186',
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-  user: process.env.DB_USER || 'manish',
-  password: process.env.DB_PASSWORD || 'manish',
-  database: process.env.DB_NAME || 'trade_bmpa25',
+  host: process.env.MYSQL_HOST || '103.155.204.186',
+  port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
+  user: process.env.MYSQL_USER || 'manish',
+  password: process.env.MYSQL_PASSWORD || 'manish',
+  database: process.env.MYSQL_DATABASE || 'trade_bmpa25',
   charset: 'utf8mb4',
   timezone: '+00:00',
   connectTimeout: 60000
