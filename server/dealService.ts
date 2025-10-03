@@ -73,7 +73,7 @@ export interface CreateDealData {
   deal_title: string;
   deal_description?: string;
   stock_description?: string;
-  stock_age?: string;
+  StockAge?: string;
   price: number;
   quantity: number;
   unit: string;
@@ -460,7 +460,7 @@ class DealService {
         deal_title,
         deal_description,
         stock_description,
-        stock_age,
+        StockAge: StockAge,
         search_key,
         price,
         quantity,
@@ -476,10 +476,14 @@ class DealService {
       const finalGrade = grade_text || grade_id || '';
       const finalBrand = brand_text || brand_id || '';
       
-      console.log('Creating deal with text values:', { 
+      console.log('Creating deal with values:', {
         finalMake,
         finalGrade,
-        finalBrand 
+        finalBrand,
+        StockAge: StockAge,
+        StockAge_type: typeof StockAge,
+        StockAge_value: StockAge,
+        will_save_as: StockAge !== undefined && StockAge !== null ? String(StockAge) : ''
       });
 
       // Extract GSM, Deckle_mm, grain_mm from deal_specifications
@@ -494,7 +498,7 @@ class DealService {
         INSERT INTO deal_master (
           groupID, Make, Grade, Brand, memberID,
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
-          GSM, Deckle_mm, grain_mm, search_key, stockage,
+          GSM, Deckle_mm, grain_mm, search_key, StockAge,
           created_by_member_id, created_by_name, created_by_company
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
@@ -512,7 +516,7 @@ class DealService {
         deckle_mm,
         grain_mm,
         final_search_key,
-        stock_age || '',
+        StockAge !== undefined && StockAge !== null ? String(StockAge) : '',
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || ''
@@ -570,7 +574,7 @@ class DealService {
         Seller_comments,
         quantity,
         stock_description,
-        stock_age,
+        StockAge,
         deal_title,
         deal_description,
         price,
@@ -660,9 +664,9 @@ class DealService {
       }
       
       // Handle stock age
-      if (stock_age !== undefined) {
-        updateFields.push(`stockage = ?`);
-        updateValues.push(stock_age);
+      if (StockAge !== undefined) {
+        updateFields.push(`StockAge = ?`);
+        updateValues.push(StockAge !== undefined && StockAge !== null ? String(StockAge) : '');
       }
       
       // Handle other optional fields

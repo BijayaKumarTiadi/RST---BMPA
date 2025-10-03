@@ -457,7 +457,7 @@ export default function AddDeal() {
         quantity: data.quantity,
         unit: data.OfferUnit,
         min_order_quantity: 100,
-        stock_age: data.stockAge || 0, // Add stock age to payload
+        StockAge: data.stockAge || 0, // Add stock age to payload
         deal_specifications: {
           GSM: data.GSM,
           Deckle_mm: data.Deckle_mm,

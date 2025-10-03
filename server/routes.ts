@@ -827,6 +827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_title,
         deal_description,
         stock_description,
+        StockAge,
         price,
         quantity,
         unit,
@@ -893,6 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_title,
         deal_description,
         stock_description,
+        StockAge,
         price: parseFloat(price),
         quantity: parseInt(quantity),
         unit,
@@ -918,7 +920,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
       
-      const result = await dealService.updateDeal(dealId, userId, req.body);
+      // Ensure StockAge is passed through if provided
+      const updateData = {
+        ...req.body,
+        StockAge: req.body.StockAge
+      };
+      
+      const result = await dealService.updateDeal(dealId, userId, updateData);
       res.json(result);
     } catch (error) {
       console.error("Error updating deal:", error);
