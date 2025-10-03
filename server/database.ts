@@ -1,10 +1,11 @@
 import mysql from 'mysql2/promise';
-import dotenv from "dotenv";
+import * as dotenv from 'dotenv';
 dotenv.config();
+
 // Database configuration
 const dbConfig = {
   host: process.env.MYSQL_HOST!,
-  port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : undefined,
+  port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
   user: process.env.MYSQL_USER!,
   password: process.env.MYSQL_PASSWORD!,
   database: process.env.MYSQL_DATABASE!,
@@ -12,13 +13,9 @@ const dbConfig = {
   timezone: '+00:00',
   connectTimeout: 60000
 };
+
 // Create connection pool for better performance
-export const pool = mysql.createPool({
-  ...dbConfig,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+export const pool = mysql.createPool(dbConfig);
 
 // Test database connection
 export async function testConnection(): Promise<boolean> {
@@ -41,7 +38,7 @@ export async function executeQuery<T = any>(
   retries: number = 3
 ): Promise<T[]> {
   let lastError: any;
-  
+
   for (let i = 0; i < retries; i++) {
     try {
       const [rows] = await pool.execute(query, params);
@@ -49,14 +46,14 @@ export async function executeQuery<T = any>(
     } catch (error: any) {
       lastError = error;
       console.error(`Database query error (attempt ${i + 1}/${retries}):`, error.message || error);
-      
+
       // Check if it's a connection error that we should retry
       if (error.code === 'EACCES' ||
           error.code === 'ETIMEDOUT' ||
           error.code === 'ECONNREFUSED' ||
           error.code === 'ENOTFOUND' ||
           error.code === 'PROTOCOL_CONNECTION_LOST') {
-        
+
         // Wait before retrying (exponential backoff)
         if (i < retries - 1) {
           const waitTime = Math.min(1000 * Math.pow(2, i), 5000); // Max 5 seconds
@@ -70,7 +67,7 @@ export async function executeQuery<T = any>(
       }
     }
   }
-  
+
   // If we've exhausted all retries, throw the last error
   console.error('Database query failed after all retries');
   throw lastError;
@@ -90,7 +87,7 @@ export async function executeQuerySingle<T = any>(
 export async function initializeDatabase(): Promise<void> {
   try {
     console.log('🔄 Initializing database...');
-    
+
     // Test connection first
     const isConnected = await testConnection();
     if (!isConnected) {
@@ -107,7 +104,7 @@ export async function initializeDatabase(): Promise<void> {
 
     if (!tableExists || tableExists.count === 0) {
       console.log('📋 Creating BMPA tables...');
-      
+
       // Create members table
       await executeQuery(`
         CREATE TABLE bmpa_members (
@@ -171,7 +168,7 @@ export async function initializeDatabase(): Promise<void> {
       // Create default admin user (username: admin, password: admin)
       const bcrypt = await import('bcryptjs');
       const defaultAdminPassword = await bcrypt.hash('admin', 12);
-      
+
       await executeQuery(`
         INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
         VALUES ('admin', ?, 'System Administrator', process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com', 'super_admin')
@@ -181,7 +178,7 @@ export async function initializeDatabase(): Promise<void> {
       console.log('🔑 Default admin user created (username: admin, password: admin)');
     } else {
       console.log('✅ Database tables already exist');
-      
+
       // Check if role column exists in bmpa_members table, if not add it
       const roleColumnExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
@@ -215,7 +212,7 @@ export async function initializeDatabase(): Promise<void> {
       } else {
         console.log('ℹ️ No users needed role update');
       }
-      
+
       // Check if admin table exists, if not create it
       const adminTableExists = await executeQuerySingle(`
         SELECT COUNT(*) as count 
@@ -226,7 +223,7 @@ export async function initializeDatabase(): Promise<void> {
 
       if (!adminTableExists || adminTableExists.count === 0) {
         console.log('📋 Creating admin table...');
-        
+
         // Create admin users table
         await executeQuery(`
           CREATE TABLE admin_users (
@@ -248,22 +245,22 @@ export async function initializeDatabase(): Promise<void> {
         // Create default admin user
         const bcrypt = await import('bcryptjs');
         const defaultAdminPassword = await bcrypt.hash('admin', 12);
-        
+
         await executeQuery(`
-          INSERT INTO admin_users (username, password_hash, full_name, email, role)
-          VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
+          INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
+          VALUES ('admin', ?, 'System Administrator', process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com', 'super_admin')
         `, [defaultAdminPassword]);
 
         console.log('✅ Admin table created successfully');
         console.log('🔑 Default admin user created (username: admin, password: admin)');
       } else {
         console.log('✅ Admin table already exists');
-        
+
         // Ensure default admin user exists
         try {
           const bcrypt = await import('bcryptjs');
           const defaultAdminPassword = await bcrypt.hash('admin', 12);
-          
+
           await executeQuery(`
             INSERT IGNORE INTO admin_users (username, password_hash, full_name, email, role)
             VALUES ('admin', ?, 'System Administrator', 'bktiadi1@gmail.com', 'super_admin')
@@ -273,7 +270,7 @@ export async function initializeDatabase(): Promise<void> {
           await executeQuery(`
             UPDATE admin_users SET email = 'bktiadi1@gmail.com' WHERE username = 'admin'
           `);
-          
+
           console.log('✅ Default admin user verified');
         } catch (error) {
           console.log('ℹ️ Default admin user already exists');
@@ -312,7 +309,7 @@ export async function initializeDatabase(): Promise<void> {
     const memberInfoColumnExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'deal_master' 
       AND column_name = 'created_by_name'
     `);
@@ -333,7 +330,7 @@ export async function initializeDatabase(): Promise<void> {
     const quantityColumnExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'deal_master' 
       AND column_name = 'quantity'
     `);
@@ -351,7 +348,7 @@ export async function initializeDatabase(): Promise<void> {
     const stockDescriptionColumnExists = await executeQuerySingle(`
       SELECT COUNT(*) as count 
       FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
+      WHERE table_schema = 'trade_bmpa25' 
       AND table_name = 'deal_master' 
       AND column_name = 'stock_description'
     `);
@@ -402,330 +399,28 @@ export async function initializeDatabase(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
       console.log('✅ BMPA Products table created successfully');
-
-      // Insert default categories
-      const defaultCategories = [
-        { id: 'cat-1', name: 'Printing Materials', description: 'Paper, ink, toner, and other printing supplies' },
-        { id: 'cat-2', name: 'Printing Equipment', description: 'Printers, scanners, and related hardware' },
-        { id: 'cat-3', name: 'Binding & Finishing', description: 'Binding machines, laminators, and finishing equipment' },
-        { id: 'cat-4', name: 'Office Supplies', description: 'Stationery, folders, and general office materials' },
-        { id: 'cat-5', name: 'Digital Services', description: 'Design, printing, and digital solutions' }
-      ];
-
-      for (const category of defaultCategories) {
-        try {
-          await executeQuery(`
-            INSERT IGNORE INTO bmpa_categories (category_name, description)
-            VALUES (?, ?)
-          `, [category.name, category.description]);
-        } catch (catError) {
-          console.log(`Category ${category.name} might already exist`);
-        }
-      }
-      console.log('✅ Default categories added');
     }
 
+    // Insert default categories
+    const defaultCategories = [
+      { id: 'cat-1', name: 'Printing Materials', description: 'Paper, ink, toner, and other printing supplies' },
+      { id: 'cat-2', name: 'Printing Equipment', description: 'Printers, scanners, and related hardware' },
+      { id: 'cat-3', name: 'Binding & Finishing', description: 'Binding machines, laminators, and finishing equipment' },
+      { id: 'cat-4', name: 'Office Supplies', description: 'Stationery, folders, and general office materials' },
+      { id: 'cat-5', name: 'Digital Services', description: 'Design, printing, and digital solutions' }
+    ];
 
-
-    // Check if deal_master table has user identification columns
-    const dealCreatorColumnExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.columns 
-      WHERE table_schema = 'trade_bmpa25' 
-      AND table_name = 'deal_master' 
-      AND column_name = 'created_by_member_id'
-    `);
-
-    if (!dealCreatorColumnExists || dealCreatorColumnExists.count === 0) {
-      console.log('📝 Adding user identification columns to deal_master table...');
-      
-      // Add created_by_member_id column
-      await executeQuery(`
-        ALTER TABLE deal_master 
-        ADD COLUMN created_by_member_id int(10) DEFAULT NULL,
-        ADD COLUMN created_by_name varchar(100) DEFAULT '',
-        ADD COLUMN created_by_company varchar(100) DEFAULT '',
-        ADD COLUMN deal_created_at datetime DEFAULT CURRENT_TIMESTAMP,
-        ADD COLUMN deal_updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      `);
-
-      // Add foreign key constraint
-      await executeQuery(`
-        ALTER TABLE deal_master 
-        ADD FOREIGN KEY (created_by_member_id) REFERENCES bmpa_members(member_id) ON DELETE SET NULL
-      `);
-      
-      console.log('✅ User identification columns added to deal_master successfully');
-    }
-
-    // Check if we need to rename inquiries table to BMPA_inquiries
-    const oldInquiriesExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'inquiries'
-    `);
-
-    const newInquiriesExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_inquiries'
-    `);
-
-    if (oldInquiriesExists && oldInquiriesExists.count > 0) {
-      if (newInquiriesExists && newInquiriesExists.count > 0) {
-        // Drop the new empty BMPA_inquiries table if it exists
-        console.log('🗑️ Dropping empty BMPA_inquiries table...');
-        await executeQuery('DROP TABLE BMPA_inquiries');
-      }
-      
-      // Rename the existing inquiries table to BMPA_inquiries
-      console.log('🔄 Renaming inquiries table to BMPA_inquiries...');
-      await executeQuery('RENAME TABLE inquiries TO BMPA_inquiries');
-      console.log('✅ Successfully renamed inquiries table to BMPA_inquiries');
-    } else if (!newInquiriesExists || newInquiriesExists.count === 0) {
-      // Create BMPA_inquiries table if neither exists
-      console.log('📧 Creating BMPA_inquiries table...');
-      await executeQuery(`
-        CREATE TABLE BMPA_inquiries (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          product_id INT NOT NULL,
-          buyer_name VARCHAR(255) NOT NULL,
-          buyer_email VARCHAR(255) NOT NULL,
-          buyer_company VARCHAR(255),
-          buyer_phone VARCHAR(20),
-          quoted_price VARCHAR(50),
-          quantity VARCHAR(100),
-          message TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          INDEX idx_product_id (product_id),
-          INDEX idx_buyer_email (buyer_email),
-          INDEX idx_created_at (created_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-      `);
-      console.log('✅ BMPA_inquiries table created successfully');
-    }
-
-    // Add columns to BMPA_inquiries for enhanced tracking
-    const inquiryColumnsCheck = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_inquiries' 
-      AND column_name = 'buyer_id'
-    `);
-    
-    if (inquiryColumnsCheck && inquiryColumnsCheck.count === 0) {
-      console.log('🔧 Adding enhanced tracking columns to BMPA_inquiries...');
-      await executeQuery(`
-        ALTER TABLE BMPA_inquiries 
-        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-        ADD COLUMN buyer_id INT AFTER inquiry_ref,
-        ADD COLUMN seller_id INT AFTER buyer_phone,
-        ADD COLUMN seller_name VARCHAR(255) AFTER seller_id,
-        ADD COLUMN seller_company VARCHAR(255) AFTER seller_name,
-        ADD COLUMN status VARCHAR(50) DEFAULT 'pending' AFTER message,
-        ADD INDEX idx_buyer_id (buyer_id),
-        ADD INDEX idx_seller_id (seller_id),
-        ADD INDEX idx_status (status),
-        ADD INDEX idx_inquiry_ref (inquiry_ref)
-      `);
-      console.log('✅ Enhanced tracking columns added to BMPA_inquiries');
-    }
-    
-    // Check if inquiry_ref column exists in BMPA_inquiries
-    const inquiryRefCheck = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_inquiries' 
-      AND column_name = 'inquiry_ref'
-    `);
-    
-    if (inquiryRefCheck && inquiryRefCheck.count === 0) {
-      console.log('🔧 Adding inquiry_ref column to BMPA_inquiries...');
-      await executeQuery(`
-        ALTER TABLE BMPA_inquiries 
-        ADD COLUMN inquiry_ref VARCHAR(100) UNIQUE AFTER id,
-        ADD INDEX idx_inquiry_ref (inquiry_ref)
-      `);
-      console.log('✅ inquiry_ref column added to BMPA_inquiries');
-    }
-    
-    // Create bmpa_received_inquiries table for sellers to track received inquiries
-    const receivedInquiriesExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'bmpa_received_inquiries'
-    `);
-    
-    if (!receivedInquiriesExists || receivedInquiriesExists.count === 0) {
-      console.log('📨 Creating bmpa_received_inquiries table...');
-      await executeQuery(`
-        CREATE TABLE bmpa_received_inquiries (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          inquiry_ref VARCHAR(100) UNIQUE,
-          seller_id INT NOT NULL,
-          buyer_id INT NOT NULL,
-          buyer_name VARCHAR(255) NOT NULL,
-          buyer_email VARCHAR(255) NOT NULL,
-          buyer_company VARCHAR(255),
-          buyer_phone VARCHAR(20),
-          product_id INT NOT NULL,
-          product_title VARCHAR(500),
-          price_offered VARCHAR(50),
-          quantity VARCHAR(100),
-          message TEXT,
-          status VARCHAR(50) DEFAULT 'open',
-          is_read BOOLEAN DEFAULT FALSE,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_seller_id (seller_id),
-          INDEX idx_buyer_id (buyer_id),
-          INDEX idx_product_id (product_id),
-          INDEX idx_status (status),
-          INDEX idx_is_read (is_read),
-          INDEX idx_created_at (created_at),
-          INDEX idx_inquiry_ref (inquiry_ref)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-      `);
-      console.log('✅ bmpa_received_inquiries table created successfully');
-    }
-    
-    // Add tracking columns to BMPA_members
-    const memberTrackingCheck = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.columns 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_members' 
-      AND column_name = 'total_inquiries_sent'
-    `);
-    
-    if (memberTrackingCheck && memberTrackingCheck.count === 0) {
-      console.log('🔧 Adding inquiry tracking columns to BMPA_members...');
-      await executeQuery(`
-        ALTER TABLE BMPA_members 
-        ADD COLUMN total_inquiries_sent INT DEFAULT 0,
-        ADD COLUMN last_inquiry_date TIMESTAMP NULL
-      `);
-      console.log('✅ Inquiry tracking columns added to BMPA_members');
-    }
-    
-    // Create BMPA_seller_notifications table
-    const notificationsTableExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_seller_notifications'
-    `);
-    
-    if (!notificationsTableExists || notificationsTableExists.count === 0) {
-      console.log('🔔 Creating BMPA_seller_notifications table...');
-      await executeQuery(`
-        CREATE TABLE BMPA_seller_notifications (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          seller_id INT NOT NULL,
-          notification_type VARCHAR(50) NOT NULL,
-          inquiry_id INT,
-          buyer_name VARCHAR(255),
-          product_id INT,
-          message TEXT,
-          is_read BOOLEAN DEFAULT FALSE,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          INDEX idx_seller_id (seller_id),
-          INDEX idx_is_read (is_read),
-          INDEX idx_created_at (created_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-      `);
-      console.log('✅ BMPA_seller_notifications table created successfully');
-    }
-
-    // Create BMPA_orders table for actual purchase transactions
-    const ordersTableExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'BMPA_orders'
-    `);
-
-    if (!ordersTableExists || ordersTableExists.count === 0) {
-      console.log('📦 Creating BMPA_orders table...');
-      await executeQuery(`
-        CREATE TABLE BMPA_orders (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          buyer_id INT NOT NULL,
-          seller_id INT NOT NULL,
-          deal_id INT NOT NULL,
-          product_title VARCHAR(500),
-          quantity VARCHAR(100),
-          unit_price DECIMAL(10, 2),
-          total_amount DECIMAL(10, 2),
-          status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-          payment_status ENUM('pending', 'paid', 'refunded') DEFAULT 'pending',
-          shipping_address TEXT,
-          tracking_number VARCHAR(100),
-          notes TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_buyer_id (buyer_id),
-          INDEX idx_seller_id (seller_id),
-          INDEX idx_deal_id (deal_id),
-          INDEX idx_status (status),
-          INDEX idx_created_at (created_at),
-          FOREIGN KEY (deal_id) REFERENCES deal_master(TransID)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-      `);
-      console.log('✅ BMPA_orders table created successfully');
-    }
-
-    // Add search_key column to deal_master if it doesn't exist
-    const searchKeyColumnExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.columns 
-      WHERE table_schema = 'trade_bmpa25' 
-      AND table_name = 'deal_master' 
-      AND column_name = 'search_key'
-    `);
-
-    if (!searchKeyColumnExists || searchKeyColumnExists.count === 0) {
-      console.log('🔍 Adding search_key column to deal_master table...');
-      await executeQuery(`
-        ALTER TABLE deal_master ADD COLUMN search_key TEXT
-      `);
-      console.log('✅ search_key column added to deal_master table');
-    }
-
-    // Backfill search_key for existing records
-    console.log('🔄 Backfilling search_key for existing records...');
-    await executeQuery(`
-      UPDATE deal_master 
-      SET search_key = LOWER(REPLACE(REPLACE(IFNULL(stock_description, ''), ' ', ''), '.', ''))
-    `);
-    console.log('✅ Backfilled search_key for existing records');
-
-    // Check if index exists before creating
-    const searchKeyIndexExists = await executeQuerySingle(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.statistics 
-      WHERE table_schema = 'trade_bmpa25' 
-      AND table_name = 'deal_master' 
-      AND index_name = 'idx_search_key'
-    `);
-
-    if (!searchKeyIndexExists || searchKeyIndexExists.count === 0) {
+    for (const category of defaultCategories) {
       try {
-        console.log('🔍 Creating search key index...');
-        await executeQuery('CREATE INDEX idx_search_key ON deal_master(search_key(255))');
-        console.log('✅ Search key index created');
-      } catch (indexError: any) {
-        console.log('⚠️ Could not create search key index:', indexError.message || indexError);
+        await executeQuery(`
+          INSERT IGNORE INTO bmpa_categories (category_name, description)
+          VALUES (?, ?)
+        `, [category.name, category.description]);
+      } catch (catError) {
+        console.log(`Category ${category.name} might already exist`);
       }
-    } else {
-      console.log('✅ Search key index already exists');
     }
-
+    console.log('✅ Default categories added');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
