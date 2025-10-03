@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
-
+import dotenv from "dotenv";
+dotenv.config();
 // Database configuration
 const dbConfig = {
   host: process.env.MYSQL_HOST!,
@@ -11,7 +12,6 @@ const dbConfig = {
   timezone: '+00:00',
   connectTimeout: 60000
 };
-
 // Create connection pool for better performance
 export const pool = mysql.createPool({
   ...dbConfig,
