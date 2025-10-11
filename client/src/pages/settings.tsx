@@ -188,9 +188,9 @@ export default function Settings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-base">Inquiry Alerts</Label>
+                    <Label className="text-base">Enquiry Alerts</Label>
                     <p className="text-sm text-muted-foreground">
-                      Get notified when you receive new product inquiries
+                      Get notified when you receive new product enquiries
                     </p>
                   </div>
                   <Switch

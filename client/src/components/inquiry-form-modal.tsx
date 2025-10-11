@@ -9,13 +9,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Mail, X, Send } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
-interface InquiryFormModalProps {
+interface EnquiryFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   deal: any;
 }
 
-export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormModalProps) {
+export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,7 +76,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
 
     try {
       const emailData = {
-        subject: `Inquiry for Product: ${deal.stock_description || deal.DealTitle || `${deal.MakeName || ''} ${deal.BrandName || ''} ${deal.GradeName || ''}`.trim() || 'Product'}`,
+        subject: `Enquiry for Product: ${deal.stock_description || deal.DealTitle || `${deal.MakeName || ''} ${deal.BrandName || ''} ${deal.GradeName || ''}`.trim() || 'Product'}`,
         buyerName: formData.buyerName,
         buyerCompany: formData.buyerCompany,
         buyerEmail: formData.buyerEmail,
@@ -113,7 +113,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
 
       if (result.success) {
         toast({
-          title: "Inquiry Sent Successfully!",
+          title: "Enquiry Sent Successfully!",
           description: "Your inquiry has been sent to the seller. They will contact you soon.",
         });
         
@@ -156,7 +156,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Send Inquiry
+            Send Enquiry
           </DialogTitle>
         </DialogHeader>
 
@@ -171,7 +171,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
             </div>
           </div>
 
-          {/* Inquiry Form */}
+          {/* Enquiry Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -281,7 +281,7 @@ export default function InquiryFormModal({ isOpen, onClose, deal }: InquiryFormM
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Send Inquiry
+                    Send Enquiry
                   </>
                 )}
               </Button>

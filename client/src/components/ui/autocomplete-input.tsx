@@ -42,18 +42,20 @@ export function AutocompleteInput({
 
   // Initialize input value from selected value or keep the text
   useEffect(() => {
-    // Don't reset if we already have input
-    if (inputValue && allowFreeText) {
-      return;
-    }
-    
     if (value) {
+      // Try to find by ID first
       const selected = suggestions.find(
         (item) => item[valueField]?.toString() === value
       );
       if (selected) {
         setInputValue(selected[displayField] || "");
+      } else if (allowFreeText) {
+        // If not found in suggestions and allowFreeText, use the value as display text
+        setInputValue(value);
       }
+    } else {
+      // Clear input if value is empty
+      setInputValue("");
     }
   }, [value, suggestions, valueField, displayField, allowFreeText]);
 

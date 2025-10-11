@@ -15,7 +15,7 @@ import Navigation from "@/components/navigation";
 import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Loader2, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
-import InquiryFormModal from "@/components/inquiry-form-modal";
+import EnquiryFormModal from "@/components/inquiry-form-modal";
 import WhatsAppQuotationModal from "@/components/whatsapp-quotation-modal";
 import PowerSearch from "@/components/power-search";
 import { MobileFilterDrawer } from "@/components/mobile-filter-drawer";
@@ -193,7 +193,7 @@ export default function Marketplace() {
   // Modal states
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   // Fetch stock hierarchy
@@ -1027,9 +1027,9 @@ export default function Marketplace() {
     setIsProductModalOpen(true);
   };
 
-  const handleSendInquiry = (deal: any) => {
+  const handleSendEnquiry = (deal: any) => {
     setSelectedDeal(deal);
-    setIsInquiryModalOpen(true);
+    setIsEnquiryModalOpen(true);
   };
 
   // Helper function to calculate relative time
@@ -2054,12 +2054,12 @@ export default function Marketplace() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleSendInquiry(deal)}
+                                    onClick={() => handleSendEnquiry(deal)}
                                     data-testid={`button-send-inquiry-${deal.TransID}`}
                                     className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
                                   >
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    Send Inquiry
+                                    <Mail className="h-3 w-3" />
+                                    <span className="ml-0.5">Enquiry</span>
                                   </Button>
                                   
                                   <Button
@@ -2145,13 +2145,13 @@ export default function Marketplace() {
         isOpen={isProductModalOpen} 
         onClose={() => setIsProductModalOpen(false)} 
         deal={selectedDeal} 
-        onSendInquiry={handleSendInquiry}
+        onSendEnquiry={handleSendEnquiry}
         onSendWhatsApp={handleSendWhatsAppFromModal}
       />
       
-      <InquiryFormModal 
-        isOpen={isInquiryModalOpen} 
-        onClose={() => setIsInquiryModalOpen(false)} 
+      <EnquiryFormModal 
+        isOpen={isEnquiryModalOpen} 
+        onClose={() => setIsEnquiryModalOpen(false)} 
         deal={selectedDeal} 
       />
       

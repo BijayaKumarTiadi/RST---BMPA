@@ -287,11 +287,11 @@ export default function BuyerDashboard() {
                               </div>
                             </div>
                             <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
-                              Inquiry Sent
+                              Enquiry Sent
                             </Badge>
                           </div>
 
-                          {/* Inquiry Details */}
+                          {/* Enquiry Details */}
                           <div className="grid md:grid-cols-2 gap-4 mb-3">
                             <div>
                               <p className="text-sm text-muted-foreground mb-1">Your Details:</p>
@@ -319,7 +319,7 @@ export default function BuyerDashboard() {
                               </div>
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground mb-1">Inquiry Details:</p>
+                              <p className="text-sm text-muted-foreground mb-1">Enquiry Details:</p>
                               <div className="space-y-1 text-xs">
                                 {inquiry.quantity && (
                                   <div><span className="font-medium">Quantity:</span> {inquiry.quantity}</div>

@@ -10,11 +10,11 @@ interface ProductDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   deal: any;
-  onSendInquiry?: (deal: any) => void;
+  onSendEnquiry?: (deal: any) => void;
   onSendWhatsApp?: (deal: any) => void;
 }
 
-export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInquiry, onSendWhatsApp }: ProductDetailsModalProps) {
+export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnquiry, onSendWhatsApp }: ProductDetailsModalProps) {
   // Fetch user settings to get dimension preference
   const { data: userSettings } = useQuery({
     queryKey: ['/api/settings'],
@@ -229,14 +229,14 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendInqui
 
           {/* Action Buttons */}
           <div className="flex gap-3 mt-4">
-            {onSendInquiry && (
+            {onSendEnquiry && (
               <Button 
-                onClick={() => onSendInquiry(deal)}
+                onClick={() => onSendEnquiry(deal)}
                 className="flex-1"
                 size="lg"
               >
                 <Mail className="mr-2 h-4 w-4" />
-                Send Inquiry
+                Send Enquiry
               </Button>
             )}
             {onSendWhatsApp && (

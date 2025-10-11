@@ -553,12 +553,18 @@ class DealService {
         };
       }
 
-      if (deal.created_by_member_id !== userId) {
+      // Check if the user owns this deal (check both created_by_member_id and memberID)
+      const isOwner = deal.created_by_member_id === userId || deal.memberID === userId;
+      
+      if (!isOwner) {
+        console.error(`Authorization failed: userId=${userId}, created_by=${deal.created_by_member_id}, memberID=${deal.memberID}`);
         return {
           success: false,
           message: 'Unauthorized to update this deal'
         };
       }
+      
+      console.log(`✅ Authorization passed for deal ${dealId}, user ${userId}`);
 
       // Extract main product fields from updateData
       const {
@@ -595,28 +601,28 @@ class DealService {
         updateValues.push(group_id || groupID);
       }
       
-      // Handle Make field - could be ID or text
-      if (make_id !== undefined || MakeID !== undefined || make_text !== undefined) {
+      // Handle Make field - always use text value
+      if (make_text !== undefined || make_id !== undefined || MakeID !== undefined) {
         updateFields.push(`Make = ?`);
-        // Use make_text if no ID is provided, otherwise use ID
         const makeValue = make_text || make_id || MakeID || '';
         updateValues.push(makeValue);
+        console.log('Updating Make field to:', makeValue);
       }
       
-      // Handle Grade field - could be ID or text
-      if (grade_id !== undefined || GradeID !== undefined || grade_text !== undefined) {
+      // Handle Grade field - always use text value
+      if (grade_text !== undefined || grade_id !== undefined || GradeID !== undefined) {
         updateFields.push(`Grade = ?`);
-        // Use grade_text if no ID is provided, otherwise use ID
         const gradeValue = grade_text || grade_id || GradeID || '';
         updateValues.push(gradeValue);
+        console.log('Updating Grade field to:', gradeValue);
       }
       
-      // Handle Brand field - could be ID or text
-      if (brand_id !== undefined || BrandID !== undefined || brand_text !== undefined) {
+      // Handle Brand field - always use text value
+      if (brand_text !== undefined || brand_id !== undefined || BrandID !== undefined) {
         updateFields.push(`Brand = ?`);
-        // Use brand_text if no ID is provided, otherwise use ID
         const brandValue = brand_text || brand_id || BrandID || '';
         updateValues.push(brandValue);
+        console.log('Updating Brand field to:', brandValue);
       }
       
       // Handle technical specifications
@@ -669,31 +675,11 @@ class DealService {
         updateValues.push(StockAge !== undefined && StockAge !== null ? String(StockAge) : '');
       }
       
-      // Handle other optional fields
-      if (deal_title !== undefined) {
-        updateFields.push(`DealTitle = ?`);
-        updateValues.push(deal_title);
-      }
+      // Skip fields that don't exist in the deal_master table
+      // DealTitle, DealSpecifications, MinOrderQuantity, Location, ExpiresAt are not in the schema
+      // These fields are handled differently or don't exist in the current database schema
       
-      if (deal_specifications !== undefined) {
-        updateFields.push(`DealSpecifications = ?`);
-        updateValues.push(JSON.stringify(deal_specifications));
-      }
-      
-      if (min_order_quantity !== undefined) {
-        updateFields.push(`MinOrderQuantity = ?`);
-        updateValues.push(min_order_quantity);
-      }
-      
-      if (location !== undefined) {
-        updateFields.push(`Location = ?`);
-        updateValues.push(location);
-      }
-      
-      if (expires_at !== undefined) {
-        updateFields.push(`ExpiresAt = ?`);
-        updateValues.push(expires_at);
-      }
+      console.log(`📝 Preparing to update ${updateFields.length} fields:`, updateFields);
 
       // If stock_description is updated, also update search_key
       if (updateStockDescription && updateData.stock_description) {

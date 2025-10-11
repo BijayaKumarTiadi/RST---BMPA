@@ -920,9 +920,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
       
-      // Ensure StockAge is passed through if provided
+      console.log('🔄 Update Deal Request:', {
+        dealId,
+        userId,
+        make_text: req.body.make_text,
+        grade_text: req.body.grade_text,
+        brand_text: req.body.brand_text,
+        GSM: req.body.GSM || req.body.deal_specifications?.GSM,
+        Deckle_mm: req.body.Deckle_mm || req.body.deal_specifications?.Deckle_mm,
+        grain_mm: req.body.grain_mm || req.body.deal_specifications?.grain_mm,
+        OfferPrice: req.body.price || req.body.OfferPrice,
+        quantity: req.body.quantity,
+        StockAge: req.body.StockAge
+      });
+      
+      // Ensure all fields are passed through properly
       const updateData = {
         ...req.body,
+        // Make sure technical specs from deal_specifications are available at top level
+        GSM: req.body.GSM || req.body.deal_specifications?.GSM,
+        Deckle_mm: req.body.Deckle_mm || req.body.deal_specifications?.Deckle_mm,
+        grain_mm: req.body.grain_mm || req.body.deal_specifications?.grain_mm,
+        // Ensure price fields are properly mapped
+        OfferPrice: req.body.price || req.body.OfferPrice,
+        OfferUnit: req.body.unit || req.body.OfferUnit,
+        // Ensure description fields are mapped
+        Seller_comments: req.body.deal_description || req.body.Seller_comments,
+        stock_description: req.body.stock_description,
         StockAge: req.body.StockAge
       };
       

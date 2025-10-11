@@ -148,8 +148,8 @@ export default function Orders() {
                             }
                             data-testid={`order-status-${order.id}`}
                           >
-                            {order.status === 'inquiry' ? 'Received Inquiry' : 
-                             order.status === 'sent' ? 'Sent Inquiry' :
+                            {order.status === 'inquiry' ? 'Received Enquiry' : 
+                             order.status === 'sent' ? 'Sent Enquiry' :
                              order.status === 'completed' ? 'Completed' :
                              order.status === 'pending' ? 'Pending' :
                              order.status}
@@ -229,8 +229,8 @@ export default function Orders() {
                       selectedOrder.status === 'sent' ? 'bg-purple-100 text-purple-700' :
                       'bg-gray-100 text-gray-700'
                     }>
-                      {selectedOrder.status === 'inquiry' ? 'Received Inquiry' : 
-                       selectedOrder.status === 'sent' ? 'Sent Inquiry' :
+                      {selectedOrder.status === 'inquiry' ? 'Received Enquiry' : 
+                       selectedOrder.status === 'sent' ? 'Sent Enquiry' :
                        selectedOrder.status}
                     </Badge>
                   </div>
@@ -309,9 +309,9 @@ export default function Orders() {
                   </div>
                 </div>
 
-                {/* Inquiry Details */}
+                {/* Enquiry Details */}
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">Inquiry Details</h3>
+                  <h3 className="text-lg font-semibold">Enquiry Details</h3>
                   <div className="p-4 border rounded-lg space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>

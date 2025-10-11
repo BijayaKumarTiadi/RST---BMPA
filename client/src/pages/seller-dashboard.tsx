@@ -27,8 +27,8 @@ export default function SellerDashboard() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
-  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [selectedEnquiry, setSelectedEnquiry] = useState<any>(null);
+  const [inquiryModalOpen, setEnquiryModalOpen] = useState(false);
 
   // Fetch user settings to get dimension preference
   const { data: userSettings } = useQuery({
@@ -847,8 +847,8 @@ export default function SellerDashboard() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedInquiry(inquiry);
-                                  setInquiryModalOpen(true);
+                                  setSelectedEnquiry(inquiry);
+                                  setEnquiryModalOpen(true);
                                 }}
                                 data-testid={`button-view-${inquiry.id}`}
                               >
@@ -969,8 +969,8 @@ export default function SellerDashboard() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedInquiry(inquiry);
-                                  setInquiryModalOpen(true);
+                                  setSelectedEnquiry(inquiry);
+                                  setEnquiryModalOpen(true);
                                 }}
                                 data-testid={`button-view-sent-${inquiry.id}`}
                               >
@@ -1175,82 +1175,67 @@ export default function SellerDashboard() {
         {/* Product Details Modal */}
         <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
+            <DialogHeader className="pb-2">
               <DialogTitle>Product Details</DialogTitle>
-              <DialogDescription>
-                View complete details of your product listing
-              </DialogDescription>
             </DialogHeader>
             {selectedDeal && (
-              <div className="space-y-4">
-                {/* Basic Information */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Basic Information</h3>
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+              <div className="space-y-2">
+                {/* Product Information - Combined */}
+                <div className="p-3 border rounded-lg space-y-2">
+                  {/* Description */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Description</p>
+                    <p className="text-sm font-semibold">{selectedDeal.stock_description || selectedDeal.Seller_comments || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Product Attributes Grid */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Deal ID</p>
-                      <p className="font-semibold">#{selectedDeal.TransID}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Status</p>
-                      <Badge className={getStatusColor(selectedDeal.StockStatus || 1)}>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <Badge className={`text-xs ${getStatusColor(selectedDeal.StockStatus || 1)}`}>
                         {getStatusText(selectedDeal.StockStatus || 1)}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Created</p>
-                      <p className="font-semibold">{getRelativeTime(selectedDeal.deal_created_at)}</p>
+                      <p className="text-xs text-muted-foreground">Category</p>
+                      <p className="text-sm font-semibold">{selectedDeal.GroupName || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Stock Age</p>
-                      <p className="font-semibold">{selectedDeal.StockAge || 0} days</p>
+                      <p className="text-xs text-muted-foreground">Make</p>
+                      <p className="text-sm font-semibold">{selectedDeal.MakeName || selectedDeal.Make || 'N/A'}</p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Product Details */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Product Details</h3>
-                  <div className="p-4 border rounded-lg space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Description</p>
-                      <p className="font-semibold">{selectedDeal.stock_description || selectedDeal.Seller_comments || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">Grade</p>
+                      <p className="text-sm font-semibold">{selectedDeal.GradeName || selectedDeal.Grade || 'N/A'}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Category</p>
-                        <p className="font-semibold">{selectedDeal.GroupName || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Make</p>
-                        <p className="font-semibold">{selectedDeal.MakeName || selectedDeal.Make || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Grade</p>
-                        <p className="font-semibold">{selectedDeal.GradeName || selectedDeal.Grade || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Brand</p>
-                        <p className="font-semibold">{selectedDeal.BrandName || selectedDeal.Brand || 'N/A'}</p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Brand</p>
+                      <p className="text-sm font-semibold">{selectedDeal.BrandName || selectedDeal.Brand || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Stock Age</p>
+                      <p className="text-sm font-semibold">{selectedDeal.StockAge || 0} days</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Created</p>
+                      <p className="text-sm font-semibold">{getRelativeTime(selectedDeal.deal_created_at)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Technical Specifications */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Technical Specifications</h3>
-                  <div className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                <div className="p-3 border rounded-lg">
+                  <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">GSM</p>
-                      <p className="font-semibold">{selectedDeal.GSM || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">GSM</p>
+                      <p className="text-sm font-semibold">{selectedDeal.GSM || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Deckle</p>
-                      <p className="font-semibold">
+                      <p className="text-xs text-muted-foreground">Deckle</p>
+                      <p className="text-sm font-semibold">
                         {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? (
                           // For Kraft Reel: show only user's preferred unit
-                          userSettings?.dimension_unit === 'inch' ? (
+                          (userSettings as any)?.dimension_unit === 'inch' ? (
                             `${(selectedDeal.Deckle_mm / 25.4).toFixed(2)}"`
                           ) : (
                             `${(selectedDeal.Deckle_mm / 10).toFixed(1)}cm`
@@ -1269,10 +1254,10 @@ export default function SellerDashboard() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? 'B.S' : 'Grain'}
                       </p>
-                      <p className="font-semibold">
+                      <p className="text-sm font-semibold">
                         {isKraftReelGroup(selectedDeal.GroupName, selectedDeal.GroupID) ? (
                           // For Kraft Reel B.S: show raw value without mm suffix
                           selectedDeal.grain_mm
@@ -1293,34 +1278,31 @@ export default function SellerDashboard() {
                 </div>
 
                 {/* Pricing & Quantity */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Pricing & Quantity</h3>
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div className="p-3 border rounded-lg">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Price</p>
-                      <p className="font-semibold text-green-600">
+                      <p className="text-xs text-muted-foreground">Price</p>
+                      <p className="text-sm font-semibold text-green-600">
                         ₹{selectedDeal.OfferPrice?.toLocaleString('en-IN')} per {selectedDeal.OfferUnit || 'unit'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Available Quantity</p>
-                      <p className="font-semibold">{selectedDeal.quantity || 'N/A'} {selectedDeal.OfferUnit || 'units'}</p>
+                      <p className="text-xs text-muted-foreground">Quantity</p>
+                      <p className="text-sm font-semibold">{selectedDeal.quantity || 'N/A'} {selectedDeal.OfferUnit || 'units'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Seller Comments */}
                 {selectedDeal.Seller_comments && (
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Additional Comments</h3>
-                    <div className="p-4 border rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap">{selectedDeal.Seller_comments}</p>
-                    </div>
+                  <div className="p-3 border rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Additional Comments</p>
+                    <p className="text-xs whitespace-pre-wrap">{selectedDeal.Seller_comments}</p>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t">
+                <div className="flex gap-2 pt-3 border-t">
                   <Button 
                     asChild
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
@@ -1344,128 +1326,103 @@ export default function SellerDashboard() {
         </Dialog>
         
         {/* Enquiry Details Modal */}
-        <Dialog open={inquiryModalOpen} onOpenChange={setInquiryModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
-                Enquiry Details
-              </DialogTitle>
-              <DialogDescription>
-                View complete enquiry information
-              </DialogDescription>
+        <Dialog open={inquiryModalOpen} onOpenChange={setEnquiryModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
+              <DialogTitle>Enquiry Details</DialogTitle>
             </DialogHeader>
             
-            {selectedInquiry && (
-              <div className="space-y-6">
+            {selectedEnquiry && (
+              <div className="space-y-2">
                 {/* Buyer Information */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <User className="h-5 w-5 text-blue-600" />
-                    Buyer Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                <div className="p-3 border rounded-lg space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Name</p>
-                      <p className="text-lg font-semibold">{selectedInquiry.buyer_name || 'Not provided'}</p>
+                      <p className="text-xs text-muted-foreground">Name</p>
+                      <p className="text-sm font-semibold">{selectedEnquiry.buyer_name || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Company</p>
-                      <p className="text-lg font-semibold">{selectedInquiry.buyer_company || 'Not provided'}</p>
+                      <p className="text-xs text-muted-foreground">Company</p>
+                      <p className="text-sm font-semibold">{selectedEnquiry.buyer_company || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Email</p>
-                      <p className="text-lg font-semibold text-blue-600">{selectedInquiry.buyer_email || 'Not provided'}</p>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-semibold text-blue-600">{selectedEnquiry.buyer_email || 'Not provided'}</p>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Phone</p>
-                      <p className="text-lg font-semibold">{selectedInquiry.buyer_phone || 'Not provided'}</p>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm font-semibold">{selectedEnquiry.buyer_phone || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Product Information */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Package className="h-5 w-5 text-green-600" />
-                    Product Information
-                  </h3>
-                  <div className="p-4 border rounded-lg bg-muted/30">
-                    <div>
-                      <p className="text-base font-medium text-muted-foreground">Product Title</p>
-                      <p className="text-lg font-semibold">{selectedInquiry.product_title || selectedInquiry.product_details || 'Product'}</p>
-                    </div>
-                    {selectedInquiry.seller_name && (
-                      <div className="mt-4 pt-4 border-t">
-                        <p className="text-base font-medium text-muted-foreground">Seller</p>
-                        <p className="text-lg font-semibold">{selectedInquiry.seller_name} {selectedInquiry.seller_company ? `(${selectedInquiry.seller_company})` : ''}</p>
-                      </div>
-                    )}
+                <div className="p-3 border rounded-lg space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Product</p>
+                    <p className="text-sm font-semibold">{selectedEnquiry.product_title || selectedEnquiry.product_details || 'Product'}</p>
                   </div>
+                  {selectedEnquiry.seller_name && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">Seller</p>
+                      <p className="text-sm font-semibold">{selectedEnquiry.seller_name} {selectedEnquiry.seller_company ? `(${selectedEnquiry.seller_company})` : ''}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Enquiry Details */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-purple-600" />
-                    Enquiry Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                <div className="p-3 border rounded-lg">
+                  <div className="grid grid-cols-2 gap-2 text-sm mb-2">
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Quoted Price</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {selectedInquiry.price_offered || selectedInquiry.quoted_price ?
-                          `₹${parseFloat(selectedInquiry.price_offered || selectedInquiry.quoted_price).toLocaleString('en-IN')}` :
+                      <p className="text-xs text-muted-foreground">Quoted Price</p>
+                      <p className="text-sm font-semibold text-green-600">
+                        {selectedEnquiry.price_offered || selectedEnquiry.quoted_price ?
+                          `₹${parseFloat(selectedEnquiry.price_offered || selectedEnquiry.quoted_price).toLocaleString('en-IN')}` :
                           'Not provided'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Quantity</p>
-                      <p className="text-lg font-semibold">{selectedInquiry.quantity || 'Not specified'}</p>
+                      <p className="text-xs text-muted-foreground">Quantity</p>
+                      <p className="text-sm font-semibold">{selectedEnquiry.quantity || 'Not specified'}</p>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Status</p>
-                      <Badge className={`text-lg font-medium px-3 py-1 ${
-                        selectedInquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                        selectedInquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                        selectedInquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <Badge className={`text-xs ${
+                        selectedEnquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                        selectedEnquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                        selectedEnquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {selectedInquiry.status || 'open'}
+                        {selectedEnquiry.status || 'open'}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-muted-foreground">Date</p>
-                      <p className="text-lg font-semibold">
-                        {selectedInquiry.created_at ?
-                          new Date(selectedInquiry.created_at).toLocaleDateString('en-IN', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          }) :
+                      <p className="text-xs text-muted-foreground">Date</p>
+                      <p className="text-sm font-semibold">
+                        {selectedEnquiry.created_at ?
+                          new Date(selectedEnquiry.created_at).toLocaleDateString('en-IN') :
                           'Not available'}
                       </p>
                     </div>
                   </div>
                   
-                  {selectedInquiry.message && (
-                    <div className="mt-4">
-                      <p className="text-base font-medium text-muted-foreground mb-2">Message</p>
-                      <div className="p-4 border rounded-lg bg-white">
-                        <p className="text-base whitespace-pre-wrap">{selectedInquiry.message}</p>
-                      </div>
+                  {selectedEnquiry.message && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground mb-1">Message</p>
+                      <p className="text-xs whitespace-pre-wrap">{selectedEnquiry.message}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t">
-                  {selectedInquiry.buyer_email && (
+                <div className="flex gap-2 pt-3 border-t">
+                  {selectedEnquiry.buyer_email && (
                     <Button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
-                        const subject = encodeURIComponent(`Re: Enquiry for ${selectedInquiry.product_title || 'Product'}`);
-                        const body = encodeURIComponent(`Dear ${selectedInquiry.buyer_name || 'Customer'},\n\nThank you for your enquiry.\n\nBest regards`);
-                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedInquiry.buyer_email}&su=${subject}&body=${body}`, '_blank');
+                        const subject = encodeURIComponent(`Re: Enquiry for ${selectedEnquiry.product_title || 'Product'}`);
+                        const body = encodeURIComponent(`Dear ${selectedEnquiry.buyer_name || 'Customer'},\n\nThank you for your enquiry.\n\nBest regards`);
+                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedEnquiry.buyer_email}&su=${subject}&body=${body}`, '_blank');
                       }}
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -1473,9 +1430,9 @@ export default function SellerDashboard() {
                     </Button>
                   )}
                   
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setInquiryModalOpen(false)}
+                  <Button
+                    variant="outline"
+                    onClick={() => setEnquiryModalOpen(false)}
                   >
                     Close
                   </Button>
