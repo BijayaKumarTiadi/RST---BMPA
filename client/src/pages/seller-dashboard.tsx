@@ -520,7 +520,7 @@ export default function SellerDashboard() {
                                   ₹{deal.OfferPrice?.toLocaleString('en-IN')}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  per {deal.OfferUnit || 'unit'}
+                                  /{deal.OfferUnit || 'unit'}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -678,8 +678,8 @@ export default function SellerDashboard() {
                                 <p className="text-xs text-muted-foreground">Price</p>
                                 <p className="font-bold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
                                   ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    per {deal.OfferUnit || 'unit'}
+                                  <span className="text-xs text-muted-foreground">
+                                    /{deal.OfferUnit || 'unit'}
                                   </span>
                                 </p>
                               </div>
@@ -1083,7 +1083,7 @@ export default function SellerDashboard() {
                       <div>
                         <span className="text-muted-foreground">Seller Price:</span>
                         <span className="ml-2 font-medium text-green-600">
-                          ₹{selectedOrder.seller_price?.toLocaleString('en-IN') || '0'} per {selectedOrder.unit || 'unit'}
+                          ₹{selectedOrder.seller_price?.toLocaleString('en-IN') || '0'}/{selectedOrder.unit || 'unit'}
                         </span>
                       </div>
                     </div>
@@ -1283,7 +1283,7 @@ export default function SellerDashboard() {
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
                       <p className="text-sm font-semibold text-green-600">
-                        ₹{selectedDeal.OfferPrice?.toLocaleString('en-IN')} per {selectedDeal.OfferUnit || 'unit'}
+                        ₹{selectedDeal.OfferPrice?.toLocaleString('en-IN')}/{selectedDeal.OfferUnit || 'unit'}
                       </p>
                     </div>
                     <div>

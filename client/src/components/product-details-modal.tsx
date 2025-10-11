@@ -101,7 +101,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
             <span className="text-2xl font-bold text-foreground">
               ₹{deal.OfferPrice?.toLocaleString('en-IN')}
             </span>
-            <span className="text-lg text-muted-foreground ml-2">per {deal.OfferUnit}</span>
+            <span className="text-lg text-muted-foreground">/{deal.OfferUnit}</span>
           </div>
 
           {/* Product Specifications */}
