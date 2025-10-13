@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,19 +35,32 @@ const isKraftReelGroup = (groupName: string): boolean => {
   return groupName?.toLowerCase().trim() === 'kraft reel';
 };
 
+// Helper function to check if group is Spare Part
+const isSparePartGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'spare part';
+};
+
 // Single validation schema with conditional validation
 const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
   groupName: z.string().optional(),
+  // Regular product fields
   MakeID: z.string().optional(),
   GradeID: z.string().optional(),
   BrandID: z.string().optional(),
-  makeText: z.string().min(1, "Product make is required"),
+  makeText: z.string().optional(),
   gradeText: z.string().optional(),
   brandText: z.string().optional(),
-  GSM: z.coerce.number().min(1, "GSM is required"),
-  Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
-  grain_mm: z.coerce.number().min(0, "Grain is required"),
+  GSM: z.coerce.number().optional(),
+  Deckle_mm: z.coerce.number().optional(),
+  grain_mm: z.coerce.number().optional(),
+  // Spare part specific fields
+  spareMake: z.string().optional(),
+  machineName: z.string().optional(),
+  sparePartDescription: z.string().optional(),
+  spareAge: z.string().optional(),
+  spareBrand: z.string().optional(),
+  // Common fields
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -56,32 +69,88 @@ const dealSchema = z.object({
   Seller_comments: z.string().optional(),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
+  const isSparePart = isSparePartGroup(data.groupName || '');
   
-  // Grade validation - required unless Kraft Reel
-  if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Grade is required",
-      path: ["gradeText"]
-    });
-  }
-  
-  // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
-  if (!isKraftReel && data.grain_mm <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Grain must be greater than 0",
-      path: ["grain_mm"]
-    });
-  }
+  if (isSparePart) {
+    // Spare part validations
+    if (!data.spareMake || data.spareMake.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Make is required",
+        path: ["spareMake"]
+      });
+    }
+    if (!data.machineName || data.machineName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Machine name is required",
+        path: ["machineName"]
+      });
+    }
+    if (!data.sparePartDescription || data.sparePartDescription.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Spare part description is required",
+        path: ["sparePartDescription"]
+      });
+    }
+  } else {
+    // Regular product validations
+    if (!data.makeText || data.makeText.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Product make is required",
+        path: ["makeText"]
+      });
+    }
+    if (!data.GSM || data.GSM < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "GSM is required",
+        path: ["GSM"]
+      });
+    }
+    if (!data.Deckle_mm || data.Deckle_mm < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Deckle is required",
+        path: ["Deckle_mm"]
+      });
+    }
+    if (!data.grain_mm && data.grain_mm !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain is required",
+        path: ["grain_mm"]
+      });
+    }
+    
+    // Grade validation - required unless Kraft Reel
+    if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grade is required",
+        path: ["gradeText"]
+      });
+    }
+    
+    // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
+    if (!isKraftReel && data.grain_mm! <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain must be greater than 0",
+        path: ["grain_mm"]
+      });
+    }
 
-  // Brand validation - not required for Kraft Reel only
-  if (!isKraftReel && (!data.brandText || data.brandText.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Brand is required",
-      path: ["brandText"]
-    });
+    // Brand validation - not required for Kraft Reel only
+    if (!isKraftReel && (!data.brandText || data.brandText.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Brand is required",
+        path: ["brandText"]
+      });
+    }
   }
 });
 
@@ -225,6 +294,11 @@ export default function EditDeal() {
       GSM: "" as any,
       Deckle_mm: "" as any,
       grain_mm: "" as any,
+      spareMake: "",
+      machineName: "",
+      sparePartDescription: "",
+      spareAge: "",
+      spareBrand: "",
       OfferPrice: "" as any,
       OfferUnit: "",
       quantity: "" as any,
@@ -440,114 +514,138 @@ export default function EditDeal() {
       // Set selected values for cascading dropdowns FIRST
       const groupId = deal.groupID?.toString() || "";
       
-      // Extract text values from the deal data
-      let makeTextValue = deal.Make || "";
-      let gradeTextValue = deal.Grade || "";
-      let brandTextValue = deal.Brand || "";
-      
-      // Find IDs from hierarchy based on text values
-      let makeId = "";
-      let gradeId = "";
-      let brandId = "";
-      
-      // Find makeId from text
-      if (makeTextValue) {
-        const makeObj = makes.find((m: any) => 
-          m.make_Name?.toLowerCase() === makeTextValue.toLowerCase()
-        );
-        makeId = makeObj?.make_ID?.toString() || "";
-      }
-      
-      // If no makeId found, try using MakeID field if it exists
-      if (!makeId && deal.MakeID) {
-        makeId = deal.MakeID.toString();
-        const makeObj = makes.find((m: any) => m.make_ID?.toString() === makeId);
-        if (makeObj) {
-          makeTextValue = makeObj.make_Name || makeTextValue;
-        }
-      }
-      
-      setSelectedGroup(groupId);
-      setSelectedMake(makeId);
-      
-      // Find gradeId from text
-      if (gradeTextValue && makeId) {
-        const gradeObj = grades.find((g: any) => 
-          g.GradeName?.toLowerCase() === gradeTextValue.toLowerCase() && 
-          g.Make_ID?.toString() === makeId
-        );
-        gradeId = gradeObj?.gradeID?.toString() || "";
-      }
-      
-      // If no gradeId found, try using GradeID field if it exists
-      if (!gradeId && deal.GradeID) {
-        gradeId = deal.GradeID.toString();
-        const gradeObj = grades.find((g: any) => g.gradeID?.toString() === gradeId);
-        if (gradeObj) {
-          gradeTextValue = gradeObj.GradeName || gradeTextValue;
-        }
-      }
-      
-      // Find brandId from text
-      if (brandTextValue && makeId) {
-        const brandObj = brands.find((b: any) => 
-          b.brandname?.toLowerCase() === brandTextValue.toLowerCase() && 
-          b.make_ID?.toString() === makeId
-        );
-        brandId = brandObj?.brandID?.toString() || "";
-      }
-      
-      // If no brandId found, try using BrandID field if it exists
-      if (!brandId && deal.BrandID) {
-        brandId = deal.BrandID.toString();
-        const brandObj = brands.find((b: any) => b.brandID?.toString() === brandId);
-        if (brandObj) {
-          brandTextValue = brandObj.brandname || brandTextValue;
-        }
-      }
-      
-      // Set text state values
-      setMakeText(makeTextValue);
-      setGradeText(gradeTextValue);
-      setBrandText(brandTextValue);
-      
       // Get group name
       const groupObj = groups.find((g: any) => g.GroupID?.toString() === groupId);
       const groupName = groupObj?.GroupName || "";
       setSelectedGroupName(groupName);
+      setSelectedGroup(groupId);
       
-      // Set form values with proper type conversions
-      const formValues = {
-        groupID: groupId,
-        groupName: groupName,
-        MakeID: makeId || makeTextValue,
-        GradeID: gradeId || gradeTextValue,
-        BrandID: brandId || brandTextValue,
-        makeText: makeTextValue,
-        gradeText: gradeTextValue,
-        brandText: brandTextValue,
-        GSM: Number(deal.GSM) || 0,
-        Deckle_mm: Number(deal.Deckle_mm) || 0,
-        grain_mm: Number(deal.grain_mm) || 0,
-        OfferPrice: Number(deal.OfferPrice) || 0,
-        OfferUnit: deal.OfferUnit || "",
-        quantity: Number(deal.quantity) || 0,
-        stockAge: Number(deal.StockAge) || 0,
-        Seller_comments: deal.Seller_comments || "",
-      };
+      // Check if this is a spare part
+      const isSparePart = isSparePartGroup(groupName);
       
-      form.reset(formValues);
+      if (isSparePart) {
+        // Load spare part data
+        const formValues = {
+          groupID: groupId,
+          groupName: groupName,
+          spareMake: deal.Make || "",
+          machineName: deal.Grade || "",
+          sparePartDescription: deal.Seller_comments || "",
+          spareAge: deal.StockAge?.toString() || "",
+          spareBrand: deal.Brand || "",
+          OfferPrice: Number(deal.OfferPrice) || 0,
+          OfferUnit: deal.OfferUnit || "",
+          quantity: Number(deal.quantity) || 0,
+          stockAge: Number(deal.StockAge) || 0,
+          Seller_comments: deal.Seller_comments || "",
+        };
+        
+        form.reset(formValues);
+      } else {
+        // Regular product data loading
+        // Extract text values from the deal data
+        let makeTextValue = deal.Make || "";
+        let gradeTextValue = deal.Grade || "";
+        let brandTextValue = deal.Brand || "";
+        
+        // Find IDs from hierarchy based on text values
+        let makeId = "";
+        let gradeId = "";
+        let brandId = "";
+        
+        // Find makeId from text
+        if (makeTextValue) {
+          const makeObj = makes.find((m: any) =>
+            m.make_Name?.toLowerCase() === makeTextValue.toLowerCase()
+          );
+          makeId = makeObj?.make_ID?.toString() || "";
+        }
+        
+        // If no makeId found, try using MakeID field if it exists
+        if (!makeId && deal.MakeID) {
+          makeId = deal.MakeID.toString();
+          const makeObj = makes.find((m: any) => m.make_ID?.toString() === makeId);
+          if (makeObj) {
+            makeTextValue = makeObj.make_Name || makeTextValue;
+          }
+        }
+        
+        setSelectedMake(makeId);
+        
+        // Find gradeId from text
+        if (gradeTextValue && makeId) {
+          const gradeObj = grades.find((g: any) =>
+            g.GradeName?.toLowerCase() === gradeTextValue.toLowerCase() &&
+            g.Make_ID?.toString() === makeId
+          );
+          gradeId = gradeObj?.gradeID?.toString() || "";
+        }
+        
+        // If no gradeId found, try using GradeID field if it exists
+        if (!gradeId && deal.GradeID) {
+          gradeId = deal.GradeID.toString();
+          const gradeObj = grades.find((g: any) => g.gradeID?.toString() === gradeId);
+          if (gradeObj) {
+            gradeTextValue = gradeObj.GradeName || gradeTextValue;
+          }
+        }
+        
+        // Find brandId from text
+        if (brandTextValue && makeId) {
+          const brandObj = brands.find((b: any) =>
+            b.brandname?.toLowerCase() === brandTextValue.toLowerCase() &&
+            b.make_ID?.toString() === makeId
+          );
+          brandId = brandObj?.brandID?.toString() || "";
+        }
+        
+        // If no brandId found, try using BrandID field if it exists
+        if (!brandId && deal.BrandID) {
+          brandId = deal.BrandID.toString();
+          const brandObj = brands.find((b: any) => b.brandID?.toString() === brandId);
+          if (brandObj) {
+            brandTextValue = brandObj.brandname || brandTextValue;
+          }
+        }
+        
+        // Set text state values
+        setMakeText(makeTextValue);
+        setGradeText(gradeTextValue);
+        setBrandText(brandTextValue);
+        
+        // Set form values with proper type conversions
+        const formValues = {
+          groupID: groupId,
+          groupName: groupName,
+          MakeID: makeId || makeTextValue,
+          GradeID: gradeId || gradeTextValue,
+          BrandID: brandId || brandTextValue,
+          makeText: makeTextValue,
+          gradeText: gradeTextValue,
+          brandText: brandTextValue,
+          GSM: Number(deal.GSM) || 0,
+          Deckle_mm: Number(deal.Deckle_mm) || 0,
+          grain_mm: Number(deal.grain_mm) || 0,
+          OfferPrice: Number(deal.OfferPrice) || 0,
+          OfferUnit: deal.OfferUnit || "",
+          quantity: Number(deal.quantity) || 0,
+          stockAge: Number(deal.StockAge) || 0,
+          Seller_comments: deal.Seller_comments || "",
+        };
+        
+        form.reset(formValues);
 
-      // Set unit conversion input values - convert from mm to user's preferred unit
-      if (deal.Deckle_mm) {
-        const mmValue = Number(deal.Deckle_mm);
-        const convertedValue = convertFromMm(mmValue, dimensionUnit);
-        setDeckleInputValue(convertedValue.toFixed(2));
-      }
-      if (deal.grain_mm) {
-        const mmValue = Number(deal.grain_mm);
-        const convertedValue = convertFromMm(mmValue, dimensionUnit);
-        setGrainInputValue(convertedValue.toFixed(2));
+        // Set unit conversion input values - convert from mm to user's preferred unit
+        if (deal.Deckle_mm) {
+          const mmValue = Number(deal.Deckle_mm);
+          const convertedValue = convertFromMm(mmValue, dimensionUnit);
+          setDeckleInputValue(convertedValue.toFixed(2));
+        }
+        if (deal.grain_mm) {
+          const mmValue = Number(deal.grain_mm);
+          const convertedValue = convertFromMm(mmValue, dimensionUnit);
+          setGrainInputValue(convertedValue.toFixed(2));
+        }
       }
     }
   }, [dealData, stockHierarchy, form, makes, grades, brands]);
@@ -555,46 +653,74 @@ export default function EditDeal() {
   // Update deal mutation
   const updateDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
-      // Generate descriptions and search key
-      const stockDescription = generateStockDescription();
-      const searchKey = generateNormalizationKey();
+      const isSparePart = isSparePartGroup(data.groupName || '');
       
-      const payload = {
-        group_id: data.groupID ? parseInt(data.groupID) : 0,
-        groupID: data.groupID ? parseInt(data.groupID) : 0,
-        make_text: data.makeText || makeText || "",
-        grade_text: data.gradeText || gradeText || "",
-        brand_text: data.brandText || brandText || "",
-        make_id: data.MakeID || data.makeText || makeText || "",
-        grade_id: data.GradeID || data.gradeText || gradeText || "",
-        brand_id: data.BrandID || data.brandText || brandText || "",
-        // Add top-level technical specs
-        GSM: data.GSM,
-        Deckle_mm: data.Deckle_mm,
-        grain_mm: data.grain_mm,
-        OfferPrice: data.OfferPrice,
-        OfferUnit: data.OfferUnit,
-        quantity: data.quantity,
-        StockAge: data.stockAge || 0,
-        Seller_comments: data.Seller_comments || "",
-        // Additional fields
-        deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
-        stock_description: stockDescription,
-        search_key: searchKey,
-        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
-        price: data.OfferPrice,
-        unit: data.OfferUnit,
-        min_order_quantity: 100,
-        deal_specifications: {
+      if (isSparePart) {
+        // Spare Part update
+        const spareDescription = `${data.spareMake} - ${data.machineName}`;
+        const searchKey = spareDescription.toLowerCase().replace(/[\s.]/g, '');
+        
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          is_spare_part: true,
+          spare_make: data.spareMake,
+          machine_name: data.machineName,
+          spare_description: data.sparePartDescription,
+          spare_age: data.spareAge || '',
+          spare_brand: data.spareBrand || '',
+          deal_title: spareDescription,
+          stock_description: spareDescription,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || data.sparePartDescription || '',
+          price: data.OfferPrice,
+          quantity: data.quantity,
+          unit: data.OfferUnit,
+          StockAge: data.stockAge || 0,
+          location: 'India',
+        };
+        
+        console.log('📤 SPARE PART UPDATE PAYLOAD:', payload);
+        return apiRequest("PUT", `/api/deals/${dealId!}`, payload);
+      } else {
+        // Regular product update
+        const stockDescription = generateStockDescription();
+        const searchKey = generateNormalizationKey();
+        
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          groupID: data.groupID ? parseInt(data.groupID) : 0,
+          make_text: data.makeText || makeText || "",
+          grade_text: data.gradeText || gradeText || "",
+          brand_text: data.brandText || brandText || "",
+          make_id: data.MakeID || data.makeText || makeText || "",
+          grade_id: data.GradeID || data.gradeText || gradeText || "",
+          brand_id: data.BrandID || data.brandText || brandText || "",
           GSM: data.GSM,
           Deckle_mm: data.Deckle_mm,
           grain_mm: data.grain_mm,
-        },
-        location: 'India',
-      };
-      
-      console.log('📤 Frontend Update Payload:', payload);
-      return apiRequest("PUT", `/api/deals/${dealId!}`, payload);
+          OfferPrice: data.OfferPrice,
+          OfferUnit: data.OfferUnit,
+          quantity: data.quantity,
+          StockAge: data.stockAge || 0,
+          Seller_comments: data.Seller_comments || "",
+          deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
+          stock_description: stockDescription,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+          price: data.OfferPrice,
+          unit: data.OfferUnit,
+          min_order_quantity: 100,
+          deal_specifications: {
+            GSM: data.GSM,
+            Deckle_mm: data.Deckle_mm,
+            grain_mm: data.grain_mm,
+          },
+          location: 'India',
+        };
+        
+        console.log('📤 Frontend Update Payload:', payload);
+        return apiRequest("PUT", `/api/deals/${dealId!}`, payload);
+      }
     },
     onSuccess: () => {
       toast({
@@ -666,6 +792,322 @@ export default function EditDeal() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Conditional rendering based on category */}
+              {isSparePartGroup(currentGroupName || '') ? (
+                /* Spare Part Form */
+                <>
+                  {/* Spare Part Details */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Package className="h-5 w-5" />
+                        Spare Part Details
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Enter details about the spare part
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Product Group Field */}
+                      <FormField
+                        control={form.control}
+                        name="groupID"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <AutocompleteInput
+                                key={`group-${selectedGroup}`}
+                                value={selectedGroupName || field.value}
+                                onChange={(value) => {
+                                  setSelectedGroup(value);
+                                  form.setValue("groupID", value);
+                                }}
+                                onSelect={(value, item) => {
+                                  handleGroupChange(value, item);
+                                }}
+                                onTextChange={(text) => {
+                                  setSelectedGroupName(text);
+                                  form.setValue("groupName", text);
+                                }}
+                                placeholder="Type to search groups..."
+                                suggestions={groups}
+                                displayField="GroupName"
+                                valueField="GroupID"
+                                testId="input-group"
+                                allowFreeText={true}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* First Row: Make and Machine Name */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Controller
+                          control={form.control}
+                          name="spareMake"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Make <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Enter make (e.g., Siemens, ABB)"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <Controller
+                          control={form.control}
+                          name="machineName"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Machine Name <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Enter machine name"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Second Row: Spare Part Description */}
+                      <FormField
+                        control={form.control}
+                        name="sparePartDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Spare Part Description <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter detailed description of the spare part"
+                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Third Row: Age and Brand */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="spareAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Age
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter age (e.g., 2 years, New)"
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="spareBrand"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Brand
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter brand"
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Pricing and Inventory (same for both) */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <IndianRupee className="h-5 w-5" />
+                        Pricing and Inventory
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Set your pricing and available quantity
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <Controller
+                          control={form.control}
+                          name="OfferPrice"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Enter price"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  data-testid="input-price"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <Controller
+                          control={form.control}
+                          name="OfferUnit"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  data-testid="select-unit"
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select unit" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    <SelectItem value="Piece" className="text-foreground hover:bg-accent">Piece</SelectItem>
+                                    <SelectItem value="Set" className="text-foreground hover:bg-accent">Set</SelectItem>
+                                    <SelectItem value="Unit" className="text-foreground hover:bg-accent">Unit</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="quantity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter quantity"
+                                  {...field}
+                                  data-testid="input-quantity"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="stockAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Stock Age (days)
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter stock age in days (e.g., 30)"
+                                  {...field}
+                                  data-testid="input-stock-age"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Additional Information (same for both) */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-foreground">
+                        Additional Information
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Add any additional comments or details
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="Seller_comments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Seller Comments</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Add any special notes, delivery terms, or additional specifications..."
+                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                {...field}
+                                data-testid="textarea-comments"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                /* Regular Product Form */
+                <>
               {/* Stock Selection */}
               <Card className="bg-card border-border">
                 <CardHeader>
@@ -1099,6 +1541,8 @@ export default function EditDeal() {
                   />
                 </CardContent>
               </Card>
+                </>
+              )}
 
               {/* Submit Buttons */}
               <Card className="bg-card border-border">

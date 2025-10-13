@@ -1162,12 +1162,14 @@ export default function Marketplace() {
                     </Select>
                   </div>
 
-                  {/* GSM */}
+                  {/* GSM - Optional for Spare Part */}
                   <div className="relative flex-1 min-w-24">
-                    <label className="text-sm font-medium">GSM <span className="text-red-500">*</span></label>
+                    <label className="text-sm font-medium">
+                      GSM {preciseSearch.category?.toLowerCase() === 'spare part' ? '(optional)' : <span className="text-red-500">*</span>}
+                    </label>
                     <Input
                       type="number"
-                      placeholder="300"
+                      placeholder={preciseSearch.category?.toLowerCase() === 'spare part' ? 'Not required' : '300'}
                       value={preciseSearch.gsm}
                       onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
                       data-testid="input-precise-gsm"
@@ -1297,11 +1299,11 @@ export default function Marketplace() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={performPreciseSearch}
                       className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
                       data-testid="button-precise-search"
-                      disabled={isSearching || !preciseSearch.category || !preciseSearch.gsm}
+                      disabled={isSearching || !preciseSearch.category || (!preciseSearch.gsm && preciseSearch.category?.toLowerCase() !== 'spare part')}
                     >
                       {isSearching ? (
                         <>

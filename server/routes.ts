@@ -816,6 +816,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log('🔍 BACKEND RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 is_spare_part value:', req.body.is_spare_part, 'Type:', typeof req.body.is_spare_part);
+
       const {
         group_id,
         make_id,
@@ -834,43 +837,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         min_order_quantity,
         deal_specifications,
         location,
-        expires_at
+        expires_at,
+        is_spare_part,
+        spare_make,
+        machine_name,
+        spare_description,
+        spare_age,
+        spare_brand
       } = req.body;
 
-      // Validate that we have either ID or text for make, grade, and brand
-      const hasMake = make_id || make_text;
-      const hasGrade = grade_id || grade_text;
-      const hasBrand = brand_id || brand_text;
-      
-      // Check if this is a Kraft Reel group (Brand is optional for Kraft Reel)
-      let isKraftReel = false;
-      if (group_id) {
-        try {
-          const groupResult = await executeQuerySingle('SELECT GroupName FROM stock_groups WHERE GroupID = ?', [group_id]);
-          isKraftReel = groupResult?.GroupName?.toLowerCase().trim() === 'kraft reel';
-        } catch (error) {
-          console.error('Error checking group name:', error);
+      // Check if this is a spare part submission
+      console.log('🔍 Checking is_spare_part:', is_spare_part, 'Condition result:', !!is_spare_part);
+      if (is_spare_part) {
+        console.log('✅ SPARE PART BRANCH - Validating spare part fields');
+        // Validate spare part required fields
+        if (!group_id || !spare_make || !machine_name || !spare_description || !price || !quantity || !unit) {
+          const missingFields = [];
+          if (!group_id) missingFields.push('group_id');
+          if (!spare_make) missingFields.push('spare_make');
+          if (!machine_name) missingFields.push('machine_name');
+          if (!spare_description) missingFields.push('spare_description');
+          if (!price) missingFields.push('price');
+          if (!quantity) missingFields.push('quantity');
+          if (!unit) missingFields.push('unit');
+          
+          return res.status(400).json({
+            success: false,
+            message: `Required fields are missing: ${missingFields.join(', ')}`
+          });
         }
-      }
-      
-      // Brand is optional for Kraft Reel, required for all other groups
-      const brandRequired = !isKraftReel;
-      
-      if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !price || !quantity || !unit) {
-        const missingFields = [];
-        if (!group_id) missingFields.push('group_id');
-        if (!hasMake) missingFields.push('make_id');
-        if (!hasGrade) missingFields.push('grade_id');
-        if (brandRequired && !hasBrand) missingFields.push('brand_id');
-        if (!deal_title) missingFields.push('deal_title');
-        if (!price) missingFields.push('price');
-        if (!quantity) missingFields.push('quantity');
-        if (!unit) missingFields.push('unit');
+      } else {
+        // Regular product validation
+        const hasMake = make_id || make_text;
+        const hasGrade = grade_id || grade_text;
+        const hasBrand = brand_id || brand_text;
         
-        return res.status(400).json({
-          success: false,
-          message: `Required fields are missing: ${missingFields.join(', ')}`
-        });
+        // Check if this is a Kraft Reel group (Brand is optional for Kraft Reel)
+        let isKraftReel = false;
+        if (group_id) {
+          try {
+            const groupResult = await executeQuerySingle('SELECT GroupName FROM stock_groups WHERE GroupID = ?', [group_id]);
+            isKraftReel = groupResult?.GroupName?.toLowerCase().trim() === 'kraft reel';
+          } catch (error) {
+            console.error('Error checking group name:', error);
+          }
+        }
+        
+        // Brand is optional for Kraft Reel, required for all other groups
+        const brandRequired = !isKraftReel;
+        
+        if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !price || !quantity || !unit) {
+          const missingFields = [];
+          if (!group_id) missingFields.push('group_id');
+          if (!hasMake) missingFields.push('make_id');
+          if (!hasGrade) missingFields.push('grade_id');
+          if (brandRequired && !hasBrand) missingFields.push('brand_id');
+          if (!deal_title) missingFields.push('deal_title');
+          if (!price) missingFields.push('price');
+          if (!quantity) missingFields.push('quantity');
+          if (!unit) missingFields.push('unit');
+          
+          return res.status(400).json({
+            success: false,
+            message: `Required fields are missing: ${missingFields.join(', ')}`
+          });
+        }
       }
 
       // Get user information for the deal
@@ -902,6 +933,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_specifications,
         location,
         expires_at: expires_at ? new Date(expires_at) : undefined,
+        is_spare_part,
+        spare_make,
+        machine_name,
+        spare_description,
+        spare_age,
+        spare_brand
       }, userInfo);
 
       res.json(result);

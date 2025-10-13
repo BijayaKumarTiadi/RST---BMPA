@@ -77,8 +77,9 @@ searchRouter.post('/precise', async (req, res) => {
       queryParams.push(`%${category.trim()}%`);
     }
     
-    // Add GSM filter with tolerance
-    if (gsm && !isNaN(Number(gsm))) {
+    // Add GSM filter with tolerance (skip for Spare Parts)
+    const isSparePart = category && category.toLowerCase().includes('spare part');
+    if (gsm && !isNaN(Number(gsm)) && !isSparePart) {
       const gsmValue = Number(gsm);
       const toleranceValue = tolerance && !isNaN(Number(tolerance)) ? Number(tolerance) : 0;
       const minGsm = gsmValue - toleranceValue;

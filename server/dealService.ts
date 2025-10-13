@@ -446,6 +446,12 @@ class DealService {
     brand_text?: string;
     search_key?: string;
     stock_type?: string;
+    is_spare_part?: boolean;
+    spare_make?: string;
+    machine_name?: string;
+    spare_description?: string;
+    spare_age?: string;
+    spare_brand?: string;
   }, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
@@ -468,31 +474,63 @@ class DealService {
         min_order_quantity = 1,
         location,
         deal_specifications,
-        expires_at
-      } = dealData;
+        expires_at,
+        is_spare_part,
+        spare_make,
+        machine_name,
+        spare_description,
+        spare_age,
+        spare_brand
+      } = dealData as any;
 
-      // Always use text values for make, grade, and brand
-      const finalMake = make_text || make_id || '';
-      const finalGrade = grade_text || grade_id || '';
-      const finalBrand = brand_text || brand_id || '';
-      
-      console.log('Creating deal with values:', {
-        finalMake,
-        finalGrade,
-        finalBrand,
-        StockAge: StockAge,
-        StockAge_type: typeof StockAge,
-        StockAge_value: StockAge,
-        will_save_as: StockAge !== undefined && StockAge !== null ? String(StockAge) : ''
-      });
+      let finalMake, finalGrade, finalBrand, gsm, deckle_mm, grain_mm;
 
-      // Extract GSM, Deckle_mm, grain_mm from deal_specifications
-      const gsm = deal_specifications?.GSM || 0;
-      const deckle_mm = deal_specifications?.Deckle_mm || 0;
-      const grain_mm = deal_specifications?.grain_mm || 0;
+      if (is_spare_part) {
+        // Spare part handling
+        finalMake = spare_make || '';
+        finalGrade = machine_name || '';
+        finalBrand = spare_brand || '';
+        gsm = 0;
+        deckle_mm = 0;
+        grain_mm = 0;
+        
+        console.log('Creating spare part with values:', {
+          spare_make,
+          machine_name,
+          spare_description,
+          spare_age,
+          spare_brand
+        });
+      } else {
+        // Regular product handling
+        finalMake = make_text || make_id || '';
+        finalGrade = grade_text || grade_id || '';
+        finalBrand = brand_text || brand_id || '';
+        
+        // Extract GSM, Deckle_mm, grain_mm from deal_specifications
+        gsm = deal_specifications?.GSM || 0;
+        deckle_mm = deal_specifications?.Deckle_mm || 0;
+        grain_mm = deal_specifications?.grain_mm || 0;
+        
+        console.log('Creating regular product with values:', {
+          finalMake,
+          finalGrade,
+          finalBrand,
+          StockAge: StockAge
+        });
+      }
 
       // Use provided search_key or generate it
       const final_search_key = search_key || (stock_description || '').toLowerCase().replace(/[\s.]/g, '');
+
+      // Build seller comments
+      let sellerComments = deal_title;
+      if (is_spare_part && spare_description) {
+        sellerComments = `${deal_title}\n${spare_description}`;
+        if (spare_age) sellerComments += `\nAge: ${spare_age}`;
+      } else if (deal_description) {
+        sellerComments = `${deal_title}\n${deal_description}`;
+      }
 
       const result = await executeQuery(`
         INSERT INTO deal_master (
@@ -507,7 +545,7 @@ class DealService {
         finalGrade,
         finalBrand,
         seller_id,
-        `${deal_title}\n${deal_description || ''}`,
+        sellerComments,
         price,
         unit,
         quantity,
@@ -526,7 +564,7 @@ class DealService {
 
       return {
         success: true,
-        message: 'Deal created successfully',
+        message: is_spare_part ? 'Spare part created successfully' : 'Deal created successfully',
         dealId: insertId
       };
     } catch (error) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,19 +35,32 @@ const isKraftReelGroup = (groupName: string): boolean => {
   return groupName?.toLowerCase().trim() === 'kraft reel';
 };
 
+// Helper function to check if group is Spare Part
+const isSparePartGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'spare part';
+};
+
 // Single validation schema with conditional validation
 const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
-  groupName: z.string().optional(), // Add group name for Kraft Reel logic
+  groupName: z.string().optional(),
+  // Regular product fields
   MakeID: z.string().optional(),
   GradeID: z.string().optional(),
   BrandID: z.string().optional(),
-  makeText: z.string().min(1, "Product make is required"),
-  gradeText: z.string().optional(), // Made optional for conditional validation
-  brandText: z.string().optional(), // Optional at base level
-  GSM: z.coerce.number().min(1, "GSM is required"),
-  Deckle_mm: z.coerce.number().min(1, "Deckle is required"),
-  grain_mm: z.coerce.number().min(0, "Grain is required"),
+  makeText: z.string().optional(),
+  gradeText: z.string().optional(),
+  brandText: z.string().optional(),
+  GSM: z.coerce.number().optional(),
+  Deckle_mm: z.coerce.number().optional(),
+  grain_mm: z.coerce.number().optional(),
+  // Spare part specific fields
+  spareMake: z.string().optional(),
+  machineName: z.string().optional(),
+  sparePartDescription: z.string().optional(),
+  spareAge: z.string().optional(),
+  spareBrand: z.string().optional(),
+  // Common fields
   deal_description: z.string().optional(),
   OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -56,32 +69,88 @@ const dealSchema = z.object({
   Seller_comments: z.string().optional(),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
+  const isSparePart = isSparePartGroup(data.groupName || '');
   
-  // Grade validation - required unless Kraft Reel
-  if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Grade is required",
-      path: ["gradeText"]
-    });
-  }
-  
-  // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
-  if (!isKraftReel && data.grain_mm <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Grain must be greater than 0",
-      path: ["grain_mm"]
-    });
-  }
+  if (isSparePart) {
+    // Spare part validations
+    if (!data.spareMake || data.spareMake.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Make is required",
+        path: ["spareMake"]
+      });
+    }
+    if (!data.machineName || data.machineName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Machine name is required",
+        path: ["machineName"]
+      });
+    }
+    if (!data.sparePartDescription || data.sparePartDescription.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Spare part description is required",
+        path: ["sparePartDescription"]
+      });
+    }
+  } else {
+    // Regular product validations
+    if (!data.makeText || data.makeText.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Product make is required",
+        path: ["makeText"]
+      });
+    }
+    if (!data.GSM || data.GSM < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "GSM is required",
+        path: ["GSM"]
+      });
+    }
+    if (!data.Deckle_mm || data.Deckle_mm < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Deckle is required",
+        path: ["Deckle_mm"]
+      });
+    }
+    if (!data.grain_mm && data.grain_mm !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain is required",
+        path: ["grain_mm"]
+      });
+    }
+    
+    // Grade validation - required unless Kraft Reel
+    if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grade is required",
+        path: ["gradeText"]
+      });
+    }
+    
+    // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
+    if (!isKraftReel && data.grain_mm! <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Grain must be greater than 0",
+        path: ["grain_mm"]
+      });
+    }
 
-  // Brand validation - not required for Kraft Reel only
-  if (!isKraftReel && (!data.brandText || data.brandText.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Brand is required",
-      path: ["brandText"]
-    });
+    // Brand validation - not required for Kraft Reel only
+    if (!isKraftReel && (!data.brandText || data.brandText.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Brand is required",
+        path: ["brandText"]
+      });
+    }
   }
 });
 
@@ -206,12 +275,18 @@ export default function AddDeal() {
       GSM: "" as any,
       Deckle_mm: "" as any,
       grain_mm: "" as any,
+      spareMake: undefined,
+      machineName: undefined,
+      sparePartDescription: undefined,
+      spareAge: undefined,
+      spareBrand: undefined,
       OfferPrice: "" as any,
       OfferUnit: "",
-      quantity: "" as any, // No default value
-      stockAge: "" as any, // No default value for stock age
+      quantity: "" as any,
+      stockAge: "" as any,
       Seller_comments: "",
     },
+    mode: "onChange",
   });
 
   // Fetch user settings for dimension unit preference
@@ -426,47 +501,68 @@ export default function AddDeal() {
   // Create deal mutation
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
-      // Generate descriptions and search key
-      const stockDescription = generateStockDescription();
-      const searchKey = generateNormalizationKey();
+      const isSparePart = isSparePartGroup(data.groupName || '');
       
-      // Debug log the form data
-      console.log('Form data before submission:', {
-        makeText: data.makeText,
-        gradeText: data.gradeText,
-        brandText: data.brandText,
-        MakeID: data.MakeID,
-        GradeID: data.GradeID,
-        BrandID: data.BrandID
-      });
-      
-      // Use text values directly - backend will handle as text or IDs
-      const payload = {
-        group_id: data.groupID ? parseInt(data.groupID) : 0,
-        make_text: data.makeText || makeText || "",
-        grade_text: data.gradeText || gradeText || "",
-        brand_text: data.brandText || brandText || "",
-        make_id: data.MakeID || data.makeText || makeText || "",
-        grade_id: data.GradeID || data.gradeText || gradeText || "",
-        brand_id: data.BrandID || data.brandText || brandText || "",
-        deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
-        stock_description: stockDescription,
-        search_key: searchKey,
-        deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
-        price: data.OfferPrice,
-        quantity: data.quantity,
-        unit: data.OfferUnit,
-        min_order_quantity: 100,
-        StockAge: data.stockAge || 0, // Add stock age to payload
-        deal_specifications: {
-          GSM: data.GSM,
-          Deckle_mm: data.Deckle_mm,
-          grain_mm: data.grain_mm,
-        },
-        location: 'India',
-      };
-      console.log('Payload being sent to backend:', payload);
-      return apiRequest("POST", "/api/deals", payload);
+      if (isSparePart) {
+        // Spare Part submission
+        const spareDescription = `${data.spareMake} - ${data.machineName}`;
+        const searchKey = spareDescription.toLowerCase().replace(/[\s.]/g, '');
+        
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          is_spare_part: true,
+          spare_make: data.spareMake,
+          machine_name: data.machineName,
+          spare_description: data.sparePartDescription,
+          spare_age: data.spareAge || '',
+          spare_brand: data.spareBrand || '',
+          deal_title: spareDescription,
+          stock_description: spareDescription,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || data.sparePartDescription || '',
+          price: data.OfferPrice,
+          quantity: data.quantity,
+          unit: data.OfferUnit,
+          StockAge: data.stockAge || 0,
+          location: 'India',
+        };
+        
+        console.log('✅ SPARE PART PAYLOAD:', JSON.stringify(payload, null, 2));
+        console.log('✅ is_spare_part flag:', payload.is_spare_part);
+        return apiRequest("POST", "/api/deals", payload);
+      } else {
+        // Regular product submission
+        const stockDescription = generateStockDescription();
+        const searchKey = generateNormalizationKey();
+        
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          make_text: data.makeText || makeText || "",
+          grade_text: data.gradeText || gradeText || "",
+          brand_text: data.brandText || brandText || "",
+          make_id: data.MakeID || data.makeText || makeText || "",
+          grade_id: data.GradeID || data.gradeText || gradeText || "",
+          brand_id: data.BrandID || data.brandText || brandText || "",
+          deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
+          stock_description: stockDescription,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+          price: data.OfferPrice,
+          quantity: data.quantity,
+          unit: data.OfferUnit,
+          min_order_quantity: 100,
+          StockAge: data.stockAge || 0,
+          deal_specifications: {
+            GSM: data.GSM,
+            Deckle_mm: data.Deckle_mm,
+            grain_mm: data.grain_mm,
+          },
+          location: 'India',
+        };
+        
+        console.log('Regular product payload being sent to backend:', payload);
+        return apiRequest("POST", "/api/deals", payload);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
@@ -491,6 +587,11 @@ export default function AddDeal() {
           GSM: "" as any,
           Deckle_mm: "" as any,
           grain_mm: "" as any,
+          spareMake: "",
+          machineName: "",
+          sparePartDescription: "",
+          spareAge: "",
+          spareBrand: "",
           OfferPrice: "" as any,
           OfferUnit: "",
           quantity: "" as any,
@@ -556,6 +657,321 @@ export default function AddDeal() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Conditional rendering based on category */}
+              {isSparePartGroup(currentGroupName || '') ? (
+                /* Spare Part Form */
+                <>
+                  {/* Spare Part Details */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Package className="h-5 w-5" />
+                        Spare Part Details
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Enter details about the spare part
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Product Group Field */}
+                      <FormField
+                        control={form.control}
+                        name="groupID"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <AutocompleteInput
+                                value={field.value}
+                                onChange={(value) => {
+                                  setSelectedGroup(value);
+                                  form.setValue("groupID", value);
+                                }}
+                                onSelect={(value, item) => {
+                                  handleGroupChange(value, item);
+                                }}
+                                onTextChange={(text) => {
+                                  setSelectedGroupName(text);
+                                  form.setValue("groupName", text);
+                                }}
+                                placeholder="Type to search groups..."
+                                suggestions={groups}
+                                displayField="GroupName"
+                                valueField="GroupID"
+                                testId="input-group"
+                                allowFreeText={true}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* First Row: Make and Machine Name */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Controller
+                          control={form.control}
+                          name="spareMake"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Make <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Enter make (e.g., Siemens, ABB)"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <Controller
+                          control={form.control}
+                          name="machineName"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Machine Name <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Enter machine name"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Second Row: Spare Part Description */}
+                      <FormField
+                        control={form.control}
+                        name="sparePartDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Spare Part Description <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter detailed description of the spare part"
+                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Third Row: Age and Brand */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="spareAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Age
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter age (e.g., 2 years, New)"
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="spareBrand"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Brand
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter brand"
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Pricing and Inventory (same for both) */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <IndianRupee className="h-5 w-5" />
+                        Pricing and Inventory
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Set your pricing and available quantity
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <Controller
+                          control={form.control}
+                          name="OfferPrice"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Enter price"
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  data-testid="input-price"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <Controller
+                          control={form.control}
+                          name="OfferUnit"
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  data-testid="select-unit"
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select unit" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    <SelectItem value="Piece" className="text-foreground hover:bg-accent">Piece</SelectItem>
+                                    <SelectItem value="Set" className="text-foreground hover:bg-accent">Set</SelectItem>
+                                    <SelectItem value="Unit" className="text-foreground hover:bg-accent">Unit</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="quantity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter quantity"
+                                  {...field}
+                                  data-testid="input-quantity"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="stockAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Stock Age (days)
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter stock age in days (e.g., 30)"
+                                  {...field}
+                                  data-testid="input-stock-age"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Additional Information (same for both) */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-foreground">
+                        Additional Information
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Add any additional comments or details
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="Seller_comments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Seller Comments</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Add any special notes, delivery terms, or additional specifications..."
+                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                {...field}
+                                data-testid="textarea-comments"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                /* Regular Product Form */
+                <>
               {/* Stock Selection */}
               <Card className="bg-card border-border">
                 <CardHeader>
@@ -989,6 +1405,8 @@ export default function AddDeal() {
                   />
                 </CardContent>
               </Card>
+                </>
+              )}
 
               {/* Submit Buttons */}
               <Card className="bg-card border-border">
