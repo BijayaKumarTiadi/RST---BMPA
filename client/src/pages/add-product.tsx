@@ -844,11 +844,20 @@ export default function AddDeal() {
                               <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
+                                  inputMode="decimal"
                                   placeholder="Enter price"
                                   value={field.value || ""}
-                                  onChange={field.onChange}
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    if (char && !/^[0-9.]$/.test(char)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                                    field.onChange(value);
+                                  }}
                                   data-testid="input-price"
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                                 />
@@ -899,10 +908,22 @@ export default function AddDeal() {
                               <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   placeholder="Enter quantity"
                                   {...field}
                                   data-testid="input-quantity"
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    if (char && !/^[0-9]$/.test(char)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    field.onChange(value);
+                                  }}
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                                 />
                               </FormControl>
@@ -922,10 +943,22 @@ export default function AddDeal() {
                               </FormLabel>
                               <FormControl>
                                 <Input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   placeholder="Enter stock age in days (e.g., 30)"
                                   {...field}
                                   data-testid="input-stock-age"
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    if (char && !/^[0-9]$/.test(char)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    field.onChange(value);
+                                  }}
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </FormControl>
@@ -1180,15 +1213,29 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">GSM <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="e.g., 180" 
-                              {...field}
-                              data-testid="input-gsm"
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          </FormControl>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="e.g., 180"
+                                  {...field}
+                                  data-testid="input-gsm"
+                                  maxLength={3}
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    const currentValue = (e.target as HTMLInputElement).value;
+                                    if (char && (!/^[0-9]$/.test(char) || currentValue.length >= 3)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                                    field.onChange(value);
+                                  }}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1287,11 +1334,21 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input
-                              type="number"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
                               placeholder="Enter price"
                               {...field}
                               data-testid="input-price"
+                              onBeforeInput={(e: any) => {
+                                const char = e.data;
+                                if (char && !/^[0-9.]$/.test(char)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9.]/g, '');
+                                field.onChange(value);
+                              }}
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                             />
                           </FormControl>
@@ -1336,10 +1393,22 @@ export default function AddDeal() {
                           <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               placeholder="Enter quantity"
                               {...field}
                               data-testid="input-quantity"
+                              onBeforeInput={(e: any) => {
+                                const char = e.data;
+                                if (char && !/^[0-9]$/.test(char)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                field.onChange(value);
+                              }}
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                             />
                           </FormControl>
@@ -1359,10 +1428,22 @@ export default function AddDeal() {
                           </FormLabel>
                           <FormControl>
                             <Input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               placeholder="Enter stock age in days (e.g., 30)"
                               {...field}
                               data-testid="input-stock-age"
+                              onBeforeInput={(e: any) => {
+                                const char = e.data;
+                                if (char && !/^[0-9]$/.test(char)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                field.onChange(value);
+                              }}
                               className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </FormControl>

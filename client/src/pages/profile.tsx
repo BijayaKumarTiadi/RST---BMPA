@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Building2, Mail, Phone, MapPin, Calendar, Edit, Save, X, Shield, CheckCircle } from "lucide-react";
 import { useLocation } from "wouter";
+import indianCitiesStates from "@/data/indian-cities-states.json";
 
 interface UserProfile {
   id: number;
@@ -28,7 +30,6 @@ interface UserProfile {
   role: string;
   membership_type?: string;
   created_at: string;
-  updated_at: string;
 }
 
 export default function Profile() {
@@ -332,22 +333,45 @@ export default function Profile() {
                 {isEditing && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        value={editedProfile.city || ''}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        placeholder="City"
-                      />
+                      <Label htmlFor="state">State</Label>
+                      <Select
+                        value={editedProfile.state || ''}
+                        onValueChange={(value) => {
+                          handleInputChange('state', value);
+                          handleInputChange('city', '');
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select State" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(indianCitiesStates).map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        value={editedProfile.state || ''}
-                        onChange={(e) => handleInputChange('state', e.target.value)}
-                        placeholder="State"
-                      />
+                      <Label htmlFor="city">City</Label>
+                      <Select
+                        value={editedProfile.city || ''}
+                        onValueChange={(value) => handleInputChange('city', value)}
+                        disabled={!editedProfile.state}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select City" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {editedProfile.state &&
+                            indianCitiesStates[editedProfile.state as keyof typeof indianCitiesStates]?.map((city) => (
+                              <SelectItem key={city} value={city}>
+                                {city}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="pincode">PIN Code</Label>

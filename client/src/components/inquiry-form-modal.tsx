@@ -229,9 +229,20 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                 <Input
                   id="quotedPrice"
                   name="quotedPrice"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.quotedPrice}
-                  onChange={handleInputChange}
+                  onBeforeInput={(e: any) => {
+                    const char = e.data;
+                    if (char && !/^[0-9]$/.test(char)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    handleInputChange({ ...e, target: { ...e.target, name: 'quotedPrice', value } } as any);
+                  }}
                   placeholder="Enter your price offer"
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
@@ -241,13 +252,22 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                 <Input
                   id="quantity"
                   name="quantity"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.quantity}
-                  onChange={handleInputChange}
+                  onBeforeInput={(e: any) => {
+                    const char = e.data;
+                    if (char && !/^[0-9]$/.test(char)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    handleInputChange({ ...e, target: { ...e.target, name: 'quantity', value } } as any);
+                  }}
                   placeholder={`Quantity in ${deal.OfferUnit} (Max: ${deal.quantity || 0})`}
                   required
-                  max={deal.quantity || 0}
-                  min="1"
                   className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${quantityError ? "border-red-500" : ""}`}
                 />
                 {quantityError && (

@@ -91,10 +91,20 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
               <Label htmlFor="quoted-price">Your Quoted Price (₹)</Label>
               <Input
                 id="quoted-price"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 placeholder="Enter your price"
                 value={quotedPrice}
-                onChange={(e) => setQuotedPrice(e.target.value)}
+                onBeforeInput={(e: any) => {
+                  const char = e.data;
+                  if (char && !/^[0-9.]$/.test(char)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  setQuotedPrice(value);
+                }}
               />
             </div>
 

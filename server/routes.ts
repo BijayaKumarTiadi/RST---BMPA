@@ -150,6 +150,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Search key index ready' });
     }
   });
+
+  // Add profile columns migration endpoint
+  app.post('/api/database/add-profile-columns', async (req, res) => {
+    try {
+      // Check which columns exist
+      const existingColumns = await executeQuery(`
+        SELECT COLUMN_NAME
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = 'trade_bmpa25'
+        AND TABLE_NAME = 'bmpa_members'
+        AND COLUMN_NAME IN ('pincode', 'gst_number', 'pan_number')
+      `);
+
+      const columnNames = existingColumns.map((col: any) => col.COLUMN_NAME);
+      const results = [];
+
+      // Add pincode if it doesn't exist
+      if (!columnNames.includes('pincode')) {
+        await executeQuery('ALTER TABLE bmpa_members ADD COLUMN pincode VARCHAR(10)');
+        results.push('Added pincode column');
+      }
+
+      // Add gst_number if it doesn't exist
+      if (!columnNames.includes('gst_number')) {
+        await executeQuery('ALTER TABLE bmpa_members ADD COLUMN gst_number VARCHAR(20)');
+        results.push('Added gst_number column');
+      }
+
+      // Add pan_number if it doesn't exist
+      if (!columnNames.includes('pan_number')) {
+        await executeQuery('ALTER TABLE bmpa_members ADD COLUMN pan_number VARCHAR(15)');
+        results.push('Added pan_number column');
+      }
+
+      res.json({
+        success: true,
+        message: results.length > 0 ? results.join(', ') : 'All columns already exist',
+        columnNames,
+        results
+      });
+    } catch (error: any) {
+      console.error('Error adding profile columns:', error);
+      res.status(500).json({ success: false, message: 'Failed to add columns', error: error.message });
+    }
+  });
   
   // Create test accounts endpoint
   app.post('/api/create-test-accounts', async (req, res) => {
@@ -669,6 +714,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating settings:', error);
       res.status(500).json({ message: 'Failed to update settings' });
+    }
+  });
+
+  // Profile endpoints
+  app.get('/api/profile', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get user profile from bmpa_members table
+      const profile = await executeQuerySingle(`
+        SELECT
+          member_id as id,
+          mname as name,
+          email,
+          phone,
+          company_name as company,
+          address1 as address,
+          city,
+          state,
+          pincode,
+          gst_number,
+          pan_number,
+          role,
+          created_at
+        FROM bmpa_members
+        WHERE member_id = ?
+      `, [memberId]);
+
+      if (!profile) {
+        return res.status(404).json({ message: 'Profile not found' });
+      }
+
+      res.json(profile);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      res.status(500).json({ message: 'Failed to fetch profile' });
+    }
+  });
+
+  // Update profile
+  app.put('/api/profile', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const {
+        name,
+        email,
+        phone,
+        company,
+        address,
+        city,
+        state,
+        pincode,
+        gst_number,
+        pan_number
+      } = req.body;
+
+      console.log('📝 Profile update request:', {
+        memberId,
+        name,
+        email,
+        phone,
+        company,
+        city,
+        state,
+        pincode,
+        gst_number,
+        pan_number
+      });
+
+      // Update profile in database
+      const updateResult = await executeQuery(`
+        UPDATE bmpa_members
+        SET
+          mname = ?,
+          email = ?,
+          phone = ?,
+          company_name = ?,
+          address1 = ?,
+          city = ?,
+          state = ?,
+          pincode = ?,
+          gst_number = ?,
+          pan_number = ?
+        WHERE member_id = ?
+      `, [
+        name,
+        email,
+        phone || null,
+        company,
+        address || null,
+        city || null,
+        state || null,
+        pincode || null,
+        gst_number || null,
+        pan_number || null,
+        memberId
+      ]);
+
+      console.log('✅ Profile updated successfully for member:', memberId);
+      console.log('📊 Database update result:', updateResult);
+
+      // Fetch the updated profile to confirm changes (include all fields)
+      const updatedProfile = await executeQuerySingle(`
+        SELECT
+          member_id as id,
+          mname as name,
+          email,
+          phone,
+          company_name as company,
+          address1 as address,
+          city,
+          state,
+          pincode,
+          gst_number,
+          pan_number,
+          role,
+          created_at
+        FROM bmpa_members
+        WHERE member_id = ?
+      `, [memberId]);
+
+      console.log('🔍 Updated profile from database:', updatedProfile);
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        profile: updatedProfile
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      res.status(500).json({ message: 'Failed to update profile' });
     }
   });
 

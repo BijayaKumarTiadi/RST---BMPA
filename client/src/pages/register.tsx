@@ -4,17 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/ui/logo";
 import { useLocation } from "wouter";
-import { 
-  Mail, 
-  Lock, 
-  User, 
-  Building, 
-  MapPin, 
-  CheckCircle, 
+import indianCitiesStates from "@/data/indian-cities-states.json";
+import {
+  Mail,
+  Lock,
+  User,
+  Building,
+  MapPin,
+  CheckCircle,
   Loader2,
   Shield
 } from "lucide-react";
@@ -567,28 +569,46 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      type="text"
-                      placeholder="City"
-                      value={formData.city}
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
-                      data-testid="input-city"
+                    <Label htmlFor="state">State *</Label>
+                    <Select
+                      value={formData.state}
+                      onValueChange={(value) => {
+                        setFormData({...formData, state: value, city: ''});
+                      }}
                       required
-                    />
+                    >
+                      <SelectTrigger id="state" data-testid="select-state">
+                        <SelectValue placeholder="Select State" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(indianCitiesStates).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">State *</Label>
-                    <Input
-                      id="state"
-                      type="text"
-                      placeholder="State"
-                      value={formData.state}
-                      onChange={(e) => setFormData({...formData, state: e.target.value})}
-                      data-testid="input-state"
+                    <Label htmlFor="city">City *</Label>
+                    <Select
+                      value={formData.city}
+                      onValueChange={(value) => setFormData({...formData, city: value})}
+                      disabled={!formData.state}
                       required
-                    />
+                    >
+                      <SelectTrigger id="city" data-testid="select-city">
+                        <SelectValue placeholder={formData.state ? "Select City" : "Select State First"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.state &&
+                          indianCitiesStates[formData.state as keyof typeof indianCitiesStates]?.map((city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

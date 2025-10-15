@@ -1168,10 +1168,23 @@ export default function Marketplace() {
                       GSM {preciseSearch.category?.toLowerCase() === 'spare part' ? '(optional)' : <span className="text-red-500">*</span>}
                     </label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder={preciseSearch.category?.toLowerCase() === 'spare part' ? 'Not required' : '300'}
                       value={preciseSearch.gsm}
-                      onChange={(e) => handlePreciseSearchChange('gsm', e.target.value)}
+                      maxLength={3}
+                      onBeforeInput={(e: any) => {
+                        const char = e.data;
+                        const currentValue = (e.target as HTMLInputElement).value;
+                        if (char && (!/^[0-9]$/.test(char) || currentValue.length >= 3)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                        handlePreciseSearchChange('gsm', value);
+                      }}
                       data-testid="input-precise-gsm"
                       className="mt-1 h-9 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       disabled={!preciseSearch.category}
@@ -1208,10 +1221,21 @@ export default function Marketplace() {
                   <div className="flex-1 min-w-24">
                     <label className="text-sm font-medium">GSM ±</label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="10"
                       value={preciseSearch.tolerance}
-                      onChange={(e) => handlePreciseSearchChange('tolerance', e.target.value)}
+                      onBeforeInput={(e: any) => {
+                        const char = e.data;
+                        if (char && !/^[0-9]$/.test(char)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handlePreciseSearchChange('tolerance', value);
+                      }}
                       data-testid="input-precise-tolerance"
                       className="mt-1 h-9 text-sm"
                       disabled={!preciseSearch.category || !preciseSearch.gsm}
