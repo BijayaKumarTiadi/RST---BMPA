@@ -30,6 +30,15 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
   });
   const [quantityError, setQuantityError] = useState("");
 
+  const handleDialogOpen = (open: boolean) => {
+    if (open) {
+      setTimeout(() => {
+        const quotedPriceInput = document.getElementById('quotedPrice');
+        quotedPriceInput?.focus();
+      }, 100);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
@@ -151,7 +160,10 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
   if (!deal) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      handleDialogOpen(open);
+      if (!open) onClose();
+    }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -184,6 +196,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   required
                   placeholder="Enter your full name"
                   maxLength={100}
+                  tabIndex={-1}
                 />
               </div>
               <div>
@@ -195,6 +208,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   onChange={handleInputChange}
                   placeholder="Enter your company name"
                   maxLength={150}
+                  tabIndex={-1}
                 />
               </div>
             </div>
@@ -210,6 +224,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   onChange={handleInputChange}
                   required
                   placeholder="Enter your email"
+                  tabIndex={-1}
                 />
               </div>
               <div>
@@ -222,6 +237,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   onChange={handleInputChange}
                   placeholder="Enter your phone number"
                   required
+                  tabIndex={-1}
                 />
               </div>
             </div>
@@ -248,6 +264,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   }}
                   placeholder="Enter your price offer"
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  autoFocus
                 />
               </div>
               <div>

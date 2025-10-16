@@ -457,7 +457,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>New Product Inquiry - Stock Laabh</title>
+      <title>New Product Enquiry - Stock Laabh</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -468,7 +468,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
             Stock Laabh
           </h1>
           <p style="color: #e0e7ff; margin: 5px 0 0 0; font-size: 16px;">
-            New Product Inquiry
+            New Product Enquiry
           </p>
         </div>
 
@@ -479,7 +479,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
           </h2>
           
           <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-            You have received a new inquiry for your product listing on Stock Laabh marketplace.
+            You have received a new enquiry for your product listing on Stock Laabh marketplace.
           </p>
 
           <!-- Product Information -->
@@ -497,6 +497,9 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
               ${data.productDetails.make ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Make:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.make}</td></tr>` : ''}
               ${data.productDetails.grade ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Grade:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.grade}</td></tr>` : ''}
               ${data.productDetails.brand ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Brand:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.brand}</td></tr>` : ''}
+              ${data.productDetails.deckle && data.productDetails.grain ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Size:</td><td style="padding: 8px 0; color: #1f2937;">${(data.productDetails.deckle / 10).toFixed(1)} × ${(data.productDetails.grain / 10).toFixed(1)} cm</td></tr>` : ''}
+              ${data.productDetails.gsm ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">GSM:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.gsm}</td></tr>` : ''}
+              ${data.quantity ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Available Quantity:</td><td style="padding: 8px 0; color: #1f2937;">${data.quantity} ${data.productDetails.unit}</td></tr>` : ''}
             </table>
           </div>
 
@@ -519,10 +522,10 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
 
           <!-- Inquiry Details -->
           <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">💰 Inquiry Details</h3>
+            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">💰 Enquiry Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
               ${data.buyerQuotedPrice ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Buyer's Quoted Price:</td><td style="padding: 8px 0; color: #1f2937;">₹${data.buyerQuotedPrice}</td></tr>` : ''}
-              ${data.quantity ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Quantity Required:</td><td style="padding: 8px 0; color: #1f2937;">${data.quantity}</td></tr>` : ''}
+              ${data.quantity ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Quantity Required:</td><td style="padding: 8px 0; color: #1f2937;">${data.quantity} ${data.productDetails.unit}</td></tr>` : ''}
             </table>
             ${data.message ? `
               <div style="margin-top: 15px;">
@@ -537,7 +540,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
               Please respond to this buyer directly using the contact information provided above.
             </p>
-            <a href="mailto:${data.buyerEmail}?subject=Re: Inquiry for ${data.productTitle}" 
+            <a href="mailto:${data.buyerEmail}?subject=Re: Enquiry for ${data.productTitle}"
                style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
               Reply to Buyer
             </a>
@@ -546,7 +549,7 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
           <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
-            This inquiry was sent through Stock Laabh marketplace. If you have any questions, please contact our support team.
+            This enquiry was sent through Stock Laabh marketplace. If you have any questions, please contact our support team.
           </p>
         </div>
 

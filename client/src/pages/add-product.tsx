@@ -307,12 +307,19 @@ export default function AddDeal() {
   const currentGradeText = form.watch("gradeText");
   const currentGroupName = form.watch("groupName");
   
-  // Update dimension unit when user settings are loaded
+  // Set dimension unit from user settings only on initial load
   useEffect(() => {
-    if (userSettings?.dimension_unit && userSettings.dimension_unit !== dimensionUnit) {
+    if (userSettings?.dimension_unit && !dimensionUnit) {
       setDimensionUnit(userSettings.dimension_unit);
     }
-  }, [userSettings, dimensionUnit]);
+  }, [userSettings]);
+  
+  // Set initial dimension unit from settings on component mount
+  useEffect(() => {
+    if (userSettings?.dimension_unit && dimensionUnit === "cm") {
+      setDimensionUnit(userSettings.dimension_unit);
+    }
+  }, [userSettings]);
   
   // Handle craft reel/craft paper B.S. auto-grade setting
   useEffect(() => {
@@ -1052,7 +1059,7 @@ export default function AddDeal() {
                               valueField="GroupID"
                               testId="input-group"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1086,7 +1093,7 @@ export default function AddDeal() {
                               valueField="make_ID"
                               testId="input-make"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1129,7 +1136,7 @@ export default function AddDeal() {
                               valueField="gradeID"
                               testId="input-grade"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1169,7 +1176,7 @@ export default function AddDeal() {
                               valueField="brandID"
                               testId="input-brand"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />

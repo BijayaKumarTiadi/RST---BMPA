@@ -1580,6 +1580,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sellerCompany: sellerQuery.seller_company || sellerCompany
       };
       
+      console.log('📧 Inquiry Email Data:', JSON.stringify({
+        productDetails: inquiryData.productDetails,
+        quantity: inquiryData.quantity,
+        hasUnit: !!inquiryData.productDetails?.unit,
+        unit: inquiryData.productDetails?.unit
+      }, null, 2));
+      
       const emailHtml = generateInquiryEmail(inquiryData);
       
       // Send email using emailService to the actual seller's email
@@ -1735,10 +1742,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get inquiries received by this seller from bmpa_received_inquiries table
       const inquiries = await executeQuery(`
-        SELECT 
+        SELECT
           i.*,
           d.Seller_comments as product_details,
-          d.OfferPrice,
+          d.OfferPrice as seller_offer_price,
+          d.quantity as seller_offer_quantity,
+          d.OfferUnit as product_unit,
+          d.Deckle_mm,
+          d.grain_mm,
           d.TransID as deal_id,
           m.mname as seller_name,
           m.company_name as seller_company
@@ -1773,10 +1784,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get inquiries sent by this buyer from BMPA_inquiries table
       const inquiries = await executeQuery(`
-        SELECT 
+        SELECT
           i.*,
           COALESCE(d.stock_description, CONCAT(d.Make, ' ', d.Brand, ' ', d.Grade)) as product_details,
-          d.OfferPrice,
+          d.OfferPrice as seller_offer_price,
+          d.quantity as seller_offer_quantity,
+          d.OfferUnit as product_unit,
+          d.Deckle_mm,
+          d.grain_mm,
           d.TransID as deal_id,
           sm.mname as seller_name,
           sm.company_name as seller_company,

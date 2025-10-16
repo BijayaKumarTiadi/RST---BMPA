@@ -1186,7 +1186,7 @@ export default function EditDeal() {
                               valueField="GroupID"
                               testId="input-group"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1221,7 +1221,7 @@ export default function EditDeal() {
                               valueField="make_ID"
                               testId="input-make"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1265,7 +1265,7 @@ export default function EditDeal() {
                               valueField="gradeID"
                               testId="input-grade"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1306,7 +1306,7 @@ export default function EditDeal() {
                               valueField="brandID"
                               testId="input-brand"
                               allowFreeText={true}
-                              maxLength={120}
+                              maxLength={60}
                             />
                           </FormControl>
                           <FormMessage />

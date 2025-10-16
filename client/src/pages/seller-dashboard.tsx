@@ -820,7 +820,7 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="text-foreground">
-                              {inquiry.quantity || '-'}
+                              {inquiry.quantity ? `${inquiry.quantity} ${inquiry.product_unit || 'units'}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -942,7 +942,7 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="text-foreground">
-                              {inquiry.quantity || '-'}
+                              {inquiry.quantity ? `${inquiry.quantity} ${inquiry.product_unit || 'units'}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -1374,16 +1374,36 @@ export default function SellerDashboard() {
                 <div className="p-3 border rounded-lg">
                   <div className="grid grid-cols-2 gap-2 text-sm mb-2">
                     <div>
-                      <p className="text-xs text-muted-foreground">Quoted Price</p>
+                      <p className="text-xs text-muted-foreground">Your Offer Price</p>
                       <p className="text-sm font-semibold text-green-600">
+                        {selectedEnquiry.seller_offer_price
+                          ? `₹${parseFloat(selectedEnquiry.seller_offer_price).toLocaleString('en-IN')}/${selectedEnquiry.product_unit || 'unit'}`
+                          : 'Not available'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Your Offer Quantity</p>
+                      <p className="text-sm font-semibold">
+                        {selectedEnquiry.seller_offer_quantity
+                          ? `${selectedEnquiry.seller_offer_quantity} ${selectedEnquiry.product_unit || 'units'}`
+                          : 'Not available'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Buyer's Quoted Price</p>
+                      <p className="text-sm font-semibold text-orange-600">
                         {selectedEnquiry.price_offered || selectedEnquiry.quoted_price ?
                           `₹${parseFloat(selectedEnquiry.price_offered || selectedEnquiry.quoted_price).toLocaleString('en-IN')}` :
                           'Not provided'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Quantity</p>
-                      <p className="text-sm font-semibold">{selectedEnquiry.quantity || 'Not specified'}</p>
+                      <p className="text-xs text-muted-foreground">Buyer's Required Quantity</p>
+                      <p className="text-sm font-semibold">
+                        {selectedEnquiry.quantity
+                          ? `${selectedEnquiry.quantity} ${selectedEnquiry.product_unit || 'units'}`
+                          : 'Not specified'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Status</p>
