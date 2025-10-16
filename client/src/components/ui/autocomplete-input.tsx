@@ -18,6 +18,7 @@ interface AutocompleteInputProps {
   className?: string;
   testId?: string;
   allowFreeText?: boolean;
+  maxLength?: number;
 }
 
 export function AutocompleteInput({
@@ -33,6 +34,7 @@ export function AutocompleteInput({
   className,
   testId,
   allowFreeText = true,
+  maxLength,
 }: AutocompleteInputProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -48,16 +50,26 @@ export function AutocompleteInput({
         (item) => item[valueField]?.toString() === value
       );
       if (selected) {
-        setInputValue(selected[displayField] || "");
+        let displayValue = selected[displayField] || "";
+        // Enforce maxLength if specified
+        if (maxLength && displayValue.length > maxLength) {
+          displayValue = displayValue.slice(0, maxLength);
+        }
+        setInputValue(displayValue);
       } else if (allowFreeText) {
         // If not found in suggestions and allowFreeText, use the value as display text
-        setInputValue(value);
+        let displayValue = value;
+        // Enforce maxLength if specified
+        if (maxLength && displayValue.length > maxLength) {
+          displayValue = displayValue.slice(0, maxLength);
+        }
+        setInputValue(displayValue);
       }
     } else {
       // Clear input if value is empty
       setInputValue("");
     }
-  }, [value, suggestions, valueField, displayField, allowFreeText]);
+  }, [value, suggestions, valueField, displayField, allowFreeText, maxLength]);
 
   // Filter suggestions based on input and remove duplicates
   useEffect(() => {
@@ -79,7 +91,13 @@ export function AutocompleteInput({
   }, [inputValue, suggestions, displayField]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+    let newValue = e.target.value;
+    
+    // Enforce maxLength if specified
+    if (maxLength && newValue.length > maxLength) {
+      newValue = newValue.slice(0, maxLength);
+    }
+    
     setInputValue(newValue);
     setOpen(true);
     
@@ -113,7 +131,12 @@ export function AutocompleteInput({
 
   const handleSelect = (item: any) => {
     const selectedValue = item[valueField]?.toString() || "";
-    const displayValue = item[displayField] || "";
+    let displayValue = item[displayField] || "";
+    
+    // Enforce maxLength if specified
+    if (maxLength && displayValue.length > maxLength) {
+      displayValue = displayValue.slice(0, maxLength);
+    }
     
     setInputValue(displayValue);
     onChange(selectedValue);
@@ -159,6 +182,7 @@ export function AutocompleteInput({
         )}
         data-testid={testId}
         autoComplete="off"
+        maxLength={maxLength}
       />
       {open && filteredSuggestions.length > 0 && (
         <div

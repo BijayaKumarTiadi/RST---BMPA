@@ -62,11 +62,11 @@ const dealSchema = z.object({
   spareBrand: z.string().optional(),
   // Common fields
   deal_description: z.string().optional(),
-  OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0"),
+  OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0").max(999999.99, "Offer price cannot exceed 999999.99"),
   OfferUnit: z.string().min(1, "Unit is required"),
-  quantity: z.coerce.number().min(1, "Quantity is required"),
-  stockAge: z.coerce.number().min(0, "Stock Age must be 0 or greater").optional(),
-  Seller_comments: z.string().optional(),
+  quantity: z.coerce.number().min(1, "Quantity is required").max(999999, "Quantity cannot exceed 999999"),
+  stockAge: z.coerce.number().min(0, "Stock Age must be 0 or greater").max(999, "Stock Age cannot exceed 999 days").optional(),
+  Seller_comments: z.string().max(400, "Comments cannot exceed 400 characters").optional(),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
   const isSparePart = isSparePartGroup(data.groupName || '');
@@ -700,6 +700,7 @@ export default function AddDeal() {
                                 valueField="GroupID"
                                 testId="input-group"
                                 allowFreeText={true}
+                                maxLength={120}
                               />
                             </FormControl>
                             <FormMessage />
@@ -848,6 +849,7 @@ export default function AddDeal() {
                                   inputMode="decimal"
                                   placeholder="Enter price"
                                   value={field.value || ""}
+                                  maxLength={9}
                                   onBeforeInput={(e: any) => {
                                     const char = e.data;
                                     if (char && !/^[0-9.]$/.test(char)) {
@@ -914,6 +916,7 @@ export default function AddDeal() {
                                   placeholder="Enter quantity"
                                   {...field}
                                   data-testid="input-quantity"
+                                  maxLength={6}
                                   onBeforeInput={(e: any) => {
                                     const char = e.data;
                                     if (char && !/^[0-9]$/.test(char)) {
@@ -949,6 +952,7 @@ export default function AddDeal() {
                                   placeholder="Enter stock age in days (e.g., 30)"
                                   {...field}
                                   data-testid="input-stock-age"
+                                  maxLength={3}
                                   onBeforeInput={(e: any) => {
                                     const char = e.data;
                                     if (char && !/^[0-9]$/.test(char)) {
@@ -993,6 +997,7 @@ export default function AddDeal() {
                                 className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
                                 {...field}
                                 data-testid="textarea-comments"
+                                maxLength={400}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1047,6 +1052,7 @@ export default function AddDeal() {
                               valueField="GroupID"
                               testId="input-group"
                               allowFreeText={true}
+                              maxLength={120}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1080,6 +1086,7 @@ export default function AddDeal() {
                               valueField="make_ID"
                               testId="input-make"
                               allowFreeText={true}
+                              maxLength={120}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1122,6 +1129,7 @@ export default function AddDeal() {
                               valueField="gradeID"
                               testId="input-grade"
                               allowFreeText={true}
+                              maxLength={120}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1161,6 +1169,7 @@ export default function AddDeal() {
                               valueField="brandID"
                               testId="input-brand"
                               allowFreeText={true}
+                              maxLength={120}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1275,7 +1284,7 @@ export default function AddDeal() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">
-                            {isKraftReelGroup(currentGroupName || '') ? 'B.S.' : `Grain (${dimensionUnit})`} <span className="text-red-500">*</span>
+                            {isKraftReelGroup(currentGroupName || '') ? 'B.F.' : `Grain (${dimensionUnit})`} <span className="text-red-500">*</span>
                             {grainInputValue && !isKraftReelGroup(currentGroupName || '') && (
                               <span className="text-xs text-muted-foreground ml-2">
                                 = {getGrainDimensions()}
@@ -1339,6 +1348,7 @@ export default function AddDeal() {
                               placeholder="Enter price"
                               {...field}
                               data-testid="input-price"
+                              maxLength={9}
                               onBeforeInput={(e: any) => {
                                 const char = e.data;
                                 if (char && !/^[0-9.]$/.test(char)) {
@@ -1399,6 +1409,7 @@ export default function AddDeal() {
                               placeholder="Enter quantity"
                               {...field}
                               data-testid="input-quantity"
+                              maxLength={6}
                               onBeforeInput={(e: any) => {
                                 const char = e.data;
                                 if (char && !/^[0-9]$/.test(char)) {
@@ -1434,6 +1445,7 @@ export default function AddDeal() {
                               placeholder="Enter stock age in days (e.g., 30)"
                               {...field}
                               data-testid="input-stock-age"
+                              maxLength={3}
                               onBeforeInput={(e: any) => {
                                 const char = e.data;
                                 if (char && !/^[0-9]$/.test(char)) {
@@ -1473,11 +1485,12 @@ export default function AddDeal() {
                       <FormItem>
                         <FormLabel className="text-foreground">Seller Comments</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Add any special notes, delivery terms, or additional specifications..."
                             className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
                             {...field}
                             data-testid="textarea-comments"
+                            maxLength={400}
                           />
                         </FormControl>
                         <FormMessage />

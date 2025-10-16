@@ -253,20 +253,20 @@ export default function Marketplace() {
     const isKraftReel = isKraftReelGroup(groupName || '', groupID);
     
     if (isKraftReel) {
-      // For Kraft Reel: use "," separator and show original grain_mm value with "B.S" suffix
+      // For Kraft Reel: use "," separator and show original grain_mm value with "B.F" suffix
       if (userUnit === 'inch') {
         const deckleInch = (deckle_mm / 25.4).toFixed(2);
         return (
           <>
-            <div>{deckleInch}", {grain_mm} B.S</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.S</div>
+            <div>{deckleInch}", {grain_mm} B.F</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.F</div>
           </>
         );
       } else {
         return (
           <>
-            <div>{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.S</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}", {grain_mm} B.S</div>
+            <div>{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.F</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}", {grain_mm} B.F</div>
           </>
         );
       }
@@ -1226,6 +1226,7 @@ export default function Marketplace() {
                       pattern="[0-9]*"
                       placeholder="10"
                       value={preciseSearch.tolerance}
+                      maxLength={2}
                       onBeforeInput={(e: any) => {
                         const char = e.data;
                         if (char && !/^[0-9]$/.test(char)) {
@@ -1233,7 +1234,7 @@ export default function Marketplace() {
                         }
                       }}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
                         handlePreciseSearchChange('tolerance', value);
                       }}
                       data-testid="input-precise-tolerance"
@@ -1247,10 +1248,16 @@ export default function Marketplace() {
                     <label className="text-sm font-medium">Deckle</label>
                     <Input
                       type="number"
-                      step="0.1"
+                      step="0.01"
                       placeholder="64.8"
                       value={preciseSearch.deckle}
-                      onChange={(e) => handlePreciseSearchChange('deckle', e.target.value)}
+                      max={999.99}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (isNaN(value) || value <= 999.99) {
+                          handlePreciseSearchChange('deckle', e.target.value);
+                        }
+                      }}
                       data-testid="input-precise-deckle"
                       className="mt-1 h-9 text-sm"
                       disabled={!preciseSearch.category || !preciseSearch.gsm}
@@ -1263,7 +1270,7 @@ export default function Marketplace() {
                     const isPaperReel = category?.toLowerCase().includes('paper reel');
                     const isBoardReel = category?.toLowerCase().includes('board reel');
                     const isKraftReel = category?.toLowerCase().includes('kraft reel');
-                    const grainLabel = isKraftReel ? 'B.S' : 'Grain';
+                    const grainLabel = isKraftReel ? 'B.F' : 'Grain';
                     const showGrainField = !isPaperReel && !isBoardReel;
                     
                     return showGrainField ? (
@@ -1271,10 +1278,16 @@ export default function Marketplace() {
                         <label className="text-sm font-medium">{grainLabel}</label>
                         <Input
                           type="number"
-                          step="0.1"
+                          step="0.01"
                           placeholder="84.1"
                           value={preciseSearch.grain}
-                          onChange={(e) => handlePreciseSearchChange('grain', e.target.value)}
+                          max={99}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value <= 99) {
+                              handlePreciseSearchChange('grain', e.target.value);
+                            }
+                          }}
                           data-testid="input-precise-grain"
                           className="mt-1 h-9 text-sm"
                           disabled={!preciseSearch.category || !preciseSearch.gsm}
@@ -1288,10 +1301,16 @@ export default function Marketplace() {
                     <label className="text-sm font-medium">Dim ±</label>
                     <Input
                       type="number"
-                      step="0.1"
+                      step="0.01"
                       placeholder="2"
                       value={preciseSearch.dimensionTolerance}
-                      onChange={(e) => handlePreciseSearchChange('dimensionTolerance', e.target.value)}
+                      max={99}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (isNaN(value) || value <= 99) {
+                          handlePreciseSearchChange('dimensionTolerance', e.target.value);
+                        }
+                      }}
                       data-testid="input-precise-dimension-tolerance"
                       className="mt-1 h-9 text-sm"
                       disabled={!preciseSearch.category || !preciseSearch.gsm}
