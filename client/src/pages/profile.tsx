@@ -100,6 +100,39 @@ export default function Profile() {
   };
 
   const handleSave = () => {
+    // Validate required fields
+    if (!editedProfile.name?.trim()) {
+      toast({
+        title: "Error",
+        description: "Full Name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!editedProfile.phone?.trim()) {
+      toast({
+        title: "Error",
+        description: "Phone Number is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!editedProfile.email?.trim()) {
+      toast({
+        title: "Error",
+        description: "Email ID is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!editedProfile.company?.trim()) {
+      toast({
+        title: "Error",
+        description: "Company Name is required",
+        variant: "destructive"
+      });
+      return;
+    }
     updateProfileMutation.mutate(editedProfile);
   };
 
@@ -177,13 +210,14 @@ export default function Profile() {
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                   {isEditing ? (
                     <Input
                       id="name"
                       value={editedProfile.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Enter your full name"
+                      required
                     />
                   ) : (
                     <div className="mt-1 p-2 bg-muted rounded-md">
@@ -193,7 +227,7 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                   {isEditing ? (
                     <Input
                       id="email"
@@ -201,6 +235,7 @@ export default function Profile() {
                       value={editedProfile.email || ''}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       placeholder="Enter your email"
+                      required
                     />
                   ) : (
                     <div className="mt-1 p-2 bg-muted rounded-md flex items-center gap-2">
@@ -211,13 +246,14 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
                   {isEditing ? (
                     <Input
                       id="phone"
                       value={editedProfile.phone || ''}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="Enter your phone number"
+                      required
                     />
                   ) : (
                     <div className="mt-1 p-2 bg-muted rounded-md flex items-center gap-2">
@@ -256,13 +292,14 @@ export default function Profile() {
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="company">Company Name</Label>
+                  <Label htmlFor="company">Company Name <span className="text-red-500">*</span></Label>
                   {isEditing ? (
                     <Input
                       id="company"
                       value={editedProfile.company || ''}
                       onChange={(e) => handleInputChange('company', e.target.value)}
                       placeholder="Enter your company name"
+                      required
                     />
                   ) : (
                     <div className="mt-1 p-2 bg-muted rounded-md">

@@ -182,7 +182,7 @@ export default function Navigation() {
                   <DropdownMenuItem asChild>
                     <Link href="/add-product" className="flex items-center space-x-2 w-full">
                       <Package className="h-4 w-4" />
-                      <span>Add Product</span>
+                      <span>Add an Offer</span>
                     </Link>
                   </DropdownMenuItem>
                   

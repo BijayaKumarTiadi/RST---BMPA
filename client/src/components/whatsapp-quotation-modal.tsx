@@ -95,6 +95,7 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
                 inputMode="decimal"
                 placeholder="Enter your price"
                 value={quotedPrice}
+                maxLength={6}
                 onBeforeInput={(e: any) => {
                   const char = e.data;
                   if (char && !/^[0-9.]$/.test(char)) {
@@ -112,9 +113,21 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
               <Label htmlFor="quantity">Required Quantity</Label>
               <Input
                 id="quantity"
+                type="text"
+                inputMode="decimal"
                 placeholder="e.g., 100 reams, 50 tonnes"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                maxLength={8}
+                onBeforeInput={(e: any) => {
+                  const char = e.data;
+                  if (char && !/^[0-9.]$/.test(char)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  setQuantity(value);
+                }}
               />
             </div>
 
@@ -126,6 +139,7 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
+                maxLength={400}
               />
             </div>
           </div>

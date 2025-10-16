@@ -183,6 +183,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   onChange={handleInputChange}
                   required
                   placeholder="Enter your full name"
+                  maxLength={100}
                 />
               </div>
               <div>
@@ -193,6 +194,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   value={formData.buyerCompany}
                   onChange={handleInputChange}
                   placeholder="Enter your company name"
+                  maxLength={150}
                 />
               </div>
             </div>
@@ -211,7 +213,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                 />
               </div>
               <div>
-                <Label htmlFor="buyerPhone">Phone Number</Label>
+                <Label htmlFor="buyerPhone">Phone Number *</Label>
                 <Input
                   id="buyerPhone"
                   name="buyerPhone"
@@ -219,6 +221,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   value={formData.buyerPhone}
                   onChange={handleInputChange}
                   placeholder="Enter your phone number"
+                  required
                 />
               </div>
             </div>
@@ -230,17 +233,17 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   id="quotedPrice"
                   name="quotedPrice"
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  inputMode="decimal"
                   value={formData.quotedPrice}
+                  maxLength={7}
                   onBeforeInput={(e: any) => {
                     const char = e.data;
-                    if (char && !/^[0-9]$/.test(char)) {
+                    if (char && !/^[0-9.]$/.test(char)) {
                       e.preventDefault();
                     }
                   }}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
                     handleInputChange({ ...e, target: { ...e.target, name: 'quotedPrice', value } } as any);
                   }}
                   placeholder="Enter your price offer"
@@ -285,6 +288,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                 onChange={handleInputChange}
                 placeholder="Any additional requirements or questions..."
                 rows={3}
+                maxLength={400}
               />
             </div>
 
