@@ -187,13 +187,6 @@ export default function Navigation() {
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem asChild>
-                    <Link href="/orders" className="flex items-center space-x-2 w-full">
-                      <ShoppingBag className="h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center space-x-2 w-full">
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
@@ -317,17 +310,6 @@ export default function Navigation() {
                           Profile
                         </Button>
                         
-                        <Button 
-                          variant="ghost" 
-                          className="w-full justify-start"
-                          onClick={() => {
-                            setLocation('/orders');
-                            setIsMobileMenuOpen(false);
-                          }}
-                        >
-                          <Package className="mr-2 h-4 w-4" />
-                          Orders
-                        </Button>
                       </>
                     )}
                     

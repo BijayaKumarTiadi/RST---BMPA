@@ -20,7 +20,6 @@ import About from "@/pages/about";
 import AddProduct from "@/pages/add-product";
 import EditProduct from "@/pages/edit-product";
 import ProductDetails from "@/pages/product-details";
-import Orders from "@/pages/orders";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import Membership from "@/pages/membership";
@@ -73,9 +72,6 @@ function Router() {
       </Route>
       <Route path="/product/:id">
         {isAuthenticated ? <ProductDetails /> : <Login />}
-      </Route>
-      <Route path="/orders">
-        {isAuthenticated ? <Orders /> : <Login />}
       </Route>
       <Route path="/profile">
         {isAuthenticated ? <Profile /> : <Login />}
