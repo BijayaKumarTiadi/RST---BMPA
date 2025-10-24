@@ -147,12 +147,22 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back to STOCK LAABH!",
-        });
-        // Reload to refresh the app state
-        window.location.href = '/';
+        // Check if user has paid membership
+        if (data.member && data.member.membershipPaid === 0) {
+          // User hasn't paid, redirect to payment page
+          toast({
+            title: "Payment Required",
+            description: "Please complete your membership payment to continue",
+          });
+          window.location.href = '/subscribe';
+        } else {
+          // User has paid, proceed to dashboard
+          toast({
+            title: "Login Successful",
+            description: "Welcome back to STOCK LAABH!",
+          });
+          window.location.href = '/';
+        }
       } else {
         // Check if it's a pending approval or not approved message
         if (data.message && (
@@ -267,11 +277,22 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: "Test Login Successful",
-          description: "Logged in as test user",
-        });
-        window.location.href = '/';
+        // Check if user has paid membership
+        if (data.member && data.member.membershipPaid === 0) {
+          // User hasn't paid, redirect to payment page
+          toast({
+            title: "Payment Required",
+            description: "Please complete your membership payment to continue",
+          });
+          window.location.href = '/subscribe';
+        } else {
+          // User has paid, proceed to dashboard
+          toast({
+            title: "Test Login Successful",
+            description: "Logged in as test user",
+          });
+          window.location.href = '/';
+        }
       } else {
         toast({
           title: "Login Failed",

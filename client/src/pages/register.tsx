@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/ui/logo";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import indianCitiesStates from "@/data/indian-cities-states.json";
 import {
   Mail,
@@ -39,6 +40,7 @@ export default function Register() {
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   // Helper function to show email already registered toast
   const showEmailAlreadyRegisteredToast = () => {
@@ -255,11 +257,24 @@ export default function Register() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(true);
+        // Store member ID in session storage for payment
+        if (data.memberId) {
+          sessionStorage.setItem('pendingPaymentMemberId', data.memberId);
+        }
+        
+        // Invalidate auth query to refetch user data
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/current-member'] });
+        
+        // Redirect to payment page instead of showing success
         toast({
-          title: "Success! 🎉",
-          description: data.message || "Registration successful! Please wait for admin approval.",
+          title: "Registration Successful! 🎉",
+          description: "Redirecting to payment...",
         });
+        
+        // Reduced timeout to make redirect faster
+        setTimeout(() => {
+          setLocation('/subscribe');
+        }, 500);
       } else {
         // Handle specific error cases - check for OTP in message
         if (data.message && (data.message.toLowerCase().includes('otp') || data.message.toLowerCase().includes('invalid otp'))) {

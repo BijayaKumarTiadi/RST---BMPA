@@ -1,173 +1,158 @@
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/navigation";
-import { CreditCard, Shield, Check, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { CreditCard, Shield, Check, ArrowLeft, Loader2 } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
-const CheckoutForm = () => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
+export default function Subscribe() {
+  const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
 
-    if (!stripe || !elements) {
-      return;
-    }
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
-    setIsProcessing(true);
+  const handlePayment = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Check if Razorpay SDK is loaded
+      if (!window.Razorpay) {
+        throw new Error('Payment system is loading. Please try again in a moment.');
+      }
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin,
-      },
-    });
+      // Create Razorpay order
+      const response = await apiRequest("POST", "/api/razorpay/create-order");
+      
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error('Failed to create payment order. Please try again.');
+      }
 
-    setIsProcessing(false);
+      const data = await response.json();
+      console.log('Create order response:', data);
 
-    if (error) {
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      const { order_id, amount, currency, key_id } = data;
+
+      if (!order_id || !key_id) {
+        throw new Error('Invalid payment order data received');
+      }
+
+      console.log('Initializing Razorpay with:', { order_id, amount, currency, key_id });
+
+      // Initialize Razorpay
+      const options = {
+        key: key_id,
+        amount: amount,
+        currency: currency,
+        name: 'STOCK LAABH',
+        description: 'BMPA Annual Membership',
+        order_id: order_id,
+        handler: async function (response: any) {
+          setIsProcessing(true);
+          
+          try {
+            // Verify payment
+            const verifyResponse = await apiRequest("POST", "/api/razorpay/verify-payment", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyData.success) {
+              // Show success page instead of redirecting
+              toast({
+                title: "Payment Successful! 🎉",
+                description: "Your payment has been confirmed.",
+              });
+
+              // Redirect to a success/pending approval page
+              setTimeout(() => {
+                setLocation('/registration-success');
+              }, 1500);
+            } else {
+              throw new Error(verifyData.message || 'Payment verification failed');
+            }
+          } catch (error: any) {
+            toast({
+              title: "Verification Failed",
+              description: error.message || "Payment verification failed. Please contact support.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: ''
+        },
+        theme: {
+          color: '#2563eb'
+        },
+        modal: {
+          ondismiss: function() {
+            setIsLoading(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment process.",
+              variant: "destructive",
+            });
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
+    } catch (error: any) {
+      console.error("Payment error:", error);
       toast({
         title: "Payment Failed",
-        description: error.message,
+        description: error.message || "Failed to initialize payment. Please try again.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Payment Successful",
-        description: "Your STOCK LAABH membership is now active!",
-      });
-      // Redirect will happen automatically via return_url
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <CreditCard className="mr-2 h-5 w-5" />
-          Complete Payment
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <PaymentElement />
-          </div>
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={!stripe || isProcessing}
-            data-testid="submit-payment"
-          >
-            {isProcessing ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Shield className="mr-2 h-4 w-4" />
-                Pay ₹2,499 Securely
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default function Subscribe() {
-  const [clientSecret, setClientSecret] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Check if Stripe is available
-  if (!stripePromise) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <CreditCard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Payment Setup Required</h1>
-          <p className="text-muted-foreground mb-6">
-            Stripe payment integration is not configured. Contact the administrator to enable payment processing.
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/register">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Registration
-            </Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    // Create subscription as soon as the page loads
-    apiRequest("POST", "/api/create-subscription")
-      .then((res) => res.json())
-      .then((data) => {
-        setClientSecret(data.clientSecret);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error creating subscription:", error);
-        toast({
-          title: "Setup Error",
-          description: "Failed to initialize payment. Please try again.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-      });
-  }, [toast]);
-
-  if (isLoading) {
+  if (isProcessing) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <CreditCard className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Payment Setup Failed</h1>
-          <p className="text-muted-foreground mb-6">
-            We couldn't initialize the payment process. Please try again or contact support.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button asChild variant="outline">
-              <Link href="/register">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Registration
-              </Link>
-            </Button>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Verifying payment...</p>
           </div>
         </div>
       </div>
@@ -184,16 +169,57 @@ export default function Subscribe() {
             Complete Your BMPA Membership
           </h1>
           <p className="text-xl text-muted-foreground">
-            Secure payment processing with industry-standard encryption
+            Secure payment processing with Razorpay
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Payment Form */}
+          {/* Payment Card */}
           <div>
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm />
-            </Elements>
+            <Card className="max-w-md mx-auto">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Complete Payment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium text-blue-800">Secure Payment</span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      Click the button below to pay securely via Razorpay. All payment information is encrypted and secure.
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={handlePayment}
+                    className="w-full h-12 text-lg" 
+                    disabled={isLoading}
+                    data-testid="submit-payment"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="mr-2 h-5 w-5" />
+                        Pay ₹2,499 Securely
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    By proceeding, you agree to our terms and conditions
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Order Summary and Benefits */}
@@ -278,8 +304,8 @@ export default function Subscribe() {
                   <div>
                     <h4 className="font-medium text-chart-2">Secure Payment</h4>
                     <p className="text-sm text-muted-foreground">
-                      Your payment is processed securely by Stripe. We don't store your payment information.
-                      Membership activation requires admin approval after successful payment.
+                      Your payment is processed securely by Razorpay. We don't store your payment information.
+                      Membership activation happens after successful payment.
                     </p>
                   </div>
                 </div>

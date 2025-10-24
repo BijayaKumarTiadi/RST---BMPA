@@ -6,10 +6,16 @@ import { adminService } from "./adminService";
 import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
-import { sendEmail, generateInquiryEmail, type InquiryEmailData } from "./emailService";
+import { sendEmail, generateInquiryEmail, generatePaymentSuccessEmail, type InquiryEmailData, type PaymentSuccessEmailData } from "./emailService";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  isRazorpayConfigured,
+  type RazorpayPaymentVerification
+} from './razorpayService';
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -193,6 +199,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error adding profile columns:', error);
       res.status(500).json({ success: false, message: 'Failed to add columns', error: error.message });
+    }
+  });
+
+  // Create payment history table endpoint
+  app.post('/api/database/create-payment-history-table', async (req, res) => {
+    try {
+      // Create bmpa_payment_history table
+      await executeQuery(`
+        CREATE TABLE IF NOT EXISTS bmpa_payment_history (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          member_id INT NOT NULL,
+          order_id VARCHAR(255) NOT NULL,
+          payment_id VARCHAR(255),
+          amount DECIMAL(10,2) NOT NULL,
+          currency VARCHAR(3) DEFAULT 'INR',
+          status ENUM('pending', 'success', 'failed') DEFAULT 'pending',
+          payment_method VARCHAR(50) DEFAULT 'razorpay',
+          signature TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (member_id) REFERENCES bmpa_members(member_id) ON DELETE RESTRICT,
+          INDEX idx_member_id (member_id),
+          INDEX idx_order_id (order_id),
+          INDEX idx_payment_id (payment_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+
+      res.json({
+        success: true,
+        message: 'Payment history table created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating payment history table:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create payment history table',
+        error: error.message
+      });
     }
   });
   
@@ -1236,7 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // First check what columns exist
       const columnsResult = await executeQuery(`
-        SELECT column_name FROM information_schema.columns 
+        SELECT column_name FROM information_schema.columns
         WHERE table_schema = 'trade_bmpa25' AND table_name = 'deal_master'
       `);
       console.log('🔧 Available columns in deal_master:', columnsResult.map((r: any) => r.column_name || r.COLUMN_NAME));
@@ -1258,9 +1304,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate total revenue from sold deals
       const revenueResult = await executeQuerySingle(`
-        SELECT COALESCE(SUM(COALESCE(OfferPrice,0) * COALESCE(quantity,0)), 0) as revenue 
-        FROM deal_master 
+        SELECT COALESCE(SUM(COALESCE(OfferPrice,0) * COALESCE(quantity,0)), 0) as revenue
+        FROM deal_master
         WHERE memberID = ? AND StockStatus = 2
+      `, [sellerId]);
+
+      // Get enquiries sent BY this member (as buyer)
+      const inquiriesSentResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM BMPA_inquiries WHERE buyer_id = ?
+      `, [sellerId]);
+
+      // Get enquiries received BY this member (as seller)
+      const inquiriesReceivedResult = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM bmpa_received_inquiries WHERE seller_id = ?
       `, [sellerId]);
 
       const stats = {
@@ -1268,6 +1324,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeDeals: activeDealsResult?.count || 0,
         soldDeals: soldDealsResult?.count || 0,
         totalRevenue: revenueResult?.revenue || 0,
+        inquiriesSent: inquiriesSentResult?.count || 0,
+        inquiriesReceived: inquiriesReceivedResult?.count || 0,
         // For backward compatibility
         totalProducts: totalDealsResult?.count || 0,
         totalOrders: soldDealsResult?.count || 0
@@ -1278,7 +1336,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeDeals: activeDealsResult?.count || 0,
         soldDeals: soldDealsResult?.count || 0,
         calculatedSold: (totalDealsResult?.count || 0) - (activeDealsResult?.count || 0),
-        totalRevenue: revenueResult?.revenue || 0
+        totalRevenue: revenueResult?.revenue || 0,
+        inquiriesSent: inquiriesSentResult?.count || 0,
+        inquiriesReceived: inquiriesReceivedResult?.count || 0
+      });
+      
+      console.log('📧 Enquiry Counts:', {
+        sent: inquiriesSentResult?.count || 0,
+        received: inquiriesReceivedResult?.count || 0
       });
 
       // Prevent caching of stats data and disable ETag
@@ -1806,9 +1871,330 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, inquiries });
     } catch (error) {
       console.error('Error fetching buyer inquiries:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to fetch inquiries' 
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch inquiries'
+      });
+    }
+  });
+
+  // ============================================
+  // RAZORPAY PAYMENT ROUTES
+  // ============================================
+
+  // Create Razorpay order for membership payment
+  app.post('/api/razorpay/create-order', requireAuth, async (req: any, res) => {
+    try {
+      // Check if Razorpay is configured
+      if (!isRazorpayConfigured()) {
+        return res.status(503).json({
+          success: false,
+          message: 'Payment gateway is not configured. Please contact support.'
+        });
+      }
+
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      // Get member details
+      const member = await executeQuerySingle(`
+        SELECT member_id, email, mname, company_name 
+        FROM bmpa_members 
+        WHERE member_id = ?
+      `, [memberId]);
+
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: 'Member not found'
+        });
+      }
+
+      // BMPA Membership fee: ₹2,118 + 18% GST = ₹2,499
+      const amount = 249900; // Amount in paise (₹2,499)
+      const currency = 'INR';
+      
+      // Create Razorpay order
+      const order = await createRazorpayOrder({
+        amount,
+        currency,
+        receipt: `receipt_${memberId}_${Date.now()}`,
+        notes: {
+          member_id: memberId.toString(),
+          member_email: member.email,
+          member_name: member.mname,
+          company_name: member.company_name || '',
+          payment_for: 'BMPA Membership',
+          amount_inr: '2499'
+        }
+      });
+
+      console.log('✅ Razorpay order created successfully:', order.id);
+
+      // Log payment attempt in database
+      await executeQuery(`
+        INSERT INTO bmpa_payment_history (
+          member_id,
+          order_id,
+          amount,
+          currency,
+          status,
+          payment_method,
+          created_at
+        ) VALUES (?, ?, ?, ?, 'pending', 'razorpay', NOW())
+      `, [memberId, order.id, 2499, currency]);
+
+      res.json({
+        success: true,
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: process.env.RAZORPAY_KEY_ID
+      });
+
+    } catch (error: any) {
+      console.error('Error creating Razorpay order:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create payment order',
+        error: error.message
+      });
+    }
+  });
+
+  // Verify Razorpay payment
+  app.post('/api/razorpay/verify-payment', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing payment verification data'
+        });
+      }
+
+      // Verify payment signature
+      const verificationData: RazorpayPaymentVerification = {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+      };
+
+      const isValid = verifyRazorpayPayment(verificationData);
+
+      if (!isValid) {
+        // Update payment status to failed
+        await executeQuery(`
+          UPDATE bmpa_payment_history 
+          SET status = 'failed', 
+              payment_id = ?,
+              updated_at = NOW()
+          WHERE order_id = ? AND member_id = ?
+        `, [razorpay_payment_id, razorpay_order_id, memberId]);
+
+        return res.status(400).json({
+          success: false,
+          message: 'Payment verification failed. Invalid signature.'
+        });
+      }
+
+      // Payment verified successfully - update member status
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+      await executeQuery(`
+        UPDATE bmpa_members
+        SET
+          membership_paid = 1,
+          mstatus = 1,
+          membership_valid_till = ?
+        WHERE member_id = ?
+      `, [oneYearFromNow, memberId]);
+
+      // Update payment history
+      await executeQuery(`
+        UPDATE bmpa_payment_history
+        SET
+          status = 'success',
+          payment_id = ?,
+          signature = ?,
+          updated_at = NOW()
+        WHERE order_id = ? AND member_id = ?
+      `, [razorpay_payment_id, razorpay_signature, razorpay_order_id, memberId]);
+
+      console.log('✅ Payment verified and member status updated for member:', memberId);
+
+      // Send payment success email
+      try {
+        // Fetch updated member details
+        const updatedMember = await executeQuerySingle(`
+          SELECT mname, email, company_name
+          FROM bmpa_members
+          WHERE member_id = ?
+        `, [memberId]);
+
+        if (updatedMember) {
+          const paymentDate = new Date().toLocaleString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Asia/Kolkata'
+          });
+
+          const paymentEmailData: PaymentSuccessEmailData = {
+            memberName: updatedMember.mname,
+            memberEmail: updatedMember.email,
+            companyName: updatedMember.company_name || 'Your Company',
+            amount: '2,499',
+            paymentId: razorpay_payment_id,
+            orderId: razorpay_order_id,
+            paymentDate: paymentDate
+          };
+
+          const emailHtml = generatePaymentSuccessEmail(paymentEmailData);
+          
+          await sendEmail({
+            to: updatedMember.email,
+            subject: '✓ Payment Successful - Stock Laabh Membership',
+            html: emailHtml
+          });
+
+          console.log('✅ Payment success email sent to:', updatedMember.email);
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending payment success email:', emailError);
+        // Don't fail the payment verification if email fails
+      }
+
+      res.json({
+        success: true,
+        message: 'Payment verified successfully. Membership activated!',
+        membership_valid_till: oneYearFromNow
+      });
+
+    } catch (error: any) {
+      console.error('Error verifying Razorpay payment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to verify payment',
+        error: error.message
+      });
+    }
+  });
+
+  // Get payment status
+  app.get('/api/razorpay/payment-status/:orderId', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      const orderId = req.params.orderId;
+
+      if (!memberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const payment = await executeQuerySingle(`
+        SELECT * FROM bmpa_payment_history 
+        WHERE order_id = ? AND member_id = ?
+      `, [orderId, memberId]);
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Payment not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        payment
+      });
+
+    } catch (error: any) {
+      console.error('Error fetching payment status:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch payment status',
+        error: error.message
+      });
+    }
+  });
+
+  // Check Razorpay configuration status
+  app.get('/api/razorpay/status', async (req, res) => {
+    try {
+      const configured = isRazorpayConfigured();
+      res.json({
+        success: true,
+        configured,
+        message: configured 
+          ? 'Razorpay is configured and ready' 
+          : 'Razorpay is not configured'
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check Razorpay status',
+        error: error.message
+      });
+    }
+  });
+
+  // Get payment history for logged-in member
+  app.get('/api/payment-history', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const payments = await executeQuery(`
+        SELECT
+          id,
+          order_id,
+          payment_id,
+          amount,
+          currency,
+          status,
+          payment_method,
+          created_at as date
+        FROM bmpa_payment_history
+        WHERE member_id = ?
+        ORDER BY created_at DESC
+      `, [memberId]);
+
+      res.json({
+        success: true,
+        payments
+      });
+
+    } catch (error: any) {
+      console.error('Error fetching payment history:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch payment history',
+        error: error.message
       });
     }
   });

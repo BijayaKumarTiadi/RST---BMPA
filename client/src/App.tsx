@@ -16,6 +16,7 @@ import SellerDashboard from "@/pages/seller-dashboard";
 import Marketplace from "@/pages/marketplace";
 import ApiDocs from "@/pages/api-docs";
 import Subscribe from "@/pages/subscribe";
+import RegistrationSuccess from "@/pages/registration-success";
 import About from "@/pages/about";
 import AddProduct from "@/pages/add-product";
 import EditProduct from "@/pages/edit-product";
@@ -88,8 +89,12 @@ function Router() {
       <Route path="/welcome">
         {isAuthenticated ? <Landing /> : <Login />}
       </Route>
+      {/* Semi-protected routes - require authentication but accessible without full approval */}
       <Route path="/subscribe">
         {isAuthenticated ? <Subscribe /> : <Login />}
+      </Route>
+      <Route path="/registration-success">
+        {isAuthenticated ? <RegistrationSuccess /> : <Login />}
       </Route>
       <Route path="/about">
         {isAuthenticated ? <About /> : <Login />}

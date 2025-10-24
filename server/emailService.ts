@@ -567,3 +567,189 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
     </html>
   `;
 }
+
+export interface PaymentSuccessEmailData {
+  memberName: string;
+  memberEmail: string;
+  companyName: string;
+  amount: string;
+  paymentId: string;
+  orderId: string;
+  paymentDate: string;
+}
+
+export function generatePaymentSuccessEmail(data: PaymentSuccessEmailData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment Successful - Stock Laabh</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 40px 20px; text-align: center;">
+          <div style="background-color: #ffffff; width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
+            <div style="font-size: 48px;">✓</div>
+          </div>
+          <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">
+            Payment Successful!
+          </h1>
+          <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 18px;">
+            Your membership is now active
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
+            Dear ${data.memberName},
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+            Thank you for your payment! We're excited to confirm that your Stock Laabh membership payment has been processed successfully for <strong>${data.companyName}</strong>.
+          </p>
+
+          <!-- Payment Details Card -->
+          <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px solid #10b981; border-radius: 12px; padding: 25px; margin: 25px 0;">
+            <h3 style="color: #065f46; margin: 0 0 20px 0; font-size: 20px; text-align: center;">
+              💳 Payment Receipt
+            </h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px 0; color: #047857; font-weight: bold; width: 45%;">Amount Paid:</td>
+                <td style="padding: 10px 0; color: #1f2937; font-weight: bold; font-size: 20px;">₹${data.amount}</td>
+              </tr>
+              <tr style="border-top: 1px solid #86efac;">
+                <td style="padding: 10px 0; color: #047857; font-weight: bold;">Payment ID:</td>
+                <td style="padding: 10px 0; color: #1f2937; font-family: monospace; font-size: 13px;">${data.paymentId}</td>
+              </tr>
+              <tr style="border-top: 1px solid #86efac;">
+                <td style="padding: 10px 0; color: #047857; font-weight: bold;">Order ID:</td>
+                <td style="padding: 10px 0; color: #1f2937; font-family: monospace; font-size: 13px;">${data.orderId}</td>
+              </tr>
+              <tr style="border-top: 1px solid #86efac;">
+                <td style="padding: 10px 0; color: #047857; font-weight: bold;">Payment Date:</td>
+                <td style="padding: 10px 0; color: #1f2937;">${data.paymentDate}</td>
+              </tr>
+              <tr style="border-top: 1px solid #86efac;">
+                <td style="padding: 10px 0; color: #047857; font-weight: bold;">Status:</td>
+                <td style="padding: 10px 0;">
+                  <span style="background-color: #10b981; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                    CONFIRMED ✓
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Status Information -->
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+            <h3 style="color: #92400e; margin: 0 0 12px 0; font-size: 18px;">
+              ⏳ What Happens Next?
+            </h3>
+            <p style="color: #78350f; margin: 0; font-size: 15px; line-height: 1.6;">
+              Your payment has been received and verified. Our admin team will review your membership application within <strong>1-2 business days</strong>. Once approved, you'll receive an email notification and can start accessing the full Stock Laabh marketplace.
+            </p>
+          </div>
+
+          <!-- Membership Benefits -->
+          <h3 style="color: #1f2937; margin: 30px 0 15px 0; font-size: 20px; text-align: center;">
+            🎁 Your Membership Benefits
+          </h3>
+          
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #3b82f6; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">1</div>
+                <div>
+                  <strong style="color: #1e40af;">Unlimited Marketplace Access</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Browse and purchase from thousands of verified sellers</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #8b5cf6; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">2</div>
+                <div>
+                  <strong style="color: #7c3aed;">List Your Products</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Sell your inventory to a wide network of buyers</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #10b981; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">3</div>
+                <div>
+                  <strong style="color: #059669;">Direct Buyer-Seller Communication</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Send enquiries and negotiate directly with members</span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div style="display: flex; align-items: start;">
+                <div style="background-color: #f59e0b; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">4</div>
+                <div>
+                  <strong style="color: #d97706;">Business Dashboard & Analytics</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Track all your orders, enquiries, and business activities</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Important Information -->
+          <div style="background-color: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h3 style="color: #1e40af; margin: 0 0 12px 0; font-size: 16px;">
+              📌 Important Information
+            </h3>
+            <ul style="color: #1e40af; margin: 0; padding-left: 20px; line-height: 1.8; font-size: 14px;">
+              <li>Your membership is valid for <strong>1 year</strong> from approval date</li>
+              <li>You can track your approval status by logging into your account</li>
+              <li>Keep this email for your records as proof of payment</li>
+              <li>For any queries, contact our support team</li>
+            </ul>
+          </div>
+
+          <!-- Support Section -->
+          <div style="text-align: center; margin: 35px 0 20px 0; padding: 25px; background-color: #f9fafb; border-radius: 8px;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">
+              Need Help?
+            </h3>
+            <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0;">
+              Our support team is here to assist you
+            </p>
+            <p style="color: #4b5563; font-size: 14px; margin: 0;">
+              📧 Email: <a href="mailto:support@stocklaabh.com" style="color: #3b82f6; text-decoration: none;">support@stocklaabh.com</a>
+            </p>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 35px 0;">
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+            Thank you for choosing Stock Laabh. We're excited to have you as part of our professional trading community!
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #1f2937; margin: 0; font-size: 15px; font-weight: bold;">
+            Welcome to the Stock Laabh Community!
+          </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 13px;">
+            © 2025 Stock Laabh. All rights reserved.
+          </p>
+          <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">
+            Powered by Renuka Print ERP Solutions
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}

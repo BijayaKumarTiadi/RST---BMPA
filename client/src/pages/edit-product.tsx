@@ -785,9 +785,6 @@ export default function EditDeal() {
               </Button>
             </Link>
             <h1 className="text-3xl font-bold text-foreground mb-2">Edit Deal</h1>
-            <p className="text-muted-foreground">
-              Update your deal information using the deal_master table structure.
-            </p>
           </div>
 
           <Form {...form}>
@@ -803,9 +800,6 @@ export default function EditDeal() {
                         <Package className="h-5 w-5" />
                         Spare Part Details
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Enter details about the spare part
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {/* Product Group Field */}
@@ -967,9 +961,6 @@ export default function EditDeal() {
                         <IndianRupee className="h-5 w-5" />
                         Pricing and Inventory
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Set your pricing and available quantity
-                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1116,9 +1107,6 @@ export default function EditDeal() {
                       <CardTitle className="text-foreground">
                         Additional Information
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Add any additional comments or details
-                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <FormField
@@ -1153,8 +1141,6 @@ export default function EditDeal() {
                     <Package className="h-5 w-5" />
                     Offer Details
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* First Row: Group and Make */}
@@ -1347,9 +1333,6 @@ export default function EditDeal() {
                     <Hash className="h-5 w-5" />
                     Technical Specifications
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Enter the technical details for your stock
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1465,9 +1448,6 @@ export default function EditDeal() {
                     <IndianRupee className="h-5 w-5" />
                     Pricing and Inventory
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Set your pricing and available quantity
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1609,9 +1589,6 @@ export default function EditDeal() {
                   <CardTitle className="text-foreground">
                     Additional Information
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Add any additional comments or details about the stock
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField

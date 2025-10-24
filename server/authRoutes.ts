@@ -238,7 +238,27 @@ authRouter.post('/complete-registration', async (req, res) => {
       email
     });
 
-    res.json(registrationResult);
+    if (registrationResult.success && registrationResult.memberId) {
+      // Auto-login the user after successful registration
+      req.session.memberId = registrationResult.memberId;
+      req.session.memberEmail = email;
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error after registration:', err);
+          return res.json({
+            ...registrationResult,
+            sessionError: true
+          });
+        }
+
+        res.json({
+          ...registrationResult,
+          autoLogin: true
+        });
+      });
+    } else {
+      res.json(registrationResult);
+    }
 
   } catch (error) {
     console.error('Complete registration error:', error);

@@ -847,81 +847,99 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="sticky right-0 bg-background min-w-[120px] z-10 shadow-sm">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handleEditMember(member)}
-                                    data-testid={`button-edit-${member.member_id}`}
-                                  >
-                                    <Edit className="w-3 h-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-md">
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Member Profile</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="mname">Name</Label>
-                                      <Input
-                                        id="mname"
-                                        value={editFormData.mname || ''}
-                                        onChange={(e) => setEditFormData({ ...editFormData, mname: e.target.value })}
-                                        data-testid="input-edit-name"
-                                      />
+                              <div className="flex space-x-2">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleEditMember(member)}
+                                      data-testid={`button-edit-${member.member_id}`}
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle>Edit Member Profile</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label htmlFor="mname">Name</Label>
+                                        <Input
+                                          id="mname"
+                                          value={editFormData.mname || ''}
+                                          onChange={(e) => setEditFormData({ ...editFormData, mname: e.target.value })}
+                                          data-testid="input-edit-name"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                          id="email"
+                                          type="email"
+                                          value={editFormData.email || ''}
+                                          onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                          data-testid="input-edit-email"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="phone">Phone</Label>
+                                        <Input
+                                          id="phone"
+                                          value={editFormData.phone || ''}
+                                          onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                          data-testid="input-edit-phone"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="company_name">Company Name</Label>
+                                        <Input
+                                          id="company_name"
+                                          value={editFormData.company_name || ''}
+                                          onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
+                                          data-testid="input-edit-company"
+                                        />
+                                      </div>
+                                      <div className="flex justify-end space-x-2">
+                                        <Button
+                                          variant="outline"
+                                          onClick={() => {
+                                            setEditingMember(null);
+                                            setEditFormData({});
+                                          }}
+                                          data-testid="button-cancel-edit"
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          onClick={handleUpdateMember}
+                                          disabled={updateMemberMutation.isPending}
+                                          data-testid="button-save-edit"
+                                        >
+                                          {updateMemberMutation.isPending ? "Saving..." : "Save"}
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <Label htmlFor="email">Email</Label>
-                                      <Input
-                                        id="email"
-                                        type="email"
-                                        value={editFormData.email || ''}
-                                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                                        data-testid="input-edit-email"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="phone">Phone</Label>
-                                      <Input
-                                        id="phone"
-                                        value={editFormData.phone || ''}
-                                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                                        data-testid="input-edit-phone"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="company_name">Company Name</Label>
-                                      <Input
-                                        id="company_name"
-                                        value={editFormData.company_name || ''}
-                                        onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
-                                        data-testid="input-edit-company"
-                                      />
-                                    </div>
-                                    <div className="flex justify-end space-x-2">
-                                      <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                          setEditingMember(null);
-                                          setEditFormData({});
-                                        }}
-                                        data-testid="button-cancel-edit"
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        onClick={handleUpdateMember}
-                                        disabled={updateMemberMutation.isPending}
-                                        data-testid="button-save-edit"
-                                      >
-                                        {updateMemberMutation.isPending ? "Saving..." : "Save"}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
+                                  </DialogContent>
+                                </Dialog>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => rejectMutation.mutate(member.member_id)}
+                                  disabled={rejectMutation.isPending}
+                                  data-testid={`button-reject-${member.member_id}`}
+                                >
+                                  {rejectMutation.isPending ? (
+                                    <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                                  ) : (
+                                    <>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
