@@ -65,7 +65,7 @@ export default function Login() {
         setOtpSent(true);
         toast({
           title: "OTP Sent",
-          description: "Please check your email for the verification code",
+          description: data.message || "Please check your email for the verification code",
         });
       } else {
         // Check if it's an email not found error
@@ -320,7 +320,7 @@ export default function Login() {
       if (data.success) {
         toast({
           title: "OTP Resent",
-          description: "A new verification code has been sent to your email",
+          description: data.message || "A new verification code has been sent",
         });
       } else {
         toast({

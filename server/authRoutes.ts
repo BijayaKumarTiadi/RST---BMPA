@@ -78,17 +78,17 @@ authRouter.post('/send-login-otp', async (req, res) => {
     // Normalize email
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if email exists
-    const emailExists = await authService.emailExists(normalizedEmail);
-    if (!emailExists) {
+    // Check if email exists and get member details
+    const member = await authService.getMemberByEmail(normalizedEmail);
+    if (!member) {
       return res.status(400).json({
         success: false,
         message: 'Email not found. Please register first or check your email spelling.'
       });
     }
 
-    // Send OTP
-    const result = await otpService.createAndSendOTP(normalizedEmail, 'login');
+    // Send OTP to both email and SMS
+    const result = await otpService.createAndSendOTP(normalizedEmail, 'login', member.phone);
     res.json(result);
 
   } catch (error) {
@@ -183,7 +183,7 @@ authRouter.post('/verify-login-otp', async (req, res) => {
 // Send OTP for registration
 authRouter.post('/send-registration-otp', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, phone } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -201,8 +201,8 @@ authRouter.post('/send-registration-otp', async (req, res) => {
       });
     }
 
-    // Send OTP
-    const result = await otpService.createAndSendOTP(email, 'registration');
+    // Send OTP to both email and SMS (if phone provided)
+    const result = await otpService.createAndSendOTP(email, 'registration', phone);
     res.json(result);
 
   } catch (error) {

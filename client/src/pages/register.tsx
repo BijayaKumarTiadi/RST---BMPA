@@ -74,9 +74,22 @@ export default function Register() {
       return;
     }
 
+    if (!formData.phone || formData.phone.length !== 10) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid 10-digit phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
+      // Send both email and phone (with 91 prefix) for OTP
+      const response = await apiRequest("POST", "/api/auth/send-registration-otp", {
+        email,
+        phone: `91${formData.phone}`
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -147,7 +160,11 @@ export default function Register() {
   const handleResendOTP = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/auth/send-registration-otp", { email });
+      // Send both email and phone (with 91 prefix) for OTP resend
+      const response = await apiRequest("POST", "/api/auth/send-registration-otp", {
+        email,
+        phone: `91${formData.phone}`
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -414,30 +431,51 @@ export default function Register() {
                   Email Verification
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address *</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-email"
+                          disabled={otpSent}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="phone-verify">Phone Number *</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        data-testid="input-email"
+                        id="phone-verify"
+                        type="tel"
+                        placeholder="10-digit mobile"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData({...formData, phone: value});
+                        }}
+                        data-testid="input-phone-verify"
                         disabled={otpSent}
+                        maxLength={10}
                         required
                       />
+                      <p className="text-xs text-gray-500">OTP will be sent to email & SMS</p>
                     </div>
                   </div>
                   
                   <div className="flex items-end">
-                    <Button 
+                    <Button
                       type="button"
                       onClick={handleSendOTP}
-                      disabled={loading || !email || otpSent}
+                      disabled={loading || !email || !formData.phone || formData.phone.length !== 10 || otpSent}
                       className="w-full"
                       data-testid="button-send-otp"
                     >

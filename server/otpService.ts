@@ -1,5 +1,6 @@
  import { executeQuery, executeQuerySingle } from './database';
 import { sendEmail, generateOTPEmail } from './emailService';
+import { sendOTPSMS } from './smsService';
 
 export interface OTPRecord {
   id: number;
@@ -17,8 +18,8 @@ export class OTPService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  // Create and send OTP
-  async createAndSendOTP(email: string, purpose: 'login' | 'registration'): Promise<{ success: boolean; message: string }> {
+  // Create and send OTP (both email and SMS)
+  async createAndSendOTP(email: string, purpose: 'login' | 'registration', phone?: string): Promise<{ success: boolean; message: string }> {
     try {
       // Normalize email
       const normalizedEmail = email.trim().toLowerCase();
@@ -61,9 +62,23 @@ export class OTPService {
       }
 
       console.log(`OTP email sent successfully to ${email}`);
+      
+      // Send SMS if phone number is provided
+      let smsSent = false;
+      if (phone) {
+        smsSent = await sendOTPSMS(phone, otp);
+        if (smsSent) {
+          console.log(`OTP SMS sent successfully to ${phone}`);
+        } else {
+          console.warn(`Failed to send SMS to ${phone}, but email was sent`);
+        }
+      }
+
       return {
         success: true,
-        message: 'OTP sent successfully to your email'
+        message: phone && smsSent
+          ? 'OTP sent successfully to your email and mobile number'
+          : 'OTP sent successfully to your email'
       };
 
     } catch (error) {
