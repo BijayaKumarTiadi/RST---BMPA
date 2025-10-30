@@ -359,9 +359,9 @@ export default function Login() {
               Member Login
             </CardTitle>
             <p className="text-sm text-gray-600 mt-2">
-              {step === 'email' 
+              {step === 'email'
                 ? 'Enter your email to receive a verification code'
-                : 'Enter the OTP sent to your email'
+                : 'Enter OTP sent to email and phone'
               }
             </p>
           </CardHeader>
