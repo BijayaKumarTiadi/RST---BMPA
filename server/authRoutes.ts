@@ -89,7 +89,22 @@ authRouter.post('/send-login-otp', async (req, res) => {
 
     // Send OTP to both email and SMS
     const result = await otpService.createAndSendOTP(normalizedEmail, 'login', member.phone);
-    res.json(result);
+    
+    // Mask phone number (show first 4 and last 2 digits)
+    let maskedPhone = '';
+    if (member.phone) {
+      const phone = member.phone.toString();
+      if (phone.length >= 6) {
+        maskedPhone = phone.substring(0, 4) + 'x'.repeat(phone.length - 6) + phone.substring(phone.length - 2);
+      } else {
+        maskedPhone = phone;
+      }
+    }
+    
+    res.json({
+      ...result,
+      maskedPhone
+    });
 
   } catch (error) {
     console.error('Send login OTP error:', error);

@@ -19,6 +19,7 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [showPendingApproval, setShowPendingApproval] = useState(false);
   const [showTestLogin, setShowTestLogin] = useState(false);
+  const [maskedPhone, setMaskedPhone] = useState('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -63,6 +64,9 @@ export default function Login() {
       if (data.success) {
         setStep('otp');
         setOtpSent(true);
+        if (data.maskedPhone) {
+          setMaskedPhone(data.maskedPhone);
+        }
         toast({
           title: "OTP Sent",
           description: data.message || "Please check your email for the verification code",
@@ -426,6 +430,7 @@ export default function Login() {
                     <Mail className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-blue-800">
                       Verification code sent to <strong>{email}</strong>
+                      {maskedPhone && <> and <strong>{maskedPhone}</strong></>}
                     </AlertDescription>
                   </Alert>
                 )}
