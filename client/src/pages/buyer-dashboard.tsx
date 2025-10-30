@@ -324,12 +324,6 @@ export default function BuyerDashboard() {
                                 {inquiry.quantity && (
                                   <div><span className="font-medium">Quantity:</span> {inquiry.quantity}</div>
                                 )}
-                                {inquiry.quoted_price && (
-                                  <div><span className="font-medium">Your Price:</span> ₹{inquiry.quoted_price}</div>
-                                )}
-                                {inquiry.OfferPrice && (
-                                  <div><span className="font-medium">Seller Price:</span> ₹{inquiry.OfferPrice}/{inquiry.OfferUnit}</div>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -396,7 +390,6 @@ export default function BuyerDashboard() {
                         <h4 className="font-semibold mb-2">{item.title}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-lg font-bold text-primary">₹{item.price}/{item.unit}</span>
                           <span className="text-sm text-muted-foreground">{item.seller}</span>
                         </div>
                         <Button size="sm" className="w-full" data-testid={`view-recommendation-${item.id}`}>

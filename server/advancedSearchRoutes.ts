@@ -76,17 +76,6 @@ router.post('/advanced', async (req, res) => {
       }
     }
     
-    // Price range filter
-    if (filters.priceRange && (filters.priceRange.min || filters.priceRange.max)) {
-      if (filters.priceRange.min) {
-        conditions.push('d.OfferPrice >= ?');
-        queryParams.push(parseFloat(filters.priceRange.min));
-      }
-      if (filters.priceRange.max) {
-        conditions.push('d.OfferPrice <= ?');
-        queryParams.push(parseFloat(filters.priceRange.max));
-      }
-    }
     
     // Dimension range filters
     if (filters.dimensionRange && filters.dimensionRange.deckle) {
@@ -140,12 +129,6 @@ router.post('/advanced', async (req, res) => {
     
     // Sort
     switch (sortBy) {
-      case 'price-low':
-        query += ' ORDER BY d.OfferPrice ASC';
-        break;
-      case 'price-high':
-        query += ' ORDER BY d.OfferPrice DESC';
-        break;
       case 'gsm-low':
         query += ' ORDER BY d.GSM ASC';
         break;

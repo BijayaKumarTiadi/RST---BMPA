@@ -4,10 +4,6 @@ import crypto from 'crypto';
 // Helper function to get ORDER BY clause based on sort parameter
 function getSortClause(sortBy?: string): string {
   switch (sortBy) {
-    case 'price-low':
-      return 'ORDER BY d.OfferPrice ASC';
-    case 'price-high':
-      return 'ORDER BY d.OfferPrice DESC';
     case 'gsm-low':
       return 'ORDER BY d.GSM ASC';
     case 'gsm-high':

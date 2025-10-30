@@ -24,7 +24,6 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
     buyerCompany: user?.company || "",
     buyerEmail: user?.email || "",
     buyerPhone: user?.phone || "",
-    quotedPrice: "",
     quantity: "",
     message: ""
   });
@@ -33,8 +32,8 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
   const handleDialogOpen = (open: boolean) => {
     if (open) {
       setTimeout(() => {
-        const quotedPriceInput = document.getElementById('quotedPrice');
-        quotedPriceInput?.focus();
+        const quantityInput = document.getElementById('quantity');
+        quantityInput?.focus();
       }, 100);
     }
   };
@@ -99,10 +98,8 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
           gsm: deal.GSM,
           deckle: deal.Deckle_mm,
           grain: deal.grain_mm,
-          sellerPrice: deal.OfferPrice,
           unit: deal.OfferUnit
         },
-        buyerQuotedPrice: formData.quotedPrice,
         quantity: formData.quantity,
         message: formData.message,
         sellerName: deal.created_by_name || deal.seller_name,
@@ -138,7 +135,6 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
           buyerCompany: user?.company || "",
           buyerEmail: user?.email || "",
           buyerPhone: user?.phone || "",
-          quotedPrice: "",
           quantity: "",
           message: ""
         });
@@ -177,7 +173,6 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
           <div className="bg-muted p-4 rounded-lg mb-6">
             <h4 className="font-semibold mb-2">Product: {deal.stock_description || `${deal.Make} ${deal.Brand} ${deal.Grade}`.trim() || 'Product Details'}</h4>
             <div className="text-sm text-muted-foreground space-y-1">
-              <div>Seller Price: ₹{deal.OfferPrice?.toLocaleString('en-IN')} per {deal.OfferUnit}</div>
               <div>Available Quantity: {deal.quantity || 0} {deal.OfferUnit}</div>
               <div>Seller: {deal.created_by_name || deal.seller_name} ({deal.created_by_company || deal.seller_company})</div>
             </div>
@@ -242,32 +237,7 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="quotedPrice">Enter your Offer Price (₹)</Label>
-                <Input
-                  id="quotedPrice"
-                  name="quotedPrice"
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.quotedPrice}
-                  maxLength={7}
-                  onBeforeInput={(e: any) => {
-                    const char = e.data;
-                    if (char && !/^[0-9.]$/.test(char)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                    handleInputChange({ ...e, target: { ...e.target, name: 'quotedPrice', value } } as any);
-                  }}
-                  placeholder="Enter your price offer"
-                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  autoFocus
-                />
-              </div>
-              <div>
+            <div>
                 <Label htmlFor="quantity">Quantity Required *</Label>
                 <Input
                   id="quantity"
@@ -289,11 +259,11 @@ export default function EnquiryFormModal({ isOpen, onClose, deal }: EnquiryFormM
                   placeholder={`Quantity in ${deal.OfferUnit} (Max: ${deal.quantity || 0})`}
                   required
                   className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${quantityError ? "border-red-500" : ""}`}
+                  autoFocus
                 />
                 {quantityError && (
                   <p className="text-xs text-red-500 mt-1">{quantityError}</p>
                 )}
-              </div>
             </div>
 
             <div>

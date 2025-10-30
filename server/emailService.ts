@@ -440,10 +440,8 @@ export interface InquiryEmailData {
     gsm?: number;
     deckle?: number;
     grain?: number;
-    sellerPrice: number;
     unit: string;
   };
-  buyerQuotedPrice: string;
   quantity: string;
   message: string;
   sellerName: string;
@@ -490,10 +488,6 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
                 <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Product:</td>
                 <td style="padding: 8px 0; color: #1f2937;">${data.productTitle || 'Product'}</td>
               </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; font-weight: bold;">Your Price:</td>
-                <td style="padding: 8px 0; color: #1f2937;">₹${data.productDetails.sellerPrice.toLocaleString('en-IN')} per ${data.productDetails.unit}</td>
-              </tr>
               ${data.productDetails.make ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Make:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.make}</td></tr>` : ''}
               ${data.productDetails.grade ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Grade:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.grade}</td></tr>` : ''}
               ${data.productDetails.brand ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: bold;">Brand:</td><td style="padding: 8px 0; color: #1f2937;">${data.productDetails.brand}</td></tr>` : ''}
@@ -524,7 +518,6 @@ export function generateInquiryEmail(data: InquiryEmailData): string {
           <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">💰 Enquiry Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
-              ${data.buyerQuotedPrice ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Buyer's Quoted Price:</td><td style="padding: 8px 0; color: #1f2937;">₹${data.buyerQuotedPrice}</td></tr>` : ''}
               ${data.quantity ? `<tr><td style="padding: 8px 0; color: #92400e; font-weight: bold;">Quantity Required:</td><td style="padding: 8px 0; color: #1f2937;">${data.quantity} ${data.productDetails.unit}</td></tr>` : ''}
             </table>
             ${data.message ? `

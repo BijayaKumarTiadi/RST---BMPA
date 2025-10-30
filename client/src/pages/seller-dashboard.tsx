@@ -478,7 +478,6 @@ export default function SellerDashboard() {
                             <TableHead className="font-semibold text-foreground">Product</TableHead>
                             <TableHead className="font-semibold text-foreground">Category</TableHead>
                             <TableHead className="font-semibold text-foreground">Specifications</TableHead>
-                            <TableHead className="font-semibold text-foreground">Price</TableHead>
                             <TableHead className="font-semibold text-foreground">Status</TableHead>
                             <TableHead className="font-semibold text-foreground">Posted on</TableHead>
                             <TableHead className="font-semibold text-foreground">Stock Age</TableHead>
@@ -513,14 +512,6 @@ export default function SellerDashboard() {
                                 <div className="space-y-1 text-sm">
                                   <div><span className="text-muted-foreground">GSM:</span> <span className="font-medium" data-testid={`deal-gsm-${deal.TransID}`}>{deal.GSM || 'N/A'}</span></div>
                                   <div><span className="text-muted-foreground">Dim:</span> <span className="font-medium">{formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.groupID)}</span></div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-semibold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
-                                  ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  /{deal.OfferUnit || 'unit'}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -672,19 +663,10 @@ export default function SellerDashboard() {
                               </div>
                             </div>
 
-                            {/* Price and Age */}
-                            <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <p className="text-xs text-muted-foreground">Price</p>
-                                <p className="font-bold text-foreground" data-testid={`deal-price-${deal.TransID}`}>
-                                  ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-                                  <span className="text-xs text-muted-foreground">
-                                    /{deal.OfferUnit || 'unit'}
-                                  </span>
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Posted/Stock Age</p>
+                            {/* Posted and Stock Age */}
+                            <div className="mb-4">
+                              <p className="text-xs text-muted-foreground mb-2">Posted/Stock Age</p>
+                              <div className="flex items-center justify-between">
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-1 text-xs text-foreground" title="When offer was created">
                                     <Clock className="h-3 w-3 text-muted-foreground" />
@@ -789,7 +771,6 @@ export default function SellerDashboard() {
                       <TableRow className="bg-muted border-b-4 border-primary/20">
                         <TableHead className="font-semibold text-foreground">Buyer</TableHead>
                         <TableHead className="font-semibold text-foreground">Company</TableHead>
-                        <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
                         <TableHead className="font-semibold text-foreground">Quantity</TableHead>
                         <TableHead className="font-semibold text-foreground">Status</TableHead>
                         <TableHead className="font-semibold text-foreground">Date</TableHead>
@@ -811,11 +792,6 @@ export default function SellerDashboard() {
                           <TableCell>
                             <div className="text-foreground">
                               {inquiry.buyer_company || '-'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-semibold text-foreground" data-testid={`inquiry-price-${inquiry.id}`}>
-                              {inquiry.price_offered ? `₹${parseFloat(inquiry.price_offered).toLocaleString('en-IN')}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -908,7 +884,6 @@ export default function SellerDashboard() {
                       <TableRow className="bg-muted border-b-4 border-primary/20">
                         <TableHead className="font-semibold text-foreground">Seller</TableHead>
                         <TableHead className="font-semibold text-foreground">Product</TableHead>
-                        <TableHead className="font-semibold text-foreground">Quoted Price</TableHead>
                         <TableHead className="font-semibold text-foreground">Quantity</TableHead>
                         <TableHead className="font-semibold text-foreground">Status</TableHead>
                         <TableHead className="font-semibold text-foreground">Date</TableHead>
@@ -933,11 +908,6 @@ export default function SellerDashboard() {
                               <div className="text-sm text-muted-foreground">
                                 {inquiry.product_details || ''}
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-semibold text-foreground" data-testid={`sent-inquiry-price-${inquiry.id}`}>
-                              {inquiry.quoted_price ? `₹${parseFloat(inquiry.quoted_price).toLocaleString('en-IN')}` : '-'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -1080,12 +1050,6 @@ export default function SellerDashboard() {
                             : 'N/A'}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Seller Price:</span>
-                        <span className="ml-2 font-medium text-green-600">
-                          ₹{selectedOrder.seller_price?.toLocaleString('en-IN') || '0'}/{selectedOrder.unit || 'unit'}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1118,14 +1082,6 @@ export default function SellerDashboard() {
                   <h3 className="text-lg font-semibold">Enquiry Details</h3>
                   <div className="p-4 border rounded-lg space-y-3">
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Quoted Price</p>
-                        <p className="font-semibold text-orange-600">
-                          {selectedOrder.buyer_quoted_price 
-                            ? `₹${Number(selectedOrder.buyer_quoted_price).toLocaleString('en-IN')}` 
-                            : 'Not specified'}
-                        </p>
-                      </div>
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Quantity</p>
                         <p className="font-semibold">{selectedOrder.buyer_quantity || 'Not specified'}</p>
@@ -1277,19 +1233,11 @@ export default function SellerDashboard() {
                   </div>
                 </div>
 
-                {/* Pricing & Quantity */}
+                {/* Quantity */}
                 <div className="p-3 border rounded-lg">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Price</p>
-                      <p className="text-sm font-semibold text-green-600">
-                        ₹{selectedDeal.OfferPrice?.toLocaleString('en-IN')}/{selectedDeal.OfferUnit || 'unit'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Quantity</p>
-                      <p className="text-sm font-semibold">{selectedDeal.quantity || 'N/A'} {selectedDeal.OfferUnit || 'units'}</p>
-                    </div>
+                  <div className="text-sm">
+                    <p className="text-xs text-muted-foreground">Quantity</p>
+                    <p className="text-sm font-semibold">{selectedDeal.quantity || 'N/A'} {selectedDeal.OfferUnit || 'units'}</p>
                   </div>
                 </div>
 
@@ -1374,27 +1322,11 @@ export default function SellerDashboard() {
                 <div className="p-3 border rounded-lg">
                   <div className="grid grid-cols-2 gap-2 text-sm mb-2">
                     <div>
-                      <p className="text-xs text-muted-foreground">Your Offer Price</p>
-                      <p className="text-sm font-semibold text-green-600">
-                        {selectedEnquiry.seller_offer_price
-                          ? `₹${parseFloat(selectedEnquiry.seller_offer_price).toLocaleString('en-IN')}/${selectedEnquiry.product_unit || 'unit'}`
-                          : 'Not available'}
-                      </p>
-                    </div>
-                    <div>
                       <p className="text-xs text-muted-foreground">Your Offer Quantity</p>
                       <p className="text-sm font-semibold">
                         {selectedEnquiry.seller_offer_quantity
                           ? `${selectedEnquiry.seller_offer_quantity} ${selectedEnquiry.product_unit || 'units'}`
                           : 'Not available'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Buyer's Quoted Price</p>
-                      <p className="text-sm font-semibold text-orange-600">
-                        {selectedEnquiry.price_offered || selectedEnquiry.quoted_price ?
-                          `₹${parseFloat(selectedEnquiry.price_offered || selectedEnquiry.quoted_price).toLocaleString('en-IN')}` :
-                          'Not provided'}
                       </p>
                     </div>
                     <div>

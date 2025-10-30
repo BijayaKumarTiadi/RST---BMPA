@@ -186,13 +186,13 @@ export function MobileFilterDrawer({
             {/* Makes */}
             <FilterSection title={`Makes ${clientFilters.makes.length > 0 ? `(${clientFilters.makes.length})` : ''}`} type="makes">
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                  getUniqueValues('makes') : 
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('makes') :
                   (searchAggregations?.makes || availableMakes || []).map((make: any) => ({
                     value: make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown'),
                     count: make.count || 0
                   }))
-                ).map((make: any, index: number) => (
+                ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((make: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
                     <Checkbox 
                       checked={clientFilters.makes.includes(make.value)}
@@ -213,13 +213,13 @@ export function MobileFilterDrawer({
             {/* Grades */}
             <FilterSection title={`Grades ${clientFilters.grades.length > 0 ? `(${clientFilters.grades.length})` : ''}`} type="grades">
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                  getUniqueValues('grades') : 
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('grades') :
                   (searchAggregations?.grades || availableGrades || []).map((grade: any) => ({
                     value: grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown'),
                     count: grade.count || 0
                   }))
-                ).map((grade: any, index: number) => (
+                ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((grade: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
                     <Checkbox 
                       checked={clientFilters.grades.includes(grade.value)}
@@ -240,13 +240,13 @@ export function MobileFilterDrawer({
             {/* Brands */}
             <FilterSection title={`Brands ${clientFilters.brands.length > 0 ? `(${clientFilters.brands.length})` : ''}`} type="brands">
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                  getUniqueValues('brands') : 
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('brands') :
                   (searchAggregations?.brands || availableBrands || []).map((brand: any) => ({
                     value: brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown'),
                     count: brand.count || 0
                   }))
-                ).map((brand: any, index: number) => (
+                ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((brand: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
                     <Checkbox 
                       checked={clientFilters.brands.includes(brand.value)}
@@ -267,13 +267,17 @@ export function MobileFilterDrawer({
             {/* GSM */}
             <FilterSection title={`GSM ${clientFilters.gsm.length > 0 ? `(${clientFilters.gsm.length})` : ''}`} type="gsm">
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                  getUniqueValues('gsm') : 
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('gsm') :
                   (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
                     value: gsm.GSM || gsm.name || gsm.value || (typeof gsm === 'string' ? gsm : 'Unknown'),
                     count: gsm.count || 0
                   }))
-                ).map((gsm: any, index: number) => (
+                ).sort((a: any, b: any) => {
+                  const numA = parseInt(a.value);
+                  const numB = parseInt(b.value);
+                  return numA - numB;
+                }).map((gsm: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
                     <Checkbox 
                       checked={clientFilters.gsm.includes(gsm.value)}

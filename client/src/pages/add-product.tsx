@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { Package, IndianRupee, Hash, Plus } from "lucide-react";
+import { Package, Hash, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +40,16 @@ const isSparePartGroup = (groupName: string): boolean => {
   return groupName?.toLowerCase().trim() === 'spare part';
 };
 
+// Helper function to check if group is Paper
+const isPaperGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'paper';
+};
+
+// Helper function to check if group is Board
+const isBoardGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'board';
+};
+
 // Single validation schema with conditional validation
 const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
@@ -62,7 +72,6 @@ const dealSchema = z.object({
   spareBrand: z.string().optional(),
   // Common fields
   deal_description: z.string().optional(),
-  OfferPrice: z.coerce.number().min(0.01, "Offer price must be greater than 0").max(999999.99, "Offer price cannot exceed 999999.99"),
   OfferUnit: z.string().min(1, "Unit is required"),
   quantity: z.coerce.number().min(1, "Quantity is required").max(999999, "Quantity cannot exceed 999999"),
   stockAge: z.coerce.number().min(0, "Stock Age must be 0 or greater").max(999, "Stock Age cannot exceed 999 days").optional(),
@@ -76,7 +85,7 @@ const dealSchema = z.object({
     if (!data.spareMake || data.spareMake.trim() === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Make is required",
+        message: "Machine Model is required",
         path: ["spareMake"]
       });
     }
@@ -107,6 +116,26 @@ const dealSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "GSM is required",
+        path: ["GSM"]
+      });
+    }
+    
+    // Validate GSM ranges for Paper and Board categories
+    const isPaper = isPaperGroup(data.groupName || '');
+    const isBoard = isBoardGroup(data.groupName || '');
+    
+    if (isPaper && data.GSM && data.GSM >= 180) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Paper category requires GSM below 180. For 180 GSM and above, please select 'Board' category",
+        path: ["GSM"]
+      });
+    }
+    
+    if (isBoard && data.GSM && data.GSM <= 175) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Board category requires GSM of 180 or above. For GSM up to 175, please select 'Paper' category",
         path: ["GSM"]
       });
     }
@@ -280,7 +309,6 @@ export default function AddDeal() {
       sparePartDescription: undefined,
       spareAge: undefined,
       spareBrand: undefined,
-      OfferPrice: "" as any,
       OfferUnit: "",
       quantity: "" as any,
       stockAge: "" as any,
@@ -527,7 +555,7 @@ export default function AddDeal() {
           stock_description: spareDescription,
           search_key: searchKey,
           deal_description: data.Seller_comments || data.sparePartDescription || '',
-          price: data.OfferPrice,
+          price: 0,
           quantity: data.quantity,
           unit: data.OfferUnit,
           StockAge: data.stockAge || 0,
@@ -554,7 +582,7 @@ export default function AddDeal() {
           stock_description: stockDescription,
           search_key: searchKey,
           deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
-          price: data.OfferPrice,
+          price: 0,
           quantity: data.quantity,
           unit: data.OfferUnit,
           min_order_quantity: 100,
@@ -599,7 +627,6 @@ export default function AddDeal() {
           sparePartDescription: "",
           spareAge: "",
           spareBrand: "",
-          OfferPrice: "" as any,
           OfferUnit: "",
           quantity: "" as any,
           stockAge: "" as any,
@@ -722,11 +749,11 @@ export default function AddDeal() {
                           name="spareMake"
                           render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-foreground">Make <span className="text-red-500">*</span></FormLabel>
+                              <FormLabel className="text-foreground">Machine Model <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
                                   type="text"
-                                  placeholder="Enter make (e.g., Siemens, ABB)"
+                                  placeholder="Enter machine model (e.g., Siemens, ABB)"
                                   value={field.value || ""}
                                   onChange={field.onChange}
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -831,53 +858,19 @@ export default function AddDeal() {
                     </CardContent>
                   </Card>
 
-                  {/* Pricing and Inventory (same for both) */}
+                  {/* Inventory */}
                   <Card className="bg-card border-border">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-foreground">
-                        <IndianRupee className="h-5 w-5" />
-                        Pricing and Inventory
+                        <Package className="h-5 w-5" />
+                        Inventory
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
-                        Set your pricing and available quantity
+                        Set your available quantity and unit
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <Controller
-                          control={form.control}
-                          name="OfferPrice"
-                          render={({ field, fieldState }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="text"
-                                  inputMode="decimal"
-                                  placeholder="Enter price"
-                                  value={field.value || ""}
-                                  maxLength={9}
-                                  onBeforeInput={(e: any) => {
-                                    const char = e.data;
-                                    if (char && !/^[0-9.]$/.test(char)) {
-                                      e.preventDefault();
-                                    }
-                                  }}
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                                    field.onChange(value);
-                                  }}
-                                  data-testid="input-price"
-                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                                />
-                              </FormControl>
-                              {fieldState.error && (
-                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
-                              )}
-                            </FormItem>
-                          )}
-                        />
-
                         <Controller
                           control={form.control}
                           name="OfferUnit"
@@ -1329,51 +1322,19 @@ export default function AddDeal() {
                 </CardContent>
               </Card>
 
-              {/* Pricing and Inventory */}
+              {/* Inventory */}
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
-                    <IndianRupee className="h-5 w-5" />
-                    Pricing and Inventory
+                    <Package className="h-5 w-5" />
+                    Inventory
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Set your pricing and available quantity
+                    Set your available quantity and unit
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <FormField
-                      control={form.control}
-                      name="OfferPrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Offer Price (₹) <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="Enter price"
-                              {...field}
-                              data-testid="input-price"
-                              maxLength={9}
-                              onBeforeInput={(e: any) => {
-                                const char = e.data;
-                                if (char && !/^[0-9.]$/.test(char)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9.]/g, '');
-                                field.onChange(value);
-                              }}
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name="OfferUnit"

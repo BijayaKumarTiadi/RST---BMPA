@@ -14,7 +14,6 @@ interface WhatsAppQuotationModalProps {
 }
 
 export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: WhatsAppQuotationModalProps) {
-  const [quotedPrice, setQuotedPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [message, setMessage] = useState("");
 
@@ -24,7 +23,6 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
     const buyerName = user?.name || user?.company_name || 'Buyer';
     const productTitle = deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product';
     const productDetails = `${productTitle} (ID: ${deal.TransID})`;
-    const sellerPrice = `₹${(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')} per ${deal.OfferUnit || deal.Unit || 'unit'}`;
     
     const additionalDetails = [];
     if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
@@ -36,11 +34,7 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
       ? `${productDetails} (${additionalDetails.join(', ')})` 
       : productDetails;
 
-    let whatsappMessage = `Hey, I am ${buyerName}. I am interested in ${productInfo}, your price is ${sellerPrice}`;
-    
-    if (quotedPrice) {
-      whatsappMessage += `, my quotation price is ₹${quotedPrice}`;
-    }
+    let whatsappMessage = `Hey, I am ${buyerName}. I am interested in ${productInfo}`;
     
     if (quantity) {
       whatsappMessage += `, required quantity: ${quantity}`;
@@ -58,7 +52,6 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
     window.open(whatsappUrl, '_blank');
     
     // Reset form and close modal
-    setQuotedPrice("");
     setQuantity("");
     setMessage("");
     onClose();
@@ -81,34 +74,12 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
           <div className="bg-muted/50 p-4 rounded-lg">
             <h4 className="font-medium mb-2">{deal.DealTitle || 'Product'}</h4>
             <p className="text-sm text-muted-foreground">
-              Seller's Price: ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')} per {deal.OfferUnit || deal.Unit || 'unit'}
+              Available Quantity: {deal.quantity || 0} {deal.OfferUnit || deal.Unit || 'unit'}
             </p>
           </div>
 
           {/* Quotation Form */}
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="quoted-price">Your Quoted Price (₹)</Label>
-              <Input
-                id="quoted-price"
-                type="text"
-                inputMode="decimal"
-                placeholder="Enter your price"
-                value={quotedPrice}
-                maxLength={6}
-                onBeforeInput={(e: any) => {
-                  const char = e.data;
-                  if (char && !/^[0-9.]$/.test(char)) {
-                    e.preventDefault();
-                  }
-                }}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  setQuotedPrice(value);
-                }}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="quantity">Required Quantity</Label>
               <Input

@@ -1080,13 +1080,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (is_spare_part) {
         console.log('✅ SPARE PART BRANCH - Validating spare part fields');
         // Validate spare part required fields
-        if (!group_id || !spare_make || !machine_name || !spare_description || !price || !quantity || !unit) {
+        if (!group_id || !spare_make || !machine_name || !spare_description || !quantity || !unit) {
           const missingFields = [];
           if (!group_id) missingFields.push('group_id');
           if (!spare_make) missingFields.push('spare_make');
           if (!machine_name) missingFields.push('machine_name');
           if (!spare_description) missingFields.push('spare_description');
-          if (!price) missingFields.push('price');
           if (!quantity) missingFields.push('quantity');
           if (!unit) missingFields.push('unit');
           
@@ -1115,14 +1114,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Brand is optional for Kraft Reel, required for all other groups
         const brandRequired = !isKraftReel;
         
-        if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !price || !quantity || !unit) {
+        if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !quantity || !unit) {
           const missingFields = [];
           if (!group_id) missingFields.push('group_id');
           if (!hasMake) missingFields.push('make_id');
           if (!hasGrade) missingFields.push('grade_id');
           if (brandRequired && !hasBrand) missingFields.push('brand_id');
           if (!deal_title) missingFields.push('deal_title');
-          if (!price) missingFields.push('price');
           if (!quantity) missingFields.push('quantity');
           if (!unit) missingFields.push('unit');
           
@@ -1155,7 +1153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_description,
         stock_description,
         StockAge,
-        price: parseFloat(price),
+        price: price ? parseFloat(price) : 0,
         quantity: parseInt(quantity),
         unit,
         min_order_quantity: min_order_quantity ? parseInt(min_order_quantity) : 1,
@@ -1638,7 +1636,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         productId,
         productTitle,
         productDetails,
-        buyerQuotedPrice,
         quantity,
         message,
         sellerName: sellerQuery.seller_name || sellerName,
@@ -1681,13 +1678,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               seller_id,
               seller_name,
               seller_company,
-              quoted_price, 
-              quantity, 
-              message, 
+              quantity,
+              message,
               status,
               created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
           `, [
             inquiryRef,
             productId,
@@ -1699,7 +1695,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sellerId,
             sellerName || null,
             sellerCompany || null,
-            buyerQuotedPrice || null,
             quantity || null,
             message || null
           ]);
@@ -1716,13 +1711,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               buyer_phone,
               product_id,
               product_title,
-              price_offered,
               quantity,
               message,
               status,
               created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())
           `, [
             inquiryRef,
             sellerId,
@@ -1733,7 +1727,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             buyerPhone || null,
             productId,
             productTitle || '',
-            buyerQuotedPrice || null,
             quantity || null,
             message || null
           ]);

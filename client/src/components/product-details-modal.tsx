@@ -96,14 +96,6 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
         </DialogHeader>
 
         <div className="space-y-4 pb-4">
-          {/* Price - No Board text or blue price */}
-          <div className="text-center">
-            <span className="text-2xl font-bold text-foreground">
-              ₹{deal.OfferPrice?.toLocaleString('en-IN')}
-            </span>
-            <span className="text-lg text-muted-foreground">/{deal.OfferUnit}</span>
-          </div>
-
           {/* Product Specifications */}
           <div>
             <h4 className="font-semibold text-lg mb-3 text-center">Product Specifications</h4>

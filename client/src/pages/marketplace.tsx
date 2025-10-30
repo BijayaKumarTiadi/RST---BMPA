@@ -38,7 +38,6 @@ export default function Marketplace() {
     selectedCategories: [] as string[],
     selectedLocations: [] as string[],
     gsmRange: { min: "", max: "" },
-    priceRange: { min: "", max: "" },
     dimensionRange: {
       deckle: { min: "", max: "" },
       grain: { min: "", max: "" }
@@ -65,10 +64,6 @@ export default function Marketplace() {
         return dealsCopy.sort((a, b) => new Date(b.deal_created_at).getTime() - new Date(a.deal_created_at).getTime());
       case 'oldest':
         return dealsCopy.sort((a, b) => new Date(a.deal_created_at).getTime() - new Date(b.deal_created_at).getTime());
-      case 'price-low':
-        return dealsCopy.sort((a, b) => (a.OfferPrice || 0) - (b.OfferPrice || 0));
-      case 'price-high':
-        return dealsCopy.sort((a, b) => (b.OfferPrice || 0) - (a.OfferPrice || 0));
       case 'gsm-low':
         return dealsCopy.sort((a, b) => (a.GSM || 0) - (b.GSM || 0));
       case 'gsm-high':
@@ -704,8 +699,6 @@ export default function Marketplace() {
     const newFilters = { ...appliedFilters };
     if (type === 'gsm') {
       newFilters.gsmRange = range;
-    } else if (type === 'price') {
-      newFilters.priceRange = range;
     } else if (type === 'deckle') {
       newFilters.dimensionRange.deckle = range;
     } else if (type === 'grain') {
@@ -723,8 +716,6 @@ export default function Marketplace() {
            appliedFilters.selectedLocations.length > 0 ||
            appliedFilters.gsmRange.min !== "" ||
            appliedFilters.gsmRange.max !== "" ||
-           appliedFilters.priceRange.min !== "" ||
-           appliedFilters.priceRange.max !== "" ||
            appliedFilters.dimensionRange.deckle.min !== "" ||
            appliedFilters.dimensionRange.deckle.max !== "" ||
            appliedFilters.dimensionRange.grain.min !== "" ||
@@ -741,7 +732,6 @@ export default function Marketplace() {
       selectedCategories: [],
       selectedLocations: [],
       gsmRange: { min: "", max: "" },
-      priceRange: { min: "", max: "" },
       dimensionRange: {
         deckle: { min: "", max: "" },
         grain: { min: "", max: "" }
@@ -831,7 +821,16 @@ export default function Marketplace() {
         return acc;
       }, [] as Array<{value: string, count: number}>);
     
-    return values.sort((a: {value: string, count: number}, b: {value: string, count: number}) => b.count - a.count);
+    // Sort alphabetically by value for makes, grades, brands, and categories
+    // Sort numerically for GSM
+    if (field === 'gsm') {
+      return values.sort((a: {value: string, count: number}, b: {value: string, count: number}) => {
+        const numA = parseInt(a.value);
+        const numB = parseInt(b.value);
+        return numA - numB;
+      });
+    }
+    return values.sort((a: {value: string, count: number}, b: {value: string, count: number}) => a.value.localeCompare(b.value));
   };
 
   // Client-side filtering function
@@ -1456,15 +1455,6 @@ export default function Marketplace() {
                   />
                 </Badge>
               )}
-              {(appliedFilters.priceRange.min || appliedFilters.priceRange.max) && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Price: ₹{appliedFilters.priceRange.min || '0'}-₹{appliedFilters.priceRange.max || '∞'}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                    onClick={() => setRangeFilter('price', { min: '', max: '' })}
-                  />
-                </Badge>
-              )}
             </div>
           </div>
         )}
@@ -1588,56 +1578,6 @@ export default function Marketplace() {
                 
                 <Separator />
                 
-                {/* Price Range Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('priceRange')}
-                  >
-                    Price Range (₹)
-                    {expandedSections.priceRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.priceRange && (
-                    <div className="mt-3 space-y-3">
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Min Price"
-                          value={appliedFilters.priceRange.min}
-                          onChange={(e) => {
-                            const newRange = { ...appliedFilters.priceRange, min: e.target.value };
-                            setRangeFilter('price', newRange);
-                          }}
-                          className="h-8 text-xs"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max Price"
-                          value={appliedFilters.priceRange.max}
-                          onChange={(e) => {
-                            const newRange = { ...appliedFilters.priceRange, max: e.target.value };
-                            setRangeFilter('price', newRange);
-                          }}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                      {(appliedFilters.priceRange.min || appliedFilters.priceRange.max) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRangeFilter('price', { min: '', max: '' })}
-                          className="w-full h-7 text-xs"
-                        >
-                          Clear Price Range
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
                 {/* Makes Filter */}
                 <div>
                   <Button
@@ -1688,8 +1628,6 @@ export default function Marketplace() {
                     <SelectContent>
                       <SelectItem value="newest">Newest First</SelectItem>
                       <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="price-low">Price: Low to High</SelectItem>
-                      <SelectItem value="price-high">Price: High to Low</SelectItem>
                       <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
                       <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
                       <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
@@ -1746,13 +1684,13 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.makes && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                        getUniqueValues('makes') : 
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                        getUniqueValues('makes') :
                         (searchAggregations?.makes || availableMakes || []).map((make: any) => ({
                           value: make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown'),
                           count: make.count || 0
                         }))
-                      ).map((make: any, index: number) => (
+                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((make: any, index: number) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`make-${index}`}
@@ -1787,13 +1725,13 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.grades && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                        getUniqueValues('grades') : 
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                        getUniqueValues('grades') :
                         (searchAggregations?.grades || availableGrades || []).map((grade: any) => ({
                           value: grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown'),
                           count: grade.count || 0
                         }))
-                      ).map((grade: any, index: number) => (
+                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((grade: any, index: number) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`grade-${index}`}
@@ -1828,13 +1766,13 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.brands && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                        getUniqueValues('brands') : 
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                        getUniqueValues('brands') :
                         (searchAggregations?.brands || availableBrands || []).map((brand: any) => ({
                           value: brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown'),
                           count: brand.count || 0
                         }))
-                      ).map((brand: any, index: number) => (
+                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((brand: any, index: number) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`brand-${index}`}
@@ -1869,13 +1807,17 @@ export default function Marketplace() {
                   </Button>
                   {expandedSections.gsm && (
                     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                        getUniqueValues('gsm') : 
+                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                        getUniqueValues('gsm') :
                         (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
                           value: gsm.GSM?.toString() || gsm.value?.toString() || (typeof gsm === 'string' ? gsm : 'Unknown'),
                           count: gsm.count || 0
                         }))
-                      ).map((gsm: any, index: number) => (
+                      ).sort((a: any, b: any) => {
+                        const numA = parseInt(a.value);
+                        const numB = parseInt(b.value);
+                        return numA - numB;
+                      }).map((gsm: any, index: number) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`gsm-${index}`}
@@ -1912,8 +1854,6 @@ export default function Marketplace() {
                     <SelectContent>
                       <SelectItem value="newest">Newest First</SelectItem>
                       <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="price-low">Price: Low to High</SelectItem>
-                      <SelectItem value="price-high">Price: High to Low</SelectItem>
                       <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
                       <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
                       <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
@@ -2043,18 +1983,11 @@ export default function Marketplace() {
                             </div>
                           </div>
 
-                          {/* 3. Quantity and Price */}
-                          <div className="flex items-center justify-between mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                          {/* 3. Quantity */}
+                          <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
                             <div className="text-xs">
                               <span className="font-medium text-gray-500">Qty:</span>
                               <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
-                            </div>
-                            <div className="text-xs">
-                              <span className="font-medium text-gray-500">Price:</span>
-                              <span className="font-bold text-foreground ml-1" data-testid={`deal-price-${deal.TransID}`}>
-                                ₹{(deal.OfferPrice || deal.Price || 0).toLocaleString('en-IN')}
-                              </span>
-                              <span className="text-xs text-gray-500">/{deal.OfferUnit || deal.Unit || 'KG'}</span>
                             </div>
                           </div>
 
