@@ -1,14 +1,13 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration using Gmail credentials
+// Email configuration using AWS SES
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
+  host: 'email-smtp.ap-south-1.amazonaws.com',
   port: 587,
-  secure: false, // Use TLS
+  secure: false, // Use STARTTLS
   auth: {
-    user: 'bktiadi1@gmail.com',
-    pass: 'jtqq rzdz ecma djoe'
+    user: 'AKIA6ELKOH76LWO6NJX2',
+    pass: 'BISi+1ofcQy37DkLlV0IOJCrG2nPx862DlWZwkYjVGT/'
   },
   tls: {
     rejectUnauthorized: false
@@ -26,7 +25,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     console.log('Attempting to send email to:', options.to);
     const result = await transporter.sendMail({
-      from: '"Stock Laabh" <bktiadi1@gmail.com>',
+      from: '"Stock Laabh" <hello@bmpa.org>',
       to: options.to,
       subject: options.subject,
       html: options.html,

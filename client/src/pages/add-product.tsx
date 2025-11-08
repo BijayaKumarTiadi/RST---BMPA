@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Hash, Plus } from "lucide-react";
+import { Package, Hash, Plus, Calculator } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -272,6 +272,28 @@ export default function AddDeal() {
       }
     }
     return "";
+  };
+
+  // Calculate weight in kg when unit is Sheet
+  const calculateWeightInKg = () => {
+    const formValues = form.getValues();
+    const unit = formValues.OfferUnit;
+    const quantity = formValues.quantity;
+    const deckle = formValues.Deckle_mm;
+    const grain = formValues.grain_mm;
+    const gsm = formValues.GSM;
+
+    if (unit === "Sheet" && quantity && deckle && grain && gsm) {
+      // Convert mm to cm
+      const deckleCm = deckle / 10;
+      const grainCm = grain / 10;
+      
+      // Formula: (No. of sheets × Length(cm) × Breadth(cm) × GSM) / 10,000,000
+      const totalKg = (quantity * deckleCm * grainCm * gsm) / 10000000;
+      
+      return totalKg.toFixed(2);
+    }
+    return null;
   };
 
   // Handle unit change for dimensions
@@ -1361,6 +1383,22 @@ export default function AddDeal() {
                       )}
                     />
                   </div>
+                  
+                  {/* Weight calculation display */}
+                  {form.watch("OfferUnit") === "Sheet" && calculateWeightInKg() && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">Calculated Weight</span>
+                      </div>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        {form.watch("quantity")} sheets × {(form.watch("Deckle_mm") / 10).toFixed(1)}cm × {(form.watch("grain_mm") / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        Formula: (Sheets × Length × Breadth × GSM) ÷ 10,000,000
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField

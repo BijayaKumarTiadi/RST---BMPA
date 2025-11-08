@@ -155,7 +155,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
               {deal.quantity && (
                 <div>
                   <span className="text-muted-foreground">Quantity:</span>
-                  <span className="ml-2 font-medium">{deal.quantity} {deal.Unit}</span>
+                  <span className="ml-2 font-medium">{deal.quantity} {deal.OfferUnit || deal.Unit || ''}</span>
                 </div>
               )}
             </div>
