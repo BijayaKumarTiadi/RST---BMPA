@@ -102,6 +102,14 @@ export default function Marketplace() {
   const [availableGsm, setAvailableGsm] = useState<any[]>([]);
   const [availableUnits, setAvailableUnits] = useState<any[]>([]);
   const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+  
+  // Spare part filter states
+  const [isSparePartMode, setIsSparePartMode] = useState(false);
+  const [availableProcesses, setAvailableProcesses] = useState<any[]>([]);
+  const [availableCategoryTypes, setAvailableCategoryTypes] = useState<any[]>([]);
+  const [availableMachineTypes, setAvailableMachineTypes] = useState<any[]>([]);
+  const [availableManufacturers, setAvailableManufacturers] = useState<any[]>([]);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
 
   // Precise search states
   const [preciseSearch, setPreciseSearch] = useState({
@@ -112,7 +120,15 @@ export default function Marketplace() {
     deckleUnit: "cm",
     grain: "",
     grainUnit: "cm",
-    dimensionTolerance: "2"
+    dimensionTolerance: "2",
+    // Spare part fields
+    process: "",
+    categoryType: "",
+    machineType: "",
+    manufacturer: "",
+    model: "",
+    partName: "",
+    partNo: ""
   });
   
   // Auto-suggestion states
@@ -129,7 +145,13 @@ export default function Marketplace() {
     grades: [] as string[],
     brands: [] as string[],
     gsm: [] as string[],
-    categories: [] as string[]
+    categories: [] as string[],
+    // Spare part filters
+    processes: [] as string[],
+    categoryTypes: [] as string[],
+    machineTypes: [] as string[],
+    manufacturers: [] as string[],
+    models: [] as string[]
   });
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
 
@@ -160,7 +182,12 @@ export default function Marketplace() {
       grades: [],
       brands: [],
       gsm: [],
-      categories: []
+      categories: [],
+      processes: [],
+      categoryTypes: [],
+      machineTypes: [],
+      manufacturers: [],
+      models: []
     });
   };
 
@@ -179,7 +206,13 @@ export default function Marketplace() {
     location: false,
     gsmRange: false,
     priceRange: false,
-    dimensionRange: false
+    dimensionRange: false,
+    // Spare part sections
+    processes: false,
+    categoryTypes: false,
+    machineTypes: false,
+    manufacturers: false,
+    models: false
   });
   const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -801,13 +834,33 @@ export default function Marketplace() {
     
     const values = allPreciseSearchResults
       .map(deal => {
+        // For spare parts, the backend has already parsed the fields
+        const isSparePartDeal = deal.is_spare_part || deal.process;
+        
         switch (field) {
-          case 'makes': return deal.Make;
-          case 'grades': return deal.Grade;
-          case 'brands': return deal.Brand;
-          case 'gsm': return deal.GSM?.toString();
-          case 'categories': return deal.category_name;
-          default: return null;
+          case 'makes':
+            return isSparePartDeal ? null : deal.Make;
+          case 'grades':
+            return isSparePartDeal ? null : deal.Grade;
+          case 'brands':
+            return isSparePartDeal ? null : deal.Brand;
+          case 'gsm':
+            return isSparePartDeal ? null : deal.GSM?.toString();
+          case 'categories':
+            return deal.category_name;
+          // Spare part fields - use parsed fields from backend
+          case 'processes':
+            return isSparePartDeal ? deal.process : null;
+          case 'categoryTypes':
+            return isSparePartDeal ? deal.category_type : null;
+          case 'machineTypes':
+            return isSparePartDeal ? deal.machine_type : null;
+          case 'manufacturers':
+            return isSparePartDeal ? deal.manufacturer : null;
+          case 'models':
+            return isSparePartDeal ? deal.model : null;
+          default:
+            return null;
         }
       })
       .filter(value => value && value.trim() !== '')
@@ -863,6 +916,27 @@ export default function Marketplace() {
       
       // Check categories filter
       if (clientFilters.categories.length > 0 && !clientFilters.categories.includes(deal.category_name)) {
+        return false;
+      }
+      
+      // Spare part filters
+      if (clientFilters.processes.length > 0 && !clientFilters.processes.includes(deal.process)) {
+        return false;
+      }
+      
+      if (clientFilters.categoryTypes.length > 0 && !clientFilters.categoryTypes.includes(deal.category_type)) {
+        return false;
+      }
+      
+      if (clientFilters.machineTypes.length > 0 && !clientFilters.machineTypes.includes(deal.machine_type)) {
+        return false;
+      }
+      
+      if (clientFilters.manufacturers.length > 0 && !clientFilters.manufacturers.includes(deal.manufacturer)) {
+        return false;
+      }
+      
+      if (clientFilters.models.length > 0 && !clientFilters.models.includes(deal.model)) {
         return false;
       }
       
@@ -972,10 +1046,66 @@ export default function Marketplace() {
     // Clear GSM suggestions when category changes to get fresh category-specific suggestions
     if (field === 'category') {
       setGsmSuggestions([]);
+      
+      // Detect spare part mode
+      const isSparePart = value?.toLowerCase()?.includes('spare part');
+      setIsSparePartMode(isSparePart);
+      
+      // If spare part mode, fetch spare part filter options
+      if (isSparePart) {
+        fetchSparePartFilterOptions();
+      }
+    }
+    
+    // For spare part fields, fetch next level options when a field changes
+    if (field === 'process' || field === 'categoryType' || field === 'machineType' || field === 'manufacturer') {
+      fetchSparePartFilterOptions();
     }
     
     // Trigger auto-suggestions based on field (excluding category - dropdown only)
     if (field === 'gsm') fetchGsmSuggestions(value);
+  };
+  
+  // Fetch spare part filter options - all independent
+  const fetchSparePartFilterOptions = async () => {
+    try {
+      // Fetch processes
+      const processesResponse = await fetch('/api/spare-parts/processes');
+      if (processesResponse.ok) {
+        const processes = await processesResponse.json();
+        setAvailableProcesses(processes.map((p: string) => ({ value: p })));
+      }
+      
+      // Fetch category types - independent
+      const categoryTypesResponse = await fetch(`/api/spare-parts/category-types`);
+      if (categoryTypesResponse.ok) {
+        const categoryTypes = await categoryTypesResponse.json();
+        setAvailableCategoryTypes(categoryTypes.map((c: string) => ({ value: c })));
+      }
+      
+      // Fetch machine types - independent
+      const machineTypesResponse = await fetch(`/api/spare-parts/machine-types`);
+      if (machineTypesResponse.ok) {
+        const machineTypes = await machineTypesResponse.json();
+        setAvailableMachineTypes(machineTypes.map((m: string) => ({ value: m })));
+      }
+      
+      // Fetch manufacturers - independent
+      const manufacturersResponse = await fetch(`/api/spare-parts/manufacturers`);
+      if (manufacturersResponse.ok) {
+        const manufacturers = await manufacturersResponse.json();
+        setAvailableManufacturers(manufacturers.map((m: string) => ({ value: m })));
+      }
+      
+      // Fetch models - independent
+      const modelsResponse = await fetch(`/api/spare-parts/models`);
+      if (modelsResponse.ok) {
+        const models = await modelsResponse.json();
+        setAvailableModels(models.map((m: string) => ({ value: m })));
+      }
+    } catch (error) {
+      console.error('Error fetching spare part filters:', error);
+    }
   };
 
   const performPreciseSearch = async () => {
@@ -983,7 +1113,11 @@ export default function Marketplace() {
     
     try {
       setIsSearching(true);
-      const response = await fetch('/api/search/precise', {
+      
+      // Determine which endpoint to use based on spare part mode
+      const endpoint = isSparePartMode ? '/api/spare-parts/search' : '/api/search/precise';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1005,7 +1139,8 @@ export default function Marketplace() {
         // Set search results for display (this will be paginated client-side)
         setSearchResults({
           ...data,
-          maxRecords: 100 // Flag to indicate 100 record limit
+          maxRecords: 100, // Flag to indicate 100 record limit
+          isSparePartSearch: isSparePartMode
         });
         
         setSearchTerm(''); // Clear regular search term
@@ -1161,183 +1296,319 @@ export default function Marketplace() {
                     </Select>
                   </div>
 
-                  {/* GSM - Optional for Spare Part */}
-                  <div className="relative flex-1 min-w-24">
-                    <label className="text-sm font-medium">
-                      GSM {preciseSearch.category?.toLowerCase() === 'spare part' ? '(optional)' : <span className="text-red-500">*</span>}
-                    </label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder={preciseSearch.category?.toLowerCase() === 'spare part' ? 'Not required' : '300'}
-                      value={preciseSearch.gsm}
-                      maxLength={3}
-                      onBeforeInput={(e: any) => {
-                        const char = e.data;
-                        const currentValue = (e.target as HTMLInputElement).value;
-                        if (char && (!/^[0-9]$/.test(char) || currentValue.length >= 3)) {
-                          e.preventDefault();
-                        }
-                      }}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
-                        handlePreciseSearchChange('gsm', value);
-                      }}
-                      data-testid="input-precise-gsm"
-                      className="mt-1 h-9 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      disabled={!preciseSearch.category}
-                    />
-                    {gsmSuggestions.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                        <div className="flex items-center justify-between p-2 border-b">
-                          <span className="text-xs font-medium text-muted-foreground">GSM Suggestions</span>
-                          <button
-                            onClick={() => setGsmSuggestions([])}
-                            className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent"
-                            data-testid="button-close-gsm-suggestions"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                  {/* Regular Product Fields - GSM */}
+                  {!isSparePartMode && (
+                    <div className="relative flex-1 min-w-24">
+                      <label className="text-sm font-medium">
+                        GSM <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="300"
+                        value={preciseSearch.gsm}
+                        maxLength={3}
+                        onBeforeInput={(e: any) => {
+                          const char = e.data;
+                          const currentValue = (e.target as HTMLInputElement).value;
+                          if (char && (!/^[0-9]$/.test(char) || currentValue.length >= 3)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                          handlePreciseSearchChange('gsm', value);
+                        }}
+                        data-testid="input-precise-gsm"
+                        className="mt-1 h-9 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        disabled={!preciseSearch.category}
+                      />
+                      {gsmSuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                          <div className="flex items-center justify-between p-2 border-b">
+                            <span className="text-xs font-medium text-muted-foreground">GSM Suggestions</span>
+                            <button
+                              onClick={() => setGsmSuggestions([])}
+                              className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent"
+                              data-testid="button-close-gsm-suggestions"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                          {gsmSuggestions.map((suggestion: any, index: number) => (
+                            <button
+                              key={index}
+                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                              onClick={() => {
+                                handlePreciseSearchChange('gsm', suggestion.value || suggestion);
+                                setGsmSuggestions([]);
+                              }}
+                            >
+                              {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
+                            </button>
+                          ))}
                         </div>
-                        {gsmSuggestions.map((suggestion: any, index: number) => (
-                          <button
-                            key={index}
-                            className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                            onClick={() => {
-                              handlePreciseSearchChange('gsm', suggestion.value || suggestion);
-                              setGsmSuggestions([]);
-                            }}
-                          >
-                            {suggestion.value || suggestion} {suggestion.count && `(${suggestion.count})`}
-                          </button>
-                        ))}
+                      )}
+                    </div>
+                  )}
+
+                  {/* Spare Part Fields - Only show when spare part mode is active */}
+                  {isSparePartMode && (
+                    <>
+                      {/* Process */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Process</label>
+                        <Select
+                          value={preciseSearch.process}
+                          onValueChange={(value) => handlePreciseSearchChange('process', value)}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-sm">
+                            <SelectValue placeholder="Select process..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableProcesses.map((proc: any, index: number) => (
+                              <SelectItem key={index} value={proc.value || proc}>
+                                {proc.value || proc}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
-                  </div>
 
-                  {/* GSM Tolerance */}
-                  <div className="flex-1 min-w-24">
-                    <label className="text-sm font-medium">GSM ±</label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="10"
-                      value={preciseSearch.tolerance}
-                      maxLength={2}
-                      onBeforeInput={(e: any) => {
-                        const char = e.data;
-                        if (char && !/^[0-9]$/.test(char)) {
-                          e.preventDefault();
-                        }
-                      }}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
-                        handlePreciseSearchChange('tolerance', value);
-                      }}
-                      data-testid="input-precise-tolerance"
-                      className="mt-1 h-9 text-sm"
-                      disabled={!preciseSearch.category || !preciseSearch.gsm}
-                    />
-                  </div>
+                      {/* Category Type */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Category Type</label>
+                        <Select
+                          value={preciseSearch.categoryType}
+                          onValueChange={(value) => handlePreciseSearchChange('categoryType', value)}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-sm">
+                            <SelectValue placeholder="Select type..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableCategoryTypes.map((type: any, index: number) => (
+                              <SelectItem key={index} value={type.value || type}>
+                                {type.value || type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  {/* Deckle Field */}
-                  <div className="flex-1 min-w-24">
-                    <label className="text-sm font-medium">Deckle</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="64.8"
-                      value={preciseSearch.deckle}
-                      max={999.99}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (isNaN(value) || value <= 999.99) {
-                          handlePreciseSearchChange('deckle', e.target.value);
-                        }
-                      }}
-                      data-testid="input-precise-deckle"
-                      className="mt-1 h-9 text-sm"
-                      disabled={!preciseSearch.category || !preciseSearch.gsm}
-                    />
-                  </div>
+                      {/* Machine Type */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Machine Type</label>
+                        <Select
+                          value={preciseSearch.machineType}
+                          onValueChange={(value) => handlePreciseSearchChange('machineType', value)}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-sm">
+                            <SelectValue placeholder="Select machine..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableMachineTypes.map((machine: any, index: number) => (
+                              <SelectItem key={index} value={machine.value || machine}>
+                                {machine.value || machine}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  {/* Grain Field - Category specific */}
-                  {(() => {
-                    const category = preciseSearch.category;
-                    const isPaperReel = category?.toLowerCase().includes('paper reel');
-                    const isBoardReel = category?.toLowerCase().includes('board reel');
-                    const isKraftReel = category?.toLowerCase().includes('kraft reel');
-                    const grainLabel = isKraftReel ? 'B.F' : 'Grain';
-                    const showGrainField = !isPaperReel && !isBoardReel;
-                    
-                    return showGrainField ? (
-                      <div className="flex-1 min-w-24">
-                        <label className="text-sm font-medium">{grainLabel}</label>
+                      {/* Manufacturer */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Manufacturer</label>
+                        <Select
+                          value={preciseSearch.manufacturer}
+                          onValueChange={(value) => handlePreciseSearchChange('manufacturer', value)}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-sm">
+                            <SelectValue placeholder="Select manufacturer..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableManufacturers.map((mfr: any, index: number) => (
+                              <SelectItem key={index} value={mfr.value || mfr}>
+                                {mfr.value || mfr}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Model */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Model</label>
+                        <Select
+                          value={preciseSearch.model}
+                          onValueChange={(value) => handlePreciseSearchChange('model', value)}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-sm">
+                            <SelectValue placeholder="Select model..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableModels.map((model: any, index: number) => (
+                              <SelectItem key={index} value={model.value || model}>
+                                {model.value || model}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Part Name */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Part Name</label>
                         <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="84.1"
-                          value={preciseSearch.grain}
-                          max={99}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (isNaN(value) || value <= 99) {
-                              handlePreciseSearchChange('grain', e.target.value);
+                          type="text"
+                          placeholder="Enter part name..."
+                          value={preciseSearch.partName}
+                          onChange={(e) => handlePreciseSearchChange('partName', e.target.value)}
+                          className="mt-1 h-9 text-sm"
+                        />
+                      </div>
+
+                      {/* Part Number */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Part No</label>
+                        <Input
+                          type="text"
+                          placeholder="Enter part number..."
+                          value={preciseSearch.partNo}
+                          onChange={(e) => handlePreciseSearchChange('partNo', e.target.value)}
+                          className="mt-1 h-9 text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Regular Product Fields Only - All hidden for spare parts */}
+                  {!isSparePartMode && (
+                    <>
+                      {/* GSM Tolerance */}
+                      <div className="flex-1 min-w-24">
+                        <label className="text-sm font-medium">GSM ±</label>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="10"
+                          value={preciseSearch.tolerance}
+                          maxLength={2}
+                          onBeforeInput={(e: any) => {
+                            const char = e.data;
+                            if (char && !/^[0-9]$/.test(char)) {
+                              e.preventDefault();
                             }
                           }}
-                          data-testid="input-precise-grain"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+                            handlePreciseSearchChange('tolerance', value);
+                          }}
+                          data-testid="input-precise-tolerance"
                           className="mt-1 h-9 text-sm"
                           disabled={!preciseSearch.category || !preciseSearch.gsm}
                         />
                       </div>
-                    ) : null;
-                  })()}
 
-                  {/* Dimension Tolerance */}
-                  <div className="flex-1 min-w-24">
-                    <label className="text-sm font-medium">Dim ±</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="2"
-                      value={preciseSearch.dimensionTolerance}
-                      max={99}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (isNaN(value) || value <= 99) {
-                          handlePreciseSearchChange('dimensionTolerance', e.target.value);
-                        }
-                      }}
-                      data-testid="input-precise-dimension-tolerance"
-                      className="mt-1 h-9 text-sm"
-                      disabled={!preciseSearch.category || !preciseSearch.gsm}
-                    />
-                  </div>
+                      {/* Deckle Field */}
+                      <div className="flex-1 min-w-24">
+                        <label className="text-sm font-medium">Deckle</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="64.8"
+                          value={preciseSearch.deckle}
+                          max={999.99}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value <= 999.99) {
+                              handlePreciseSearchChange('deckle', e.target.value);
+                            }
+                          }}
+                          data-testid="input-precise-deckle"
+                          className="mt-1 h-9 text-sm"
+                          disabled={!preciseSearch.category || !preciseSearch.gsm}
+                        />
+                      </div>
 
-                  {/* Single Unit Selector */}
-                  <div className="flex-shrink-0">
-                    <label className="text-sm font-medium">Unit</label>
-                    <Select
-                      value={preciseSearch.deckleUnit}
-                      onValueChange={(value) => {
-                        setPreciseSearch(prev => ({ 
-                          ...prev, 
-                          deckleUnit: value,
-                          grainUnit: value 
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="w-16 h-9 mt-1 text-sm" disabled={!preciseSearch.category || !preciseSearch.gsm}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cm">cm</SelectItem>
-                        <SelectItem value="inch">inch</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      {/* Grain Field - Category specific */}
+                      {(() => {
+                        const category = preciseSearch.category;
+                        const isPaperReel = category?.toLowerCase().includes('paper reel');
+                        const isBoardReel = category?.toLowerCase().includes('board reel');
+                        const isKraftReel = category?.toLowerCase().includes('kraft reel');
+                        const grainLabel = isKraftReel ? 'B.F' : 'Grain';
+                        const showGrainField = !isPaperReel && !isBoardReel;
+                        
+                        return showGrainField ? (
+                          <div className="flex-1 min-w-24">
+                            <label className="text-sm font-medium">{grainLabel}</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="84.1"
+                              value={preciseSearch.grain}
+                              max={99}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (isNaN(value) || value <= 99) {
+                                  handlePreciseSearchChange('grain', e.target.value);
+                                }
+                              }}
+                              data-testid="input-precise-grain"
+                              className="mt-1 h-9 text-sm"
+                              disabled={!preciseSearch.category || !preciseSearch.gsm}
+                            />
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Dimension Tolerance */}
+                      <div className="flex-1 min-w-24">
+                        <label className="text-sm font-medium">Dim ±</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="2"
+                          value={preciseSearch.dimensionTolerance}
+                          max={99}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value <= 99) {
+                              handlePreciseSearchChange('dimensionTolerance', e.target.value);
+                            }
+                          }}
+                          data-testid="input-precise-dimension-tolerance"
+                          className="mt-1 h-9 text-sm"
+                          disabled={!preciseSearch.category || !preciseSearch.gsm}
+                        />
+                      </div>
+
+                      {/* Single Unit Selector */}
+                      <div className="flex-shrink-0">
+                        <label className="text-sm font-medium">Unit</label>
+                        <Select
+                          value={preciseSearch.deckleUnit}
+                          onValueChange={(value) => {
+                            setPreciseSearch(prev => ({
+                              ...prev,
+                              deckleUnit: value,
+                              grainUnit: value
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="w-16 h-9 mt-1 text-sm" disabled={!preciseSearch.category || !preciseSearch.gsm}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cm">cm</SelectItem>
+                            <SelectItem value="inch">inch</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
@@ -1345,7 +1616,7 @@ export default function Marketplace() {
                       onClick={performPreciseSearch}
                       className="h-9 px-4 bg-blue-600 hover:bg-blue-700"
                       data-testid="button-precise-search"
-                      disabled={isSearching || !preciseSearch.category || (!preciseSearch.gsm && preciseSearch.category?.toLowerCase() !== 'spare part')}
+                      disabled={isSearching || !preciseSearch.category || (!isSparePartMode && !preciseSearch.gsm)}
                     >
                       {isSearching ? (
                         <>
@@ -1359,7 +1630,7 @@ export default function Marketplace() {
                         </>
                       )}
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => {
                         setPreciseSearch({
@@ -1370,9 +1641,18 @@ export default function Marketplace() {
                           deckleUnit: 'cm',
                           grain: '',
                           grainUnit: 'cm',
-                          dimensionTolerance: '2'
+                          dimensionTolerance: '2',
+                          // Spare part fields
+                          process: '',
+                          categoryType: '',
+                          machineType: '',
+                          manufacturer: '',
+                          model: '',
+                          partName: '',
+                          partNo: ''
                         });
                         setGsmSuggestions([]);
+                        setIsSparePartMode(false);
                       }}
                       className="h-9 px-3"
                     >
@@ -1672,171 +1952,345 @@ export default function Marketplace() {
             <Card className="sticky top-4">
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pt-6">
                 
-                {/* Makes Filter - Checkbox based */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('makes')}
-                  >
-                    Makes
-                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.makes && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
-                        getUniqueValues('makes') :
-                        (searchAggregations?.makes || availableMakes || []).map((make: any) => ({
-                          value: make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown'),
-                          count: make.count || 0
-                        }))
-                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((make: any, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`make-${index}`}
-                            checked={clientFilters.makes.includes(make.value)}
-                            onCheckedChange={(checked) => handleFilterChange('makes', make.value, checked as boolean)}
-                            data-testid={`checkbox-make-${make.value}`}
-                          />
-                          <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer">
-                            <span>{make.value}</span>
-                          </label>
+                {/* Dynamic Filters based on search mode */}
+                {searchResults?.isSparePartSearch ? (
+                  <>
+                    {/* Spare Part Filters */}
+                    {/* Process Filter */}
+                    {getUniqueValues('processes').length > 0 && (
+                      <>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between p-0 h-auto font-semibold"
+                            onClick={() => toggleSection('processes')}
+                          >
+                            Process
+                            {expandedSections.processes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          {expandedSections.processes && (
+                            <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                              {getUniqueValues('processes').map((proc: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`process-${index}`}
+                                    checked={clientFilters.processes.includes(proc.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('processes', proc.value, checked as boolean)}
+                                  />
+                                  <label htmlFor={`process-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {proc.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
-                       !(searchAggregations?.makes || availableMakes || []).length && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                        <Separator />
+                      </>
+                    )}
+
+                    {/* Category Type Filter */}
+                    {getUniqueValues('categoryTypes').length > 0 && (
+                      <>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between p-0 h-auto font-semibold"
+                            onClick={() => toggleSection('categoryTypes')}
+                          >
+                            Category Type
+                            {expandedSections.categoryTypes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          {expandedSections.categoryTypes && (
+                            <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                              {getUniqueValues('categoryTypes').map((type: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`categoryType-${index}`}
+                                    checked={clientFilters.categoryTypes.includes(type.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('categoryTypes', type.value, checked as boolean)}
+                                  />
+                                  <label htmlFor={`categoryType-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {type.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
+                    {/* Machine Type Filter */}
+                    {getUniqueValues('machineTypes').length > 0 && (
+                      <>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between p-0 h-auto font-semibold"
+                            onClick={() => toggleSection('machineTypes')}
+                          >
+                            Machine Type
+                            {expandedSections.machineTypes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          {expandedSections.machineTypes && (
+                            <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                              {getUniqueValues('machineTypes').map((type: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`machineType-${index}`}
+                                    checked={clientFilters.machineTypes.includes(type.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('machineTypes', type.value, checked as boolean)}
+                                  />
+                                  <label htmlFor={`machineType-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {type.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
+                    {/* Manufacturer Filter */}
+                    {getUniqueValues('manufacturers').length > 0 && (
+                      <>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between p-0 h-auto font-semibold"
+                            onClick={() => toggleSection('manufacturers')}
+                          >
+                            Manufacturer
+                            {expandedSections.manufacturers ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          {expandedSections.manufacturers && (
+                            <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                              {getUniqueValues('manufacturers').map((mfr: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`manufacturer-${index}`}
+                                    checked={clientFilters.manufacturers.includes(mfr.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('manufacturers', mfr.value, checked as boolean)}
+                                  />
+                                  <label htmlFor={`manufacturer-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {mfr.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
+                    {/* Model Filter */}
+                    {getUniqueValues('models').length > 0 && (
+                      <>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between p-0 h-auto font-semibold"
+                            onClick={() => toggleSection('models')}
+                          >
+                            Model
+                            {expandedSections.models ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          {expandedSections.models && (
+                            <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                              {getUniqueValues('models').map((model: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`model-${index}`}
+                                    checked={clientFilters.models.includes(model.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('models', model.value, checked as boolean)}
+                                  />
+                                  <label htmlFor={`model-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {model.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Regular Product Filters */}
+                    {/* Makes Filter - Checkbox based */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('makes')}
+                      >
+                        Makes
+                        {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.makes && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                            getUniqueValues('makes') :
+                            (searchAggregations?.makes || availableMakes || []).map((make: any) => ({
+                              value: make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown'),
+                              count: make.count || 0
+                            }))
+                          ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((make: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`make-${index}`}
+                                checked={clientFilters.makes.includes(make.value)}
+                                onCheckedChange={(checked) => handleFilterChange('makes', make.value, checked as boolean)}
+                                data-testid={`checkbox-make-${make.value}`}
+                              />
+                              <label htmlFor={`make-${index}`} className="text-sm flex-1 cursor-pointer">
+                                <span>{make.value}</span>
+                              </label>
+                            </div>
+                          ))}
+                          {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
+                           !(searchAggregations?.makes || availableMakes || []).length && (
+                            <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-                
-                <Separator />
+                    
+                    <Separator />
 
-                {/* Grades Filter - Checkbox based */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('grades')}
-                  >
-                    Grades
-                    {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.grades && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
-                        getUniqueValues('grades') :
-                        (searchAggregations?.grades || availableGrades || []).map((grade: any) => ({
-                          value: grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown'),
-                          count: grade.count || 0
-                        }))
-                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((grade: any, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`grade-${index}`}
-                            checked={clientFilters.grades.includes(grade.value)}
-                            onCheckedChange={(checked) => handleFilterChange('grades', grade.value, checked as boolean)}
-                            data-testid={`checkbox-grade-${grade.value}`}
-                          />
-                          <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer">
-                            <span>{grade.value}</span>
-                          </label>
+                    {/* Grades Filter - Checkbox based */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('grades')}
+                      >
+                        Grades
+                        {expandedSections.grades ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.grades && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                            getUniqueValues('grades') :
+                            (searchAggregations?.grades || availableGrades || []).map((grade: any) => ({
+                              value: grade.Grade || grade.name || grade.value || (typeof grade === 'string' ? grade : 'Unknown'),
+                              count: grade.count || 0
+                            }))
+                          ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((grade: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`grade-${index}`}
+                                checked={clientFilters.grades.includes(grade.value)}
+                                onCheckedChange={(checked) => handleFilterChange('grades', grade.value, checked as boolean)}
+                                data-testid={`checkbox-grade-${grade.value}`}
+                              />
+                              <label htmlFor={`grade-${index}`} className="text-sm flex-1 cursor-pointer">
+                                <span>{grade.value}</span>
+                              </label>
+                            </div>
+                          ))}
+                          {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
+                           !(searchAggregations?.grades || availableGrades || []).length && (
+                            <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
+                          )}
                         </div>
-                      ))}
-                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
-                       !(searchAggregations?.grades || availableGrades || []).length && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
                       )}
                     </div>
-                  )}
-                </div>
 
-                <Separator />
+                    <Separator />
 
-                {/* Brands Filter - Checkbox based */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('brands')}
-                  >
-                    Brands
-                    {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.brands && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
-                        getUniqueValues('brands') :
-                        (searchAggregations?.brands || availableBrands || []).map((brand: any) => ({
-                          value: brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown'),
-                          count: brand.count || 0
-                        }))
-                      ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((brand: any, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`brand-${index}`}
-                            checked={clientFilters.brands.includes(brand.value)}
-                            onCheckedChange={(checked) => handleFilterChange('brands', brand.value, checked as boolean)}
-                            data-testid={`checkbox-brand-${brand.value}`}
-                          />
-                          <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer">
-                            <span>{brand.value}</span>
-                          </label>
+                    {/* Brands Filter - Checkbox based */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('brands')}
+                      >
+                        Brands
+                        {expandedSections.brands ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.brands && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                            getUniqueValues('brands') :
+                            (searchAggregations?.brands || availableBrands || []).map((brand: any) => ({
+                              value: brand.Brand || brand.name || brand.value || (typeof brand === 'string' ? brand : 'Unknown'),
+                              count: brand.count || 0
+                            }))
+                          ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((brand: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`brand-${index}`}
+                                checked={clientFilters.brands.includes(brand.value)}
+                                onCheckedChange={(checked) => handleFilterChange('brands', brand.value, checked as boolean)}
+                                data-testid={`checkbox-brand-${brand.value}`}
+                              />
+                              <label htmlFor={`brand-${index}`} className="text-sm flex-1 cursor-pointer">
+                                <span>{brand.value}</span>
+                              </label>
+                            </div>
+                          ))}
+                          {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
+                           !(searchAggregations?.brands || availableBrands || []).length && (
+                            <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
+                          )}
                         </div>
-                      ))}
-                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
-                       !(searchAggregations?.brands || availableBrands || []).length && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
                       )}
                     </div>
-                  )}
-                </div>
 
-                <Separator />
+                    <Separator />
 
-                {/* GSM Filter - Checkbox based */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('gsm')}
-                  >
-                    GSM
-                    {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.gsm && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
-                        getUniqueValues('gsm') :
-                        (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
-                          value: gsm.GSM?.toString() || gsm.value?.toString() || (typeof gsm === 'string' ? gsm : 'Unknown'),
-                          count: gsm.count || 0
-                        }))
-                      ).sort((a: any, b: any) => {
-                        const numA = parseInt(a.value);
-                        const numB = parseInt(b.value);
-                        return numA - numB;
-                      }).map((gsm: any, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`gsm-${index}`}
-                            checked={clientFilters.gsm.includes(gsm.value)}
-                            onCheckedChange={(checked) => handleFilterChange('gsm', gsm.value, checked as boolean)}
-                            data-testid={`checkbox-gsm-${gsm.value}`}
-                          />
-                          <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer">
-                            <span>{gsm.value} GSM</span>
-                          </label>
+                    {/* GSM Filter - Checkbox based */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('gsm')}
+                      >
+                        GSM
+                        {expandedSections.gsm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.gsm && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                            getUniqueValues('gsm') :
+                            (searchAggregations?.gsm || availableGsm || []).map((gsm: any) => ({
+                              value: gsm.GSM?.toString() || gsm.value?.toString() || (typeof gsm === 'string' ? gsm : 'Unknown'),
+                              count: gsm.count || 0
+                            }))
+                          ).sort((a: any, b: any) => {
+                            const numA = parseInt(a.value);
+                            const numB = parseInt(b.value);
+                            return numA - numB;
+                          }).map((gsm: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`gsm-${index}`}
+                                checked={clientFilters.gsm.includes(gsm.value)}
+                                onCheckedChange={(checked) => handleFilterChange('gsm', gsm.value, checked as boolean)}
+                                data-testid={`checkbox-gsm-${gsm.value}`}
+                              />
+                              <label htmlFor={`gsm-${index}`} className="text-sm flex-1 cursor-pointer">
+                                <span>{gsm.value} GSM</span>
+                              </label>
+                            </div>
+                          ))}
+                          {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
+                           !(searchAggregations?.gsm || availableGsm || []).length && (
+                            <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
+                          )}
                         </div>
-                      ))}
-                      {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) && 
-                       !(searchAggregations?.gsm || availableGsm || []).length && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
                       )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
 
 
                 
@@ -1966,30 +2420,92 @@ export default function Marketplace() {
 
                         <CardContent className="p-2 flex-1 flex flex-col">
 
-                          {/* 2. GSM and Dimensions properly aligned */}
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <div>
-                                <span className="font-medium text-gray-500">GSM:</span>
-                                <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+                          {/* Product Details - Different for spare parts vs regular products */}
+                          {deal.is_spare_part || deal.process ? (
+                            <>
+                              {/* Spare Part Information */}
+                              <div className="mb-2 space-y-1.5">
+                                {deal.process && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Process:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.process}</span>
+                                  </div>
+                                )}
+                                {deal.category_type && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Type:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.category_type}</span>
+                                  </div>
+                                )}
+                                {deal.machine_type && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Machine:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.machine_type}</span>
+                                  </div>
+                                )}
+                                {deal.manufacturer && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Mfr:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.manufacturer}</span>
+                                  </div>
+                                )}
+                                {deal.model && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Model:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.model}</span>
+                                  </div>
+                                )}
+                                {deal.part_name && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Part:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.part_name}</span>
+                                  </div>
+                                )}
+                                {deal.part_no && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Part No:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.part_no}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-right">
-                                <div className="font-semibold text-foreground">
-                                  {(deal.Deckle_mm && deal.grain_mm) ?
-                                    formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
-                                  : 'N/A'}
+
+                              {/* Quantity for spare parts */}
+                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-500">Qty:</span>
+                                  <span className="font-bold text-foreground ml-1">{deal.pcs || deal.quantity || 1} {deal.unit || deal.OfferUnit || 'PCS'}</span>
                                 </div>
                               </div>
-                            </div>
-                          </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Regular Product Information */}
+                              {/* 2. GSM and Dimensions properly aligned */}
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div>
+                                    <span className="font-medium text-gray-500">GSM:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-semibold text-foreground">
+                                      {(deal.Deckle_mm && deal.grain_mm) ?
+                                        formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
+                                      : 'N/A'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
 
-                          {/* 3. Quantity */}
-                          <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
-                            <div className="text-xs">
-                              <span className="font-medium text-gray-500">Qty:</span>
-                              <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
-                            </div>
-                          </div>
+                              {/* 3. Quantity */}
+                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-500">Qty:</span>
+                                  <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
 
 
 

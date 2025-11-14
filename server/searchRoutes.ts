@@ -158,12 +158,35 @@ searchRouter.post('/precise', async (req, res) => {
     
     console.log(`Precise search found ${results.length} records (max 100 limit)`);
     
+    // Parse spare part fields for spare part results
+    const parsedResults = results.map((deal: any) => {
+      const isSparePartDeal = deal.GroupName && deal.GroupName.toLowerCase().includes('spare part');
+      
+      if (isSparePartDeal && deal.Make) {
+        // Parse Make field: "process - category_type - machine_type"
+        const makeParts = deal.Make.split(' - ').map((p: string) => p.trim());
+        
+        return {
+          ...deal,
+          process: makeParts[0] || null,
+          category_type: makeParts[1] || null,
+          machine_type: makeParts[2] || null,
+          manufacturer: deal.Grade || null,
+          model: deal.Brand || null,
+          is_spare_part: true
+        };
+      }
+      
+      return deal;
+    });
+    
     res.json({
       success: true,
-      data: results,
-      total: results.length,
+      data: parsedResults,
+      total: parsedResults.length,
       maxRecords: 100, // Flag to indicate 100 record limit
-      searchType: 'precise'
+      searchType: 'precise',
+      isSparePartSearch: isSparePart
     });
   } catch (error) {
     console.error('Error performing precise search:', error);

@@ -64,12 +64,14 @@ const dealSchema = z.object({
   GSM: z.coerce.number().optional(),
   Deckle_mm: z.coerce.number().optional(),
   grain_mm: z.coerce.number().optional(),
-  // Spare part specific fields
-  spareMake: z.string().optional(),
-  machineName: z.string().optional(),
-  sparePartDescription: z.string().optional(),
-  spareAge: z.string().optional(),
-  spareBrand: z.string().optional(),
+  // Spare part specific fields (new cascading structure)
+  spareProcess: z.string().optional(),
+  spareCategoryType: z.string().optional(),
+  spareMachineType: z.string().optional(),
+  spareManufacturer: z.string().optional(),
+  spareModel: z.string().optional(),
+  sparePartName: z.string().optional(),
+  sparePartNo: z.string().optional(),
   // Common fields
   deal_description: z.string().optional(),
   OfferUnit: z.string().min(1, "Unit is required"),
@@ -81,26 +83,47 @@ const dealSchema = z.object({
   const isSparePart = isSparePartGroup(data.groupName || '');
   
   if (isSparePart) {
-    // Spare part validations
-    if (!data.spareMake || data.spareMake.trim() === '') {
+    // Spare part validations (new cascading structure)
+    if (!data.spareProcess || data.spareProcess.trim() === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Machine Model is required",
-        path: ["spareMake"]
+        message: "Process is required",
+        path: ["spareProcess"]
       });
     }
-    if (!data.machineName || data.machineName.trim() === '') {
+    if (!data.spareCategoryType || data.spareCategoryType.trim() === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Machine name is required",
-        path: ["machineName"]
+        message: "Category Type is required",
+        path: ["spareCategoryType"]
       });
     }
-    if (!data.sparePartDescription || data.sparePartDescription.trim() === '') {
+    if (!data.spareMachineType || data.spareMachineType.trim() === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Spare part description is required",
-        path: ["sparePartDescription"]
+        message: "Machine Type is required",
+        path: ["spareMachineType"]
+      });
+    }
+    if (!data.spareManufacturer || data.spareManufacturer.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Manufacturer is required",
+        path: ["spareManufacturer"]
+      });
+    }
+    if (!data.sparePartName || data.sparePartName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Part Name is required",
+        path: ["sparePartName"]
+      });
+    }
+    if (!data.sparePartNo || data.sparePartNo.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Part Number is required",
+        path: ["sparePartNo"]
       });
     }
   } else {
@@ -198,7 +221,14 @@ export default function AddDeal() {
   const [brandText, setBrandText] = useState("");
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
   const [isGradeAutoSet, setIsGradeAutoSet] = useState(false);
-  const [isKraftReelAutoSet, setIsKraftReelAutoSet] = useState(false); // Track Kraft Reel auto-fill
+  const [isKraftReelAutoSet, setIsKraftReelAutoSet] = useState(false);
+  
+  // Spare part category states
+  const [selectedProcess, setSelectedProcess] = useState("");
+  const [selectedCategoryType, setSelectedCategoryType] = useState("");
+  const [selectedMachineType, setSelectedMachineType] = useState("");
+  const [selectedManufacturer, setSelectedManufacturer] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
 
   // Unit state - single unit selector for both Deckle and Grain
   const [dimensionUnit, setDimensionUnit] = useState("cm");
@@ -326,11 +356,13 @@ export default function AddDeal() {
       GSM: "" as any,
       Deckle_mm: "" as any,
       grain_mm: "" as any,
-      spareMake: undefined,
-      machineName: undefined,
-      sparePartDescription: undefined,
-      spareAge: undefined,
-      spareBrand: undefined,
+      spareProcess: "",
+      spareCategoryType: "",
+      spareMachineType: "",
+      spareManufacturer: "",
+      spareModel: "",
+      sparePartName: "",
+      sparePartNo: "",
       OfferUnit: "",
       quantity: "" as any,
       stockAge: "" as any,
@@ -435,6 +467,88 @@ export default function AddDeal() {
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
+
+  // Fetch spare part processes
+  const { data: processes, isLoading: processesLoading } = useQuery({
+    queryKey: ['/api/spare-parts/processes'],
+    queryFn: async () => {
+      console.log('Fetching processes...');
+      const response = await fetch('/api/spare-parts/processes');
+      if (!response.ok) throw new Error('Failed to fetch processes');
+      const data = await response.json();
+      console.log('Processes data:', data);
+      return data;
+    },
+    enabled: isSparePartGroup(currentGroupName || ''),
+  });
+
+  // Fetch category types - independent of process
+  const { data: categoryTypes, isLoading: categoryTypesLoading } = useQuery({
+    queryKey: ['/api/spare-parts/category-types'],
+    queryFn: async () => {
+      console.log('Fetching category types...');
+      const response = await fetch(`/api/spare-parts/category-types`);
+      if (!response.ok) throw new Error('Failed to fetch category types');
+      const data = await response.json();
+      console.log('Category types data:', data);
+      return data;
+    },
+    enabled: isSparePartGroup(currentGroupName || ''),
+  });
+
+  // Fetch machine types - independent of previous selections
+  const { data: machineTypes, isLoading: machineTypesLoading } = useQuery({
+    queryKey: ['/api/spare-parts/machine-types'],
+    queryFn: async () => {
+      console.log('Fetching machine types...');
+      const response = await fetch(`/api/spare-parts/machine-types`);
+      if (!response.ok) throw new Error('Failed to fetch machine types');
+      const data = await response.json();
+      console.log('Machine types data:', data);
+      return data;
+    },
+    enabled: isSparePartGroup(currentGroupName || ''),
+  });
+
+  // Fetch manufacturers - independent of previous selections
+  const { data: manufacturers, isLoading: manufacturersLoading } = useQuery({
+    queryKey: ['/api/spare-parts/manufacturers'],
+    queryFn: async () => {
+      console.log('Fetching manufacturers...');
+      const response = await fetch(`/api/spare-parts/manufacturers`);
+      if (!response.ok) throw new Error('Failed to fetch manufacturers');
+      const data = await response.json();
+      console.log('Manufacturers data:', data);
+      return data;
+    },
+    enabled: isSparePartGroup(currentGroupName || ''),
+  });
+
+  // Fetch models - independent of previous selections
+  const { data: models, isLoading: modelsLoading } = useQuery({
+    queryKey: ['/api/spare-parts/models'],
+    queryFn: async () => {
+      console.log('Fetching models...');
+      const response = await fetch(`/api/spare-parts/models`);
+      if (!response.ok) throw new Error('Failed to fetch models');
+      const data = await response.json();
+      console.log('Models data:', data);
+      return data;
+    },
+    enabled: isSparePartGroup(currentGroupName || ''),
+  });
+
+  // Debug log when data changes
+  useEffect(() => {
+    if (isSparePartGroup(currentGroupName || '')) {
+      console.log('=== Spare Part Data Debug ===');
+      console.log('Processes:', processes, 'Loading:', processesLoading);
+      console.log('Category Types:', categoryTypes, 'Loading:', categoryTypesLoading);
+      console.log('Machine Types:', machineTypes, 'Loading:', machineTypesLoading);
+      console.log('Manufacturers:', manufacturers, 'Loading:', manufacturersLoading);
+      console.log('Models:', models, 'Loading:', modelsLoading);
+    }
+  }, [processes, categoryTypes, machineTypes, manufacturers, models, currentGroupName, processesLoading, categoryTypesLoading, machineTypesLoading, manufacturersLoading, modelsLoading]);
 
   // Show all options without filtering
   const filteredMakes = makes;
@@ -561,22 +675,34 @@ export default function AddDeal() {
       const isSparePart = isSparePartGroup(data.groupName || '');
       
       if (isSparePart) {
-        // Spare Part submission
-        const spareDescription = `${data.spareMake} - ${data.machineName}`;
-        const searchKey = spareDescription.toLowerCase().replace(/[\s.]/g, '');
+        // Spare Part submission - using new cascading fields
+        const partFullName = [
+          data.spareProcess,
+          data.spareCategoryType,
+          data.spareMachineType,
+          data.spareManufacturer,
+          data.spareModel,
+          data.sparePartName,
+          data.sparePartNo
+        ].filter(Boolean).join(' - ');
+        
+        const spareDescription = `${data.sparePartName} (${data.sparePartNo})`;
+        const searchKey = partFullName.toLowerCase().replace(/[\s.]/g, '');
         
         const payload = {
           group_id: data.groupID ? parseInt(data.groupID) : 0,
           is_spare_part: true,
-          spare_make: data.spareMake,
-          machine_name: data.machineName,
-          spare_description: data.sparePartDescription,
-          spare_age: data.spareAge || '',
-          spare_brand: data.spareBrand || '',
+          spare_process: data.spareProcess,
+          spare_category_type: data.spareCategoryType,
+          spare_machine_type: data.spareMachineType,
+          spare_manufacturer: data.spareManufacturer,
+          spare_model: data.spareModel || '',
+          spare_part_name: data.sparePartName,
+          spare_part_no: data.sparePartNo,
           deal_title: spareDescription,
-          stock_description: spareDescription,
+          stock_description: partFullName,
           search_key: searchKey,
-          deal_description: data.Seller_comments || data.sparePartDescription || '',
+          deal_description: data.Seller_comments || partFullName,
           price: 0,
           quantity: data.quantity,
           unit: data.OfferUnit,
@@ -644,11 +770,13 @@ export default function AddDeal() {
           GSM: "" as any,
           Deckle_mm: "" as any,
           grain_mm: "" as any,
-          spareMake: "",
-          machineName: "",
-          sparePartDescription: "",
-          spareAge: "",
-          spareBrand: "",
+          spareProcess: "",
+          spareCategoryType: "",
+          spareMachineType: "",
+          spareManufacturer: "",
+          spareModel: "",
+          sparePartName: "",
+          sparePartNo: "",
           OfferUnit: "",
           quantity: "" as any,
           stockAge: "" as any,
@@ -664,6 +792,11 @@ export default function AddDeal() {
         setGrainInputValue("");
         setIsGradeAutoSet(false);
         setIsKraftReelAutoSet(false);
+        setSelectedProcess("");
+        setSelectedCategoryType("");
+        setSelectedMachineType("");
+        setSelectedManufacturer("");
+        setSelectedModel("");
         setSaveAndAddAnother(false);
       } else {
         toast({
@@ -744,11 +877,15 @@ export default function AddDeal() {
                                   form.setValue("groupID", value);
                                 }}
                                 onSelect={(value, item) => {
+                                  console.log('Group selected:', value, item);
                                   handleGroupChange(value, item);
+                                  console.log('After handleGroupChange - currentGroupName:', form.getValues('groupName'));
                                 }}
                                 onTextChange={(text) => {
+                                  console.log('Group text changed:', text);
                                   setSelectedGroupName(text);
                                   form.setValue("groupName", text);
+                                  console.log('Is spare part group?', isSparePartGroup(text));
                                 }}
                                 placeholder="Type to search groups..."
                                 suggestions={groups}
@@ -764,22 +901,40 @@ export default function AddDeal() {
                         )}
                       />
 
-                      {/* First Row: Make and Machine Name */}
+                      {/* First Row: Process and Category Type */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Controller
                           control={form.control}
-                          name="spareMake"
+                          name="spareProcess"
                           render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-foreground">Machine Model <span className="text-red-500">*</span></FormLabel>
+                              <FormLabel className="text-foreground">Process <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
-                                <Input
-                                  type="text"
-                                  placeholder="Enter machine model (e.g., Siemens, ABB)"
+                                <Select
                                   value={field.value || ""}
-                                  onChange={field.onChange}
-                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                                />
+                                  onValueChange={(value) => {
+                                    console.log('Process selected:', value);
+                                    console.log('Current field value BEFORE:', field.value);
+                                    field.onChange(value);
+                                    setSelectedProcess(value);
+                                    console.log('Current field value AFTER:', form.getValues('spareProcess'));
+                                  }}
+                                  onOpenChange={(open) => console.log('Process dropdown opened:', open)}
+                                >
+                                  <SelectTrigger
+                                    className="bg-popover border-border text-foreground"
+                                    onClick={() => console.log('Process trigger clicked, field value:', field.value, 'processes:', processes)}
+                                  >
+                                    <SelectValue placeholder="Select process" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border" style={{ zIndex: 9999 }}>
+                                    {processes?.map((process: string) => (
+                                      <SelectItem key={process} value={process} className="text-foreground hover:bg-accent">
+                                        {process}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                               {fieldState.error && (
                                 <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
@@ -790,18 +945,29 @@ export default function AddDeal() {
 
                         <Controller
                           control={form.control}
-                          name="machineName"
+                          name="spareCategoryType"
                           render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-foreground">Machine Name <span className="text-red-500">*</span></FormLabel>
+                              <FormLabel className="text-foreground">Category Type <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
-                                <Input
-                                  type="text"
-                                  placeholder="Enter machine name"
+                                <Select
                                   value={field.value || ""}
-                                  onChange={field.onChange}
-                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                                />
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedCategoryType(value);
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select category type" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {categoryTypes?.map((type: string) => (
+                                      <SelectItem key={type} value={type} className="text-foreground hover:bg-accent">
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                               {fieldState.error && (
                                 <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
@@ -811,19 +977,118 @@ export default function AddDeal() {
                         />
                       </div>
 
-                      {/* Second Row: Spare Part Description */}
+                      {/* Second Row: Machine Type and Manufacturer */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="spareMachineType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Machine Type <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedMachineType(value);
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select machine type" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {machineTypes?.map((type: string) => (
+                                      <SelectItem key={type} value={type} className="text-foreground hover:bg-accent">
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="spareManufacturer"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Manufacturer <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedManufacturer(value);
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select manufacturer" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {manufacturers?.map((mfr: string) => (
+                                      <SelectItem key={mfr} value={mfr} className="text-foreground hover:bg-accent">
+                                        {mfr}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Third Row: Model (optional) - Autocomplete with auto-save */}
                       <FormField
                         control={form.control}
-                        name="sparePartDescription"
+                        name="spareModel"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-foreground">Spare Part Description <span className="text-red-500">*</span></FormLabel>
+                            <FormLabel className="text-foreground">
+                              Model
+                              <span className="text-xs text-muted-foreground ml-2">(optional - type to add new)</span>
+                            </FormLabel>
                             <FormControl>
-                              <Textarea
-                                placeholder="Enter detailed description of the spare part"
-                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                                value={field.value || ''}
-                                onChange={field.onChange}
+                              <AutocompleteInput
+                                value={selectedModel || field.value || ''}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  setSelectedModel(value);
+                                }}
+                                onSelect={async (value, item) => {
+                                  // If it's a new model (not from dropdown), save it
+                                  if (!item && value && selectedProcess && selectedCategoryType && selectedMachineType && selectedManufacturer) {
+                                    try {
+                                      await apiRequest("POST", "/api/spare-parts/save-model", {
+                                        process: selectedProcess,
+                                        category_type: selectedCategoryType,
+                                        machine_type: selectedMachineType,
+                                        manufacturer: selectedManufacturer,
+                                        model: value
+                                      });
+                                      // Refresh models list
+                                      queryClient.invalidateQueries({ queryKey: ['/api/spare-parts/models'] });
+                                    } catch (error) {
+                                      console.error('Error saving model:', error);
+                                    }
+                                  }
+                                  field.onChange(value);
+                                  setSelectedModel(value);
+                                }}
+                                onTextChange={(text) => {
+                                  field.onChange(text);
+                                  setSelectedModel(text);
+                                }}
+                                placeholder="Type to search or add model..."
+                                suggestions={models?.map((model: string) => ({ label: model, value: model })) || []}
+                                displayField="label"
+                                valueField="value"
+                                allowFreeText={true}
+                                maxLength={60}
                               />
                             </FormControl>
                             <FormMessage />
@@ -831,20 +1096,18 @@ export default function AddDeal() {
                         )}
                       />
 
-                      {/* Third Row: Age and Brand */}
+                      {/* Fourth Row: Part Name and Part Number */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                           control={form.control}
-                          name="spareAge"
+                          name="sparePartName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-foreground">
-                                Age
-                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
-                              </FormLabel>
+                              <FormLabel className="text-foreground">Part Name <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="Enter age (e.g., 2 years, New)"
+                                  type="text"
+                                  placeholder="Enter part name"
                                   value={field.value || ''}
                                   onChange={field.onChange}
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -857,16 +1120,14 @@ export default function AddDeal() {
 
                         <FormField
                           control={form.control}
-                          name="spareBrand"
+                          name="sparePartNo"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-foreground">
-                                Brand
-                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
-                              </FormLabel>
+                              <FormLabel className="text-foreground">Part Number <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="Enter brand"
+                                  type="text"
+                                  placeholder="Enter part number"
                                   value={field.value || ''}
                                   onChange={field.onChange}
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
@@ -877,6 +1138,7 @@ export default function AddDeal() {
                           )}
                         />
                       </div>
+
                     </CardContent>
                   </Card>
 

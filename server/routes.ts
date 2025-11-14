@@ -7,6 +7,8 @@ import { dealService } from "./dealService";
 import { storage } from "./storage";
 import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, generatePaymentSuccessEmail, type InquiryEmailData, type PaymentSuccessEmailData } from "./emailService";
+import * as sparePartCategoryService from "./sparePartCategoryService";
+import { createSparePartTables } from "./createSparePartTables";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
@@ -47,6 +49,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.use('/api/auth', authRouter);
+  
+  // IMPORTANT: Register spare-parts routes BEFORE search routes to prevent conflicts
+  // Search spare parts from deal_master - MUST come before /api/search routes
+  app.post('/api/spare-parts/search', async (req, res) => {
+    try {
+      const {
+        process,
+        categoryType,
+        machineType,
+        manufacturer,
+        model,
+        partName,
+        partNo,
+        exclude_member_id
+      } = req.body;
+
+      console.log('Spare part search params:', req.body);
+
+      // Get spare part group ID
+      const sparePartGroup = await executeQuerySingle(`
+        SELECT GroupID FROM stock_groups WHERE GroupName LIKE '%Spare Part%'
+      `);
+      
+      if (!sparePartGroup) {
+        return res.json({
+          success: true,
+          data: [],
+          total: 0
+        });
+      }
+
+      // Build WHERE clause
+      let whereClause = `WHERE dm.groupID = ? AND dm.StockStatus = 1`;
+      const queryParams: any[] = [sparePartGroup.GroupID];
+      
+      // Exclude user's own products
+      if (exclude_member_id) {
+        whereClause += ` AND (dm.memberID != ? AND dm.created_by_member_id != ?)`;
+        queryParams.push(exclude_member_id, exclude_member_id);
+      }
+      
+      // Filter by process, categoryType, machineType (from Make field)
+      if (process || categoryType || machineType) {
+        const makePattern = [];
+        if (process) makePattern.push(process);
+        if (categoryType) makePattern.push(categoryType);
+        if (machineType) makePattern.push(machineType);
+        
+        if (makePattern.length > 0) {
+          whereClause += ` AND dm.Make LIKE ?`;
+          queryParams.push(`%${makePattern.join('%')}%`);
+        }
+      }
+      
+      // Filter by manufacturer (from Grade field)
+      if (manufacturer) {
+        whereClause += ` AND dm.Grade LIKE ?`;
+        queryParams.push(`%${manufacturer}%`);
+      }
+      
+      // Filter by model (from Brand field)
+      if (model) {
+        whereClause += ` AND dm.Brand LIKE ?`;
+        queryParams.push(`%${model}%`);
+      }
+      
+      // Filter by part name (from Seller_comments)
+      if (partName) {
+        whereClause += ` AND dm.Seller_comments LIKE ?`;
+        queryParams.push(`%${partName}%`);
+      }
+      
+      // Filter by part number (from Seller_comments)
+      if (partNo) {
+        whereClause += ` AND dm.Seller_comments LIKE ?`;
+        queryParams.push(`%${partNo}%`);
+      }
+
+      const query = `
+        SELECT
+          dm.*,
+          sg.GroupName,
+          sg.GroupName as category_name,
+          m.mname as created_by_name,
+          m.company_name as created_by_company
+        FROM deal_master dm
+        LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
+        LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
+        ${whereClause}
+        ORDER BY dm.TransID DESC
+        LIMIT 100
+      `;
+
+      const results = await executeQuery(query, queryParams);
+      
+      // Parse spare part fields from Make, Grade, Brand
+      const parsedResults = results.map((deal: any) => {
+        const makeParts = deal.Make ? deal.Make.split(' - ').map((p: string) => p.trim()) : [];
+        
+        return {
+          ...deal,
+          process: makeParts[0] || null,
+          category_type: makeParts[1] || null,
+          machine_type: makeParts[2] || null,
+          manufacturer: deal.Grade || null,
+          model: deal.Brand || null,
+          is_spare_part: true
+        };
+      });
+
+      res.json({
+        success: true,
+        data: parsedResults,
+        total: parsedResults.length,
+        maxRecords: 100
+      });
+    } catch (error) {
+      console.error("Error searching spare parts:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to search spare parts"
+      });
+    }
+  });
   
   // Search routes (Elasticsearch)
   app.use('/api/search', searchRouter);
@@ -237,6 +363,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to create payment history table',
+        error: error.message
+      });
+    }
+  });
+
+  // Create spare part tables endpoint
+  app.post('/api/database/create-spare-part-tables', async (req, res) => {
+    try {
+      console.log('🔧 Received request to create spare part tables');
+      const result = await createSparePartTables();
+      console.log('✅ Spare part tables created successfully:', result);
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Error creating spare part tables:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create spare part tables',
         error: error.message
       });
     }
@@ -901,6 +1044,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Spare Part Category Routes
+  app.get('/api/spare-parts/processes', async (req, res) => {
+    try {
+      const processes = await sparePartCategoryService.getProcesses();
+      res.json(processes);
+    } catch (error) {
+      console.error("Error fetching processes:", error);
+      res.status(500).json({ message: "Failed to fetch processes" });
+    }
+  });
+
+  app.get('/api/spare-parts/category-types', async (req, res) => {
+    try {
+      const types = await sparePartCategoryService.getCategoryTypes();
+      res.json(types);
+    } catch (error) {
+      console.error("Error fetching category types:", error);
+      res.status(500).json({ message: "Failed to fetch category types" });
+    }
+  });
+
+  app.get('/api/spare-parts/machine-types', async (req, res) => {
+    try {
+      const types = await sparePartCategoryService.getMachineTypes();
+      res.json(types);
+    } catch (error) {
+      console.error("Error fetching machine types:", error);
+      res.status(500).json({ message: "Failed to fetch machine types" });
+    }
+  });
+
+  app.get('/api/spare-parts/manufacturers', async (req, res) => {
+    try {
+      const manufacturers = await sparePartCategoryService.getManufacturers();
+      res.json(manufacturers);
+    } catch (error) {
+      console.error("Error fetching manufacturers:", error);
+      res.status(500).json({ message: "Failed to fetch manufacturers" });
+    }
+  });
+
+  app.get('/api/spare-parts/models', async (req, res) => {
+    try {
+      const models = await sparePartCategoryService.getModels();
+      res.json(models);
+    } catch (error) {
+      console.error("Error fetching models:", error);
+      res.status(500).json({ message: "Failed to fetch models" });
+    }
+  });
+
+  app.post('/api/spare-parts/save-model', requireAuth, async (req: any, res) => {
+    try {
+      const { process, category_type, machine_type, manufacturer, model } = req.body;
+      
+      if (!process || !category_type || !machine_type || !manufacturer || !model) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required to save a model"
+        });
+      }
+
+      const saved = await sparePartCategoryService.saveCustomModel({
+        process,
+        category_type,
+        machine_type,
+        manufacturer,
+        model
+      });
+
+      if (saved) {
+        res.json({
+          success: true,
+          message: "Model saved successfully"
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to save model"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving custom model:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to save model"
+      });
+    }
+  });
+
+  // NOTE: Spare parts search route moved to line 62 (before /api/search routes) to prevent routing conflicts
+
+  // Get all spare part filter options from deal_master
+  app.get('/api/spare-parts/filters', async (req, res) => {
+    try {
+      // Get spare part group ID
+      const sparePartGroup = await executeQuerySingle(`
+        SELECT GroupID FROM stock_groups WHERE GroupName LIKE '%Spare Part%'
+      `);
+      
+      if (!sparePartGroup) {
+        return res.json({
+          processes: [],
+          categoryTypes: [],
+          machineTypes: [],
+          manufacturers: [],
+          models: []
+        });
+      }
+      
+      // Extract unique values from deal_master where groupID = Spare Part
+      // Make field contains: "process - category_type - machine_type"
+      // Grade field contains: manufacturer
+      // Brand field contains: model or part_name
+      
+      const deals = await executeQuery(`
+        SELECT DISTINCT Make, Grade, Brand
+        FROM deal_master
+        WHERE groupID = ? AND StockStatus = 1
+      `, [sparePartGroup.GroupID]);
+      
+      const processes = new Set<string>();
+      const categoryTypes = new Set<string>();
+      const machineTypes = new Set<string>();
+      const manufacturers = new Set<string>();
+      const models = new Set<string>();
+      
+      deals.forEach((deal: any) => {
+        // Parse Make field: "process - category_type - machine_type"
+        if (deal.Make) {
+          const parts = deal.Make.split(' - ').map((p: string) => p.trim());
+          if (parts[0]) processes.add(parts[0]);
+          if (parts[1]) categoryTypes.add(parts[1]);
+          if (parts[2]) machineTypes.add(parts[2]);
+        }
+        
+        // Grade field contains manufacturer
+        if (deal.Grade) {
+          manufacturers.add(deal.Grade);
+        }
+        
+        // Brand field contains model
+        if (deal.Brand) {
+          models.add(deal.Brand);
+        }
+      });
+      
+      res.json({
+        processes: Array.from(processes).sort(),
+        categoryTypes: Array.from(categoryTypes).sort(),
+        machineTypes: Array.from(machineTypes).sort(),
+        manufacturers: Array.from(manufacturers).sort(),
+        models: Array.from(models).sort()
+      });
+    } catch (error) {
+      console.error("Error fetching spare part filters:", error);
+      res.status(500).json({ message: "Failed to fetch spare part filters" });
+    }
+  });
+
+  // Create spare part listing
+  app.post('/api/spare-parts/listings', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const {
+        process,
+        category_type,
+        machine_type,
+        manufacturer,
+        model,
+        part_name,
+        part_no,
+        pcs,
+        unit,
+        stock_age,
+        seller_comments
+      } = req.body;
+
+      if (!process || !category_type || !machine_type || !manufacturer || !part_name || !part_no || !pcs) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields'
+        });
+      }
+
+      const listingId = await sparePartCategoryService.createSparePartListing({
+        seller_id: sellerId,
+        process,
+        category_type,
+        machine_type,
+        manufacturer,
+        model: model || null,
+        part_name,
+        part_no,
+        pcs: parseInt(pcs),
+        unit: unit || 'Piece',
+        stock_age: stock_age ? parseInt(stock_age) : 0,
+        seller_comments: seller_comments || null
+      });
+
+      res.json({
+        success: true,
+        message: 'Spare part listing created successfully',
+        listing_id: listingId
+      });
+    } catch (error) {
+      console.error("Error creating spare part listing:", error);
+      res.status(500).json({ message: "Failed to create spare part listing" });
+    }
+  });
+
   // Categories
   app.get('/api/categories', async (req, res) => {
     try {
@@ -1068,24 +1429,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location,
         expires_at,
         is_spare_part,
-        spare_make,
-        machine_name,
-        spare_description,
-        spare_age,
-        spare_brand
+        spare_process,
+        spare_category_type,
+        spare_machine_type,
+        spare_manufacturer,
+        spare_model,
+        spare_part_name,
+        spare_part_no,
       } = req.body;
 
       // Check if this is a spare part submission
       console.log('🔍 Checking is_spare_part:', is_spare_part, 'Condition result:', !!is_spare_part);
       if (is_spare_part) {
         console.log('✅ SPARE PART BRANCH - Validating spare part fields');
-        // Validate spare part required fields
-        if (!group_id || !spare_make || !machine_name || !spare_description || !quantity || !unit) {
+        // Validate spare part required fields (new cascading structure)
+        if (!group_id || !spare_process || !spare_category_type || !spare_machine_type || !spare_manufacturer || !spare_part_name || !spare_part_no || !quantity || !unit) {
           const missingFields = [];
           if (!group_id) missingFields.push('group_id');
-          if (!spare_make) missingFields.push('spare_make');
-          if (!machine_name) missingFields.push('machine_name');
-          if (!spare_description) missingFields.push('spare_description');
+          if (!spare_process) missingFields.push('spare_process');
+          if (!spare_category_type) missingFields.push('spare_category_type');
+          if (!spare_machine_type) missingFields.push('spare_machine_type');
+          if (!spare_manufacturer) missingFields.push('spare_manufacturer');
+          if (!spare_part_name) missingFields.push('spare_part_name');
+          if (!spare_part_no) missingFields.push('spare_part_no');
           if (!quantity) missingFields.push('quantity');
           if (!unit) missingFields.push('unit');
           
@@ -1161,11 +1527,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location,
         expires_at: expires_at ? new Date(expires_at) : undefined,
         is_spare_part,
-        spare_make,
-        machine_name,
-        spare_description,
-        spare_age,
-        spare_brand
+        spare_process,
+        spare_category_type,
+        spare_machine_type,
+        spare_manufacturer,
+        spare_model,
+        spare_part_name,
+        spare_part_no,
       }, userInfo);
 
       res.json(result);

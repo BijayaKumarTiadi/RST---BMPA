@@ -1,5 +1,6 @@
 import { executeQuery, executeQuerySingle } from './database.js';
 import crypto from 'crypto';
+import { saveCustomModel } from './sparePartCategoryService';
 
 // Helper function to get ORDER BY clause based on sort parameter
 function getSortClause(sortBy?: string): string {
@@ -443,11 +444,13 @@ class DealService {
     search_key?: string;
     stock_type?: string;
     is_spare_part?: boolean;
-    spare_make?: string;
-    machine_name?: string;
-    spare_description?: string;
-    spare_age?: string;
-    spare_brand?: string;
+    spare_process?: string;
+    spare_category_type?: string;
+    spare_machine_type?: string;
+    spare_manufacturer?: string;
+    spare_model?: string;
+    spare_part_name?: string;
+    spare_part_no?: string;
   }, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
@@ -472,31 +475,47 @@ class DealService {
         deal_specifications,
         expires_at,
         is_spare_part,
-        spare_make,
-        machine_name,
-        spare_description,
-        spare_age,
-        spare_brand
+        spare_process,
+        spare_category_type,
+        spare_machine_type,
+        spare_manufacturer,
+        spare_model,
+        spare_part_name,
+        spare_part_no,
       } = dealData as any;
 
       let finalMake, finalGrade, finalBrand, gsm, deckle_mm, grain_mm;
 
       if (is_spare_part) {
-        // Spare part handling
-        finalMake = spare_make || '';
-        finalGrade = machine_name || '';
-        finalBrand = spare_brand || '';
+        // Spare part handling - new cascading structure
+        // Store all spare part info in the Make, Grade, Brand fields temporarily
+        finalMake = `${spare_process} - ${spare_category_type} - ${spare_machine_type}`;
+        finalGrade = spare_manufacturer;
+        finalBrand = spare_model || spare_part_name;
         gsm = 0;
         deckle_mm = 0;
         grain_mm = 0;
         
-        console.log('Creating spare part with values:', {
-          spare_make,
-          machine_name,
-          spare_description,
-          spare_age,
-          spare_brand
+        console.log('Creating spare part with new cascading values:', {
+          spare_process,
+          spare_category_type,
+          spare_machine_type,
+          spare_manufacturer,
+          spare_model,
+          spare_part_name,
+          spare_part_no,
         });
+        
+        // Auto-save custom model to spare_part_categories if provided
+        if (spare_model && spare_process && spare_category_type && spare_machine_type && spare_manufacturer) {
+          await saveCustomModel({
+            process: spare_process,
+            category_type: spare_category_type,
+            machine_type: spare_machine_type,
+            manufacturer: spare_manufacturer,
+            model: spare_model
+          });
+        }
       } else {
         // Regular product handling
         finalMake = make_text || make_id || '';
@@ -521,9 +540,18 @@ class DealService {
 
       // Build seller comments
       let sellerComments = deal_title;
-      if (is_spare_part && spare_description) {
-        sellerComments = `${deal_title}\n${spare_description}`;
-        if (spare_age) sellerComments += `\nAge: ${spare_age}`;
+      if (is_spare_part) {
+        // For spare parts, build a descriptive comment from all fields
+        const parts = [
+          `Part: ${spare_part_name} (${spare_part_no})`,
+          `Process: ${spare_process}`,
+          `Category: ${spare_category_type}`,
+          `Machine: ${spare_machine_type}`,
+          `Manufacturer: ${spare_manufacturer}`,
+        ];
+        if (spare_model) parts.push(`Model: ${spare_model}`);
+        if (deal_description) parts.push(`\n${deal_description}`);
+        sellerComments = parts.join('\n');
       } else if (deal_description) {
         sellerComments = `${deal_title}\n${deal_description}`;
       }
