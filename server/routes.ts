@@ -65,7 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exclude_member_id
       } = req.body;
 
-      console.log('Spare part search params:', req.body);
+      console.log('🔍 Spare part search params:', req.body);
+      console.log('🔍 exclude_member_id:', exclude_member_id);
 
       // Get spare part group ID
       const sparePartGroup = await executeQuerySingle(`
@@ -380,6 +381,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to create spare part tables',
+        error: error.message
+      });
+    }
+  });
+
+  // Add company child user columns migration endpoint
+  app.post('/api/database/add-company-child-user-columns', async (req, res) => {
+    try {
+      const { addCompanyChildUserColumns } = await import('./addCompanyChildUserColumns');
+      const result = await addCompanyChildUserColumns();
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error adding company child user columns:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add company child user columns',
+        error: error.message
+      });
+    }
+  });
+
+  // Fix user types for existing accounts (one-time migration helper)
+  app.post('/api/database/fix-user-types', async (req, res) => {
+    try {
+      // Update all existing members without user_type to be parent users
+      await executeQuery(`
+        UPDATE bmpa_members
+        SET user_type = 'parent',
+            company_id = member_id
+        WHERE user_type IS NULL OR user_type = ''
+      `);
+
+      // Count updated users
+      const result = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM bmpa_members WHERE user_type = 'parent'
+      `);
+
+      res.json({
+        success: true,
+        message: 'User types fixed successfully',
+        parentUsers: result?.count || 0
+      });
+    } catch (error: any) {
+      console.error('Error fixing user types:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fix user types',
         error: error.message
       });
     }
@@ -1041,6 +1089,339 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating profile:', error);
       res.status(500).json({ message: 'Failed to update profile' });
+    }
+  });
+
+  // ============================================
+  // CHILD USER MANAGEMENT ROUTES
+  // ============================================
+
+  // Get all child users for a company
+  app.get('/api/child-users', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get current user to check if they're a parent
+      const currentUser = await executeQuerySingle(`
+        SELECT user_type, company_id FROM bmpa_members WHERE member_id = ?
+      `, [memberId]);
+
+      if (!currentUser || currentUser.user_type !== 'parent') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only parent accounts can manage child users'
+        });
+      }
+
+      // Get all child users for this company with product counts
+      const childUsers = await executeQuery(`
+        SELECT
+          m.member_id,
+          m.child_user_name as name,
+          m.email,
+          m.phone,
+          m.created_at,
+          m.last_login,
+          COUNT(d.TransID) as product_count
+        FROM bmpa_members m
+        LEFT JOIN deal_master d ON m.member_id = d.created_by_member_id AND d.StockStatus = 1
+        WHERE m.parent_member_id = ? AND m.user_type = 'child'
+        GROUP BY m.member_id, m.child_user_name, m.email, m.phone, m.created_at, m.last_login
+        ORDER BY m.created_at DESC
+      `, [memberId]);
+
+      res.json({
+        success: true,
+        childUsers,
+        maxChildUsers: 2,
+        currentCount: childUsers.length
+      });
+    } catch (error) {
+      console.error('Error fetching child users:', error);
+      res.status(500).json({ message: 'Failed to fetch child users' });
+    }
+  });
+
+  // Create a child user
+  app.post('/api/child-users', requireAuth, async (req: any, res) => {
+    try {
+      const parentId = req.session.memberId;
+      if (!parentId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      console.log('📝 Create child user request body:', req.body);
+
+      const { name, email, phone } = req.body;
+
+      if (!name || !email || !phone) {
+        console.log('❌ Missing required fields - name:', name, 'email:', email, 'phone:', phone);
+        return res.status(400).json({
+          success: false,
+          message: 'Name, email, and phone number are required'
+        });
+      }
+
+      // Get parent user info
+      const parent = await executeQuerySingle(`
+        SELECT user_type, company_id, company_name FROM bmpa_members WHERE member_id = ?
+      `, [parentId]);
+
+      if (!parent || parent.user_type !== 'parent') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only parent accounts can create child users'
+        });
+      }
+
+      // Check if email already exists
+      const existingUser = await executeQuerySingle(`
+        SELECT member_id FROM bmpa_members WHERE email = ?
+      `, [email]);
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is already registered'
+        });
+      }
+
+      // Check child user limit (max 2)
+      const childCount = await executeQuerySingle(`
+        SELECT COUNT(*) as count FROM bmpa_members
+        WHERE parent_member_id = ? AND user_type = 'child'
+      `, [parentId]);
+
+      if (childCount && childCount.count >= 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum of 2 child users allowed per company'
+        });
+      }
+
+      // Create child user
+      console.log('📝 Creating child user with:', {
+        name,
+        email,
+        phone,
+        company_name: parent.company_name,
+        parent_id: parentId,
+        company_id: parent.company_id
+      });
+
+      // Get parent's membership validity (can't use subquery in INSERT into same table)
+      const parentMembership = await executeQuerySingle(`
+        SELECT membership_valid_till FROM bmpa_members WHERE member_id = ?
+      `, [parentId]);
+
+      const result = await executeQuery(`
+        INSERT INTO bmpa_members (
+          child_user_name,
+          email,
+          phone,
+          company_name,
+          parent_member_id,
+          user_type,
+          company_id,
+          role,
+          mstatus,
+          membership_paid,
+          membership_valid_till
+        ) VALUES (?, ?, ?, ?, ?, 'child', ?, 'both', 1, 1, ?)
+      `, [
+        name,
+        email,
+        phone,
+        parent.company_name,
+        parentId,
+        parent.company_id,
+        parentMembership?.membership_valid_till || '2025-12-31'
+      ]);
+
+      const insertResult = result as any;
+      const childUserId = insertResult.insertId;
+
+      console.log(`✅ Child user created: ${name} (${email}) for parent ${parentId}`);
+
+      // Send welcome email to the child user
+      try {
+        const { generateChildUserWelcomeEmail } = await import('./emailService');
+        const welcomeEmailHtml = generateChildUserWelcomeEmail({
+          childUserName: name,
+          childUserEmail: email,
+          parentName: parent.mname || 'Parent User',
+          companyName: parent.company_name,
+          membershipValidTill: parentMembership?.membership_valid_till || '2025-12-31'
+        });
+
+        await sendEmail({
+          to: email,
+          subject: 'Welcome to Stock Laabh - Child User Account Created',
+          html: welcomeEmailHtml
+        });
+
+        console.log(`✅ Welcome email sent to child user: ${email}`);
+      } catch (emailError) {
+        console.error('❌ Error sending welcome email to child user:', emailError);
+        // Don't fail the request if email fails
+      }
+
+      res.json({
+        success: true,
+        message: 'Child user created successfully',
+        childUserId
+      });
+    } catch (error: any) {
+      console.error('❌ Error creating child user:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage
+      });
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to create child user',
+        error: error.sqlMessage || error.message
+      });
+    }
+  });
+
+  // Delete a child user
+  app.delete('/api/child-users/:id', requireAuth, async (req: any, res) => {
+    try {
+      const parentId = req.session.memberId;
+      const childUserId = parseInt(req.params.id);
+
+      if (!parentId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Verify the child user belongs to this parent
+      const childUser = await executeQuerySingle(`
+        SELECT member_id FROM bmpa_members
+        WHERE member_id = ? AND parent_member_id = ? AND user_type = 'child'
+      `, [childUserId, parentId]);
+
+      if (!childUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Child user not found or you do not have permission to delete this user'
+        });
+      }
+
+      // Delete the child user
+      await executeQuery(`
+        DELETE FROM bmpa_members WHERE member_id = ?
+      `, [childUserId]);
+
+      console.log(`✅ Child user ${childUserId} deleted by parent ${parentId}`);
+
+      res.json({
+        success: true,
+        message: 'Child user deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting child user:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete child user'
+      });
+    }
+  });
+
+  // Get company dashboard stats (for parent accounts)
+  app.get('/api/company/stats', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      if (!memberId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get current user
+      const currentUser = await executeQuerySingle(`
+        SELECT user_type, company_id, member_id FROM bmpa_members WHERE member_id = ?
+      `, [memberId]);
+
+      if (!currentUser || currentUser.user_type !== 'parent') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only parent accounts can view company stats'
+        });
+      }
+
+      console.log('📊 Company Stats Debug:', {
+        memberId,
+        userType: currentUser.user_type,
+        companyId: currentUser.company_id
+      });
+
+      // Use member_id directly instead of company_id which might not be set
+      const companyIdToUse = currentUser.company_id || memberId;
+
+      // Get total inquiries received (for all users in company)
+      const inquiryCount = await executeQuerySingle(`
+        SELECT COUNT(*) as count
+        FROM bmpa_received_inquiries
+        WHERE seller_id IN (
+          SELECT member_id FROM bmpa_members
+          WHERE company_id = ? OR member_id = ? OR parent_member_id = ?
+        )
+      `, [companyIdToUse, memberId, memberId]);
+
+      // Get child user count
+      const childUserCount = await executeQuerySingle(`
+        SELECT COUNT(*) as count
+        FROM bmpa_members
+        WHERE parent_member_id = ? AND user_type = 'child'
+      `, [memberId]);
+
+      // Get total products listed by company (all products)
+      const totalProductCount = await executeQuerySingle(`
+        SELECT COUNT(*) as count
+        FROM deal_master
+        WHERE memberID IN (
+          SELECT member_id FROM bmpa_members
+          WHERE company_id = ? OR member_id = ? OR parent_member_id = ?
+        )
+      `, [companyIdToUse, memberId, memberId]);
+
+      // Get active products only (StockStatus = 1)
+      const activeProductCount = await executeQuerySingle(`
+        SELECT COUNT(*) as count
+        FROM deal_master
+        WHERE memberID IN (
+          SELECT member_id FROM bmpa_members
+          WHERE company_id = ? OR member_id = ? OR parent_member_id = ?
+        ) AND StockStatus = 1
+      `, [companyIdToUse, memberId, memberId]);
+
+      console.log('📊 Stats Results:', {
+        totalInquiries: inquiryCount?.count || 0,
+        childUserCount: childUserCount?.count || 0,
+        totalProducts: totalProductCount?.count || 0,
+        activeProducts: activeProductCount?.count || 0
+      });
+
+      res.json({
+        success: true,
+        stats: {
+          total_inquiries: inquiryCount?.count || 0,
+          child_user_count: childUserCount?.count || 0,
+          max_child_users: 2,
+          total_products: totalProductCount?.count || 0,
+          active_products: activeProductCount?.count || 0
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching company stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch company stats'
+      });
     }
   });
 
@@ -1965,14 +2346,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // First, get the seller information including email from the database
+      // If seller is a child user, get parent's email instead
       const sellerQuery = await executeQuerySingle(`
-        SELECT 
+        SELECT
           d.created_by_member_id as seller_id,
-          mb.email as seller_email,
-          mb.mname as seller_name,
-          mb.company_name as seller_company
+          CASE
+            WHEN mb.user_type = 'child' THEN parent.email
+            ELSE mb.email
+          END as seller_email,
+          CASE
+            WHEN mb.user_type = 'child' THEN parent.mname
+            ELSE mb.mname
+          END as seller_name,
+          CASE
+            WHEN mb.user_type = 'child' THEN parent.company_name
+            ELSE mb.company_name
+          END as seller_company,
+          mb.user_type,
+          mb.child_user_name
         FROM deal_master d
         LEFT JOIN bmpa_members mb ON d.created_by_member_id = mb.member_id
+        LEFT JOIN bmpa_members parent ON mb.parent_member_id = parent.member_id
         WHERE d.TransID = ?
       `, [productId]);
       
@@ -1993,7 +2387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log(`📧 Sending inquiry to seller email: ${sellerEmail}`);
+      console.log(`📧 Sending inquiry to ${sellerQuery.user_type === 'child' ? 'parent' : 'seller'} email: ${sellerEmail}`);
 
       // Generate inquiry email HTML
       const inquiryData: InquiryEmailData = {

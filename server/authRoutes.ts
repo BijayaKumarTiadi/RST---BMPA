@@ -181,7 +181,11 @@ authRouter.post('/verify-login-otp', async (req, res) => {
           company: member.company_name,
           membershipPaid: member.membership_paid,
           membershipValidTill: member.membership_valid_till,
-          status: member.mstatus
+          status: member.mstatus,
+          user_type: member.user_type || null,
+          parent_member_id: member.parent_member_id || null,
+          child_user_name: member.child_user_name || null,
+          company_id: member.company_id || null
         }
       });
     });
@@ -319,7 +323,11 @@ authRouter.get('/current-member', async (req, res) => {
         membershipValidTill: member.membership_valid_till,
         status: member.mstatus,
         last_login: member.last_login,
-        role: member.role || 'buyer' // Use role from database, default to buyer
+        role: member.role || 'buyer', // Use role from database, default to buyer
+        user_type: member.user_type || null, // Include user_type for parent/child logic
+        parent_member_id: member.parent_member_id || null,
+        child_user_name: member.child_user_name || null,
+        company_id: member.company_id || null
       }
     });
 

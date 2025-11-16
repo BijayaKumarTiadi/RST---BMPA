@@ -745,3 +745,154 @@ export function generatePaymentSuccessEmail(data: PaymentSuccessEmailData): stri
     </html>
   `;
 }
+
+export interface ChildUserWelcomeEmailData {
+  childUserName: string;
+  childUserEmail: string;
+  parentName: string;
+  companyName: string;
+  membershipValidTill: string;
+}
+
+export function generateChildUserWelcomeEmail(data: ChildUserWelcomeEmailData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to Stock Laabh - Child User Account</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+            Welcome to Stock Laabh!
+          </h1>
+          <p style="color: #ede9fe; margin: 5px 0 0 0; font-size: 16px;">
+            Your child user account has been created
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
+            Hello ${data.childUserName}!
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            You've been added as a child user to <strong>${data.companyName}</strong> on the Stock Laabh platform by ${data.parentName}.
+          </p>
+
+          <!-- Account Information -->
+          <div style="background-color: #f3f4f6; border: 2px solid #d1d5db; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #7c3aed; margin: 0 0 15px 0; font-size: 18px;">👤 Your Account Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold; width: 45%;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${data.childUserEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Company:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${data.companyName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Account Type:</td>
+                <td style="padding: 8px 0; color: #1f2937;">Child User</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Membership Valid Till:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${new Date(data.membershipValidTill).toLocaleDateString('en-IN')}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Login Instructions -->
+          <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px;">🔐 How to Log In:</h3>
+            <ol style="color: #047857; margin: 0; padding-left: 20px; line-height: 1.8;">
+              <li>Visit the Stock Laabh login page</li>
+              <li>Enter your email address (${data.childUserEmail})</li>
+              <li>Click "Send OTP" to receive a one-time password</li>
+              <li>Enter the OTP to access your account</li>
+            </ol>
+          </div>
+
+          <!-- Permissions & Features -->
+          <h3 style="color: #1f2937; margin: 30px 0 15px 0; font-size: 18px;">✨ What You Can Do:</h3>
+          
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #3b82f6; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">✓</div>
+                <div>
+                  <strong style="color: #1e40af;">Add & Manage Products</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Create and edit product listings for your company</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #8b5cf6; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">✓</div>
+                <div>
+                  <strong style="color: #7c3aed;">Browse Marketplace</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Search and view available products from other sellers</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <div style="display: flex; align-items: start; margin-bottom: 12px;">
+                <div style="background-color: #10b981; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">✓</div>
+                <div>
+                  <strong style="color: #059669;">Shared Membership</strong><br>
+                  <span style="color: #64748b; font-size: 14px;">Automatically inherit your company's membership benefits</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Important Notes -->
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+            <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">📌 Important Notes:</h3>
+            <ul style="color: #78350f; margin: 0; padding-left: 20px; line-height: 1.6; font-size: 14px;">
+              <li>All product inquiries will be sent to the parent account email (${data.parentName})</li>
+              <li>You share the same membership status as your parent company</li>
+              <li>Your account is managed by ${data.parentName}</li>
+              <li>Use OTP-based authentication - no password needed</li>
+            </ul>
+          </div>
+
+          <!-- Call to Action -->
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="https://stocklaabh.com/login" 
+               style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);">
+              Log In to Your Account
+            </a>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">
+            If you have any questions or need assistance, please contact our support team at <a href="mailto:support@bmpa.org" style="color: #3b82f6;">support@bmpa.org</a>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 14px;">
+            © 2025 Stock Laabh. All rights reserved.
+          </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">
+            Professional Trading Platform
+          </p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 11px;">
+            Powered by Renuka Print ERP Solutions
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}

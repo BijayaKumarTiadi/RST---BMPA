@@ -322,7 +322,7 @@ export default function Marketplace() {
 
   // Fetch deals - initial load only, sorting is client-side
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ["/api/deals", user?.member_id],
+    queryKey: ["/api/deals", user?.id],
     queryFn: async () => {
       // If we have search results, use them instead
       if (searchResults && searchResults.data) {
@@ -339,8 +339,8 @@ export default function Marketplace() {
       params.append('page', '1');
       
       // Exclude user's own products from marketplace view
-      if (user?.member_id) {
-        params.append('exclude_member_id', user.member_id.toString());
+      if (user?.id) {
+        params.append('exclude_member_id', user.id.toString());
       }
       
       const response = await fetch(`/api/deals?${params.toString()}`);
@@ -475,7 +475,7 @@ export default function Marketplace() {
           query: '', // Empty query to get all data
           page: 1,
           pageSize: 1, // Just need aggregations, not all results
-          exclude_member_id: user?.member_id // Exclude user's own products
+          exclude_member_id: user?.id // Exclude user's own products
         })
       });
       
@@ -516,7 +516,7 @@ export default function Marketplace() {
           query: query.trim(),
           page: currentPage,
           pageSize: itemsPerPage,
-          exclude_member_id: user?.member_id // Exclude user's own products
+          exclude_member_id: user?.id // Exclude user's own products
         })
       });
       
@@ -580,7 +580,7 @@ export default function Marketplace() {
             query: value.trim(),
             page: 1,
             pageSize: itemsPerPage,
-            exclude_member_id: user?.member_id // Exclude user's own products
+            exclude_member_id: user?.id // Exclude user's own products
           })
         });
         
@@ -1124,7 +1124,7 @@ export default function Marketplace() {
         },
         body: JSON.stringify({
           ...preciseSearch,
-          exclude_member_id: user?.member_id // Exclude user's own products
+          exclude_member_id: user?.id // Exclude user's own products
         })
       });
       
@@ -2528,7 +2528,7 @@ export default function Marketplace() {
                             </Button>
                             
                             {/* Show edit button only for deals created by current user */}
-                            {deal.created_by_member_id === user?.member_id ? (
+                            {deal.created_by_member_id === user?.id ? (
                               <div className="grid grid-cols-2 gap-2">
                                 <Button
                                   size="sm"

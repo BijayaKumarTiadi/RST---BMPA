@@ -312,7 +312,7 @@ class DealService {
       const offset = filters?.offset || 0;
 
       const dealsQuery = `
-        SELECT 
+        SELECT
           d.*,
           d.stock_description,
           d.Seller_comments,
@@ -327,13 +327,17 @@ class DealService {
           mb.mname as seller_name,
           mb.company_name as seller_company,
           mb.email as seller_email,
-          mb.phone as seller_phone
+          mb.phone as seller_phone,
+          creator.user_type as created_by_user_type,
+          creator.child_user_name as created_by_child_name,
+          COALESCE(creator.child_user_name, creator.mname, d.created_by_name) as created_by_display_name
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
         LEFT JOIN stock_make_master m ON d.Make = m.make_ID
         LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
         LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
+        LEFT JOIN bmpa_members creator ON d.created_by_member_id = creator.member_id
         ${whereClause}
         ${getSortClause(filters?.sort)}
         LIMIT ? OFFSET ?
@@ -379,7 +383,7 @@ class DealService {
   async getDealById(dealId: number): Promise<Deal | null> {
     try {
       const deal = await executeQuerySingle(`
-        SELECT 
+        SELECT
           d.*,
           d.stock_description,
           d.Seller_comments,
@@ -394,13 +398,17 @@ class DealService {
           mb.mname as seller_name,
           mb.company_name as seller_company,
           mb.email as seller_email,
-          mb.phone as seller_phone
+          mb.phone as seller_phone,
+          creator.user_type as created_by_user_type,
+          creator.child_user_name as created_by_child_name,
+          COALESCE(creator.child_user_name, creator.mname, d.created_by_name) as created_by_display_name
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
         LEFT JOIN stock_make_master m ON d.Make = m.make_ID
         LEFT JOIN stock_grade gr ON d.Grade = gr.gradeID
         LEFT JOIN stock_brand b ON d.Brand = b.brandID
         LEFT JOIN bmpa_members mb ON d.memberID = mb.member_id
+        LEFT JOIN bmpa_members creator ON d.created_by_member_id = creator.member_id
         WHERE d.TransID = ?
       `, [dealId]);
 

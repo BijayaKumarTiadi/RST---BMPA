@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail, UserCog } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -361,7 +361,7 @@ export default function SellerDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-green-100">Active Offers</CardTitle>
@@ -402,6 +402,21 @@ export default function SellerDashboard() {
               </p>
             </CardContent>
           </Card>
+          
+          {user?.user_type === 'parent' && (
+            <Card className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-0 cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/manage-users')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-indigo-100">User Management</CardTitle>
+                <UserCog className="h-5 w-5 text-indigo-200" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">Manage</div>
+                <p className="text-xs text-indigo-100 mt-1">
+                  Child user accounts
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Main Content Tabs */}

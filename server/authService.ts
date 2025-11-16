@@ -21,6 +21,10 @@ export interface Member {
   bmpa_approval_id: number;
   approval_datetime: Date;
   last_login?: Date;
+  parent_member_id?: number;
+  user_type?: 'parent' | 'child';
+  child_user_name?: string;
+  company_id?: number;
 }
 
 export interface RegistrationData {
@@ -74,12 +78,12 @@ export class AuthService {
 
       // No password needed for OTP-based authentication
 
-      // Insert new member
+      // Insert new member as parent by default
       const result = await executeQuery(
         `INSERT INTO bmpa_members (
-          mname, email, phone, company_name, address1, address2, 
-          city, state, role, mstatus, bmpa_approval_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          mname, email, phone, company_name, address1, address2,
+          city, state, role, mstatus, bmpa_approval_id, user_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.mname,
           data.email,
@@ -91,12 +95,19 @@ export class AuthService {
           data.state,
           'both', // role: explicitly set to 'both' for all new users
           0, // mstatus: 0 = pending approval
-          0  // bmpa_approval_id: 0 = not approved yet
+          0,  // bmpa_approval_id: 0 = not approved yet
+          'parent' // user_type: new users are parent accounts
         ]
       );
 
       const insertResult = result as any;
       const memberId = insertResult.insertId;
+
+      // Set company_id to the member's own ID for parent accounts
+      await executeQuery(
+        'UPDATE bmpa_members SET company_id = ? WHERE member_id = ?',
+        [memberId, memberId]
+      );
 
       // Send welcome email to user
       try {
@@ -196,8 +207,20 @@ export class AuthService {
         };
       }
 
+      // For child users, check parent's membership status
+      let membershipMember = member;
+      if (member.user_type === 'child' && member.parent_member_id) {
+        const parentMember = await executeQuerySingle<Member>(
+          'SELECT * FROM bmpa_members WHERE member_id = ?',
+          [member.parent_member_id]
+        );
+        if (parentMember) {
+          membershipMember = parentMember;
+        }
+      }
+
       // Check if account is approved
-      if (member.mstatus === 0) {
+      if (membershipMember.mstatus === 0) {
         return {
           success: false,
           message: 'Your account is pending admin approval. Please wait for approval.'
@@ -205,14 +228,14 @@ export class AuthService {
       }
 
       // Check if membership is paid and valid
-      if (member.membership_paid === 0) {
+      if (membershipMember.membership_paid === 0) {
         return {
           success: false,
           message: 'Please complete your membership payment to access the platform.'
         };
       }
 
-      const validTill = new Date(member.membership_valid_till);
+      const validTill = new Date(membershipMember.membership_valid_till);
       if (validTill < new Date()) {
         return {
           success: false,

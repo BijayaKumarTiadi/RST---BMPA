@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info, LayoutDashboard, Store } from "lucide-react";
+import { Menu, X, Sun, Moon, User, Clock, ChevronDown, ShoppingBag, LogOut, Settings, Package, CreditCard, Info, LayoutDashboard, Store, Users } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -186,6 +186,15 @@ export default function Navigation() {
                     </Link>
                   </DropdownMenuItem>
                   
+                  {user?.user_type !== 'child' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/manage-users" className="flex items-center space-x-2 w-full">
+                        <Users className="h-4 w-4" />
+                        <span>Manage Users</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center space-x-2 w-full">
                       <Settings className="h-4 w-4" />
@@ -297,9 +306,22 @@ export default function Navigation() {
                           Member Dashboard
                         </Button>
                         
+                        {user?.user_type !== 'child' && (
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setLocation('/manage-users');
+                              setIsMobileMenuOpen(false);
+                            }}
+                          >
+                            <Users className="mr-2 h-4 w-4" />
+                            Manage Users
+                          </Button>
+                        )}
                         
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           className="w-full justify-start"
                           onClick={() => {
                             setLocation('/profile');

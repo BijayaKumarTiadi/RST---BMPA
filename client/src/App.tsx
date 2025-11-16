@@ -24,6 +24,7 @@ import ProductDetails from "@/pages/product-details";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import Membership from "@/pages/membership";
+import ManageUsers from "@/pages/manage-users";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -85,6 +86,9 @@ function Router() {
       </Route>
       <Route path="/api-docs">
         {isAuthenticated ? <ApiDocs /> : <Login />}
+      </Route>
+      <Route path="/manage-users">
+        {isAuthenticated ? <ManageUsers /> : <Login />}
       </Route>
       <Route path="/welcome">
         {isAuthenticated ? <Landing /> : <Login />}

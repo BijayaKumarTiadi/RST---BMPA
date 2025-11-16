@@ -30,6 +30,9 @@ interface UserProfile {
   role: string;
   membership_type?: string;
   created_at: string;
+  user_type?: 'parent' | 'child';
+  membership_valid_till?: string;
+  membership_paid?: number;
 }
 
 export default function Profile() {
@@ -168,6 +171,17 @@ export default function Profile() {
   }
 
   const profile = profileData || user;
+  
+  const isChildUser = profile?.user_type === 'child' || user?.user_type === 'child';
+  const membershipEndDate = profile?.membership_valid_till
+    ? new Date(profile.membership_valid_till)
+    : user?.membership_valid_till
+    ? new Date(user.membership_valid_till)
+    : null;
+  
+  const daysRemaining = membershipEndDate
+    ? Math.ceil((membershipEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -425,6 +439,58 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Membership Information for Child Users */}
+        {isChildUser && (
+          <Card className="border-0 shadow-xl overflow-hidden mt-6">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-6 w-6" />
+                    <h2 className="text-2xl font-bold">Inherited Membership</h2>
+                  </div>
+                  <p className="text-purple-100 mb-4">Shared from parent company account</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">₹2,499</span>
+                    <span className="text-purple-100">/year</span>
+                  </div>
+                </div>
+                <Badge className="bg-green-500 text-white">
+                  Active
+                </Badge>
+              </div>
+            </div>
+
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <Calendar className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-1">Valid Until</p>
+                  <p className="font-semibold">
+                    {membershipEndDate
+                      ? membershipEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : 'Not available'}
+                  </p>
+                </div>
+
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-1">Days Remaining</p>
+                  <p className="font-semibold text-green-600">
+                    {daysRemaining > 0 ? `${daysRemaining} days` : 'Expired'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
+                <p className="text-sm text-blue-900">
+                  <strong>Note:</strong> As a child user, you inherit all membership benefits from the parent company account. This includes unlimited product listings, buyer-seller communication, and all premium features.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 mt-8">
