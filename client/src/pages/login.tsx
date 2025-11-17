@@ -535,7 +535,8 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        {/* Test Login for Development */}
+        {/* Test Login for Development - COMMENTED OUT FOR PRODUCTION DEMO */}
+        {/*
         <Card className="shadow-lg border-0 mt-4 bg-yellow-50 border-yellow-200">
           <CardHeader className="text-center pb-2">
             <CardTitle className="flex items-center justify-center text-lg text-yellow-800">
@@ -545,7 +546,7 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             {!showTestLogin ? (
-              <Button 
+              <Button
                 onClick={() => setShowTestLogin(true)}
                 variant="outline"
                 className="w-full border-yellow-300 text-yellow-800 hover:bg-yellow-100"
@@ -565,14 +566,14 @@ export default function Login() {
                     className="border-yellow-300"
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-yellow-600 hover:bg-yellow-700" 
+                <Button
+                  type="submit"
+                  className="w-full bg-yellow-600 hover:bg-yellow-700"
                   disabled={loading}
                 >
                   {loading ? 'Logging in...' : 'Test Login'}
                 </Button>
-                <Button 
+                <Button
                   type="button"
                   onClick={() => setShowTestLogin(false)}
                   variant="ghost"
@@ -584,6 +585,7 @@ export default function Login() {
             )}
           </CardContent>
         </Card>
+        */}
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-500">
