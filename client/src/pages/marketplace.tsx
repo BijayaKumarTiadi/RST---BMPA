@@ -1250,7 +1250,7 @@ export default function Marketplace() {
             hoverTimeoutRef.current = setTimeout(() => {
               setPreciseSearchExpanded(false);
               hoverTimeoutRef.current = null;
-            }, 3000);
+            }, 20000);
           }}
         >
           <Card className="w-full transition-all duration-300 hover:shadow-lg border-blue-200 dark:border-blue-800">
@@ -1278,22 +1278,34 @@ export default function Marketplace() {
                   {/* Category */}
                   <div className="flex-1 min-w-32">
                     <label className="text-sm font-medium">Category <span className="text-red-500">*</span></label>
-                    <Select 
-                      value={preciseSearch.category} 
-                      onValueChange={(value) => handlePreciseSearchChange('category', value)}
-                    >
-                      <SelectTrigger className="mt-1 h-9 text-sm" data-testid="select-precise-category">
-                        <SelectValue placeholder="Select category first..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categoriesData?.map((category: any, index: number) => (
-                          <SelectItem key={index} value={category.value || category}>
-                            {category.value || category} {category.count && `(${category.count})`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative flex items-center gap-1 mt-1">
+                      <Select
+                        value={preciseSearch.category}
+                        onValueChange={(value) => handlePreciseSearchChange('category', value)}
+                      >
+                        <SelectTrigger className="h-9 text-sm" data-testid="select-precise-category">
+                          <SelectValue placeholder="Select category first..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categoriesData?.map((category: any, index: number) => (
+                            <SelectItem key={index} value={category.value || category}>
+                              {category.value || category} {category.count && `(${category.count})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {preciseSearch.category && (
+                        <button
+                          onClick={() => handlePreciseSearchChange('category', '')}
+                          className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          type="button"
+                          title="Clear category"
+                        >
+                          <X className="h-3 w-3 text-gray-500" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Regular Product Fields - GSM */}
@@ -1359,101 +1371,161 @@ export default function Marketplace() {
                       {/* Process */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Process</label>
-                        <Select
-                          value={preciseSearch.process}
-                          onValueChange={(value) => handlePreciseSearchChange('process', value)}
-                        >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
-                            <SelectValue placeholder="Select process..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableProcesses.map((proc: any, index: number) => (
-                              <SelectItem key={index} value={proc.value || proc}>
-                                {proc.value || proc}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={preciseSearch.process}
+                            onValueChange={(value) => handlePreciseSearchChange('process', value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select process..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProcesses.map((proc: any, index: number) => (
+                                <SelectItem key={index} value={proc.value || proc}>
+                                  {proc.value || proc}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {preciseSearch.process && (
+                            <button
+                              onClick={() => handlePreciseSearchChange('process', '')}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear process"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Category Type */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Category Type</label>
-                        <Select
-                          value={preciseSearch.categoryType}
-                          onValueChange={(value) => handlePreciseSearchChange('categoryType', value)}
-                        >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
-                            <SelectValue placeholder="Select type..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableCategoryTypes.map((type: any, index: number) => (
-                              <SelectItem key={index} value={type.value || type}>
-                                {type.value || type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={preciseSearch.categoryType}
+                            onValueChange={(value) => handlePreciseSearchChange('categoryType', value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select type..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableCategoryTypes.map((type: any, index: number) => (
+                                <SelectItem key={index} value={type.value || type}>
+                                  {type.value || type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {preciseSearch.categoryType && (
+                            <button
+                              onClick={() => handlePreciseSearchChange('categoryType', '')}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear category type"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Machine Type */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Machine Type</label>
-                        <Select
-                          value={preciseSearch.machineType}
-                          onValueChange={(value) => handlePreciseSearchChange('machineType', value)}
-                        >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
-                            <SelectValue placeholder="Select machine..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableMachineTypes.map((machine: any, index: number) => (
-                              <SelectItem key={index} value={machine.value || machine}>
-                                {machine.value || machine}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={preciseSearch.machineType}
+                            onValueChange={(value) => handlePreciseSearchChange('machineType', value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select machine..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableMachineTypes.map((machine: any, index: number) => (
+                                <SelectItem key={index} value={machine.value || machine}>
+                                  {machine.value || machine}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {preciseSearch.machineType && (
+                            <button
+                              onClick={() => handlePreciseSearchChange('machineType', '')}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear machine type"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Manufacturer */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Manufacturer</label>
-                        <Select
-                          value={preciseSearch.manufacturer}
-                          onValueChange={(value) => handlePreciseSearchChange('manufacturer', value)}
-                        >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
-                            <SelectValue placeholder="Select manufacturer..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableManufacturers.map((mfr: any, index: number) => (
-                              <SelectItem key={index} value={mfr.value || mfr}>
-                                {mfr.value || mfr}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={preciseSearch.manufacturer}
+                            onValueChange={(value) => handlePreciseSearchChange('manufacturer', value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select manufacturer..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableManufacturers.map((mfr: any, index: number) => (
+                                <SelectItem key={index} value={mfr.value || mfr}>
+                                  {mfr.value || mfr}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {preciseSearch.manufacturer && (
+                            <button
+                              onClick={() => handlePreciseSearchChange('manufacturer', '')}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear manufacturer"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Model */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Model</label>
-                        <Select
-                          value={preciseSearch.model}
-                          onValueChange={(value) => handlePreciseSearchChange('model', value)}
-                        >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
-                            <SelectValue placeholder="Select model..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableModels.map((model: any, index: number) => (
-                              <SelectItem key={index} value={model.value || model}>
-                                {model.value || model}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={preciseSearch.model}
+                            onValueChange={(value) => handlePreciseSearchChange('model', value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select model..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableModels.map((model: any, index: number) => (
+                                <SelectItem key={index} value={model.value || model}>
+                                  {model.value || model}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {preciseSearch.model && (
+                            <button
+                              onClick={() => handlePreciseSearchChange('model', '')}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear model"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Part Name */}
