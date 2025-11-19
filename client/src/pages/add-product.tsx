@@ -510,32 +510,21 @@ export default function AddDeal() {
     enabled: isSparePartGroup(currentGroupName || ''),
   });
 
-  // Fetch manufacturers - independent of previous selections
+  // Fetch manufacturers - filtered by Process
   const { data: manufacturers, isLoading: manufacturersLoading } = useQuery({
-    queryKey: ['/api/spare-parts/manufacturers'],
+    queryKey: ['/api/spare-parts/manufacturers', selectedProcess],
     queryFn: async () => {
-      console.log('Fetching manufacturers...');
-      const response = await fetch(`/api/spare-parts/manufacturers`);
+      console.log('Fetching manufacturers for process:', selectedProcess);
+      const url = selectedProcess
+        ? `/api/spare-parts/manufacturers?process=${encodeURIComponent(selectedProcess)}`
+        : `/api/spare-parts/manufacturers`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch manufacturers');
       const data = await response.json();
       console.log('Manufacturers data:', data);
       return data;
     },
-    enabled: isSparePartGroup(currentGroupName || ''),
-  });
-
-  // Fetch models - independent of previous selections
-  const { data: models, isLoading: modelsLoading } = useQuery({
-    queryKey: ['/api/spare-parts/models'],
-    queryFn: async () => {
-      console.log('Fetching models...');
-      const response = await fetch(`/api/spare-parts/models`);
-      if (!response.ok) throw new Error('Failed to fetch models');
-      const data = await response.json();
-      console.log('Models data:', data);
-      return data;
-    },
-    enabled: isSparePartGroup(currentGroupName || ''),
+    enabled: isSparePartGroup(currentGroupName || '') && !!selectedProcess,
   });
 
   // Debug log when data changes
@@ -546,9 +535,8 @@ export default function AddDeal() {
       console.log('Category Types:', categoryTypes, 'Loading:', categoryTypesLoading);
       console.log('Machine Types:', machineTypes, 'Loading:', machineTypesLoading);
       console.log('Manufacturers:', manufacturers, 'Loading:', manufacturersLoading);
-      console.log('Models:', models, 'Loading:', modelsLoading);
     }
-  }, [processes, categoryTypes, machineTypes, manufacturers, models, currentGroupName, processesLoading, categoryTypesLoading, machineTypesLoading, manufacturersLoading, modelsLoading]);
+  }, [processes, categoryTypes, machineTypes, manufacturers, currentGroupName, processesLoading, categoryTypesLoading, machineTypesLoading, manufacturersLoading]);
 
   // Show all options without filtering
   const filteredMakes = makes;
@@ -901,7 +889,7 @@ export default function AddDeal() {
                         )}
                       />
 
-                      {/* First Row: Process and Category Type */}
+                      {/* First Row: Process and Machine Type */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Controller
                           control={form.control}
@@ -914,17 +902,14 @@ export default function AddDeal() {
                                   value={field.value || ""}
                                   onValueChange={(value) => {
                                     console.log('Process selected:', value);
-                                    console.log('Current field value BEFORE:', field.value);
                                     field.onChange(value);
                                     setSelectedProcess(value);
-                                    console.log('Current field value AFTER:', form.getValues('spareProcess'));
+                                    // Clear manufacturer when process changes
+                                    form.setValue('spareManufacturer', '');
+                                    setSelectedManufacturer('');
                                   }}
-                                  onOpenChange={(open) => console.log('Process dropdown opened:', open)}
                                 >
-                                  <SelectTrigger
-                                    className="bg-popover border-border text-foreground"
-                                    onClick={() => console.log('Process trigger clicked, field value:', field.value, 'processes:', processes)}
-                                  >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
                                     <SelectValue placeholder="Select process" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-popover border-border" style={{ zIndex: 9999 }}>
@@ -939,6 +924,72 @@ export default function AddDeal() {
                               {fieldState.error && (
                                 <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
                               )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="spareMachineType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Machine Type <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedMachineType(value);
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select machine type" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {machineTypes?.map((type: string) => (
+                                      <SelectItem key={type} value={type} className="text-foreground hover:bg-accent">
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Second Row: Manufacturer and Category Type */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="spareManufacturer"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Manufacturer <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedManufacturer(value);
+                                  }}
+                                  disabled={!selectedProcess}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder={selectedProcess ? "Select manufacturer" : "Select process first"} />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {manufacturers?.map((mfr: string) => (
+                                      <SelectItem key={mfr} value={mfr} className="text-foreground hover:bg-accent">
+                                        {mfr}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -977,72 +1028,7 @@ export default function AddDeal() {
                         />
                       </div>
 
-                      {/* Second Row: Machine Type and Manufacturer */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="spareMachineType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">Machine Type <span className="text-red-500">*</span></FormLabel>
-                              <FormControl>
-                                <Select
-                                  value={field.value}
-                                  onValueChange={(value) => {
-                                    field.onChange(value);
-                                    setSelectedMachineType(value);
-                                  }}
-                                >
-                                  <SelectTrigger className="bg-popover border-border text-foreground">
-                                    <SelectValue placeholder="Select machine type" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-popover border-border">
-                                    {machineTypes?.map((type: string) => (
-                                      <SelectItem key={type} value={type} className="text-foreground hover:bg-accent">
-                                        {type}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="spareManufacturer"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">Manufacturer <span className="text-red-500">*</span></FormLabel>
-                              <FormControl>
-                                <Select
-                                  value={field.value}
-                                  onValueChange={(value) => {
-                                    field.onChange(value);
-                                    setSelectedManufacturer(value);
-                                  }}
-                                >
-                                  <SelectTrigger className="bg-popover border-border text-foreground">
-                                    <SelectValue placeholder="Select manufacturer" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-popover border-border">
-                                    {manufacturers?.map((mfr: string) => (
-                                      <SelectItem key={mfr} value={mfr} className="text-foreground hover:bg-accent">
-                                        {mfr}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {/* Third Row: Model (optional) - Autocomplete with auto-save */}
+                      {/* Third Row: Model (text input) */}
                       <FormField
                         control={form.control}
                         name="spareModel"
@@ -1050,44 +1036,18 @@ export default function AddDeal() {
                           <FormItem>
                             <FormLabel className="text-foreground">
                               Model
-                              <span className="text-xs text-muted-foreground ml-2">(optional - type to add new)</span>
+                              <span className="text-xs text-muted-foreground ml-2">(optional)</span>
                             </FormLabel>
                             <FormControl>
-                              <AutocompleteInput
-                                value={selectedModel || field.value || ''}
-                                onChange={(value) => {
-                                  field.onChange(value);
-                                  setSelectedModel(value);
+                              <Input
+                                type="text"
+                                placeholder="Enter model..."
+                                value={field.value || ''}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  setSelectedModel(e.target.value);
                                 }}
-                                onSelect={async (value, item) => {
-                                  // If it's a new model (not from dropdown), save it
-                                  if (!item && value && selectedProcess && selectedCategoryType && selectedMachineType && selectedManufacturer) {
-                                    try {
-                                      await apiRequest("POST", "/api/spare-parts/save-model", {
-                                        process: selectedProcess,
-                                        category_type: selectedCategoryType,
-                                        machine_type: selectedMachineType,
-                                        manufacturer: selectedManufacturer,
-                                        model: value
-                                      });
-                                      // Refresh models list
-                                      queryClient.invalidateQueries({ queryKey: ['/api/spare-parts/models'] });
-                                    } catch (error) {
-                                      console.error('Error saving model:', error);
-                                    }
-                                  }
-                                  field.onChange(value);
-                                  setSelectedModel(value);
-                                }}
-                                onTextChange={(text) => {
-                                  field.onChange(text);
-                                  setSelectedModel(text);
-                                }}
-                                placeholder="Type to search or add model..."
-                                suggestions={models?.map((model: string) => ({ label: model, value: model })) || []}
-                                displayField="label"
-                                valueField="value"
-                                allowFreeText={true}
+                                className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
                                 maxLength={60}
                               />
                             </FormControl>

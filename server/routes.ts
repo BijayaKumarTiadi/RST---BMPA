@@ -9,6 +9,7 @@ import { executeQuery, executeQuerySingle } from "./database";
 import { sendEmail, generateInquiryEmail, generatePaymentSuccessEmail, type InquiryEmailData, type PaymentSuccessEmailData } from "./emailService";
 import * as sparePartCategoryService from "./sparePartCategoryService";
 import { createSparePartTables } from "./createSparePartTables";
+import { runSparePartCategoriesMigration } from "./updateSparePartCategories";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
@@ -1458,11 +1459,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/spare-parts/manufacturers', async (req, res) => {
     try {
-      const manufacturers = await sparePartCategoryService.getManufacturers();
+      const { process } = req.query;
+      const manufacturers = await sparePartCategoryService.getManufacturers(process as string);
       res.json(manufacturers);
     } catch (error) {
       console.error("Error fetching manufacturers:", error);
       res.status(500).json({ message: "Failed to fetch manufacturers" });
+    }
+  });
+
+  // Migration endpoint to update spare part categories
+  app.post('/api/admin/migrate-spare-part-categories', requireAdminAuth, async (req, res) => {
+    try {
+      const result = await runSparePartCategoriesMigration();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error running spare part categories migration:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 

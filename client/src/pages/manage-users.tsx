@@ -85,7 +85,7 @@ export default function ManageUsers() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Child user created successfully! They will receive a welcome email and can log in using OTP.",
+        description: "Associate user created successfully! They will receive a welcome email and can log in using OTP.",
       });
       setIsAddDialogOpen(false);
       setNewUserEmail("");
@@ -111,7 +111,7 @@ export default function ManageUsers() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Child user deleted successfully!",
+        description: "Associate user deleted successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/child-users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/company/stats'] });
@@ -159,7 +159,7 @@ export default function ManageUsers() {
   };
 
   const handleDeleteUser = (userId: number, userName: string) => {
-    if (confirm(`Are you sure you want to delete child user "${userName}"? This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete Associate user "${userName}"? This action cannot be undone.`)) {
       deleteChildUserMutation.mutate(userId);
     }
   };
@@ -196,8 +196,8 @@ export default function ManageUsers() {
             <AlertTitle>Access Denied</AlertTitle>
             <AlertDescription>
               {isChildUser
-                ? "Child users cannot manage other users. Only the parent account holder can add or remove child users."
-                : "Only parent accounts with paid membership can manage child users."
+                ? "Associate users cannot manage other users. Only the parent account holder can add or remove Associate users."
+                : "Only parent accounts with paid membership can manage Associate users."
               }
             </AlertDescription>
           </Alert>
@@ -219,7 +219,7 @@ export default function ManageUsers() {
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">User Management</h1>
               <p className="text-muted-foreground">
-                Manage child users for your company account
+                Manage Associate users for your company account
               </p>
             </div>
             {isParent && !isChildUser && (
@@ -230,14 +230,14 @@ export default function ManageUsers() {
                     disabled={!canAddMoreUsers}
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add Child User
+                    Add Associate User
                   </Button>
                 </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Add Child User</DialogTitle>
+                  <DialogTitle>Add Associate User</DialogTitle>
                   <DialogDescription>
-                    Create a new child user account. They will share your company's membership and log in using OTP.
+                    Create a new Associate user account. They will share your company's membership and log in using OTP.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -279,7 +279,7 @@ export default function ManageUsers() {
                   <Alert>
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertDescription>
-                      Child users will inherit your company's membership and log in using OTP sent to their phone/email. All inquiries will be routed to your email.
+                      Associate users will inherit your company's membership and log in using OTP sent to their phone/email. All inquiries will be routed to your email.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -304,7 +304,7 @@ export default function ManageUsers() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100">Child Users</CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-100">Associate Users</CardTitle>
               <Users className="h-5 w-5 text-blue-200" />
             </CardHeader>
             <CardContent>
@@ -350,9 +350,9 @@ export default function ManageUsers() {
         {/* User List */}
         <Card className="border-2 border-border shadow-lg">
           <CardHeader className="bg-muted border-b-2 border-border">
-            <CardTitle className="text-foreground">Child Users</CardTitle>
+            <CardTitle className="text-foreground">Associate Users</CardTitle>
             <CardDescription>
-              Manage child user accounts for your company. Maximum 2 child users allowed.
+              Manage Associate user accounts for your company. Maximum 2 Associate users allowed.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -363,16 +363,16 @@ export default function ManageUsers() {
             ) : !childUsers || childUsers.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No child users yet</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">No Associate users yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Add up to 2 child users to help manage your company's products
+                  Add up to 2 Associate users to help manage your company's products
                 </p>
                 <Button 
                   onClick={() => setIsAddDialogOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Add First Child User
+                  Add First Associate User
                 </Button>
               </div>
             ) : (
@@ -509,7 +509,7 @@ export default function ManageUsers() {
             <CheckCircle2 className="h-4 w-4" />
             <AlertTitle>Shared Membership</AlertTitle>
             <AlertDescription>
-              Child users automatically inherit your company's membership status and benefits.
+              Associate users automatically inherit your company's membership status and benefits.
             </AlertDescription>
           </Alert>
 

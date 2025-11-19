@@ -1057,13 +1057,28 @@ export default function Marketplace() {
       }
     }
     
-    // For spare part fields, fetch next level options when a field changes
-    if (field === 'process' || field === 'categoryType' || field === 'machineType' || field === 'manufacturer') {
-      fetchSparePartFilterOptions();
+    // For spare part fields, fetch manufacturers when process changes
+    if (field === 'process') {
+      fetchManufacturersByProcess(value);
     }
     
     // Trigger auto-suggestions based on field (excluding category - dropdown only)
     if (field === 'gsm') fetchGsmSuggestions(value);
+  };
+  
+  // Fetch manufacturers filtered by process
+  const fetchManufacturersByProcess = async (process: string) => {
+    try {
+      const manufacturersResponse = await fetch(`/api/spare-parts/manufacturers?process=${encodeURIComponent(process)}`);
+      if (manufacturersResponse.ok) {
+        const manufacturers = await manufacturersResponse.json();
+        setAvailableManufacturers(manufacturers.map((m: string) => ({ value: m })));
+      }
+      // Clear manufacturer selection when process changes
+      setPreciseSearch(prev => ({ ...prev, manufacturer: '' }));
+    } catch (error) {
+      console.error('Error fetching manufacturers:', error);
+    }
   };
   
   // Fetch spare part filter options - all independent
@@ -1076,7 +1091,7 @@ export default function Marketplace() {
         setAvailableProcesses(processes.map((p: string) => ({ value: p })));
       }
       
-      // Fetch category types - independent
+      // Fetch category types - common for all processes
       const categoryTypesResponse = await fetch(`/api/spare-parts/category-types`);
       if (categoryTypesResponse.ok) {
         const categoryTypes = await categoryTypesResponse.json();
@@ -1090,19 +1105,8 @@ export default function Marketplace() {
         setAvailableMachineTypes(machineTypes.map((m: string) => ({ value: m })));
       }
       
-      // Fetch manufacturers - independent
-      const manufacturersResponse = await fetch(`/api/spare-parts/manufacturers`);
-      if (manufacturersResponse.ok) {
-        const manufacturers = await manufacturersResponse.json();
-        setAvailableManufacturers(manufacturers.map((m: string) => ({ value: m })));
-      }
-      
-      // Fetch models - independent
-      const modelsResponse = await fetch(`/api/spare-parts/models`);
-      if (modelsResponse.ok) {
-        const models = await modelsResponse.json();
-        setAvailableModels(models.map((m: string) => ({ value: m })));
-      }
+      // Manufacturers will be fetched when process is selected
+      // Models are now text input, not dropdown
     } catch (error) {
       console.error('Error fetching spare part filters:', error);
     }
@@ -1400,38 +1404,6 @@ export default function Marketplace() {
                         </div>
                       </div>
 
-                      {/* Category Type */}
-                      <div className="flex-1 min-w-32">
-                        <label className="text-sm font-medium">Category Type</label>
-                        <div className="relative flex items-center gap-1 mt-1">
-                          <Select
-                            value={preciseSearch.categoryType}
-                            onValueChange={(value) => handlePreciseSearchChange('categoryType', value)}
-                          >
-                            <SelectTrigger className="h-9 text-sm">
-                              <SelectValue placeholder="Select type..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableCategoryTypes.map((type: any, index: number) => (
-                                <SelectItem key={index} value={type.value || type}>
-                                  {type.value || type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {preciseSearch.categoryType && (
-                            <button
-                              onClick={() => handlePreciseSearchChange('categoryType', '')}
-                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                              type="button"
-                              title="Clear category type"
-                            >
-                              <X className="h-3 w-3 text-gray-500" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
                       {/* Machine Type */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Machine Type</label>
@@ -1464,16 +1436,17 @@ export default function Marketplace() {
                         </div>
                       </div>
 
-                      {/* Manufacturer */}
+                      {/* Manufacturer - filtered by Process */}
                       <div className="flex-1 min-w-32">
                         <label className="text-sm font-medium">Manufacturer</label>
                         <div className="relative flex items-center gap-1 mt-1">
                           <Select
                             value={preciseSearch.manufacturer}
                             onValueChange={(value) => handlePreciseSearchChange('manufacturer', value)}
+                            disabled={!preciseSearch.process}
                           >
                             <SelectTrigger className="h-9 text-sm">
-                              <SelectValue placeholder="Select manufacturer..." />
+                              <SelectValue placeholder={preciseSearch.process ? "Select manufacturer..." : "Select process first..."} />
                             </SelectTrigger>
                             <SelectContent>
                               {availableManufacturers.map((mfr: any, index: number) => (
@@ -1496,36 +1469,48 @@ export default function Marketplace() {
                         </div>
                       </div>
 
-                      {/* Model */}
+                      {/* Category Type - common for all processes */}
                       <div className="flex-1 min-w-32">
-                        <label className="text-sm font-medium">Model</label>
+                        <label className="text-sm font-medium">Category Type</label>
                         <div className="relative flex items-center gap-1 mt-1">
                           <Select
-                            value={preciseSearch.model}
-                            onValueChange={(value) => handlePreciseSearchChange('model', value)}
+                            value={preciseSearch.categoryType}
+                            onValueChange={(value) => handlePreciseSearchChange('categoryType', value)}
                           >
                             <SelectTrigger className="h-9 text-sm">
-                              <SelectValue placeholder="Select model..." />
+                              <SelectValue placeholder="Select type..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableModels.map((model: any, index: number) => (
-                                <SelectItem key={index} value={model.value || model}>
-                                  {model.value || model}
+                              {availableCategoryTypes.map((type: any, index: number) => (
+                                <SelectItem key={index} value={type.value || type}>
+                                  {type.value || type}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                          {preciseSearch.model && (
+                          {preciseSearch.categoryType && (
                             <button
-                              onClick={() => handlePreciseSearchChange('model', '')}
+                              onClick={() => handlePreciseSearchChange('categoryType', '')}
                               className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                               type="button"
-                              title="Clear model"
+                              title="Clear category type"
                             >
                               <X className="h-3 w-3 text-gray-500" />
                             </button>
                           )}
                         </div>
+                      </div>
+
+                      {/* Model - text input */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Model</label>
+                        <Input
+                          type="text"
+                          placeholder="Enter model..."
+                          value={preciseSearch.model}
+                          onChange={(e) => handlePreciseSearchChange('model', e.target.value)}
+                          className="mt-1 h-9 text-sm"
+                        />
                       </div>
 
                       {/* Part Name */}

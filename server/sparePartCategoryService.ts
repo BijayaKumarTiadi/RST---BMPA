@@ -46,9 +46,14 @@ export async function getProcesses(): Promise<string[]> {
  */
 export async function getCategoryTypes(process?: string): Promise<string[]> {
   const results = await executeQuery<{ category_type: string }>(
-    'SELECT DISTINCT category_type FROM spare_part_categories WHERE category_type IS NOT NULL ORDER BY category_type'
+    'SELECT DISTINCT category_type FROM spare_part_categories WHERE category_type IS NOT NULL AND category_type != \'\' ORDER BY category_type'
   );
-  return results.map(r => r.category_type);
+  const categoryTypes = results.map(r => r.category_type).filter(Boolean);
+  
+  if (categoryTypes.length === 0) {
+    return ['Electronics', 'Mechanical', 'Pneumatic'];
+  }
+  return categoryTypes;
 }
 
 /**
@@ -56,22 +61,37 @@ export async function getCategoryTypes(process?: string): Promise<string[]> {
  */
 export async function getMachineTypes(process?: string, categoryType?: string): Promise<string[]> {
   const results = await executeQuery<{ machine_type: string }>(
-    'SELECT DISTINCT machine_type FROM spare_part_categories WHERE machine_type IS NOT NULL ORDER BY machine_type'
+    'SELECT DISTINCT machine_type FROM spare_part_categories WHERE machine_type IS NOT NULL AND machine_type != \'\' ORDER BY machine_type'
   );
-  return results.map(r => r.machine_type);
+  const machineTypes = results.map(r => r.machine_type).filter(Boolean);
+  
+  if (machineTypes.length === 0) {
+    return ['Offset', 'Flexo', 'Digital', 'Screen', 'Perfect Binding', 'Saddle Stitch', 'Die Cutting', 'Flatbed', 'Folder Gluer', 'Box Making', 'Window Patcher', 'Film Applicator', 'Thermal', 'Cold', 'General'];
+  }
+  return machineTypes;
 }
 
 /**
- * Get manufacturers - independent of previous selections
+ * Get manufacturers - filtered by process
+ * Manufacturer is linked to process, so dropdown shows only manufacturers for selected process
  */
 export async function getManufacturers(
   process?: string,
   categoryType?: string,
   machineType?: string
 ): Promise<string[]> {
-  const results = await executeQuery<{ manufacturer: string }>(
-    'SELECT DISTINCT manufacturer FROM spare_part_categories WHERE manufacturer IS NOT NULL ORDER BY manufacturer'
-  );
+  let query = 'SELECT DISTINCT manufacturer FROM spare_part_categories WHERE manufacturer IS NOT NULL';
+  const params: any[] = [];
+  
+  // Filter by process if provided - this is the key relationship
+  if (process) {
+    query += ' AND process = ?';
+    params.push(process);
+  }
+  
+  query += ' ORDER BY manufacturer';
+  
+  const results = await executeQuery<{ manufacturer: string }>(query, params);
   return results.map(r => r.manufacturer);
 }
 

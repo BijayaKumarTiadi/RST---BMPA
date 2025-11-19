@@ -440,7 +440,7 @@ export default function Profile() {
           </Card>
         </div>
 
-        {/* Membership Information for Child Users */}
+        {/* Membership Information for Associate Users */}
         {isChildUser && (
           <Card className="border-0 shadow-xl overflow-hidden mt-6">
             <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6">
@@ -485,7 +485,7 @@ export default function Profile() {
 
               <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
                 <p className="text-sm text-blue-900">
-                  <strong>Note:</strong> As a child user, you inherit all membership benefits from the parent company account. This includes unlimited product listings, buyer-seller communication, and all premium features.
+                  <strong>Note:</strong> As an Associate user, you inherit all membership benefits from the parent company account. This includes unlimited product listings, buyer-seller communication, and all premium features.
                 </p>
               </div>
             </CardContent>
