@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navigation from "@/components/navigation";
-import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Loader2, X } from "lucide-react";
+import { Package, Search, Filter, MessageCircle, MapPin, Heart, Eye, Edit, ChevronDown, ChevronUp, Mail, MessageSquare, Calendar, SlidersHorizontal, Loader2, X, LayoutGrid, List } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import ProductDetailsModal from "@/components/product-details-modal";
 import EnquiryFormModal from "@/components/inquiry-form-modal";
@@ -26,6 +26,7 @@ export default function Marketplace() {
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'block' | 'grid'>('block'); // Default to block view
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAggregations, setSearchAggregations] = useState<any>(null);
@@ -2458,9 +2459,44 @@ export default function Marketplace() {
               </div>
             ) : (
               <>
+                {/* View Toggle and Results Count */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-muted-foreground">
+                    {totalDeals} {totalDeals === 1 ? 'result' : 'results'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground hidden sm:inline">View:</span>
+                    <div className="flex border rounded-md overflow-hidden">
+                      <Button
+                        variant={viewMode === 'block' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('block')}
+                        className="rounded-none px-2 h-8"
+                        data-testid="button-block-view"
+                        title="Block View"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="rounded-none px-2 h-8"
+                        data-testid="button-grid-view"
+                        title="Grid View"
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Deal Cards Grid - Responsive */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Deal Cards Grid - Responsive with View Mode */}
+                <div className={`grid gap-4 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' 
+                    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                }`}>
                   {deals.map((deal: any) => (
                     <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
                       <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">

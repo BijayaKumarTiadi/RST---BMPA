@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Hash, Plus, Calculator, IndianRupee } from "lucide-react";
+import { Package, Hash, Plus, Calculator, IndianRupee, Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
@@ -238,6 +238,13 @@ export default function AddDeal() {
   const [dimensionUnit, setDimensionUnit] = useState("cm");
   const [deckleInputValue, setDeckleInputValue] = useState("");
   const [grainInputValue, setGrainInputValue] = useState("");
+
+  // Bulk upload state
+  const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null);
+  const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([]);
+  const [bulkUploadSuccess, setBulkUploadSuccess] = useState<string>("");
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   // Unit conversion functions
   const convertToMm = (value: number, unit: string): number => {
@@ -822,6 +829,103 @@ export default function AddDeal() {
     createDealMutation.mutate(data);
   };
 
+  // Bulk upload functions
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/deals/bulk-upload-template');
+      if (!response.ok) {
+        throw new Error('Failed to download template');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bulk_upload_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "Template Downloaded",
+        description: "Fill in the Excel file and upload it to add multiple offers at once.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download template",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        toast({
+          title: "Invalid File",
+          description: "Please upload an Excel file (.xlsx or .xls)",
+          variant: "destructive",
+        });
+        return;
+      }
+      setBulkUploadFile(file);
+      setBulkUploadErrors([]);
+      setBulkUploadSuccess("");
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkUploadFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please select an Excel file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkUploading(true);
+    setBulkUploadErrors([]);
+    setBulkUploadSuccess("");
+
+    try {
+      const formData = new FormData();
+      formData.append('file', bulkUploadFile);
+
+      const response = await fetch('/api/deals/bulk-upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.errors && result.errors.length > 0) {
+          setBulkUploadErrors(result.errors);
+        } else {
+          setBulkUploadErrors([result.message || 'Upload failed']);
+        }
+        return;
+      }
+
+      setBulkUploadSuccess(result.message || `Successfully processed ${result.created || 0} new and ${result.updated || 0} updated records`);
+      setBulkUploadFile(null);
+      // Reset file input
+      const fileInput = document.getElementById('bulk-upload-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/deals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deals/my'] });
+    } catch (error: any) {
+      setBulkUploadErrors([error.message || 'Failed to upload file']);
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
   if (hierarchyLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -841,6 +945,119 @@ export default function AddDeal() {
               <h1 className="text-xl font-bold text-foreground mb-1">Add an Offer</h1>
             </div>
           </div>
+
+          {/* Bulk Upload Section */}
+          <Card className="bg-card border-border mb-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                  <FileSpreadsheet className="h-5 w-5" />
+                  Bulk Upload
+                </CardTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBulkUpload(!showBulkUpload)}
+                  data-testid="button-toggle-bulk-upload"
+                >
+                  {showBulkUpload ? 'Hide' : 'Show'} Bulk Upload
+                </Button>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                Upload multiple offers at once using an Excel template
+              </CardDescription>
+            </CardHeader>
+            {showBulkUpload && (
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDownloadTemplate}
+                    className="flex items-center gap-2"
+                    data-testid="button-download-template"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Template
+                  </Button>
+                  
+                  <div className="flex-1 flex items-center gap-2">
+                    <Input
+                      id="bulk-upload-input"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileChange}
+                      className="flex-1"
+                      data-testid="input-bulk-upload-file"
+                    />
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    onClick={handleBulkUpload}
+                    disabled={!bulkUploadFile || isBulkUploading}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                    data-testid="button-upload-bulk"
+                  >
+                    {isBulkUploading ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Upload
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {bulkUploadFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected file: <span className="font-medium">{bulkUploadFile.name}</span>
+                  </p>
+                )}
+
+                {bulkUploadErrors.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Upload Errors</h4>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-300">
+                          {bulkUploadErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {bulkUploadSuccess && (
+                  <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md p-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <span className="text-green-800 dark:text-green-200">{bulkUploadSuccess}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p className="font-medium">Instructions:</p>
+                  <ol className="list-decimal list-inside space-y-0.5 ml-2">
+                    <li>Download the template Excel file</li>
+                    <li>Fill in the data using the dropdown lists for Brand, Manufacturer, and Board Type</li>
+                    <li>Enter GSM, Size (Deckle x Grain), Unit (UOM), and Quantity</li>
+                    <li>Upload the file - it will be validated before processing</li>
+                    <li>If records with same details already exist, only quantity will be updated</li>
+                  </ol>
+                </div>
+              </CardContent>
+            )}
+          </Card>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -1624,7 +1841,7 @@ export default function AddDeal() {
                         <span className="font-semibold text-blue-800 dark:text-blue-200">Calculated Weight</span>
                       </div>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        {form.watch("quantity")} sheets × {(form.watch("Deckle_mm") / 10).toFixed(1)}cm × {(form.watch("grain_mm") / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
+                        {form.watch("quantity")} sheets × {((form.watch("Deckle_mm") || 0) / 10).toFixed(1)}cm × {((form.watch("grain_mm") || 0) / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
                       </p>
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                         Formula: (Sheets × Length × Breadth × GSM) ÷ 10,000,000

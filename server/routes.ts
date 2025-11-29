@@ -13,6 +13,9 @@ import { runSparePartCategoriesMigration } from "./updateSparePartCategories";
 import searchRouter from "./searchRoutes";
 import suggestionRouter from "./suggestionRoutes";
 import advancedSearchRouter from "./advancedSearchRoutes";
+import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import multer from "multer";
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -41,6 +44,14 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
   }
   next();
 };
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Clean up expired OTPs periodically
@@ -1696,6 +1707,497 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching stock hierarchy:", error);
       res.status(500).json({ message: "Failed to fetch stock hierarchy" });
+    }
+  });
+
+  // Bulk Upload Template Download - Using ExcelJS for data validation support
+  app.get('/api/deals/bulk-upload-template', async (req, res) => {
+    try {
+      // Get Makes, Brands from hierarchy
+      const hierarchy = await dealService.getStockHierarchy();
+      
+      // Extract unique makes and brands
+      const makes: string[] = [];
+      const brands: string[] = [];
+      const grades: string[] = [];
+      const boardTypes: string[] = ['Paper', 'Board', 'Kraft Reel'];
+      const units: string[] = ['MT', 'Kg', 'Sheet', 'Pkt', 'Nos', 'Reel'];
+      
+      if (hierarchy.groups) {
+        hierarchy.groups.forEach((group: any) => {
+          if (group.makes) {
+            group.makes.forEach((make: any) => {
+              if (make.Make && !makes.includes(make.Make)) {
+                makes.push(make.Make);
+              }
+              if (make.grades) {
+                make.grades.forEach((grade: any) => {
+                  if (grade.Grade && !grades.includes(grade.Grade)) {
+                    grades.push(grade.Grade);
+                  }
+                  if (grade.brands) {
+                    grade.brands.forEach((brand: any) => {
+                      if (brand.Brand && !brands.includes(brand.Brand)) {
+                        brands.push(brand.Brand);
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      // Sort alphabetically
+      makes.sort();
+      brands.sort();
+      grades.sort();
+
+      // Create workbook using ExcelJS (supports data validation)
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'BMPA';
+      workbook.created = new Date();
+      
+      // Create main Offers sheet FIRST (so it's the active sheet when opened)
+      const offersSheet = workbook.addWorksheet('Offers');
+      
+      // Create Reference Values sheet (for dropdown references)
+      const refSheet = workbook.addWorksheet('Lists');
+      
+      // Populate Lists sheet with dropdown values
+      // Column A: Board Types
+      refSheet.getColumn(1).width = 15;
+      refSheet.getCell('A1').value = 'Board Types';
+      boardTypes.forEach((type, i) => {
+        refSheet.getCell(`A${i + 2}`).value = type;
+      });
+      
+      // Column B: Makes
+      refSheet.getColumn(2).width = 25;
+      refSheet.getCell('B1').value = 'Makes';
+      makes.forEach((make, i) => {
+        refSheet.getCell(`B${i + 2}`).value = make;
+      });
+      
+      // Column C: Grades
+      refSheet.getColumn(3).width = 20;
+      refSheet.getCell('C1').value = 'Grades';
+      grades.forEach((grade, i) => {
+        refSheet.getCell(`C${i + 2}`).value = grade;
+      });
+      
+      // Column D: Brands
+      refSheet.getColumn(4).width = 20;
+      refSheet.getCell('D1').value = 'Brands';
+      brands.forEach((brand, i) => {
+        refSheet.getCell(`D${i + 2}`).value = brand;
+      });
+      
+      // Column E: Units
+      refSheet.getColumn(5).width = 10;
+      refSheet.getCell('E1').value = 'Units';
+      units.forEach((unit, i) => {
+        refSheet.getCell(`E${i + 2}`).value = unit;
+      });
+      
+      // Column F: Show Rate
+      refSheet.getColumn(6).width = 15;
+      refSheet.getCell('F1').value = 'Show Rate';
+      refSheet.getCell('F2').value = 'Yes';
+      refSheet.getCell('F3').value = 'No';
+      
+      // Style Lists header row
+      const listsHeaderRow = refSheet.getRow(1);
+      listsHeaderRow.font = { bold: true };
+      
+      // Configure Offers sheet
+      offersSheet.columns = [
+        { header: 'Board Type*', key: 'boardType', width: 15 },
+        { header: 'Make/Manufacturer*', key: 'make', width: 25 },
+        { header: 'Grade', key: 'grade', width: 20 },
+        { header: 'Brand', key: 'brand', width: 20 },
+        { header: 'GSM*', key: 'gsm', width: 10 },
+        { header: 'Deckle (cm)*', key: 'deckle', width: 12 },
+        { header: 'Grain (cm)*', key: 'grain', width: 12 },
+        { header: 'Unit*', key: 'unit', width: 10 },
+        { header: 'Quantity*', key: 'quantity', width: 12 },
+        { header: 'Rate (Rs)', key: 'rate', width: 12 },
+        { header: 'Show Rate', key: 'showRate', width: 12 },
+        { header: 'Comments', key: 'comments', width: 30 }
+      ];
+      
+      // Style header row
+      const headerRow = offersSheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+      
+      // Add data validation dropdowns to rows 2-51
+      for (let rowNum = 2; rowNum <= 51; rowNum++) {
+        // Board Type dropdown (Column A) - reference Lists sheet
+        offersSheet.getCell(`A${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: [`Lists!$A$2:$A$${boardTypes.length + 1}`],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Board Type',
+          error: 'Please select Paper, Board, or Kraft Reel'
+        };
+        
+        // Make/Manufacturer dropdown from Lists sheet (Column B)
+        if (makes.length > 0) {
+          offersSheet.getCell(`B${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$B$2:$B$${makes.length + 1}`],
+            showErrorMessage: false // Allow new values
+          };
+        }
+        
+        // Grade dropdown from Lists sheet (Column C)
+        if (grades.length > 0) {
+          offersSheet.getCell(`C${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$C$2:$C$${grades.length + 1}`],
+            showErrorMessage: false // Allow new values
+          };
+        }
+        
+        // Brand dropdown from Lists sheet (Column D)
+        if (brands.length > 0) {
+          offersSheet.getCell(`D${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$D$2:$D$${brands.length + 1}`],
+            showErrorMessage: false // Allow new values
+          };
+        }
+        
+        // Unit dropdown (Column H) - reference Lists sheet
+        offersSheet.getCell(`H${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: [`Lists!$E$2:$E$${units.length + 1}`],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Unit',
+          error: 'Please select MT, Kg, Sheet, Pkt, Nos, or Reel'
+        };
+        
+        // Show Rate dropdown (Column K) - reference Lists sheet
+        offersSheet.getCell(`K${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: ['Lists!$F$2:$F$3'],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Value',
+          error: 'Please enter Yes or No'
+        };
+      }
+      
+      // Create Instructions sheet
+      const instructionsSheet = workbook.addWorksheet('Instructions');
+      instructionsSheet.columns = [{ width: 80 }];
+      
+      const instructions = [
+        ['BULK UPLOAD INSTRUCTIONS'],
+        [''],
+        ['Fields marked with * are required'],
+        [''],
+        ['1. Board Type: Select from dropdown - Paper, Board, or Kraft Reel'],
+        ['2. Make/Manufacturer: Select from dropdown or type a new value'],
+        ['3. Grade: Select from dropdown or type new (optional for Kraft Reel)'],
+        ['4. Brand: Select from dropdown or type new (optional for Kraft Reel)'],
+        ['5. GSM: Enter numeric value (e.g., 120, 250)'],
+        ['6. Deckle: Enter size in centimeters'],
+        ['7. Grain: Enter size in centimeters (enter 0 for B.S. in Kraft Reel)'],
+        ['8. Unit: Select from dropdown - MT, Kg, Sheet, Pkt, Nos, Reel'],
+        ['9. Quantity: Enter numeric value'],
+        ['10. Rate (Rs): Optional - Enter your offer price per unit'],
+        ['11. Show Rate: Select Yes or No from dropdown'],
+        ['12. Comments: Optional remarks (max 400 characters)'],
+        [''],
+        ['DUPLICATE HANDLING:'],
+        ['If a record with same Board Type, Make, Grade, Brand, GSM, and Size already exists,'],
+        ['only the Quantity will be updated. Other fields will not change.'],
+        [''],
+        ['DROPDOWN LISTS:'],
+        ['- All dropdown values are sourced from the "Lists" sheet'],
+        ['- Board Type: Paper, Board, Kraft Reel'],
+        ['- Unit: MT, Kg, Sheet, Pkt, Nos, Reel'],
+        ['- Show Rate: Yes, No'],
+        ['- Make, Grade, and Brand: Populated from database, you can type new values'],
+        [''],
+        ['NOTES:'],
+        ['- Check the "Lists" sheet for all available dropdown options'],
+        ['- Maximum 100 rows per upload'],
+      ];
+      
+      instructions.forEach((row, index) => {
+        instructionsSheet.getRow(index + 1).getCell(1).value = row[0];
+        if (index === 0) {
+          instructionsSheet.getRow(index + 1).font = { bold: true, size: 14 };
+        }
+      });
+      
+      // Generate buffer
+      const buffer = await workbook.xlsx.writeBuffer();
+      
+      res.setHeader('Content-Disposition', 'attachment; filename=bulk_upload_template.xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(Buffer.from(buffer));
+      
+    } catch (error) {
+      console.error('Error generating template:', error);
+      res.status(500).json({ message: 'Failed to generate template' });
+    }
+  });
+
+  // Bulk Upload Process
+  app.post('/api/deals/bulk-upload', requireAuth, upload.single('file'), async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      
+      if (!sellerId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
+
+      // Parse Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+
+      // Skip header row
+      const rows = data.slice(1).filter(row => row.length > 0 && row.some(cell => cell !== undefined && cell !== ''));
+
+      if (rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No data found in the Excel file'
+        });
+      }
+
+      if (rows.length > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 100 rows allowed per upload'
+        });
+      }
+
+      // Get hierarchy for validation
+      const hierarchy = await dealService.getStockHierarchy();
+      
+      // Map board types to group IDs
+      const groupMap: Record<string, number> = {};
+      if (hierarchy.groups) {
+        hierarchy.groups.forEach((group: any) => {
+          const name = group.GroupName?.toLowerCase().trim();
+          if (name === 'paper') groupMap['paper'] = group.GroupID;
+          if (name === 'board') groupMap['board'] = group.GroupID;
+          if (name === 'kraft reel' || name === 'kraftreel') groupMap['kraft reel'] = group.GroupID;
+        });
+      }
+
+      const errors: string[] = [];
+      const validRecords: any[] = [];
+
+      // Process each row
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 2; // Account for header row
+        
+        const boardType = String(row[0] || '').trim();
+        const make = String(row[1] || '').trim();
+        const grade = String(row[2] || '').trim();
+        const brand = String(row[3] || '').trim();
+        const gsm = parseFloat(String(row[4] || ''));
+        const deckle = parseFloat(String(row[5] || ''));
+        const grain = parseFloat(String(row[6] || ''));
+        const unit = String(row[7] || '').trim();
+        const quantity = parseFloat(String(row[8] || ''));
+        const rate = row[9] !== undefined && row[9] !== '' ? parseFloat(String(row[9])) : null;
+        const showRate = String(row[10] || 'Yes').toLowerCase();
+        const comments = String(row[11] || '').trim();
+
+        // Validation
+        const rowErrors: string[] = [];
+
+        if (!boardType) {
+          rowErrors.push('Board Type is required');
+        } else {
+          const boardTypeLower = boardType.toLowerCase();
+          if (!['paper', 'board', 'kraft reel'].includes(boardTypeLower)) {
+            rowErrors.push('Board Type must be Paper, Board, or Kraft Reel');
+          }
+        }
+
+        if (!make) {
+          rowErrors.push('Make/Manufacturer is required');
+        }
+
+        if (isNaN(gsm) || gsm <= 0) {
+          rowErrors.push('GSM must be a positive number');
+        }
+
+        if (isNaN(deckle) || deckle <= 0) {
+          rowErrors.push('Deckle must be a positive number');
+        }
+
+        if (isNaN(grain) || grain < 0) {
+          rowErrors.push('Grain must be 0 or greater');
+        }
+
+        const validUnits = ['mt', 'kg', 'sheet', 'pkt', 'nos', 'reel'];
+        if (!unit || !validUnits.includes(unit.toLowerCase())) {
+          rowErrors.push('Unit must be one of: MT, Kg, Sheet, Pkt, Nos, Reel');
+        }
+
+        if (isNaN(quantity) || quantity <= 0) {
+          rowErrors.push('Quantity must be a positive number');
+        }
+
+        if (rate !== null && (isNaN(rate) || rate < 0)) {
+          rowErrors.push('Rate must be a non-negative number');
+        }
+
+        if (comments && comments.length > 400) {
+          rowErrors.push('Comments cannot exceed 400 characters');
+        }
+
+        // Check grade and brand for non-Kraft Reel
+        const isKraftReel = boardType.toLowerCase() === 'kraft reel';
+        if (!isKraftReel) {
+          if (!grade) {
+            rowErrors.push('Grade is required for Paper/Board');
+          }
+          if (!brand) {
+            rowErrors.push('Brand is required for Paper/Board');
+          }
+        }
+
+        if (rowErrors.length > 0) {
+          errors.push(`Row ${rowNum}: ${rowErrors.join(', ')}`);
+        } else {
+          // Get group ID
+          const groupId = groupMap[boardType.toLowerCase()] || groupMap['paper'];
+          
+          // Convert dimensions to mm
+          const deckle_mm = deckle * 10;
+          const grain_mm = grain * 10;
+          
+          validRecords.push({
+            groupId,
+            boardType,
+            make,
+            grade: grade || '',
+            brand: brand || '',
+            gsm,
+            deckle_mm,
+            grain_mm,
+            unit: unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase(),
+            quantity,
+            rate,
+            showRate: showRate === 'yes' || showRate === 'true' || showRate === '1',
+            comments
+          });
+        }
+      }
+
+      // If there are validation errors, return them
+      if (errors.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation errors found',
+          errors
+        });
+      }
+
+      // Process valid records
+      let created = 0;
+      let updated = 0;
+
+      for (const record of validRecords) {
+        try {
+          // Check if a similar record exists
+          const existingDeal = await executeQuerySingle(`
+            SELECT TransID, quantity FROM deal_master 
+            WHERE created_by_member_id = ? 
+              AND groupID = ?
+              AND Make = ?
+              AND COALESCE(Grade, '') = ?
+              AND COALESCE(Brand, '') = ?
+              AND GSM = ?
+              AND Deckle_mm = ?
+              AND grain_mm = ?
+              AND StockStatus = 1
+            LIMIT 1
+          `, [sellerId, record.groupId, record.make, record.grade, record.brand, record.gsm, record.deckle_mm, record.grain_mm]);
+
+          if (existingDeal) {
+            // Update quantity only
+            await executeQuery(`
+              UPDATE deal_master 
+              SET quantity = ?, deal_updated_at = NOW()
+              WHERE TransID = ?
+            `, [record.quantity, existingDeal.TransID]);
+            updated++;
+          } else {
+            // Create new deal
+            const result = await dealService.createDeal({
+              seller_id: sellerId,
+              group_id: record.groupId,
+              make_text: record.make,
+              grade_text: record.grade,
+              brand_text: record.brand,
+              gsm: record.gsm,
+              deckle_mm: record.deckle_mm,
+              grain_mm: record.grain_mm,
+              unit: record.unit,
+              quantity: record.quantity,
+              price: record.rate || 0,
+              show_rate_in_marketplace: record.showRate,
+              seller_comments: record.comments
+            });
+            
+            if (result) {
+              created++;
+            }
+          }
+        } catch (err: any) {
+          console.error('Error processing record:', err);
+          errors.push(`Failed to process: ${record.make} ${record.grade} ${record.brand} - ${err.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully processed ${created + updated} records`,
+        created,
+        updated,
+        errors: errors.length > 0 ? errors : undefined
+      });
+
+    } catch (error: any) {
+      console.error('Error processing bulk upload:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to process bulk upload'
+      });
     }
   });
 

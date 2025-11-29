@@ -75,7 +75,27 @@ Preferred communication style: Simple, everyday language.
 - **Email/SMS**: OTP verification system for user registration
 - **Search**: Built-in search functionality for stock listings and categories
 
-## Recent Changes (September 2025)
+## Recent Changes (November 2025)
+
+### Marketplace View Toggle
+- **Grid/Block View Toggle**: Added icon buttons in marketplace header to switch between Block view (3 columns) and Grid view (5 columns on large screens)
+- **Default View**: Block view is the default, showing 3 columns of product cards
+- **Grid View**: Displays 5 columns on large screens for compact overview
+- **Responsive Design**: Both views adapt to screen sizes with proper column counts
+
+### Bulk Upload Feature
+- **Excel Template Download**: Users can download an Excel template with pre-defined dropdown lists
+- **ExcelJS Integration**: Migrated from xlsx library to ExcelJS for proper data validation support
+- **Three-Sheet Structure**: 
+  - Offers sheet (main data entry with dropdowns)
+  - Lists sheet (dropdown values from database)
+  - Instructions sheet (usage guide)
+- **Data Validation Dropdowns**: Board Type, Make, Grade, Brand, Unit, and Show Rate fields have dropdown lists
+- **Duplicate Handling**: If a record with same key fields exists, only quantity is updated
+- **Server-side Validation**: All uploads validated before processing with detailed error feedback
+- **Maximum 100 rows per upload**
+
+## Previous Changes (September 2025)
 
 ### Admin Panel Improvements
 - **Table Responsiveness**: Implemented comprehensive responsive design for all admin tables (Members, Approved Users, Payment History)
