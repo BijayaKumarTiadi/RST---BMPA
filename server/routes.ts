@@ -833,6 +833,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Summary Report API
+  app.get('/api/admin/summary-report', requireAdminAuth, async (req, res) => {
+    try {
+      const { fromDate, toDate, category } = req.query;
+      
+      // Build date filter
+      let dateFilter = '';
+      const params: any[] = [];
+      
+      if (fromDate) {
+        dateFilter += ' AND d.deal_created_at >= ?';
+        params.push(fromDate);
+      }
+      if (toDate) {
+        dateFilter += ' AND d.deal_created_at <= ?';
+        params.push(toDate + ' 23:59:59');
+      }
+      
+      // Build category filter
+      let categoryFilter = '';
+      if (category && category !== 'all') {
+        if (category === 'spare_part') {
+          categoryFilter = ' AND d.is_spare_part = 1';
+        } else if (category === 'paper') {
+          categoryFilter = ' AND (d.GroupID = 1 OR d.GroupName LIKE "%Paper%") AND (d.is_spare_part IS NULL OR d.is_spare_part = 0)';
+        } else if (category === 'board') {
+          categoryFilter = ' AND (d.GroupID = 2 OR d.GroupName LIKE "%Board%") AND (d.is_spare_part IS NULL OR d.is_spare_part = 0)';
+        } else if (category === 'kraft') {
+          categoryFilter = ' AND (d.GroupID = 3 OR d.GroupName LIKE "%Kraft%") AND (d.is_spare_part IS NULL OR d.is_spare_part = 0)';
+        }
+      }
+      
+      const pool = await dealService.getPool();
+      
+      // Total postings and aggregates
+      const [postingStats]: any = await pool.query(`
+        SELECT 
+          COUNT(*) as totalPostings,
+          COALESCE(SUM(CASE WHEN d.OfferUnit IN ('MT', 'Kg', 'KG') THEN d.quantity ELSE 0 END), 0) as totalKgs,
+          COALESCE(SUM(d.OfferPrice * d.quantity), 0) as totalValue
+        FROM bmpa_deals d
+        WHERE 1=1 ${dateFilter} ${categoryFilter}
+      `, params);
+      
+      // Total closed as sold
+      const [soldStats]: any = await pool.query(`
+        SELECT COUNT(*) as totalSold
+        FROM bmpa_deals d
+        WHERE d.deal_status = 'sold' ${dateFilter} ${categoryFilter}
+      `, params);
+      
+      // Total closed on expiry
+      const [expiredStats]: any = await pool.query(`
+        SELECT COUNT(*) as totalExpired
+        FROM bmpa_deals d
+        WHERE d.deal_status = 'expired' ${dateFilter} ${categoryFilter}
+      `, params);
+      
+      // Total active postings
+      const [activeStats]: any = await pool.query(`
+        SELECT COUNT(*) as totalActive
+        FROM bmpa_deals d
+        WHERE (d.deal_status = 'active' OR d.deal_status IS NULL) ${dateFilter} ${categoryFilter}
+      `, params);
+      
+      // Active members (members who have active membership)
+      const [memberStats]: any = await pool.query(`
+        SELECT COUNT(*) as activeMembers
+        FROM Members m
+        WHERE m.mstatus = 1 
+        AND m.membership_valid_till >= CURDATE()
+      `);
+      
+      // Total responses (inquiries) against posts
+      const [responseStats]: any = await pool.query(`
+        SELECT COUNT(*) as totalResponses
+        FROM inquiries i
+        JOIN bmpa_deals d ON i.deal_id = d.TransID
+        WHERE 1=1 ${dateFilter.replace(/d\./g, 'd.')} ${categoryFilter.replace(/d\./g, 'd.')}
+      `, params);
+      
+      res.json({
+        totalPostings: postingStats[0]?.totalPostings || 0,
+        totalKgs: Math.round(postingStats[0]?.totalKgs || 0),
+        totalValue: Math.round(postingStats[0]?.totalValue || 0),
+        totalSold: soldStats[0]?.totalSold || 0,
+        totalExpired: expiredStats[0]?.totalExpired || 0,
+        totalActive: activeStats[0]?.totalActive || 0,
+        activeMembers: memberStats[0]?.activeMembers || 0,
+        totalResponses: responseStats[0]?.totalResponses || 0
+      });
+      
+    } catch (error) {
+      console.error("Error fetching summary report:", error);
+      res.status(500).json({ message: "Failed to fetch summary report" });
+    }
+  });
+
   // Get single member details
   app.get('/api/admin/members/:id', requireAdminAuth, async (req, res) => {
     try {

@@ -29,8 +29,13 @@ import {
   Edit,
   IndianRupee,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  Package,
+  MessageSquare,
+  Filter
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdminUser {
   id: number;
@@ -85,6 +90,17 @@ interface PaymentHistory {
   payment_date: string;
 }
 
+interface SummaryReport {
+  totalPostings: number;
+  totalKgs: number;
+  totalValue: number;
+  totalSold: number;
+  totalExpired: number;
+  totalActive: number;
+  activeMembers: number;
+  totalResponses: number;
+}
+
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,6 +108,11 @@ export default function AdminDashboard() {
   const [editFormData, setEditFormData] = useState<Partial<Member>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Summary Report filters
+  const [reportFromDate, setReportFromDate] = useState("");
+  const [reportToDate, setReportToDate] = useState("");
+  const [reportCategory, setReportCategory] = useState("all");
 
   // Check admin authentication
   const { data: adminUser, isLoading: isAdminLoading, error: adminError } = useQuery<{ admin: AdminUser }>({
@@ -120,6 +141,23 @@ export default function AdminDashboard() {
   // Get payment history
   const { data: paymentHistory = [] } = useQuery<PaymentHistory[]>({
     queryKey: ["/api/admin/payment-history"],
+    enabled: !!adminUser,
+  });
+  
+  // Get summary report
+  const { data: summaryReport, isLoading: isSummaryLoading, refetch: refetchSummary } = useQuery<SummaryReport>({
+    queryKey: ["/api/admin/summary-report", reportFromDate, reportToDate, reportCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (reportFromDate) params.append('fromDate', reportFromDate);
+      if (reportToDate) params.append('toDate', reportToDate);
+      if (reportCategory) params.append('category', reportCategory);
+      const response = await fetch(`/api/admin/summary-report?${params.toString()}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch summary');
+      return response.json();
+    },
     enabled: !!adminUser,
   });
 
@@ -401,11 +439,12 @@ export default function AdminDashboard() {
 
         {/* Main Content */}
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="members" data-testid="tab-members">All Members</TabsTrigger>
-            <TabsTrigger value="pending" data-testid="tab-pending">Pending Users</TabsTrigger>
+            <TabsTrigger value="pending" data-testid="tab-pending">Pending</TabsTrigger>
             <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">Payment History</TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">Payments</TabsTrigger>
+            <TabsTrigger value="summary" data-testid="tab-summary">Summary</TabsTrigger>
           </TabsList>
 
           {/* Members Tab */}
@@ -1067,6 +1106,189 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Summary Report Tab */}
+          <TabsContent value="summary">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Summary Report
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Filters */}
+                <div className="flex flex-wrap gap-4 items-end p-4 bg-muted/50 rounded-lg">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="fromDate">From Date</Label>
+                    <Input
+                      id="fromDate"
+                      type="date"
+                      value={reportFromDate}
+                      onChange={(e) => setReportFromDate(e.target.value)}
+                      className="w-40"
+                      data-testid="input-report-from-date"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="toDate">To Date</Label>
+                    <Input
+                      id="toDate"
+                      type="date"
+                      value={reportToDate}
+                      onChange={(e) => setReportToDate(e.target.value)}
+                      className="w-40"
+                      data-testid="input-report-to-date"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={reportCategory} onValueChange={setReportCategory}>
+                      <SelectTrigger className="w-40" data-testid="select-report-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="paper">Paper</SelectItem>
+                        <SelectItem value="board">Board</SelectItem>
+                        <SelectItem value="kraft">Kraft</SelectItem>
+                        <SelectItem value="spare_part">Spare Parts</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={() => refetchSummary()} 
+                    variant="default"
+                    data-testid="button-generate-report"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+
+                {/* Summary Stats */}
+                {isSummaryLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-8 w-8 text-blue-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">No. of Postings</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-postings">
+                              {summaryReport?.totalPostings?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Package className="h-8 w-8 text-green-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Kgs</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-kgs">
+                              {summaryReport?.totalKgs?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <IndianRupee className="h-8 w-8 text-yellow-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Value</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-value">
+                              ₹{summaryReport?.totalValue?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-8 w-8 text-emerald-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Closed as Sold</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-sold">
+                              {summaryReport?.totalSold?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-8 w-8 text-orange-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Closed on Expiry</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-expired">
+                              {summaryReport?.totalExpired?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="h-8 w-8 text-purple-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Active Postings</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-active">
+                              {summaryReport?.totalActive?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-8 w-8 text-indigo-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Active Members</p>
+                            <p className="text-2xl font-bold" data-testid="stat-active-members">
+                              {summaryReport?.activeMembers?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <MessageSquare className="h-8 w-8 text-cyan-600" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Responses</p>
+                            <p className="text-2xl font-bold" data-testid="stat-total-responses">
+                              {summaryReport?.totalResponses?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

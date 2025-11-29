@@ -77,6 +77,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 2025)
 
+### Admin Summary Report
+- **New Summary Tab**: Added a "Summary" tab in Admin Dashboard for comprehensive reporting
+- **Date Range Filter**: From Date and To Date pickers to filter postings by creation date
+- **Category Filter**: Dropdown to filter by category (All, Paper, Board, Kraft, Spare Parts)
+- **Statistics Cards**: 8 key metrics displayed:
+  - No. of Postings - Total stock postings in selected range
+  - Total Kgs - Sum of quantities
+  - Total Value - Sum of offer prices × quantities  
+  - Closed as Sold - Deals marked as sold
+  - Closed on Expiry - Deals that expired
+  - Active Postings - Currently active listings
+  - Active Members - Members with valid paid memberships
+  - Total Responses - Inquiries received on posts
+
 ### Marketplace View Toggle
 - **Block/Grid View Toggle**: Added icon buttons in marketplace header to switch between Block view (cards) and Grid view (table/spreadsheet format)
 - **Default View**: Block view is the default, showing product cards in 1-3 columns (responsive)
