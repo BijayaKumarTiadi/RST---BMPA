@@ -3406,6 +3406,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('✅ Payment verified and member status updated for member:', memberId);
 
+      // Update session with new membership status so user can access marketplace immediately
+      req.session.membershipPaid = true;
+      req.session.membershipValidTill = oneYearFromNow;
+      req.session.mstatus = 1;
+      
+      // Save session to ensure changes persist
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err: any) => {
+          if (err) {
+            console.error('Session save error after payment:', err);
+            reject(err);
+          } else {
+            console.log('✅ Session updated with new membership status');
+            resolve();
+          }
+        });
+      });
+
       // Send payment success email
       try {
         // Fetch updated member details
@@ -3450,10 +3468,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't fail the payment verification if email fails
       }
 
+      // Fetch complete updated member data to return to frontend
+      const completeUpdatedMember = await executeQuerySingle(`
+        SELECT member_id, mname, email, phone, company_name, address1, address2, city, state,
+               membership_paid, membership_valid_till, mstatus, last_login, role, user_type,
+               parent_member_id, child_user_name, company_id
+        FROM bmpa_members
+        WHERE member_id = ?
+      `, [memberId]);
+
       res.json({
         success: true,
         message: 'Payment verified successfully. Membership activated!',
-        membership_valid_till: oneYearFromNow
+        membership_valid_till: oneYearFromNow,
+        member: completeUpdatedMember ? {
+          id: completeUpdatedMember.member_id,
+          name: completeUpdatedMember.mname,
+          firstName: completeUpdatedMember.mname,
+          email: completeUpdatedMember.email,
+          phone: completeUpdatedMember.phone,
+          company: completeUpdatedMember.company_name,
+          address1: completeUpdatedMember.address1,
+          address2: completeUpdatedMember.address2,
+          city: completeUpdatedMember.city,
+          state: completeUpdatedMember.state,
+          membershipPaid: completeUpdatedMember.membership_paid,
+          membershipValidTill: completeUpdatedMember.membership_valid_till,
+          status: completeUpdatedMember.mstatus,
+          last_login: completeUpdatedMember.last_login,
+          role: completeUpdatedMember.role || 'buyer',
+          user_type: completeUpdatedMember.user_type || null,
+          parent_member_id: completeUpdatedMember.parent_member_id || null,
+          child_user_name: completeUpdatedMember.child_user_name || null,
+          company_id: completeUpdatedMember.company_id || null
+        } : null
       });
 
     } catch (error: any) {

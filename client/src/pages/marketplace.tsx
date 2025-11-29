@@ -1600,15 +1600,22 @@ export default function Marketplace() {
                       <div className="flex-1 min-w-24">
                         <label className="text-sm font-medium">Deckle</label>
                         <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="00.0"
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="000.0"
                           value={preciseSearch.deckle}
-                          max={999.99}
+                          maxLength={6}
+                          onBeforeInput={(e: any) => {
+                            const char = e.data;
+                            if (char && !/^[0-9.]$/.test(char)) {
+                              e.preventDefault();
+                            }
+                          }}
                           onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (isNaN(value) || value <= 999.99) {
-                              handlePreciseSearchChange('deckle', e.target.value);
+                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                            const numValue = parseFloat(value);
+                            if (value === '' || (!isNaN(numValue) && numValue <= 999.99)) {
+                              handlePreciseSearchChange('deckle', value);
                             }
                           }}
                           data-testid="input-precise-deckle"
@@ -1630,15 +1637,22 @@ export default function Marketplace() {
                           <div className="flex-1 min-w-24">
                             <label className="text-sm font-medium">{grainLabel}</label>
                             <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="00.0"
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="000.0"
                               value={preciseSearch.grain}
-                              max={99}
+                              maxLength={6}
+                              onBeforeInput={(e: any) => {
+                                const char = e.data;
+                                if (char && !/^[0-9.]$/.test(char)) {
+                                  e.preventDefault();
+                                }
+                              }}
                               onChange={(e) => {
-                                const value = parseFloat(e.target.value);
-                                if (isNaN(value) || value <= 99) {
-                                  handlePreciseSearchChange('grain', e.target.value);
+                                const value = e.target.value.replace(/[^0-9.]/g, '');
+                                const numValue = parseFloat(value);
+                                if (value === '' || (!isNaN(numValue) && numValue <= 999.99)) {
+                                  handlePreciseSearchChange('grain', value);
                                 }
                               }}
                               data-testid="input-precise-grain"

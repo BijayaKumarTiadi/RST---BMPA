@@ -17,6 +17,26 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
   const [quantity, setQuantity] = useState("");
   const [message, setMessage] = useState("");
 
+  // Helper function to format dimensions
+  const formatSize = (deckle_mm: number, grain_mm: number, groupName?: string) => {
+    if (!deckle_mm) return null;
+    
+    // Check if it's a reel product (only deckle, no grain)
+    const isReel = groupName?.toLowerCase().includes('reel');
+    
+    if (isReel && !grain_mm) {
+      // For reels, show just deckle in cm
+      return `${(deckle_mm / 10).toFixed(1)} cm`;
+    }
+    
+    // For sheets/boards, show deckle x grain in cm
+    if (deckle_mm && grain_mm) {
+      return `${(deckle_mm / 10).toFixed(1)} x ${(grain_mm / 10).toFixed(1)} cm`;
+    }
+    
+    return null;
+  };
+
   const handleSendWhatsApp = () => {
     if (!deal) return;
     
@@ -24,14 +44,38 @@ export default function WhatsAppQuotationModal({ isOpen, onClose, deal, user }: 
     const productTitle = deal.DealTitle || deal.Seller_comments || `${deal.MakeName} ${deal.GradeName} ${deal.BrandName}`.trim() || 'Product';
     const productDetails = `${productTitle} (ID: ${deal.TransID})`;
     
+    // Check if it's Paper/Board group (GroupID 1 or 2, or name contains Paper/Board)
+    const isPaperBoardGroup = deal.GroupID === 1 || deal.GroupID === 2 || 
+      deal.GroupName?.toLowerCase().includes('paper') || 
+      deal.GroupName?.toLowerCase().includes('board');
+    
     const additionalDetails = [];
-    if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
-    if (deal.GradeName) additionalDetails.push(`Grade: ${deal.GradeName}`);
-    if (deal.BrandName) additionalDetails.push(`Brand: ${deal.BrandName}`);
-    if (deal.GSM) additionalDetails.push(`GSM: ${deal.GSM}`);
+    
+    if (isPaperBoardGroup) {
+      // For Paper/Board: Mill, Type of Board, Brand, GSM, Size
+      if (deal.MakeName) additionalDetails.push(`Mill: ${deal.MakeName}`);
+      if (deal.GradeName) additionalDetails.push(`Type: ${deal.GradeName}`);
+      if (deal.category_name) additionalDetails.push(`Category: ${deal.category_name}`);
+      if (deal.BrandName) additionalDetails.push(`Brand: ${deal.BrandName}`);
+      if (deal.GSM) additionalDetails.push(`GSM: ${deal.GSM}`);
+      
+      // Add size (Deckle x Grain)
+      const size = formatSize(deal.Deckle_mm, deal.grain_mm, deal.GroupName);
+      if (size) additionalDetails.push(`Size: ${size}`);
+    } else {
+      // For other groups - original behavior
+      if (deal.MakeName) additionalDetails.push(`Make: ${deal.MakeName}`);
+      if (deal.GradeName) additionalDetails.push(`Grade: ${deal.GradeName}`);
+      if (deal.BrandName) additionalDetails.push(`Brand: ${deal.BrandName}`);
+      if (deal.GSM) additionalDetails.push(`GSM: ${deal.GSM}`);
+      
+      // Add size for other product types as well
+      const size = formatSize(deal.Deckle_mm, deal.grain_mm, deal.GroupName);
+      if (size) additionalDetails.push(`Size: ${size}`);
+    }
     
     const productInfo = additionalDetails.length > 0 
-      ? `${productDetails} (${additionalDetails.join(', ')})` 
+      ? `${productDetails}\n${additionalDetails.join(', ')}` 
       : productDetails;
 
     let whatsappMessage = `Hey, I am ${buyerName}. I am interested in ${productInfo}`;

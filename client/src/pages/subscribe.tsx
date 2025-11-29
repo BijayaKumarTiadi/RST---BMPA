@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,16 +87,23 @@ export default function Subscribe() {
             const verifyData = await verifyResponse.json();
 
             if (verifyData.success) {
-              // Show success page instead of redirecting
+              // Set the updated member data directly in the cache to ensure immediate access
+              if (verifyData.member) {
+                queryClient.setQueryData(['/api/auth/current-member'], {
+                  success: true,
+                  member: verifyData.member
+                });
+              }
+              
+              // Show success message
               toast({
-                title: "Payment Successful! 🎉",
-                description: "Your payment has been confirmed.",
+                title: "Payment Successful!",
+                description: "Your payment has been confirmed. Redirecting to marketplace...",
               });
 
-              // Redirect to a success/pending approval page
-              setTimeout(() => {
-                setLocation('/registration-success');
-              }, 1500);
+              // Force a page reload to ensure all auth state is fresh
+              // This is the most reliable way to ensure the user sees the updated state
+              window.location.href = '/';
             } else {
               throw new Error(verifyData.message || 'Payment verification failed');
             }
