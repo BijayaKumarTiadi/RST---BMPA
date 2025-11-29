@@ -197,7 +197,7 @@ router.get('/states', async (req, res) => {
       SELECT DISTINCT 
         state as value,
         COUNT(*) as count
-      FROM Members 
+      FROM bmpa_members 
       WHERE state IS NOT NULL 
         AND state != ''
         AND mstatus = 1
