@@ -2473,9 +2473,9 @@ export default function Marketplace() {
                         onClick={() => setViewMode('block')}
                         className="rounded-none px-2 h-8"
                         data-testid="button-block-view"
-                        title="Block View"
+                        title="Block View (Cards)"
                       >
-                        <List className="h-4 w-4" />
+                        <LayoutGrid className="h-4 w-4" />
                       </Button>
                       <Button
                         variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -2483,210 +2483,314 @@ export default function Marketplace() {
                         onClick={() => setViewMode('grid')}
                         className="rounded-none px-2 h-8"
                         data-testid="button-grid-view"
-                        title="Grid View"
+                        title="Grid View (Table)"
                       >
-                        <LayoutGrid className="h-4 w-4" />
+                        <List className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* Deal Cards Grid - Responsive with View Mode */}
-                <div className={`grid gap-4 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' 
-                    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                }`}>
-                  {deals.map((deal: any) => (
-                    <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
-                      <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
-                        {/* Header with badges - No Board/Reel */}
-                        <div className="flex items-center justify-between mb-1">
-                          {/* Status Badge removed */}
+                {/* Grid View (Table/Spreadsheet format) */}
+                {viewMode === 'grid' ? (
+                  <div className="overflow-x-auto border rounded-lg">
+                    <table className="w-full text-xs border-collapse" data-testid="deals-table">
+                      <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-2 py-2 text-left font-semibold border-b border-r whitespace-nowrap">Description</th>
+                          <th className="px-2 py-2 text-left font-semibold border-b border-r whitespace-nowrap">Make</th>
+                          <th className="px-2 py-2 text-left font-semibold border-b border-r whitespace-nowrap">Grade</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b border-r whitespace-nowrap">GSM</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b border-r whitespace-nowrap">Size</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b border-r whitespace-nowrap">Qty</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b border-r whitespace-nowrap">Rate</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b border-r whitespace-nowrap">Stock Age</th>
+                          <th className="px-2 py-2 text-center font-semibold border-b whitespace-nowrap">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {deals.map((deal: any, index: number) => (
+                          <tr 
+                            key={deal.TransID} 
+                            className={`hover:bg-blue-50 dark:hover:bg-blue-950/30 ${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800/50'}`}
+                            data-testid={`table-row-${deal.TransID}`}
+                          >
+                            <td className="px-2 py-2 border-b border-r max-w-[200px]">
+                              <span className="font-medium text-foreground line-clamp-2" data-testid={`deal-title-${deal.TransID}`}>
+                                {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2 border-b border-r whitespace-nowrap">{deal.Make || '-'}</td>
+                            <td className="px-2 py-2 border-b border-r whitespace-nowrap">{deal.Grade || '-'}</td>
+                            <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap">{deal.GSM || '-'}</td>
+                            <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap">
+                              {(deal.Deckle_mm && deal.grain_mm) ?
+                                formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
+                              : '-'}
+                            </td>
+                            <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap font-medium">
+                              {deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}
+                            </td>
+                            <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap">
+                              {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
+                                <span className="text-amber-600 italic">On request</span>
+                              ) : Number(deal.OfferPrice) > 0 ? (
+                                <span className="text-green-600 font-medium">Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')}</span>
+                              ) : (
+                                <span className="text-amber-600 italic">On request</span>
+                              )}
+                            </td>
+                            <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap text-gray-500">
+                              {formatStockAge(deal.StockAge)}
+                            </td>
+                            <td className="px-2 py-2 border-b text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => handleViewDetails(deal)}
+                                  data-testid={`button-view-details-${deal.TransID}`}
+                                  title="View Details"
+                                >
+                                  <Eye className="h-4 w-4 text-blue-600" />
+                                </Button>
+                                {deal.created_by_member_id === user?.id ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
+                                    data-testid={`button-edit-deal-${deal.TransID}`}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4 text-yellow-600" />
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => handleSendEnquiry(deal)}
+                                      data-testid={`button-send-inquiry-${deal.TransID}`}
+                                      title="Send Enquiry"
+                                    >
+                                      <Mail className="h-4 w-4 text-blue-600" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => handleSendWhatsApp(deal)}
+                                      data-testid={`button-send-whatsapp-${deal.TransID}`}
+                                      title="WhatsApp"
+                                    >
+                                      <MessageSquare className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  /* Block View (Card Grid) */
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {deals.map((deal: any) => (
+                      <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
+                        <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
+                          {/* Header with badges - No Board/Reel */}
+                          <div className="flex items-center justify-between mb-1">
+                            {/* Status Badge removed */}
+                          </div>
+                          
+                          {/* Product Description in Header */}
+                          <h3 className="font-bold text-sm line-clamp-2 text-gray-800 dark:text-gray-200" data-testid={`deal-title-${deal.TransID}`}>
+                            {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
+                          </h3>
                         </div>
-                        
-                        {/* Product Description in Header */}
-                        <h3 className="font-bold text-sm line-clamp-2 text-gray-800 dark:text-gray-200" data-testid={`deal-title-${deal.TransID}`}>
-                          {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
-                        </h3>
-                      </div>
 
-                        <CardContent className="p-2 flex-1 flex flex-col">
+                          <CardContent className="p-2 flex-1 flex flex-col">
 
-                          {/* Product Details - Different for spare parts vs regular products */}
-                          {deal.is_spare_part || deal.process ? (
-                            <>
-                              {/* Spare Part Information */}
-                              <div className="mb-2 space-y-1.5">
-                                {deal.process && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Process:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.process}</span>
-                                  </div>
-                                )}
-                                {deal.category_type && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Type:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.category_type}</span>
-                                  </div>
-                                )}
-                                {deal.machine_type && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Machine:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.machine_type}</span>
-                                  </div>
-                                )}
-                                {deal.manufacturer && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Mfr:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.manufacturer}</span>
-                                  </div>
-                                )}
-                                {deal.model && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Model:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.model}</span>
-                                  </div>
-                                )}
-                                {deal.part_name && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Part:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.part_name}</span>
-                                  </div>
-                                )}
-                                {deal.part_no && (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Part No:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.part_no}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Quantity for spare parts */}
-                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
-                                <div className="text-xs">
-                                  <span className="font-medium text-gray-500">Qty:</span>
-                                  <span className="font-bold text-foreground ml-1">{deal.pcs || deal.quantity || 1} {deal.unit || deal.OfferUnit || 'PCS'}</span>
+                            {/* Product Details - Different for spare parts vs regular products */}
+                            {deal.is_spare_part || deal.process ? (
+                              <>
+                                {/* Spare Part Information */}
+                                <div className="mb-2 space-y-1.5">
+                                  {deal.process && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Process:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.process}</span>
+                                    </div>
+                                  )}
+                                  {deal.category_type && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Type:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.category_type}</span>
+                                    </div>
+                                  )}
+                                  {deal.machine_type && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Machine:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.machine_type}</span>
+                                    </div>
+                                  )}
+                                  {deal.manufacturer && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Mfr:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.manufacturer}</span>
+                                    </div>
+                                  )}
+                                  {deal.model && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Model:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.model}</span>
+                                    </div>
+                                  )}
+                                  {deal.part_name && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Part:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.part_name}</span>
+                                    </div>
+                                  )}
+                                  {deal.part_no && (
+                                    <div className="text-xs">
+                                      <span className="font-medium text-gray-500">Part No:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.part_no}</span>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {/* Regular Product Information */}
-                              {/* 2. GSM and Dimensions properly aligned */}
-                              <div className="mb-2">
-                                <div className="flex items-center justify-between text-xs">
-                                  <div>
-                                    <span className="font-medium text-gray-500">GSM:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+
+                                {/* Quantity for spare parts */}
+                                <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Qty:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.pcs || deal.quantity || 1} {deal.unit || deal.OfferUnit || 'PCS'}</span>
                                   </div>
-                                  <div className="text-right">
-                                    <div className="font-semibold text-foreground">
-                                      {(deal.Deckle_mm && deal.grain_mm) ?
-                                        formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
-                                      : 'N/A'}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* Regular Product Information */}
+                                {/* 2. GSM and Dimensions properly aligned */}
+                                <div className="mb-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div>
+                                      <span className="font-medium text-gray-500">GSM:</span>
+                                      <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="font-semibold text-foreground">
+                                        {(deal.Deckle_mm && deal.grain_mm) ?
+                                          formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
+                                        : 'N/A'}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* 3. Quantity */}
-                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
-                                <div className="text-xs">
-                                  <span className="font-medium text-gray-500">Qty:</span>
-                                  <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
+                                {/* 3. Quantity */}
+                                <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Qty:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            </>
-                          )}
-
-
-
-                          {/* Stock Age - from API */}
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Stock: {formatStockAge(deal.StockAge)}</span>
-                          </div>
-
-                          {/* Rate Display */}
-                          <div className="flex items-center justify-between mb-2 p-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                            <span className="font-medium text-xs text-gray-600 dark:text-gray-400">Rate:</span>
-                            {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
-                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-on-request-${deal.TransID}`}>
-                                Rate on request
-                              </span>
-                            ) : Number(deal.OfferPrice) > 0 ? (
-                              <span className="text-xs font-bold text-green-700 dark:text-green-400" data-testid={`rate-display-${deal.TransID}`}>
-                                Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}
-                              </span>
-                            ) : (
-                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-not-set-${deal.TransID}`}>
-                                Rate on request
-                              </span>
+                              </>
                             )}
-                          </div>
 
-                          {/* Action Buttons */}
-                          <div className="mt-auto">
-                            <Button
-                              size="sm"
-                              className="w-full text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white mb-1"
-                              onClick={() => handleViewDetails(deal)}
-                              data-testid={`button-view-details-${deal.TransID}`}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View Details
-                            </Button>
-                            
-                            {/* Show edit button only for deals created by current user */}
-                            {deal.created_by_member_id === user?.id ? (
-                              <div className="grid grid-cols-2 gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
-                                  data-testid={`button-edit-deal-${deal.TransID}`}
-                                  className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
-                                >
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Edit
-                                </Button>
-                                
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
+
+
+                            {/* Stock Age - from API */}
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Stock: {formatStockAge(deal.StockAge)}</span>
+                            </div>
+
+                            {/* Rate Display */}
+                            <div className="flex items-center justify-between mb-2 p-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                              <span className="font-medium text-xs text-gray-600 dark:text-gray-400">Rate:</span>
+                              {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
+                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-on-request-${deal.TransID}`}>
+                                  Rate on request
+                                </span>
+                              ) : Number(deal.OfferPrice) > 0 ? (
+                                <span className="text-xs font-bold text-green-700 dark:text-green-400" data-testid={`rate-display-${deal.TransID}`}>
+                                  Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}
+                                </span>
+                              ) : (
+                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-not-set-${deal.TransID}`}>
+                                  Rate on request
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="mt-auto">
+                              <Button
+                                size="sm"
+                                className="w-full text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white mb-1"
+                                onClick={() => handleViewDetails(deal)}
+                                data-testid={`button-view-details-${deal.TransID}`}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View Details
+                              </Button>
+                              
+                              {/* Show edit button only for deals created by current user */}
+                              {deal.created_by_member_id === user?.id ? (
                                 <div className="grid grid-cols-2 gap-2">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleSendEnquiry(deal)}
-                                    data-testid={`button-send-inquiry-${deal.TransID}`}
-                                    className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
+                                    onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
+                                    data-testid={`button-edit-deal-${deal.TransID}`}
+                                    className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
                                   >
-                                    <Mail className="h-3 w-3" />
-                                    <span className="ml-0.5">Enquiry</span>
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
                                   </Button>
                                   
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleSendWhatsApp(deal)}
-                                    data-testid={`button-send-whatsapp-${deal.TransID}`}
-                                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 text-xs"
-                                  >
-                                    <MessageSquare className="h-3 w-3 mr-1" />
-                                    WhatsApp
-                                  </Button>
                                 </div>
-                                
-                              </div>
-                            )}
-                          </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSendEnquiry(deal)}
+                                      data-testid={`button-send-inquiry-${deal.TransID}`}
+                                      className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
+                                    >
+                                      <Mail className="h-3 w-3" />
+                                      <span className="ml-0.5">Enquiry</span>
+                                    </Button>
+                                    
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSendWhatsApp(deal)}
+                                      data-testid={`button-send-whatsapp-${deal.TransID}`}
+                                      className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 text-xs"
+                                    >
+                                      <MessageSquare className="h-3 w-3 mr-1" />
+                                      WhatsApp
+                                    </Button>
+                                  </div>
+                                  
+                                </div>
+                              )}
+                            </div>
 
-                        </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (

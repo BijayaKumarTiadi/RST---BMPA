@@ -78,10 +78,11 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (November 2025)
 
 ### Marketplace View Toggle
-- **Grid/Block View Toggle**: Added icon buttons in marketplace header to switch between Block view (3 columns) and Grid view (5 columns on large screens)
-- **Default View**: Block view is the default, showing 3 columns of product cards
-- **Grid View**: Displays 5 columns on large screens for compact overview
-- **Responsive Design**: Both views adapt to screen sizes with proper column counts
+- **Block/Grid View Toggle**: Added icon buttons in marketplace header to switch between Block view (cards) and Grid view (table/spreadsheet format)
+- **Default View**: Block view is the default, showing product cards in 1-3 columns (responsive)
+- **Grid View**: Displays products in a table/spreadsheet format like Excel with columns for Description, Make, Grade, GSM, Size, Qty, Rate, Stock Age, and Actions
+- **Responsive Design**: Table view scrolls horizontally on mobile, cards adapt to screen sizes
+- **Icons**: LayoutGrid icon for Block view (cards), List icon for Grid view (table)
 
 ### Bulk Upload Feature
 - **Excel Template Download**: Users can download an Excel template with pre-defined dropdown lists
