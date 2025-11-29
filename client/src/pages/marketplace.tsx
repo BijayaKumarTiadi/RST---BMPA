@@ -2598,8 +2598,8 @@ export default function Marketplace() {
                     </table>
                   </div>
                 ) : (
-                  /* Block View (Card Grid) */
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  /* Block View (Card Grid) - 4 columns on large screens */
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {deals.map((deal: any) => (
                       <Card key={deal.TransID} className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
                         <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-2">
