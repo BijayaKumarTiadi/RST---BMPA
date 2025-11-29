@@ -87,23 +87,36 @@ export default function Subscribe() {
             const verifyData = await verifyResponse.json();
 
             if (verifyData.success) {
-              // Set the updated member data directly in the cache to ensure immediate access
-              if (verifyData.member) {
-                queryClient.setQueryData(['/api/auth/current-member'], {
-                  success: true,
-                  member: verifyData.member
-                });
-              }
-              
-              // Show success message
-              toast({
-                title: "Payment Successful!",
-                description: "Your payment has been confirmed. Redirecting to marketplace...",
+              // Invalidate the auth query to force a fresh fetch
+              await queryClient.invalidateQueries({ 
+                queryKey: ['/api/auth/current-member'], 
+                type: 'all' 
               });
-
-              // Force a page reload to ensure all auth state is fresh
-              // This is the most reliable way to ensure the user sees the updated state
-              window.location.href = '/';
+              
+              // Fetch fresh auth data and wait for it to complete
+              const refreshed = await queryClient.fetchQuery({ 
+                queryKey: ['/api/auth/current-member'] 
+              }) as any;
+              
+              // Verify membership flags are set before navigating
+              const member = refreshed?.member;
+              const hasPaid = member?.membership_paid === 1 || member?.membershipPaid === 1;
+              const isApproved = member?.mstatus === 1 || member?.status === 1;
+              
+              if (hasPaid && isApproved) {
+                toast({
+                  title: "Payment Successful!",
+                  description: "Your payment has been confirmed. Welcome to the marketplace!",
+                });
+                setLocation('/');
+              } else {
+                // Fallback - user is paid but awaiting approval
+                toast({
+                  title: "Payment Successful!",
+                  description: "Your payment has been confirmed. Redirecting...",
+                });
+                setLocation('/registration-success');
+              }
             } else {
               throw new Error(verifyData.message || 'Payment verification failed');
             }
