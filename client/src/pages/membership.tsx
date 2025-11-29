@@ -362,12 +362,6 @@ export default function Membership() {
                     >
                       Email Support
                     </a>
-                    <a 
-                      href="tel:+911234567890"
-                      className="block w-full px-4 py-2 text-sm border rounded-md hover:bg-muted transition-colors"
-                    >
-                      Call Support
-                    </a>
                   </div>
                 </div>
               </CardContent>
