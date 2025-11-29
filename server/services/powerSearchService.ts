@@ -153,7 +153,8 @@ export class PowerSearchService {
         sg.GroupName,
         m.mname as created_by_name,
         m.company_name as created_by_company,
-        m.email as seller_email
+        m.email as seller_email,
+        m.state as member_state
       FROM deal_master dm
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
       LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID

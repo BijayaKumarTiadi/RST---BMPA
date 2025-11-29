@@ -91,6 +91,12 @@ Preferred communication style: Simple, everyday language.
   - Active Members - Members with valid paid memberships
   - Total Responses - Inquiries received on posts
 
+### Marketplace State Filter
+- **State Filter**: Added a State filter in the marketplace sidebar to filter products by seller's state
+- **Distinct States**: Filter options are populated from distinct states in member profiles
+- **Any/All Option**: Includes an "Any/All" option to show products from all states (default)
+- **Checkbox-Based**: Users can select multiple states to filter products
+
 ### Marketplace View Toggle
 - **Block/Grid View Toggle**: Added icon buttons in marketplace header to switch between Block view (cards) and Grid view (table/spreadsheet format)
 - **Default View**: Block view is the default, showing product cards in 1-3 columns (responsive)

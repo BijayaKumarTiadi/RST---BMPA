@@ -103,6 +103,7 @@ export default function Marketplace() {
   const [availableGsm, setAvailableGsm] = useState<any[]>([]);
   const [availableUnits, setAvailableUnits] = useState<any[]>([]);
   const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+  const [availableStates, setAvailableStates] = useState<any[]>([]);
   
   // Spare part filter states
   const [isSparePartMode, setIsSparePartMode] = useState(false);
@@ -147,6 +148,7 @@ export default function Marketplace() {
     brands: [] as string[],
     gsm: [] as string[],
     categories: [] as string[],
+    states: [] as string[],
     // Spare part filters
     processes: [] as string[],
     categoryTypes: [] as string[],
@@ -184,6 +186,7 @@ export default function Marketplace() {
       brands: [],
       gsm: [],
       categories: [],
+      states: [],
       processes: [],
       categoryTypes: [],
       machineTypes: [],
@@ -199,6 +202,7 @@ export default function Marketplace() {
   
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     categories: true,
+    states: false,
     makes: false,
     grades: false,
     brands: false,
@@ -245,6 +249,24 @@ export default function Marketplace() {
       return result.suggestions || [];
     },
   });
+
+  // Fetch distinct states for filter
+  const { data: statesData } = useQuery({
+    queryKey: ["/api/suggestions/states"],
+    queryFn: async () => {
+      const response = await fetch('/api/suggestions/states');
+      if (!response.ok) throw new Error('Failed to fetch states');
+      const result = await response.json();
+      return result.suggestions || [];
+    },
+  });
+
+  // Update available states when data is fetched
+  useEffect(() => {
+    if (statesData) {
+      setAvailableStates(statesData);
+    }
+  }, [statesData]);
 
   // Fetch user settings for dimension unit preference
   const { data: userSettings } = useQuery({
@@ -917,6 +939,11 @@ export default function Marketplace() {
       
       // Check categories filter
       if (clientFilters.categories.length > 0 && !clientFilters.categories.includes(deal.category_name)) {
+        return false;
+      }
+      
+      // Check states filter (from member profile)
+      if (clientFilters.states.length > 0 && !clientFilters.states.includes(deal.member_state)) {
         return false;
       }
       
@@ -2343,6 +2370,58 @@ export default function Marketplace() {
                           {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
                            !(searchAggregations?.gsm || availableGsm || []).length && (
                             <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* State Filter - Dropdown based */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('states')}
+                      >
+                        State
+                        {expandedSections.states ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.states && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {availableStates.length > 0 ? (
+                            <>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="state-all"
+                                  checked={clientFilters.states.length === 0}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setClientFilters(prev => ({ ...prev, states: [] }));
+                                    }
+                                  }}
+                                  data-testid="checkbox-state-all"
+                                />
+                                <label htmlFor="state-all" className="text-sm flex-1 cursor-pointer font-medium">
+                                  Any/All
+                                </label>
+                              </div>
+                              {availableStates.map((state: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`state-${index}`}
+                                    checked={clientFilters.states.includes(state.value)}
+                                    onCheckedChange={(checked) => handleFilterChange('states', state.value, checked as boolean)}
+                                    data-testid={`checkbox-state-${state.value}`}
+                                  />
+                                  <label htmlFor={`state-${index}`} className="text-sm flex-1 cursor-pointer">
+                                    {state.value}
+                                  </label>
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No states available</p>
                           )}
                         </div>
                       )}

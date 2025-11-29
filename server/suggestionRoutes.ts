@@ -190,5 +190,28 @@ router.get('/grain', async (req, res) => {
   }
 });
 
+// Get distinct states from member profiles
+router.get('/states', async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT 
+        state as value,
+        COUNT(*) as count
+      FROM Members 
+      WHERE state IS NOT NULL 
+        AND state != ''
+        AND mstatus = 1
+      GROUP BY state
+      ORDER BY state ASC
+    `;
+
+    const results = await executeQuery(query, []);
+    res.json({ success: true, suggestions: results });
+  } catch (error) {
+    console.error('Error fetching state suggestions:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch states' });
+  }
+});
+
 
 export default router;

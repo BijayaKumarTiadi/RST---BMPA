@@ -145,7 +145,8 @@ searchRouter.post('/precise', async (req, res) => {
         sg.GroupName,
         sg.GroupName as category_name,
         m.mname as created_by_name,
-        m.company_name as created_by_company
+        m.company_name as created_by_company,
+        m.state as member_state
       FROM deal_master dm 
       LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
       LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
