@@ -1323,7 +1323,7 @@ export default function Marketplace() {
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        placeholder="300"
+                        placeholder="000"
                         value={preciseSearch.gsm}
                         maxLength={3}
                         onBeforeInput={(e: any) => {
@@ -1550,7 +1550,7 @@ export default function Marketplace() {
                           type="text"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          placeholder="10"
+                          placeholder="00"
                           value={preciseSearch.tolerance}
                           maxLength={2}
                           onBeforeInput={(e: any) => {
@@ -1575,7 +1575,7 @@ export default function Marketplace() {
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="64.8"
+                          placeholder="00.0"
                           value={preciseSearch.deckle}
                           max={999.99}
                           onChange={(e) => {
@@ -1605,7 +1605,7 @@ export default function Marketplace() {
                             <Input
                               type="number"
                               step="0.01"
-                              placeholder="84.1"
+                              placeholder="00.0"
                               value={preciseSearch.grain}
                               max={99}
                               onChange={(e) => {
@@ -1628,7 +1628,7 @@ export default function Marketplace() {
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="2"
+                          placeholder="0"
                           value={preciseSearch.dimensionTolerance}
                           max={99}
                           onChange={(e) => {
