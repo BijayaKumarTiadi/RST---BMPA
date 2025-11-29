@@ -401,6 +401,24 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ BMPA Products table created successfully');
     }
 
+    // Add show_rate_in_marketplace column to deal_master if it doesn't exist
+    const showRateColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'deal_master' 
+      AND column_name = 'show_rate_in_marketplace'
+    `);
+
+    if (!showRateColumnExists || showRateColumnExists.count === 0) {
+      console.log('🔧 Adding show_rate_in_marketplace column to deal_master...');
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN show_rate_in_marketplace TINYINT(1) DEFAULT 1
+      `);
+      console.log('✅ show_rate_in_marketplace column added to deal_master (default: true for existing records)');
+    }
+
     // Insert default categories
     const defaultCategories = [
       { id: 'cat-1', name: 'Printing Materials', description: 'Paper, ink, toner, and other printing supplies' },

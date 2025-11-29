@@ -12,7 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Hash, Plus, Calculator } from "lucide-react";
+import { Package, Hash, Plus, Calculator, IndianRupee } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,6 +79,9 @@ const dealSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity is required").max(999999, "Quantity cannot exceed 999999"),
   stockAge: z.coerce.number().min(0, "Stock Age must be 0 or greater").max(999, "Stock Age cannot exceed 999 days").optional(),
   Seller_comments: z.string().max(400, "Comments cannot exceed 400 characters").optional(),
+  // Offer rate fields
+  offerRate: z.coerce.number().min(0, "Rate must be 0 or greater").optional(),
+  showRateInMarketplace: z.boolean().default(true),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
   const isSparePart = isSparePartGroup(data.groupName || '');
@@ -367,6 +371,8 @@ export default function AddDeal() {
       quantity: "" as any,
       stockAge: "" as any,
       Seller_comments: "",
+      offerRate: "" as any,
+      showRateInMarketplace: true,
     },
     mode: "onChange",
   });
@@ -691,11 +697,12 @@ export default function AddDeal() {
           stock_description: partFullName,
           search_key: searchKey,
           deal_description: data.Seller_comments || partFullName,
-          price: 0,
+          price: data.offerRate || 0,
           quantity: data.quantity,
           unit: data.OfferUnit,
           StockAge: data.stockAge || 0,
           location: 'India',
+          show_rate_in_marketplace: data.showRateInMarketplace ?? true,
         };
         
         console.log('✅ SPARE PART PAYLOAD:', JSON.stringify(payload, null, 2));
@@ -718,7 +725,7 @@ export default function AddDeal() {
           stock_description: stockDescription,
           search_key: searchKey,
           deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
-          price: 0,
+          price: data.offerRate || 0,
           quantity: data.quantity,
           unit: data.OfferUnit,
           min_order_quantity: 100,
@@ -729,6 +736,7 @@ export default function AddDeal() {
             grain_mm: data.grain_mm,
           },
           location: 'India',
+          show_rate_in_marketplace: data.showRateInMarketplace ?? true,
         };
         
         console.log('Regular product payload being sent to backend:', payload);
@@ -769,6 +777,8 @@ export default function AddDeal() {
           quantity: "" as any,
           stockAge: "" as any,
           Seller_comments: "",
+          offerRate: "" as any,
+          showRateInMarketplace: true,
         });
         setSelectedGroup("");
         setSelectedGroupName("");
@@ -1692,6 +1702,91 @@ export default function AddDeal() {
                       )}
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Pricing Section */}
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <IndianRupee className="h-5 w-5" />
+                    Pricing
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Set your offer rate and visibility preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="offerRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">
+                            Offer Rate (per {form.watch("OfferUnit") || "unit"})
+                            <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                <IndianRupee className="h-4 w-4" />
+                              </span>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="Enter rate"
+                                {...field}
+                                data-testid="input-offer-rate"
+                                maxLength={10}
+                                onBeforeInput={(e: any) => {
+                                  const char = e.data;
+                                  if (char && !/^[0-9.]$/.test(char)) {
+                                    e.preventDefault();
+                                  }
+                                }}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                                  // Only allow one decimal point
+                                  const parts = value.split('.');
+                                  const sanitized = parts.length > 2 
+                                    ? parts[0] + '.' + parts.slice(1).join('')
+                                    : value;
+                                  field.onChange(sanitized);
+                                }}
+                                className="pl-9 bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="showRateInMarketplace"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-muted/50">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-show-rate"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-foreground font-medium">
+                            Show rate in marketplace
+                          </FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            When unchecked, "Rate on request" will be displayed to buyers instead of the actual rate
+                          </p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
 

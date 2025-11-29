@@ -459,6 +459,7 @@ class DealService {
     spare_model?: string;
     spare_part_name?: string;
     spare_part_no?: string;
+    show_rate_in_marketplace?: boolean;
   }, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
@@ -490,6 +491,7 @@ class DealService {
         spare_model,
         spare_part_name,
         spare_part_no,
+        show_rate_in_marketplace = true,
       } = dealData as any;
 
       let finalMake, finalGrade, finalBrand, gsm, deckle_mm, grain_mm;
@@ -569,8 +571,8 @@ class DealService {
           groupID, Make, Grade, Brand, memberID,
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
           GSM, Deckle_mm, grain_mm, search_key, StockAge,
-          created_by_member_id, created_by_name, created_by_company
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          created_by_member_id, created_by_name, created_by_company, show_rate_in_marketplace
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         finalMake,
@@ -589,7 +591,8 @@ class DealService {
         StockAge !== undefined && StockAge !== null ? String(StockAge) : '',
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
-        userInfo?.company || ''
+        userInfo?.company || '',
+        show_rate_in_marketplace ? 1 : 0
       ]);
 
       const insertId = (result as any).insertId;
@@ -658,7 +661,8 @@ class DealService {
         min_order_quantity,
         location,
         deal_specifications,
-        expires_at
+        expires_at,
+        show_rate_in_marketplace
       } = updateData as any;
 
       const updateFields = [];
@@ -743,6 +747,12 @@ class DealService {
       if (StockAge !== undefined) {
         updateFields.push(`StockAge = ?`);
         updateValues.push(StockAge !== undefined && StockAge !== null ? String(StockAge) : '');
+      }
+      
+      // Handle show_rate_in_marketplace
+      if (show_rate_in_marketplace !== undefined) {
+        updateFields.push(`show_rate_in_marketplace = ?`);
+        updateValues.push(show_rate_in_marketplace ? 1 : 0);
       }
       
       // Skip fields that don't exist in the deal_master table

@@ -2572,6 +2572,24 @@ export default function Marketplace() {
                             <span>Stock: {formatStockAge(deal.StockAge)}</span>
                           </div>
 
+                          {/* Rate Display */}
+                          <div className="flex items-center justify-between mb-2 p-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <span className="font-medium text-xs text-gray-600 dark:text-gray-400">Rate:</span>
+                            {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-on-request-${deal.TransID}`}>
+                                Rate on request
+                              </span>
+                            ) : Number(deal.OfferPrice) > 0 ? (
+                              <span className="text-xs font-bold text-green-700 dark:text-green-400" data-testid={`rate-display-${deal.TransID}`}>
+                                Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-not-set-${deal.TransID}`}>
+                                Rate on request
+                              </span>
+                            )}
+                          </div>
+
                           {/* Action Buttons */}
                           <div className="mt-auto">
                             <Button
