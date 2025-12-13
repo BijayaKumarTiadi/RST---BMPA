@@ -181,11 +181,11 @@ export default function ManageUsers() {
 
   // Check if user is a child account
   const isChildUser = user?.user_type === 'child';
-  
+
   // SIMPLIFIED: Anyone with paid membership is a parent account (unless explicitly marked as child)
   const isPaidMember = user?.membershipPaid === 1 || user?.status === 1;
   const isParent = (user?.user_type === 'parent' || isPaidMember) && !isChildUser;
-  
+
   if (isChildUser || !isParent) {
     return (
       <div className="min-h-screen bg-background">
@@ -206,12 +206,12 @@ export default function ManageUsers() {
     );
   }
 
-  const canAddMoreUsers = !childUsers || childUsers.length < 2;
+  const canAddMoreUsers = !childUsers || childUsers.length < 5;
 
   return (
     <div className="min-h-screen bg-muted">
       <Navigation />
-      
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -233,69 +233,69 @@ export default function ManageUsers() {
                     Add Associate User
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Add Associate User</DialogTitle>
-                  <DialogDescription>
-                    Create a new Associate user account. They will share your company's membership and log in using OTP.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="user-name">
-                      User Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="user-name"
-                      placeholder="Enter user's name"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                    />
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Add Associate User</DialogTitle>
+                    <DialogDescription>
+                      Create a new Associate user account. They will share your company's membership and log in using OTP.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="user-name">
+                        User Name <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="user-name"
+                        placeholder="Enter user's name"
+                        value={newUserName}
+                        onChange={(e) => setNewUserName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="user-email">
+                        Email Address <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="user-email"
+                        type="email"
+                        placeholder="Enter email address"
+                        value={newUserEmail}
+                        onChange={(e) => setNewUserEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="user-phone">
+                        Phone Number <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="user-phone"
+                        type="tel"
+                        placeholder="Enter phone number (for OTP)"
+                        value={newUserPhone}
+                        onChange={(e) => setNewUserPhone(e.target.value)}
+                      />
+                    </div>
+                    <Alert>
+                      <CheckCircle2 className="h-4 w-4" />
+                      <AlertDescription>
+                        Associate users will inherit your company's membership and log in using OTP sent to their phone/email. All inquiries will be routed to your email.
+                      </AlertDescription>
+                    </Alert>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="user-email">
-                      Email Address <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="user-email"
-                      type="email"
-                      placeholder="Enter email address"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                    />
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateChildUser}
+                      disabled={createChildUserMutation.isPending}
+                    >
+                      {createChildUserMutation.isPending ? "Creating..." : "Create User"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="user-phone">
-                      Phone Number <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="user-phone"
-                      type="tel"
-                      placeholder="Enter phone number (for OTP)"
-                      value={newUserPhone}
-                      onChange={(e) => setNewUserPhone(e.target.value)}
-                    />
-                  </div>
-                  <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>
-                      Associate users will inherit your company's membership and log in using OTP sent to their phone/email. All inquiries will be routed to your email.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleCreateChildUser}
-                    disabled={createChildUserMutation.isPending}
-                  >
-                    {createChildUserMutation.isPending ? "Creating..." : "Create User"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function ManageUsers() {
               <Users className="h-5 w-5 text-blue-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{companyStats?.child_user_count || 0} / 2</div>
+              <div className="text-3xl font-bold">{companyStats?.child_user_count || 0} / 5</div>
               <p className="text-xs text-blue-100 mt-1">Maximum allowed</p>
             </CardContent>
           </Card>
@@ -352,7 +352,7 @@ export default function ManageUsers() {
           <CardHeader className="bg-muted border-b-2 border-border">
             <CardTitle className="text-foreground">Associate Users</CardTitle>
             <CardDescription>
-              Manage Associate user accounts for your company. Maximum 2 Associate users allowed.
+              Manage Associate user accounts for your company. Maximum 5 Associate users allowed.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -365,9 +365,9 @@ export default function ManageUsers() {
                 <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">No Associate users yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Add up to 2 Associate users to help manage your company's products
+                  Add up to 5 Associate users to help manage your company's products
                 </p>
-                <Button 
+                <Button
                   onClick={() => setIsAddDialogOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
@@ -392,7 +392,7 @@ export default function ManageUsers() {
                     </TableHeader>
                     <TableBody>
                       {childUsers.map((childUser: ChildUser) => (
-                        <TableRow 
+                        <TableRow
                           key={childUser.member_id}
                           className="hover:bg-muted/50 transition-colors"
                         >

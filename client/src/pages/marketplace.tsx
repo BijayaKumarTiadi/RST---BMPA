@@ -45,21 +45,21 @@ export default function Marketplace() {
     },
     dateRange: "all" // all, today, week, month
   });
-  
+
   // Pending filters (UI state, not applied yet)
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
   const [pendingSelectedCategory, setPendingSelectedCategory] = useState("");
-  
+
   // Main search state - this will be used for everything
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  
+
   // Client-side sorting function
   const sortDeals = (deals: any[], sortType: string) => {
     if (!deals || deals.length === 0) return deals;
-    
+
     const dealsCopy = [...deals];
-    
+
     switch (sortType) {
       case 'newest':
         return dealsCopy.sort((a, b) => new Date(b.deal_created_at).getTime() - new Date(a.deal_created_at).getTime());
@@ -95,7 +95,7 @@ export default function Marketplace() {
         return dealsCopy.sort((a, b) => new Date(b.deal_created_at).getTime() - new Date(a.deal_created_at).getTime());
     }
   };
-  
+
   // Available filter options from search API (dynamic based on search)
   const [availableMakes, setAvailableMakes] = useState<any[]>([]);
   const [availableGrades, setAvailableGrades] = useState<any[]>([]);
@@ -104,7 +104,7 @@ export default function Marketplace() {
   const [availableUnits, setAvailableUnits] = useState<any[]>([]);
   const [availableLocations, setAvailableLocations] = useState<any[]>([]);
   const [availableStates, setAvailableStates] = useState<any[]>([]);
-  
+
   // Spare part filter states
   const [isSparePartMode, setIsSparePartMode] = useState(false);
   const [availableProcesses, setAvailableProcesses] = useState<any[]>([]);
@@ -132,15 +132,15 @@ export default function Marketplace() {
     partName: "",
     partNo: ""
   });
-  
+
   // Auto-suggestion states
   const [gsmSuggestions, setGsmSuggestions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
-  
+
   // Client-side pagination for precise search results
   const [allPreciseSearchResults, setAllPreciseSearchResults] = useState<any[]>([]);
-  
+
   // Client-side filter states (checkbox based)
   const [clientFilters, setClientFilters] = useState({
     makes: [] as string[],
@@ -163,7 +163,7 @@ export default function Marketplace() {
     setClientFilters(prev => {
       const newFilters = { ...prev };
       const filterArray = newFilters[filterType as keyof typeof newFilters];
-      
+
       if (checked) {
         // Add value if not already present
         if (!filterArray.includes(value)) {
@@ -173,7 +173,7 @@ export default function Marketplace() {
         // Remove value
         newFilters[filterType as keyof typeof newFilters] = filterArray.filter(item => item !== value);
       }
-      
+
       return newFilters;
     });
   };
@@ -199,8 +199,8 @@ export default function Marketplace() {
   useEffect(() => {
     applyClientFilters();
   }, [clientFilters, allPreciseSearchResults]);
-  
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     categories: true,
     states: false,
     makes: false,
@@ -222,7 +222,7 @@ export default function Marketplace() {
   const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchCardRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Modal states
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -302,7 +302,7 @@ export default function Marketplace() {
   const formatDimensions = (deckle_mm: number, grain_mm: number, groupName?: string, groupID?: number) => {
     const userUnit = userSettings?.dimension_unit || 'cm';
     const isKraftReel = isKraftReelGroup(groupName || '', groupID);
-    
+
     if (isKraftReel) {
       // For Kraft Reel: use "," separator and show original grain_mm value with "B.F" suffix
       if (userUnit === 'inch') {
@@ -310,14 +310,14 @@ export default function Marketplace() {
         return (
           <>
             <div>{deckleInch}", {grain_mm} B.F</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.F</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm / 10).toFixed(1)} cm, {grain_mm} B.F</div>
           </>
         );
       } else {
         return (
           <>
-            <div>{(deckle_mm/10).toFixed(1)} cm, {grain_mm} B.F</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}", {grain_mm} B.F</div>
+            <div>{(deckle_mm / 10).toFixed(1)} cm, {grain_mm} B.F</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm / 25.4).toFixed(2)}", {grain_mm} B.F</div>
           </>
         );
       }
@@ -329,14 +329,14 @@ export default function Marketplace() {
         return (
           <>
             <div>{deckleInch}" × {grainInch}"</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm / 10).toFixed(1)} × {(grain_mm / 10).toFixed(1)} cm</div>
           </>
         );
       } else {
         return (
           <>
-            <div>{(deckle_mm/10).toFixed(1)} × {(grain_mm/10).toFixed(1)} cm</div>
-            <div className="text-xs text-muted-foreground">{(deckle_mm/25.4).toFixed(2)}" × {(grain_mm/25.4).toFixed(2)}"</div>
+            <div>{(deckle_mm / 10).toFixed(1)} × {(grain_mm / 10).toFixed(1)} cm</div>
+            <div className="text-xs text-muted-foreground">{(deckle_mm / 25.4).toFixed(2)}" × {(grain_mm / 25.4).toFixed(2)}"</div>
           </>
         );
       }
@@ -355,17 +355,17 @@ export default function Marketplace() {
           page: searchResults.page || 1
         };
       }
-      
+
       // Otherwise fetch regular deals (no sorting, we'll sort client-side)
       const params = new URLSearchParams();
       params.append('limit', '100'); // Get more data for client-side sorting
       params.append('page', '1');
-      
+
       // Exclude user's own products from marketplace view
       if (user?.id) {
         params.append('exclude_member_id', user.id.toString());
       }
-      
+
       const response = await fetch(`/api/deals?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch deals');
       return response.json();
@@ -397,14 +397,14 @@ export default function Marketplace() {
   // Apply client-side sorting to existing data (NO API CALLS)
   let deals = [];
   let totalDeals = 0;
-  
+
   if (searchResults?.maxRecords && allPreciseSearchResults.length > 0) {
     // Use filtered results if filters are applied, otherwise use all results
     const rawData = hasClientFilters() ? filteredResults : allPreciseSearchResults;
-    
+
     // Apply client-side sorting first
     const sortedData = sortDeals(rawData, sortBy);
-    
+
     // Then apply client-side pagination for precise search (max 100 records)
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -413,19 +413,19 @@ export default function Marketplace() {
   } else {
     // Get raw data from search results or regular deals
     const rawData = searchResults?.data || dealsData?.deals || [];
-    
+
     // Apply client-side sorting to existing data (NO API CALLS)
     const sortedData = sortDeals(rawData, sortBy);
-    
+
     // Apply pagination to sorted data
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     deals = sortedData.slice(startIndex, endIndex);
     totalDeals = sortedData.length;
   }
-  
+
   const totalPages = Math.max(1, Math.ceil(totalDeals / itemsPerPage));
-  
+
   // Handle page change with filters
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -435,41 +435,41 @@ export default function Marketplace() {
     }
     // Note: For precise search with maxRecords (100 limit), pagination is handled client-side automatically
   };
-  
+
   // Ensure current page doesn't exceed total pages
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
-  
+
   const groups = stockHierarchy?.groups || [];
   const makes = stockHierarchy?.makes || [];
   const grades = stockHierarchy?.grades || [];
   const brands = stockHierarchy?.brands || [];
-  
+
   // Define dynamic filter options first based on search results
-  const dynamicMakes = searchAggregations?.makes 
+  const dynamicMakes = searchAggregations?.makes
     ? searchAggregations.makes.map((item: any) => ({ name: item.Make, count: item.count }))
     : null;
-    
-  const dynamicGrades = searchAggregations?.grades 
+
+  const dynamicGrades = searchAggregations?.grades
     ? searchAggregations.grades.map((item: any) => ({ name: item.Grade, count: item.count }))
     : null;
-    
-  const dynamicBrands = searchAggregations?.brands 
+
+  const dynamicBrands = searchAggregations?.brands
     ? searchAggregations.brands.map((item: any) => ({ name: item.Brand, count: item.count }))
     : null;
-    
-  const dynamicUnits = searchAggregations?.units 
+
+  const dynamicUnits = searchAggregations?.units
     ? searchAggregations.units.map((item: any) => ({ name: item.OfferUnit, count: item.count }))
     : null;
 
   // Dynamic GSM options based on search results or all deals
-  const gsmOptions = searchAggregations?.gsm 
+  const gsmOptions = searchAggregations?.gsm
     ? searchAggregations.gsm.map((item: any) => ({ value: item.GSM.toString(), count: item.count }))
     : Array.from(new Set(deals.filter((deal: any) => deal.GSM).map((deal: any) => deal.GSM.toString()))).sort((a, b) => parseFloat(a as string) - parseFloat(b as string)).map((gsm) => ({ value: gsm as string, count: 0 }));
-  
+
   // No filtering needed - using available options from search API
 
   // Reset to page 1 when filters change
@@ -501,11 +501,11 @@ export default function Marketplace() {
           exclude_member_id: user?.id // Exclude user's own products
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Initial filter response:', data);
-        
+
         if (data.aggregations) {
           console.log('Setting initial filter options');
           setAvailableMakes(data.aggregations.makes || []);
@@ -513,13 +513,14 @@ export default function Marketplace() {
           setAvailableBrands(data.aggregations.brands || []);
           setAvailableGsm(data.aggregations.gsm || []);
           setAvailableUnits(data.aggregations.units || []);
+          setAvailableStates(data.aggregations.states || []);
         }
       }
     } catch (error) {
       console.error('Error loading initial filters:', error);
     }
   };
-  
+
   // Apply pending filters
   const applySearch = () => {
     // Trigger search with current search term
@@ -542,39 +543,40 @@ export default function Marketplace() {
           exclude_member_id: user?.id // Exclude user's own products
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data);
         setSearchTerm(query); // Update search term after successful search
         console.log('Search API response:', data);
         console.log('Available aggregations:', data.aggregations);
-        
+
         if (data.aggregations) {
           setSearchAggregations(data.aggregations);
-          
+
           // Log each filter array to debug
           console.log('Makes data:', data.aggregations.makes);
-          console.log('Grades data:', data.aggregations.grades);  
+          console.log('Grades data:', data.aggregations.grades);
           console.log('Brands data:', data.aggregations.brands);
           console.log('GSM data:', data.aggregations.gsm);
-          
+
           const makes = data.aggregations.makes || [];
           const grades = data.aggregations.grades || [];
           const brands = data.aggregations.brands || [];
           const gsm = data.aggregations.gsm || [];
           const units = data.aggregations.units || [];
-          
+
           console.log('Setting availableMakes:', makes);
           console.log('Setting availableGrades:', grades);
           console.log('Setting availableBrands:', brands);
           console.log('Setting availableGsm:', gsm);
-          
+
           setAvailableMakes(makes);
           setAvailableGrades(grades);
           setAvailableBrands(brands);
           setAvailableGsm(gsm);
           setAvailableUnits(units);
+          setAvailableStates(data.aggregations.states || []);
         } else {
           console.log('No aggregations found in response');
         }
@@ -585,12 +587,12 @@ export default function Marketplace() {
       setIsSearching(false);
     }
   };
-  
+
   // Handle hierarchical filter changes
   // Handle search term changes to update filter options
   const handleSearchChange = async (value: string) => {
     setPendingSearchTerm(value);
-    
+
     // Update filter options based on current search
     if (value.trim()) {
       try {
@@ -606,11 +608,11 @@ export default function Marketplace() {
             exclude_member_id: user?.id // Exclude user's own products
           })
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('Search Change API response:', data);
-          
+
           if (data.aggregations) {
             console.log('Updating filters with aggregations:', data.aggregations);
             setAvailableMakes(data.aggregations.makes || []);
@@ -673,7 +675,7 @@ export default function Marketplace() {
   const applyFilters = async (newFilters = appliedFilters, resetPage = true) => {
     setIsSearching(true);
     if (resetPage) setCurrentPage(1);
-    
+
     try {
       const response = await fetch('/api/search/advanced', {
         method: 'POST',
@@ -687,7 +689,7 @@ export default function Marketplace() {
           sortBy: 'newest' // Use default sort for API, sorting handled client-side
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data);
@@ -741,11 +743,11 @@ export default function Marketplace() {
     setClientFilters(prev => {
       const newFilters = { ...prev };
       const filterArray = newFilters[type as keyof typeof newFilters];
-      
+
       if (Array.isArray(filterArray)) {
         newFilters[type as keyof typeof newFilters] = filterArray.filter(item => item !== value);
       }
-      
+
       return newFilters;
     });
   };
@@ -766,16 +768,16 @@ export default function Marketplace() {
   // Check if filters are active
   const hasActiveFilters = () => {
     return appliedFilters.selectedMakes.length > 0 ||
-           appliedFilters.selectedGrades.length > 0 ||
-           appliedFilters.selectedBrands.length > 0 ||
-           appliedFilters.selectedCategories.length > 0 ||
-           appliedFilters.selectedLocations.length > 0 ||
-           appliedFilters.gsmRange.min !== "" ||
-           appliedFilters.gsmRange.max !== "" ||
-           appliedFilters.dimensionRange.deckle.min !== "" ||
-           appliedFilters.dimensionRange.deckle.max !== "" ||
-           appliedFilters.dimensionRange.grain.min !== "" ||
-           appliedFilters.dimensionRange.grain.max !== "";
+      appliedFilters.selectedGrades.length > 0 ||
+      appliedFilters.selectedBrands.length > 0 ||
+      appliedFilters.selectedCategories.length > 0 ||
+      appliedFilters.selectedLocations.length > 0 ||
+      appliedFilters.gsmRange.min !== "" ||
+      appliedFilters.gsmRange.max !== "" ||
+      appliedFilters.dimensionRange.deckle.min !== "" ||
+      appliedFilters.dimensionRange.deckle.max !== "" ||
+      appliedFilters.dimensionRange.grain.min !== "" ||
+      appliedFilters.dimensionRange.grain.max !== "";
   };
 
   // Clear all filters
@@ -794,7 +796,7 @@ export default function Marketplace() {
       },
       dateRange: "all"
     };
-    
+
     setPendingSearchTerm("");
     setSearchTerm("");
     setSortBy("newest");
@@ -814,13 +816,13 @@ export default function Marketplace() {
     try {
       console.log('Starting chat with dealId:', dealId, 'sellerId:', sellerId);
       console.log('Deal object:', deals.find((d: any) => d.TransID === dealId));
-      
+
       if (!dealId || !sellerId) {
         console.error('Missing dealId or sellerId');
         alert(`Missing dealId (${dealId}) or sellerId (${sellerId}). Please try again.`);
         return;
       }
-      
+
       const response = await fetch('/api/chat/start', {
         method: 'POST',
         headers: {
@@ -831,10 +833,10 @@ export default function Marketplace() {
           sellerId
         })
       });
-      
+
       const result = await response.json();
       console.log('Chat start result:', result);
-      
+
       if (result.success) {
         setLocation(`/chat/${result.chatId}`);
       } else {
@@ -854,12 +856,12 @@ export default function Marketplace() {
   // Extract unique values from precise search results for client-side filtering
   const getUniqueValues = (field: string) => {
     if (!allPreciseSearchResults.length) return [];
-    
+
     const values = allPreciseSearchResults
       .map(deal => {
         // For spare parts, the backend has already parsed the fields
         const isSparePartDeal = deal.is_spare_part || deal.process;
-        
+
         switch (field) {
           case 'makes':
             return isSparePartDeal ? null : deal.Make;
@@ -871,6 +873,8 @@ export default function Marketplace() {
             return isSparePartDeal ? null : deal.GSM?.toString();
           case 'categories':
             return deal.category_name;
+          case 'states':
+            return deal.member_state;
           // Spare part fields - use parsed fields from backend
           case 'processes':
             return isSparePartDeal ? deal.process : null;
@@ -887,26 +891,26 @@ export default function Marketplace() {
         }
       })
       .filter(value => value && value.trim() !== '')
-      .reduce((acc: Array<{value: string, count: number}>, value) => {
-        const existing = acc.find((item: {value: string, count: number}) => item.value === value);
+      .reduce((acc: Array<{ value: string, count: number }>, value) => {
+        const existing = acc.find((item: { value: string, count: number }) => item.value === value);
         if (existing) {
           existing.count++;
         } else {
           acc.push({ value, count: 1 });
         }
         return acc;
-      }, [] as Array<{value: string, count: number}>);
-    
+      }, [] as Array<{ value: string, count: number }>);
+
     // Sort alphabetically by value for makes, grades, brands, and categories
     // Sort numerically for GSM
     if (field === 'gsm') {
-      return values.sort((a: {value: string, count: number}, b: {value: string, count: number}) => {
+      return values.sort((a: { value: string, count: number }, b: { value: string, count: number }) => {
         const numA = parseInt(a.value);
         const numB = parseInt(b.value);
         return numA - numB;
       });
     }
-    return values.sort((a: {value: string, count: number}, b: {value: string, count: number}) => a.value.localeCompare(b.value));
+    return values.sort((a: { value: string, count: number }, b: { value: string, count: number }) => a.value.localeCompare(b.value));
   };
 
   // Client-side filtering function
@@ -921,53 +925,53 @@ export default function Marketplace() {
       if (clientFilters.makes.length > 0 && !clientFilters.makes.includes(deal.Make)) {
         return false;
       }
-      
+
       // Check grades filter
       if (clientFilters.grades.length > 0 && !clientFilters.grades.includes(deal.Grade)) {
         return false;
       }
-      
+
       // Check brands filter
       if (clientFilters.brands.length > 0 && !clientFilters.brands.includes(deal.Brand)) {
         return false;
       }
-      
+
       // Check GSM filter
       if (clientFilters.gsm.length > 0 && !clientFilters.gsm.includes(deal.GSM?.toString())) {
         return false;
       }
-      
+
       // Check categories filter
       if (clientFilters.categories.length > 0 && !clientFilters.categories.includes(deal.category_name)) {
         return false;
       }
-      
+
       // Check states filter (from member profile)
       if (clientFilters.states.length > 0 && !clientFilters.states.includes(deal.member_state)) {
         return false;
       }
-      
+
       // Spare part filters
       if (clientFilters.processes.length > 0 && !clientFilters.processes.includes(deal.process)) {
         return false;
       }
-      
+
       if (clientFilters.categoryTypes.length > 0 && !clientFilters.categoryTypes.includes(deal.category_type)) {
         return false;
       }
-      
+
       if (clientFilters.machineTypes.length > 0 && !clientFilters.machineTypes.includes(deal.machine_type)) {
         return false;
       }
-      
+
       if (clientFilters.manufacturers.length > 0 && !clientFilters.manufacturers.includes(deal.manufacturer)) {
         return false;
       }
-      
+
       if (clientFilters.models.length > 0 && !clientFilters.models.includes(deal.model)) {
         return false;
       }
-      
+
       return true;
     });
 
@@ -1009,7 +1013,7 @@ export default function Marketplace() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('[data-testid="input-precise-gsm"]') &&
-          !target.closest('.absolute.z-50')) {
+        !target.closest('.absolute.z-50')) {
         setGsmSuggestions([]);
       }
     };
@@ -1027,28 +1031,28 @@ export default function Marketplace() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
+
       // Check if click is on the search card itself
       if (searchCardRef.current && searchCardRef.current.contains(target)) {
         return;
       }
-      
+
       // Check if click is on a Select dropdown (Radix UI portals)
       // These render outside the component tree
       const isSelectDropdown = target.closest('[role="listbox"]') ||
-                              target.closest('[data-radix-select-content]') ||
-                              target.closest('[data-radix-popper-content-wrapper]');
-      
+        target.closest('[data-radix-select-content]') ||
+        target.closest('[data-radix-popper-content-wrapper]');
+
       if (isSelectDropdown) {
         return; // Don't close if clicking on dropdown
       }
-      
+
       // Clear any existing timeout
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
         hoverTimeoutRef.current = null;
       }
-      
+
       // Close immediately when clicked outside
       setPreciseSearchExpanded(false);
     };
@@ -1070,30 +1074,30 @@ export default function Marketplace() {
   // Handle precise search field changes
   const handlePreciseSearchChange = (field: string, value: string) => {
     setPreciseSearch(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear GSM suggestions when category changes to get fresh category-specific suggestions
     if (field === 'category') {
       setGsmSuggestions([]);
-      
+
       // Detect spare part mode
       const isSparePart = value?.toLowerCase()?.includes('spare part');
       setIsSparePartMode(isSparePart);
-      
+
       // If spare part mode, fetch spare part filter options
       if (isSparePart) {
         fetchSparePartFilterOptions();
       }
     }
-    
+
     // For spare part fields, fetch manufacturers when process changes
     if (field === 'process') {
       fetchManufacturersByProcess(value);
     }
-    
+
     // Trigger auto-suggestions based on field (excluding category - dropdown only)
     if (field === 'gsm') fetchGsmSuggestions(value);
   };
-  
+
   // Fetch manufacturers filtered by process
   const fetchManufacturersByProcess = async (process: string) => {
     try {
@@ -1108,7 +1112,7 @@ export default function Marketplace() {
       console.error('Error fetching manufacturers:', error);
     }
   };
-  
+
   // Fetch spare part filter options - all independent
   const fetchSparePartFilterOptions = async () => {
     try {
@@ -1118,21 +1122,21 @@ export default function Marketplace() {
         const processes = await processesResponse.json();
         setAvailableProcesses(processes.map((p: string) => ({ value: p })));
       }
-      
+
       // Fetch category types - common for all processes
       const categoryTypesResponse = await fetch(`/api/spare-parts/category-types`);
       if (categoryTypesResponse.ok) {
         const categoryTypes = await categoryTypesResponse.json();
         setAvailableCategoryTypes(categoryTypes.map((c: string) => ({ value: c })));
       }
-      
+
       // Fetch machine types - independent
       const machineTypesResponse = await fetch(`/api/spare-parts/machine-types`);
       if (machineTypesResponse.ok) {
         const machineTypes = await machineTypesResponse.json();
         setAvailableMachineTypes(machineTypes.map((m: string) => ({ value: m })));
       }
-      
+
       // Manufacturers will be fetched when process is selected
       // Models are now text input, not dropdown
     } catch (error) {
@@ -1142,13 +1146,13 @@ export default function Marketplace() {
 
   const performPreciseSearch = async () => {
     console.log('Performing precise search with (max 100 records):', preciseSearch);
-    
+
     try {
       setIsSearching(true);
-      
+
       // Determine which endpoint to use based on spare part mode
       const endpoint = isSparePartMode ? '/api/spare-parts/search' : '/api/search/precise';
-      
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -1159,22 +1163,22 @@ export default function Marketplace() {
           exclude_member_id: user?.id // Exclude user's own products
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Precise search results (MAX 100 RECORDS):', data);
         console.log(`Received ${data.data?.length || 0} records (max 100 limit)`);
-        
+
         // Store all results for client-side pagination
         setAllPreciseSearchResults(data.data || []);
-        
+
         // Set search results for display (this will be paginated client-side)
         setSearchResults({
           ...data,
           maxRecords: 100, // Flag to indicate 100 record limit
           isSparePartSearch: isSparePartMode
         });
-        
+
         setSearchTerm(''); // Clear regular search term
         setCurrentPage(1); // Reset to first page
       } else {
@@ -1201,12 +1205,12 @@ export default function Marketplace() {
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return '1 day ago';
     if (diffDays < 30) return `${diffDays} days ago`;
@@ -1221,7 +1225,7 @@ export default function Marketplace() {
   // Helper function to format stock age from API's StockAge field (days)
   const formatStockAge = (stockAgeDays: number) => {
     if (stockAgeDays === undefined || stockAgeDays === null) return 'N/A';
-    
+
     if (stockAgeDays === 0) {
       return 'Fresh stock';
     } else if (stockAgeDays === 1) {
@@ -1261,7 +1265,7 @@ export default function Marketplace() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-2 sm:py-4">
 
 
@@ -1300,7 +1304,7 @@ export default function Marketplace() {
                 </div>
               </div>
             </div>
-            
+
             {/* Expandable content */}
             <div className={`transition-all duration-300 overflow-hidden ${preciseSearchExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
               <div className="px-3 pb-3">
@@ -1632,7 +1636,7 @@ export default function Marketplace() {
                         const isKraftReel = category?.toLowerCase().includes('kraft reel');
                         const grainLabel = isKraftReel ? 'B.F' : 'Grain';
                         const showGrainField = !isPaperReel && !isBoardReel;
-                        
+
                         return showGrainField ? (
                           <div className="flex-1 min-w-24">
                             <label className="text-sm font-medium">{grainLabel}</label>
@@ -1763,16 +1767,16 @@ export default function Marketplace() {
             </div>
           </Card>
         </div>
-        
-        
+
+
         {/* Active Filters Display */}
         {hasActiveFilters() && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-medium text-muted-foreground">Active Filters:</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={clearAllFilters}
                 className="text-xs h-6 px-2"
               >
@@ -1783,8 +1787,8 @@ export default function Marketplace() {
               {appliedFilters.selectedMakes.map((make, index) => (
                 <Badge key={`make-${index}`} variant="secondary" className="flex items-center gap-1">
                   Make: {make}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => removeFilter('makes', make)}
                   />
                 </Badge>
@@ -1792,8 +1796,8 @@ export default function Marketplace() {
               {appliedFilters.selectedGrades.map((grade, index) => (
                 <Badge key={`grade-${index}`} variant="secondary" className="flex items-center gap-1">
                   Grade: {grade}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => removeFilter('grades', grade)}
                   />
                 </Badge>
@@ -1801,8 +1805,8 @@ export default function Marketplace() {
               {appliedFilters.selectedBrands.map((brand, index) => (
                 <Badge key={`brand-${index}`} variant="secondary" className="flex items-center gap-1">
                   Brand: {brand}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => removeFilter('brands', brand)}
                   />
                 </Badge>
@@ -1810,8 +1814,8 @@ export default function Marketplace() {
               {appliedFilters.selectedCategories.map((category, index) => (
                 <Badge key={`category-${index}`} variant="secondary" className="flex items-center gap-1">
                   Category: {category}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => removeFilter('categories', category)}
                   />
                 </Badge>
@@ -1819,8 +1823,8 @@ export default function Marketplace() {
               {appliedFilters.selectedLocations.map((location, index) => (
                 <Badge key={`location-${index}`} variant="secondary" className="flex items-center gap-1">
                   Location: {location}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => removeFilter('locations', location)}
                   />
                 </Badge>
@@ -1828,8 +1832,8 @@ export default function Marketplace() {
               {(appliedFilters.gsmRange.min || appliedFilters.gsmRange.max) && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   GSM: {appliedFilters.gsmRange.min || '0'}-{appliedFilters.gsmRange.max || '∞'}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => setRangeFilter('gsm', { min: '', max: '' })}
                   />
                 </Badge>
@@ -1856,6 +1860,7 @@ export default function Marketplace() {
             availableBrands={availableBrands}
             availableGsm={availableGsm}
             availableLocations={availableLocations}
+            availableStates={availableStates}
             onSearchChange={handleSearchChange}
             onFilterChange={handleFilterChange}
             onRangeFilterChange={setRangeFilter}
@@ -1889,156 +1894,156 @@ export default function Marketplace() {
               </SheetHeader>
               {/* Mobile Filter Content - Will be the same as desktop */}
               <div className="space-y-6">
-            <Card className="sticky top-4">
-              <CardContent className="space-y-6 pt-6">
-                {/* Search */}
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search offers..."
-                      value={pendingSearchTerm}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search"
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                {/* GSM Range Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('gsmRange')}
-                  >
-                    GSM Range
-                    {expandedSections.gsmRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.gsmRange && (
-                    <div className="mt-3 space-y-3">
-                      <div className="flex gap-2">
+                <Card className="sticky top-4">
+                  <CardContent className="space-y-6 pt-6">
+                    {/* Search */}
+                    <div>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          type="number"
-                          placeholder="Min GSM"
-                          value={appliedFilters.gsmRange.min}
-                          onChange={(e) => {
-                            const newRange = { ...appliedFilters.gsmRange, min: e.target.value };
-                            setRangeFilter('gsm', newRange);
-                          }}
-                          className="h-8 text-xs"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max GSM"
-                          value={appliedFilters.gsmRange.max}
-                          onChange={(e) => {
-                            const newRange = { ...appliedFilters.gsmRange, max: e.target.value };
-                            setRangeFilter('gsm', newRange);
-                          }}
-                          className="h-8 text-xs"
+                          placeholder="Search offers..."
+                          value={pendingSearchTerm}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-search"
                         />
                       </div>
-                      {(appliedFilters.gsmRange.min || appliedFilters.gsmRange.max) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRangeFilter('gsm', { min: '', max: '' })}
-                          className="w-full h-7 text-xs"
-                        >
-                          Clear GSM Range
-                        </Button>
-                      )}
                     </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
-                {/* Makes Filter */}
-                <div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-0 h-auto font-semibold"
-                    onClick={() => toggleSection('makes')}
-                  >
-                    Makes
-                    {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                  {expandedSections.makes && (
-                    <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                      {availableMakes.map((make: any, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-between h-auto p-2 text-left"
-                          onClick={() => handleMakeClick(make)}
-                        >
-                          <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
-                          {make.count && (
-                            <Badge variant="secondary" className="text-xs px-2 py-0">
-                              {make.count}
-                            </Badge>
+
+                    <Separator />
+
+                    {/* GSM Range Filter */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('gsmRange')}
+                      >
+                        GSM Range
+                        {expandedSections.gsmRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.gsmRange && (
+                        <div className="mt-3 space-y-3">
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              placeholder="Min GSM"
+                              value={appliedFilters.gsmRange.min}
+                              onChange={(e) => {
+                                const newRange = { ...appliedFilters.gsmRange, min: e.target.value };
+                                setRangeFilter('gsm', newRange);
+                              }}
+                              className="h-8 text-xs"
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Max GSM"
+                              value={appliedFilters.gsmRange.max}
+                              onChange={(e) => {
+                                const newRange = { ...appliedFilters.gsmRange, max: e.target.value };
+                                setRangeFilter('gsm', newRange);
+                              }}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          {(appliedFilters.gsmRange.min || appliedFilters.gsmRange.max) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setRangeFilter('gsm', { min: '', max: '' })}
+                              className="w-full h-7 text-xs"
+                            >
+                              Clear GSM Range
+                            </Button>
                           )}
-                        </Button>
-                      ))}
-                      {availableMakes.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                
+                    <Separator />
 
-                
-                <Separator />
-                
-                {/* Sort Options */}
-                <div>
-                  <label className="text-sm font-semibold">Sort By</label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="mt-2" data-testid="select-sort">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
-                      <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
-                      <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
-                      <SelectItem value="quantity-high">Quantity: High to Low</SelectItem>
-                      <SelectItem value="size-small">Size: Small to Large</SelectItem>
-                      <SelectItem value="size-large">Size: Large to Small</SelectItem>
-                      <SelectItem value="location">Location (A-Z)</SelectItem>
-                      <SelectItem value="company">Company (A-Z)</SelectItem>
-                      <SelectItem value="category">Category (A-Z)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Filter Action Buttons */}
-                <div className="space-y-3">
-                  <Button 
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    onClick={applySearch}
-                  >
-                    Apply Search
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={clearAllFilters}
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    {/* Makes Filter */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto font-semibold"
+                        onClick={() => toggleSection('makes')}
+                      >
+                        Makes
+                        {expandedSections.makes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                      {expandedSections.makes && (
+                        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                          {availableMakes.map((make: any, index: number) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              size="sm"
+                              className="w-full justify-between h-auto p-2 text-left"
+                              onClick={() => handleMakeClick(make)}
+                            >
+                              <span className="text-sm">{make.Make || make.name || make.value || (typeof make === 'string' ? make : 'Unknown')}</span>
+                              {make.count && (
+                                <Badge variant="secondary" className="text-xs px-2 py-0">
+                                  {make.count}
+                                </Badge>
+                              )}
+                            </Button>
+                          ))}
+                          {availableMakes.length === 0 && (
+                            <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+
+
+
+                    <Separator />
+
+                    {/* Sort Options */}
+                    <div>
+                      <label className="text-sm font-semibold">Sort By</label>
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="mt-2" data-testid="select-sort">
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="oldest">Oldest First</SelectItem>
+                          <SelectItem value="gsm-low">GSM: Low to High</SelectItem>
+                          <SelectItem value="gsm-high">GSM: High to Low</SelectItem>
+                          <SelectItem value="quantity-low">Quantity: Low to High</SelectItem>
+                          <SelectItem value="quantity-high">Quantity: High to Low</SelectItem>
+                          <SelectItem value="size-small">Size: Small to Large</SelectItem>
+                          <SelectItem value="size-large">Size: Large to Small</SelectItem>
+                          <SelectItem value="location">Location (A-Z)</SelectItem>
+                          <SelectItem value="company">Company (A-Z)</SelectItem>
+                          <SelectItem value="category">Category (A-Z)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Filter Action Buttons */}
+                    <div className="space-y-3">
+                      <Button
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                        onClick={applySearch}
+                      >
+                        Apply Search
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={clearAllFilters}
+                      >
+                        Clear All Filters
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </SheetContent>
           </Sheet>
@@ -2050,7 +2055,7 @@ export default function Marketplace() {
           <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
             <Card className="sticky top-4">
               <CardContent className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pt-6">
-                
+
                 {/* Dynamic Filters based on search mode */}
                 {searchResults?.isSparePartSearch ? (
                   <>
@@ -2255,13 +2260,13 @@ export default function Marketplace() {
                             </div>
                           ))}
                           {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
-                           !(searchAggregations?.makes || availableMakes || []).length && (
-                            <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
-                          )}
+                            !(searchAggregations?.makes || availableMakes || []).length && (
+                              <p className="text-sm text-muted-foreground italic">Type in search to see available makes</p>
+                            )}
                         </div>
                       )}
                     </div>
-                    
+
                     <Separator />
 
                     {/* Grades Filter - Checkbox based */}
@@ -2296,9 +2301,9 @@ export default function Marketplace() {
                             </div>
                           ))}
                           {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
-                           !(searchAggregations?.grades || availableGrades || []).length && (
-                            <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
-                          )}
+                            !(searchAggregations?.grades || availableGrades || []).length && (
+                              <p className="text-sm text-muted-foreground italic">Type in search to see available grades</p>
+                            )}
                         </div>
                       )}
                     </div>
@@ -2337,9 +2342,9 @@ export default function Marketplace() {
                             </div>
                           ))}
                           {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
-                           !(searchAggregations?.brands || availableBrands || []).length && (
-                            <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
-                          )}
+                            !(searchAggregations?.brands || availableBrands || []).length && (
+                              <p className="text-sm text-muted-foreground italic">Type in search to see available brands</p>
+                            )}
                         </div>
                       )}
                     </div>
@@ -2382,9 +2387,9 @@ export default function Marketplace() {
                             </div>
                           ))}
                           {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
-                           !(searchAggregations?.gsm || availableGsm || []).length && (
-                            <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
-                          )}
+                            !(searchAggregations?.gsm || availableGsm || []).length && (
+                              <p className="text-sm text-muted-foreground italic">Type in search to see available GSM values</p>
+                            )}
                         </div>
                       )}
                     </div>
@@ -2403,40 +2408,29 @@ export default function Marketplace() {
                       </Button>
                       {expandedSections.states && (
                         <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                          {availableStates.length > 0 ? (
-                            <>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id="state-all"
-                                  checked={clientFilters.states.length === 0}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setClientFilters(prev => ({ ...prev, states: [] }));
-                                    }
-                                  }}
-                                  data-testid="checkbox-state-all"
-                                />
-                                <label htmlFor="state-all" className="text-sm flex-1 cursor-pointer font-medium">
-                                  Any/All
-                                </label>
-                              </div>
-                              {availableStates.map((state: any, index: number) => (
-                                <div key={index} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`state-${index}`}
-                                    checked={clientFilters.states.includes(state.value)}
-                                    onCheckedChange={(checked) => handleFilterChange('states', state.value, checked as boolean)}
-                                    data-testid={`checkbox-state-${state.value}`}
-                                  />
-                                  <label htmlFor={`state-${index}`} className="text-sm flex-1 cursor-pointer">
-                                    {state.value}
-                                  </label>
-                                </div>
-                              ))}
-                            </>
-                          ) : (
-                            <p className="text-sm text-muted-foreground italic">No states available</p>
-                          )}
+                          {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                            getUniqueValues('states') :
+                            (searchAggregations?.states || availableStates || []).map((state: any) => ({
+                              value: state.state || state.name || state.value || (typeof state === 'string' ? state : 'Unknown'),
+                              count: state.count || 0
+                            }))
+                          ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((state: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`state-${index}`}
+                                checked={clientFilters.states.includes(state.value)}
+                                onCheckedChange={(checked) => handleFilterChange('states', state.value, checked as boolean)}
+                                data-testid={`checkbox-state-${state.value}`}
+                              />
+                              <label htmlFor={`state-${index}`} className="text-sm flex-1 cursor-pointer">
+                                <span>{state.value}</span>
+                              </label>
+                            </div>
+                          ))}
+                          {!(searchResults?.maxRecords && allPreciseSearchResults.length > 0) &&
+                            !(searchAggregations?.states || availableStates || []).length && (
+                              <p className="text-sm text-muted-foreground italic">Type in search to see available states</p>
+                            )}
                         </div>
                       )}
                     </div>
@@ -2444,11 +2438,11 @@ export default function Marketplace() {
                 )}
 
 
-                
 
-                
+
+
                 <Separator />
-                
+
                 {/* Sort Options */}
                 <div>
                   <label className="text-sm font-semibold">Sort By</label>
@@ -2471,21 +2465,21 @@ export default function Marketplace() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Filter Action Buttons */}
                 <div className="space-y-3">
                   {searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? (
                     // Client-side filter buttons
                     <>
                       <div className="text-sm text-center text-muted-foreground">
-                        {hasClientFilters() ? 
-                          `Showing ${totalDeals} of ${allPreciseSearchResults.length} results` : 
+                        {hasClientFilters() ?
+                          `Showing ${totalDeals} of ${allPreciseSearchResults.length} results` :
                           `${allPreciseSearchResults.length} results (max 100)`
                         }
                       </div>
-                      
-                      <Button 
-                        variant="outline" 
+
+                      <Button
+                        variant="outline"
                         className="w-full"
                         onClick={clearClientFilters}
                         disabled={!hasClientFilters()}
@@ -2497,16 +2491,16 @@ export default function Marketplace() {
                   ) : (
                     // Original filter buttons for regular search
                     <>
-                      <Button 
+                      <Button
                         className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                         onClick={applySearch}
                         data-testid="button-apply-search-desktop"
                       >
                         Apply Search
                       </Button>
-                      
-                      <Button 
-                        variant="outline" 
+
+                      <Button
+                        variant="outline"
                         className="w-full"
                         onClick={clearAllFilters}
                         data-testid="button-clear-filters-desktop"
@@ -2519,7 +2513,7 @@ export default function Marketplace() {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Right Content Area */}
           <div className="flex-1 min-w-0">
             {/* Results */}
@@ -2543,8 +2537,8 @@ export default function Marketplace() {
                 <p className="text-muted-foreground mb-4">
                   Try adjusting your filters or search terms
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={clearAllFilters}
                 >
                   Clear Filters
@@ -2603,8 +2597,8 @@ export default function Marketplace() {
                       </thead>
                       <tbody>
                         {deals.map((deal: any, index: number) => (
-                          <tr 
-                            key={deal.TransID} 
+                          <tr
+                            key={deal.TransID}
                             className={`hover:bg-blue-50 dark:hover:bg-blue-950/30 ${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800/50'}`}
                             data-testid={`table-row-${deal.TransID}`}
                           >
@@ -2619,7 +2613,7 @@ export default function Marketplace() {
                             <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap">
                               {(deal.Deckle_mm && deal.grain_mm) ?
                                 formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
-                              : '-'}
+                                : '-'}
                             </td>
                             <td className="px-2 py-2 border-b border-r text-center whitespace-nowrap font-medium">
                               {deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}
@@ -2700,186 +2694,186 @@ export default function Marketplace() {
                           <div className="flex items-center justify-between mb-1">
                             {/* Status Badge removed */}
                           </div>
-                          
+
                           {/* Product Description in Header */}
                           <h3 className="font-bold text-sm line-clamp-2 text-gray-800 dark:text-gray-200" data-testid={`deal-title-${deal.TransID}`}>
                             {deal.stock_description || `${deal.Make} ${deal.Grade}`.trim() || 'Product Details'}
                           </h3>
                         </div>
 
-                          <CardContent className="p-2 flex-1 flex flex-col">
+                        <CardContent className="p-2 flex-1 flex flex-col">
 
-                            {/* Product Details - Different for spare parts vs regular products */}
-                            {deal.is_spare_part || deal.process ? (
-                              <>
-                                {/* Spare Part Information */}
-                                <div className="mb-2 space-y-1.5">
-                                  {deal.process && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Process:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.process}</span>
-                                    </div>
-                                  )}
-                                  {deal.category_type && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Type:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.category_type}</span>
-                                    </div>
-                                  )}
-                                  {deal.machine_type && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Machine:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.machine_type}</span>
-                                    </div>
-                                  )}
-                                  {deal.manufacturer && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Mfr:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.manufacturer}</span>
-                                    </div>
-                                  )}
-                                  {deal.model && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Model:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.model}</span>
-                                    </div>
-                                  )}
-                                  {deal.part_name && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Part:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.part_name}</span>
-                                    </div>
-                                  )}
-                                  {deal.part_no && (
-                                    <div className="text-xs">
-                                      <span className="font-medium text-gray-500">Part No:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.part_no}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Quantity for spare parts */}
-                                <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                          {/* Product Details - Different for spare parts vs regular products */}
+                          {deal.is_spare_part || deal.process ? (
+                            <>
+                              {/* Spare Part Information */}
+                              <div className="mb-2 space-y-1.5">
+                                {deal.process && (
                                   <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Qty:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.pcs || deal.quantity || 1} {deal.unit || deal.OfferUnit || 'PCS'}</span>
+                                    <span className="font-medium text-gray-500">Process:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.process}</span>
                                   </div>
+                                )}
+                                {deal.category_type && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Type:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.category_type}</span>
+                                  </div>
+                                )}
+                                {deal.machine_type && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Machine:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.machine_type}</span>
+                                  </div>
+                                )}
+                                {deal.manufacturer && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Mfr:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.manufacturer}</span>
+                                  </div>
+                                )}
+                                {deal.model && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Model:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.model}</span>
+                                  </div>
+                                )}
+                                {deal.part_name && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Part:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.part_name}</span>
+                                  </div>
+                                )}
+                                {deal.part_no && (
+                                  <div className="text-xs">
+                                    <span className="font-medium text-gray-500">Part No:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.part_no}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Quantity for spare parts */}
+                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-500">Qty:</span>
+                                  <span className="font-bold text-foreground ml-1">{deal.pcs || deal.quantity || 1} {deal.unit || deal.OfferUnit || 'PCS'}</span>
                                 </div>
-                              </>
-                            ) : (
-                              <>
-                                {/* Regular Product Information */}
-                                {/* 2. GSM and Dimensions properly aligned */}
-                                <div className="mb-2">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div>
-                                      <span className="font-medium text-gray-500">GSM:</span>
-                                      <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="font-semibold text-foreground">
-                                        {(deal.Deckle_mm && deal.grain_mm) ?
-                                          formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Regular Product Information */}
+                              {/* 2. GSM and Dimensions properly aligned */}
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div>
+                                    <span className="font-medium text-gray-500">GSM:</span>
+                                    <span className="font-bold text-foreground ml-1">{deal.GSM || 'N/A'}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-semibold text-foreground">
+                                      {(deal.Deckle_mm && deal.grain_mm) ?
+                                        formatDimensions(deal.Deckle_mm, deal.grain_mm, deal.GroupName, deal.GroupID)
                                         : 'N/A'}
-                                      </div>
                                     </div>
                                   </div>
                                 </div>
+                              </div>
 
-                                {/* 3. Quantity */}
-                                <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-500">Qty:</span>
-                                    <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
-                                  </div>
+                              {/* 3. Quantity */}
+                              <div className="flex items-center mb-2 p-1.5 rounded border border-gray-200 dark:border-gray-700">
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-500">Qty:</span>
+                                  <span className="font-bold text-foreground ml-1">{deal.quantity || 1000} {deal.OfferUnit || deal.Unit || 'KG'}</span>
                                 </div>
-                              </>
+                              </div>
+                            </>
+                          )}
+
+
+
+                          {/* Stock Age - from API */}
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>Stock: {formatStockAge(deal.StockAge)}</span>
+                          </div>
+
+                          {/* Rate Display */}
+                          <div className="flex items-center justify-between mb-2 p-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <span className="font-medium text-xs text-gray-600 dark:text-gray-400">Rate:</span>
+                            {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-on-request-${deal.TransID}`}>
+                                Rate on request
+                              </span>
+                            ) : Number(deal.OfferPrice) > 0 ? (
+                              <span className="text-xs font-bold text-green-700 dark:text-green-400" data-testid={`rate-display-${deal.TransID}`}>
+                                Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-not-set-${deal.TransID}`}>
+                                Rate on request
+                              </span>
                             )}
+                          </div>
 
+                          {/* Action Buttons */}
+                          <div className="mt-auto">
+                            <Button
+                              size="sm"
+                              className="w-full text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white mb-1"
+                              onClick={() => handleViewDetails(deal)}
+                              data-testid={`button-view-details-${deal.TransID}`}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Details
+                            </Button>
 
+                            {/* Show edit button only for deals created by current user */}
+                            {deal.created_by_member_id === user?.id ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
+                                  data-testid={`button-edit-deal-${deal.TransID}`}
+                                  className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
 
-                            {/* Stock Age - from API */}
-                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>Stock: {formatStockAge(deal.StockAge)}</span>
-                            </div>
-
-                            {/* Rate Display */}
-                            <div className="flex items-center justify-between mb-2 p-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                              <span className="font-medium text-xs text-gray-600 dark:text-gray-400">Rate:</span>
-                              {deal.show_rate_in_marketplace === false || deal.show_rate_in_marketplace === 0 ? (
-                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-on-request-${deal.TransID}`}>
-                                  Rate on request
-                                </span>
-                              ) : Number(deal.OfferPrice) > 0 ? (
-                                <span className="text-xs font-bold text-green-700 dark:text-green-400" data-testid={`rate-display-${deal.TransID}`}>
-                                  Rs. {Number(deal.OfferPrice).toLocaleString('en-IN')} / {deal.OfferUnit || 'unit'}
-                                </span>
-                              ) : (
-                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 italic" data-testid={`rate-not-set-${deal.TransID}`}>
-                                  Rate on request
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="mt-auto">
-                              <Button
-                                size="sm"
-                                className="w-full text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white mb-1"
-                                onClick={() => handleViewDetails(deal)}
-                                data-testid={`button-view-details-${deal.TransID}`}
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                View Details
-                              </Button>
-                              
-                              {/* Show edit button only for deals created by current user */}
-                              {deal.created_by_member_id === user?.id ? (
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => setLocation(`/edit-deal/${deal.TransID}`)}
-                                    data-testid={`button-edit-deal-${deal.TransID}`}
-                                    className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
+                                    onClick={() => handleSendEnquiry(deal)}
+                                    data-testid={`button-send-inquiry-${deal.TransID}`}
+                                    className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
                                   >
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    Edit
+                                    <Mail className="h-3 w-3" />
+                                    <span className="ml-0.5">Enquiry</span>
                                   </Button>
-                                  
-                                </div>
-                              ) : (
-                                <div className="space-y-2">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleSendEnquiry(deal)}
-                                      data-testid={`button-send-inquiry-${deal.TransID}`}
-                                      className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
-                                    >
-                                      <Mail className="h-3 w-3" />
-                                      <span className="ml-0.5">Enquiry</span>
-                                    </Button>
-                                    
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleSendWhatsApp(deal)}
-                                      data-testid={`button-send-whatsapp-${deal.TransID}`}
-                                      className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 text-xs"
-                                    >
-                                      <MessageSquare className="h-3 w-3 mr-1" />
-                                      WhatsApp
-                                    </Button>
-                                  </div>
-                                  
-                                </div>
-                              )}
-                            </div>
 
-                          </CardContent>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSendWhatsApp(deal)}
+                                    data-testid={`button-send-whatsapp-${deal.TransID}`}
+                                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 text-xs"
+                                  >
+                                    <MessageSquare className="h-3 w-3 mr-1" />
+                                    WhatsApp
+                                  </Button>
+                                </div>
+
+                              </div>
+                            )}
+                          </div>
+
+                        </CardContent>
                       </Card>
                     ))}
                   </div>
@@ -2892,47 +2886,47 @@ export default function Marketplace() {
                       Showing {deals.length} of {totalDeals} deal{totalDeals !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
                     </p>
                     <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="text-xs sm:text-sm px-2 sm:px-3"
-                    >
-                      <span className="hidden sm:inline">Previous</span>
-                      <span className="sm:hidden">Prev</span>
-                    </Button>
-                    
-                    {/* Page Numbers - Show fewer on mobile */}
-                    <div className="flex space-x-1">
-                      {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
-                        const pageNum = Math.max(1, Math.min(totalPages - (isMobile ? 2 : 4), currentPage - (isMobile ? 1 : 2))) + i;
-                        if (pageNum <= totalPages) {
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handlePageChange(pageNum)}
-                              className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="text-xs sm:text-sm px-2 sm:px-3"
-                    >
-                      Next
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="text-xs sm:text-sm px-2 sm:px-3"
+                      >
+                        <span className="hidden sm:inline">Previous</span>
+                        <span className="sm:hidden">Prev</span>
+                      </Button>
+
+                      {/* Page Numbers - Show fewer on mobile */}
+                      <div className="flex space-x-1">
+                        {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
+                          const pageNum = Math.max(1, Math.min(totalPages - (isMobile ? 2 : 4), currentPage - (isMobile ? 1 : 2))) + i;
+                          if (pageNum <= totalPages) {
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(pageNum)}
+                                className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="text-xs sm:text-sm px-2 sm:px-3"
+                      >
+                        Next
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -2943,24 +2937,24 @@ export default function Marketplace() {
       </div>
 
       {/* Modals */}
-      <ProductDetailsModal 
-        isOpen={isProductModalOpen} 
-        onClose={() => setIsProductModalOpen(false)} 
-        deal={selectedDeal} 
+      <ProductDetailsModal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        deal={selectedDeal}
         onSendEnquiry={handleSendEnquiry}
         onSendWhatsApp={handleSendWhatsAppFromModal}
       />
-      
-      <EnquiryFormModal 
-        isOpen={isEnquiryModalOpen} 
-        onClose={() => setIsEnquiryModalOpen(false)} 
-        deal={selectedDeal} 
+
+      <EnquiryFormModal
+        isOpen={isEnquiryModalOpen}
+        onClose={() => setIsEnquiryModalOpen(false)}
+        deal={selectedDeal}
       />
-      
-      <WhatsAppQuotationModal 
-        isOpen={isWhatsAppModalOpen} 
-        onClose={() => setIsWhatsAppModalOpen(false)} 
-        deal={selectedDeal} 
+
+      <WhatsAppQuotationModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        deal={selectedDeal}
         user={user}
       />
     </div>

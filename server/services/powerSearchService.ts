@@ -8,8 +8,8 @@ function normalizeSearchText(text: string): string {
 export class PowerSearchService {
   // Get filter aggregations based on search results
   async getFilterAggregations(whereClause: string, queryParams: any[]): Promise<any> {
-    const aggregations = {};
-    
+    const aggregations: Record<string, any> = {};
+
     // GSM aggregations
     const gsmQuery = `
       SELECT GSM, COUNT(*) as count 
@@ -20,7 +20,7 @@ export class PowerSearchService {
     `;
     const gsmResults = await executeQuery(gsmQuery, queryParams);
     aggregations['gsm'] = gsmResults;
-    
+
     // Make aggregations  
     const makeQuery = `
       SELECT Make, COUNT(*) as count 
@@ -31,7 +31,7 @@ export class PowerSearchService {
     `;
     const makeResults = await executeQuery(makeQuery, queryParams);
     aggregations['makes'] = makeResults;
-    
+
     // Grade aggregations
     const gradeQuery = `
       SELECT Grade, COUNT(*) as count 
@@ -42,7 +42,7 @@ export class PowerSearchService {
     `;
     const gradeResults = await executeQuery(gradeQuery, queryParams);
     aggregations['grades'] = gradeResults;
-    
+
     // Brand aggregations
     const brandQuery = `
       SELECT Brand, COUNT(*) as count 
@@ -53,7 +53,7 @@ export class PowerSearchService {
     `;
     const brandResults = await executeQuery(brandQuery, queryParams);
     aggregations['brands'] = brandResults;
-    
+
     // Unit aggregations
     const unitQuery = `
       SELECT OfferUnit, COUNT(*) as count 
@@ -64,7 +64,19 @@ export class PowerSearchService {
     `;
     const unitResults = await executeQuery(unitQuery, queryParams);
     aggregations['units'] = unitResults;
-    
+
+    // State aggregations - get states from members who published the offers
+    const stateQuery = `
+      SELECT m.state, COUNT(DISTINCT dm.TransID) as count 
+      FROM deal_master dm 
+      LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
+      WHERE ${whereClause} AND m.state IS NOT NULL AND m.state != ''
+      GROUP BY m.state 
+      ORDER BY m.state ASC
+    `;
+    const stateResults = await executeQuery(stateQuery, queryParams);
+    aggregations['states'] = stateResults;
+
     return aggregations;
   }
 
@@ -75,34 +87,34 @@ export class PowerSearchService {
     pageSize?: number;
     exclude_member_id?: number;
   }): Promise<any> {
-    const { 
-      query = '', 
+    const {
+      query = '',
       page = 1,
       pageSize = 20,
-      exclude_member_id 
+      exclude_member_id
     } = params;
 
     const queryParams: any[] = [];
     let whereConditions = ['dm.StockStatus = 1'];
-    
+
     // Exclude user's own products from marketplace view
     if (exclude_member_id) {
       whereConditions.push('(dm.memberID != ? AND dm.created_by_member_id != ?)');
       queryParams.push(exclude_member_id, exclude_member_id);
     }
-    
+
     if (query && query.trim()) {
       // Split the query into individual terms for flexible matching
       const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
-      
+
       if (searchTerms.length > 0) {
-        const termConditions = [];
-        
+        const termConditions: string[] = [];
+
         searchTerms.forEach(term => {
           // Normalize each term (remove spaces and dots)
           const normalizedTerm = term.replace(/[\s.]/g, '');
           if (normalizedTerm.length > 0) {
-            
+
             // Check if this is a GSM pattern (number + gsm)
             const gsmMatch = normalizedTerm.match(/^(\d+)gsm?$/i);
             if (gsmMatch) {
@@ -124,27 +136,27 @@ export class PowerSearchService {
             }
           }
         });
-        
+
         if (termConditions.length > 0) {
           // All terms must be present (AND logic) for best matching
           whereConditions.push('(' + termConditions.join(' AND ') + ')');
         }
       }
     }
-    
+
     const whereClause = whereConditions.join(' AND ');
     const offset = (page - 1) * pageSize;
-    
+
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM deal_master dm 
       WHERE ${whereClause}
     `;
-    
+
     const countResult = await executeQuery(countQuery, queryParams);
     const total = countResult[0]?.total || 0;
-    
+
     // Get results with simple ordering (remove complex relevance scoring for now)
     const searchQueryText = `
       SELECT 
@@ -162,16 +174,16 @@ export class PowerSearchService {
       ORDER BY dm.TransID DESC
       LIMIT ? OFFSET ?
     `;
-    
+
     // Simple parameter passing - just the search terms and pagination
     const searchParams = [...queryParams];
     searchParams.push(pageSize, offset);
-    
+
     const results = await executeQuery(searchQueryText, searchParams);
-    
+
     // Get filter aggregations for the current search
     const aggregations = await this.getFilterAggregations(whereClause, queryParams);
-    
+
     return {
       success: true,
       data: results,
@@ -183,15 +195,15 @@ export class PowerSearchService {
       aggregations: aggregations
     };
   }
-  
+
   // Fast autocomplete suggestions using search_key
   async getSuggestions(query: string): Promise<any[]> {
     if (!query || query.length < 2) return [];
-    
+
     // Normalize the query for search_key matching
     const normalizedQuery = normalizeSearchText(query);
     const searchTerm = `%${normalizedQuery}%`;
-    
+
     const suggestQuery = `
       SELECT DISTINCT 
         CONCAT(Make, ' ', Grade, ' ', GSM, ' GSM') as text,
@@ -201,9 +213,9 @@ export class PowerSearchService {
       AND search_key LIKE ?
       LIMIT 10
     `;
-    
+
     const results = await executeQuery(suggestQuery, [searchTerm]);
-    
+
     return results;
   }
 }

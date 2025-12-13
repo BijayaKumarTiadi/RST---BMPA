@@ -46,7 +46,7 @@ const requireAdminAuth = (req: any, res: any, next: any) => {
 };
 
 // Configure multer for file uploads
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.use('/api/auth', authRouter);
-  
+
   // IMPORTANT: Register spare-parts routes BEFORE search routes to prevent conflicts
   // Search spare parts from deal_master - MUST come before /api/search routes
   app.post('/api/spare-parts/search', async (req, res) => {
@@ -84,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sparePartGroup = await executeQuerySingle(`
         SELECT GroupID FROM stock_groups WHERE GroupName LIKE '%Spare Part%'
       `);
-      
+
       if (!sparePartGroup) {
         return res.json({
           success: true,
@@ -96,44 +96,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Build WHERE clause
       let whereClause = `WHERE dm.groupID = ? AND dm.StockStatus = 1`;
       const queryParams: any[] = [sparePartGroup.GroupID];
-      
+
       // Exclude user's own products
       if (exclude_member_id) {
         whereClause += ` AND (dm.memberID != ? AND dm.created_by_member_id != ?)`;
         queryParams.push(exclude_member_id, exclude_member_id);
       }
-      
+
       // Filter by process, categoryType, machineType (from Make field)
       if (process || categoryType || machineType) {
         const makePattern = [];
         if (process) makePattern.push(process);
         if (categoryType) makePattern.push(categoryType);
         if (machineType) makePattern.push(machineType);
-        
+
         if (makePattern.length > 0) {
           whereClause += ` AND dm.Make LIKE ?`;
           queryParams.push(`%${makePattern.join('%')}%`);
         }
       }
-      
+
       // Filter by manufacturer (from Grade field)
       if (manufacturer) {
         whereClause += ` AND dm.Grade LIKE ?`;
         queryParams.push(`%${manufacturer}%`);
       }
-      
+
       // Filter by model (from Brand field)
       if (model) {
         whereClause += ` AND dm.Brand LIKE ?`;
         queryParams.push(`%${model}%`);
       }
-      
+
       // Filter by part name (from Seller_comments)
       if (partName) {
         whereClause += ` AND dm.Seller_comments LIKE ?`;
         queryParams.push(`%${partName}%`);
       }
-      
+
       // Filter by part number (from Seller_comments)
       if (partNo) {
         whereClause += ` AND dm.Seller_comments LIKE ?`;
@@ -156,11 +156,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
 
       const results = await executeQuery(query, queryParams);
-      
+
       // Parse spare part fields from Make, Grade, Brand
       const parsedResults = results.map((deal: any) => {
         const makeParts = deal.Make ? deal.Make.split(' - ').map((p: string) => p.trim()) : [];
-        
+
         return {
           ...deal,
           process: makeParts[0] || null,
@@ -186,13 +186,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  
+
   // Search routes (Elasticsearch)
   app.use('/api/search', searchRouter);
-  
+
   // Advanced search routes for robust filtering
   app.use('/api/search', advancedSearchRouter);
-  
+
   // Suggestion routes for precise search
   app.use('/api/suggestions', suggestionRouter);
 
@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         AND (Make LIKE '%ITC%' OR stock_description LIKE '%ITC%' OR GSM = 40 OR GSM = 400)
         LIMIT 15
       `);
-      
+
       res.json({ success: true, deals });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ('ITC', 'ART PAPER', 'ITC Limited', 130, 'ITC ART PAPER ITC Limited 63.50 X 96.50 130 gsm', 1, 85.00, 'KG', 8, 1000, 635, 965, 1),
         ('BILT', 'BIBLE PAPER', 'BILT Papers', 40, 'BILT BIBLE PAPER BILT Papers 70.00 X 100.00 40 gsm', 1, 135.00, 'KG', 8, 300, 700, 1000, 1)
       `);
-      
+
       res.json({ success: true, message: 'Test data created successfully' });
     } catch (error) {
       console.error('Error creating test data:', error);
@@ -273,8 +273,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT COUNT(*) as count FROM deal_master WHERE search_key IS NOT NULL AND search_key != ''
       `);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'Search keys backfilled successfully',
         updatedRecords: updatedCount[0]?.count || 0
       });
@@ -444,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  
+
   // Create test accounts endpoint
   app.post('/api/create-test-accounts', async (req, res) => {
     try {
@@ -499,14 +499,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const account of testAccounts) {
         // Check if account already exists
         const existing = await executeQuery('SELECT * FROM bmpa_members WHERE email = ?', [account.email]);
-        
+
         if (existing.length === 0) {
           await executeQuery(`
             INSERT INTO bmpa_members (mname, email, phone, company_name, address1, city, state, role, mstatus, membership_paid, membership_valid_till)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, '2025-12-31')
           `, [
             account.mname,
-            account.email, 
+            account.email,
             account.phone,
             account.company_name,
             account.address1,
@@ -545,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         AND table_name = 'BMPA_inquiries'
         ORDER BY ORDINAL_POSITION
       `);
-      
+
       // Check bmpa_received_inquiries structure  
       const receivedInquiriesColumns = await executeQuery(`
         SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY 
@@ -554,16 +554,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         AND table_name = 'bmpa_received_inquiries'
         ORDER BY ORDINAL_POSITION
       `);
-      
+
       // Get sample data from each table
       const bmpaInquiriesSample = await executeQuery(`
         SELECT * FROM BMPA_inquiries LIMIT 5
       `);
-      
+
       const receivedInquiriesSample = await executeQuery(`
         SELECT * FROM bmpa_received_inquiries LIMIT 5
       `);
-      
+
       res.json({
         success: true,
         tables: {
@@ -581,19 +581,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error checking inquiry tables:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      res.status(500).json({
+        success: false,
+        error: error.message
       });
     }
   });
-  
+
   // Debug endpoint to check table structures
   app.get('/api/debug/table-structure', async (req, res) => {
     try {
       const tables = ['stock_groups', 'stock_make_master', 'stock_grade', 'stock_brand', 'deal_master'];
       const results = {};
-      
+
       for (const table of tables) {
         try {
           const columns = await executeQuery(`DESCRIBE ${table}`);
@@ -602,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results[table] = { error: error.message };
         }
       }
-      
+
       res.json({ success: true, tables: results });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -663,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deal.OfferPrice,
           deal.OfferUnit
         ]);
-        
+
         createdDeals.push({
           id: result.insertId,
           title: deal.Seller_comments.split('\n')[0]
@@ -700,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get member from bmpa_members table
       const members = await executeQuery('SELECT * FROM bmpa_members WHERE email = ?', [email]);
-      
+
       if (members.length === 0) {
         return res.status(401).json({
           success: false,
@@ -709,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const member = members[0];
-      
+
       // For testing, accept 'admin123' as password for all users
       if (password !== 'admin123') {
         return res.status(401).json({
@@ -837,11 +837,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/summary-report', requireAdminAuth, async (req, res) => {
     try {
       const { fromDate, toDate, category } = req.query;
-      
+
       // Build date filter
       let dateFilter = '';
       const params: any[] = [];
-      
+
       if (fromDate) {
         dateFilter += ' AND d.deal_created_at >= ?';
         params.push(fromDate);
@@ -850,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateFilter += ' AND d.deal_created_at <= ?';
         params.push(toDate + ' 23:59:59');
       }
-      
+
       // Build category filter
       let categoryFilter = '';
       if (category && category !== 'all') {
@@ -864,9 +864,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           categoryFilter = ' AND (d.GroupID = 3 OR d.GroupName LIKE "%Kraft%") AND (d.is_spare_part IS NULL OR d.is_spare_part = 0)';
         }
       }
-      
+
       const pool = await dealService.getPool();
-      
+
       // Total postings and aggregates
       const [postingStats]: any = await pool.query(`
         SELECT 
@@ -876,28 +876,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM bmpa_deals d
         WHERE 1=1 ${dateFilter} ${categoryFilter}
       `, params);
-      
+
       // Total closed as sold
       const [soldStats]: any = await pool.query(`
         SELECT COUNT(*) as totalSold
         FROM bmpa_deals d
         WHERE d.deal_status = 'sold' ${dateFilter} ${categoryFilter}
       `, params);
-      
+
       // Total closed on expiry
       const [expiredStats]: any = await pool.query(`
         SELECT COUNT(*) as totalExpired
         FROM bmpa_deals d
         WHERE d.deal_status = 'expired' ${dateFilter} ${categoryFilter}
       `, params);
-      
+
       // Total active postings
       const [activeStats]: any = await pool.query(`
         SELECT COUNT(*) as totalActive
         FROM bmpa_deals d
         WHERE (d.deal_status = 'active' OR d.deal_status IS NULL) ${dateFilter} ${categoryFilter}
       `, params);
-      
+
       // Active members (members who have active membership)
       const [memberStats]: any = await pool.query(`
         SELECT COUNT(*) as activeMembers
@@ -905,7 +905,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE m.mstatus = 1 
         AND m.membership_valid_till >= CURDATE()
       `);
-      
+
       // Total responses (inquiries) against posts
       const [responseStats]: any = await pool.query(`
         SELECT COUNT(*) as totalResponses
@@ -913,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN bmpa_deals d ON i.deal_id = d.TransID
         WHERE 1=1 ${dateFilter.replace(/d\./g, 'd.')} ${categoryFilter.replace(/d\./g, 'd.')}
       `, params);
-      
+
       res.json({
         totalPostings: postingStats[0]?.totalPostings || 0,
         totalKgs: Math.round(postingStats[0]?.totalKgs || 0),
@@ -924,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeMembers: memberStats[0]?.activeMembers || 0,
         totalResponses: responseStats[0]?.totalResponses || 0
       });
-      
+
     } catch (error) {
       console.error("Error fetching summary report:", error);
       res.status(500).json({ message: "Failed to fetch summary report" });
@@ -936,14 +936,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const memberId = parseInt(req.params.id);
       const member = await adminService.getMemberById(memberId);
-      
+
       if (!member) {
         return res.status(404).json({
           success: false,
           message: 'Member not found'
         });
       }
-      
+
       res.json(member);
     } catch (error) {
       console.error('Error getting member details:', error);
@@ -959,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const memberId = parseInt(req.params.id);
       const updateData = req.body;
-      
+
       const result = await adminService.updateMemberProfile(memberId, updateData);
       res.json(result);
     } catch (error) {
@@ -977,14 +977,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const memberId = parseInt(req.params.id);
       const { role } = req.body;
       const adminId = req.session.adminId;
-      
+
       if (!role) {
         return res.status(400).json({
           success: false,
           message: 'Role is required'
         });
       }
-      
+
       const result = await adminService.updateMemberRole(memberId, role, adminId);
       res.json(result);
     } catch (error) {
@@ -1044,7 +1044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const settingsUpdate = req.body;
-      
+
       // If dimension_unit is being updated, save it to paperunit column
       if ('dimension_unit' in settingsUpdate) {
         await executeQuery(`
@@ -1054,9 +1054,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `, [settingsUpdate.dimension_unit, memberId]);
       }
 
-      res.json({ 
-        success: true, 
-        message: 'Settings updated successfully' 
+      res.json({
+        success: true,
+        message: 'Settings updated successfully'
       });
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -1246,7 +1246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         childUsers,
-        maxChildUsers: 2,
+        maxChildUsers: 5,
         currentCount: childUsers.length
       });
     } catch (error) {
@@ -1299,16 +1299,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check child user limit (max 2)
+      // Check child user limit (max 5)
       const childCount = await executeQuerySingle(`
         SELECT COUNT(*) as count FROM bmpa_members
         WHERE parent_member_id = ? AND user_type = 'child'
       `, [parentId]);
 
-      if (childCount && childCount.count >= 2) {
+      if (childCount && childCount.count >= 5) {
         return res.status(400).json({
           success: false,
-          message: 'Maximum of 2 child users allowed per company'
+          message: 'Maximum of 5 child users allowed per company'
         });
       }
 
@@ -1601,7 +1601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/spare-parts/save-model', requireAuth, async (req: any, res) => {
     try {
       const { process, category_type, machine_type, manufacturer, model } = req.body;
-      
+
       if (!process || !category_type || !machine_type || !manufacturer || !model) {
         return res.status(400).json({
           success: false,
@@ -1646,7 +1646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sparePartGroup = await executeQuerySingle(`
         SELECT GroupID FROM stock_groups WHERE GroupName LIKE '%Spare Part%'
       `);
-      
+
       if (!sparePartGroup) {
         return res.json({
           processes: [],
@@ -1656,24 +1656,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           models: []
         });
       }
-      
+
       // Extract unique values from deal_master where groupID = Spare Part
       // Make field contains: "process - category_type - machine_type"
       // Grade field contains: manufacturer
       // Brand field contains: model or part_name
-      
+
       const deals = await executeQuery(`
         SELECT DISTINCT Make, Grade, Brand
         FROM deal_master
         WHERE groupID = ? AND StockStatus = 1
       `, [sparePartGroup.GroupID]);
-      
+
       const processes = new Set<string>();
       const categoryTypes = new Set<string>();
       const machineTypes = new Set<string>();
       const manufacturers = new Set<string>();
       const models = new Set<string>();
-      
+
       deals.forEach((deal: any) => {
         // Parse Make field: "process - category_type - machine_type"
         if (deal.Make) {
@@ -1682,18 +1682,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (parts[1]) categoryTypes.add(parts[1]);
           if (parts[2]) machineTypes.add(parts[2]);
         }
-        
+
         // Grade field contains manufacturer
         if (deal.Grade) {
           manufacturers.add(deal.Grade);
         }
-        
+
         // Brand field contains model
         if (deal.Brand) {
           models.add(deal.Brand);
         }
       });
-      
+
       res.json({
         processes: Array.from(processes).sort(),
         categoryTypes: Array.from(categoryTypes).sort(),
@@ -1780,7 +1780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/categories', requireAuth, async (req: any, res) => {
     try {
       const { name, description, parent_id } = req.body;
-      
+
       if (!name) {
         return res.status(400).json({
           success: false,
@@ -1813,14 +1813,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get Makes, Brands from hierarchy
       const hierarchy = await dealService.getStockHierarchy();
-      
+
       // Extract unique makes and brands
       const makes: string[] = [];
       const brands: string[] = [];
       const grades: string[] = [];
       const boardTypes: string[] = ['Paper', 'Board', 'Kraft Reel'];
       const units: string[] = ['MT', 'Kg', 'Sheet', 'Pkt', 'Nos', 'Reel'];
-      
+
       if (hierarchy.groups) {
         hierarchy.groups.forEach((group: any) => {
           if (group.makes) {
@@ -1846,7 +1846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      
+
       // Sort alphabetically
       makes.sort();
       brands.sort();
@@ -1856,13 +1856,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workbook = new ExcelJS.Workbook();
       workbook.creator = 'BMPA';
       workbook.created = new Date();
-      
+
       // Create main Offers sheet FIRST (so it's the active sheet when opened)
       const offersSheet = workbook.addWorksheet('Offers');
-      
+
       // Create Reference Values sheet (for dropdown references)
       const refSheet = workbook.addWorksheet('Lists');
-      
+
       // Populate Lists sheet with dropdown values
       // Column A: Board Types
       refSheet.getColumn(1).width = 15;
@@ -1870,45 +1870,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       boardTypes.forEach((type, i) => {
         refSheet.getCell(`A${i + 2}`).value = type;
       });
-      
+
       // Column B: Makes
       refSheet.getColumn(2).width = 25;
       refSheet.getCell('B1').value = 'Makes';
       makes.forEach((make, i) => {
         refSheet.getCell(`B${i + 2}`).value = make;
       });
-      
+
       // Column C: Grades
       refSheet.getColumn(3).width = 20;
       refSheet.getCell('C1').value = 'Grades';
       grades.forEach((grade, i) => {
         refSheet.getCell(`C${i + 2}`).value = grade;
       });
-      
+
       // Column D: Brands
       refSheet.getColumn(4).width = 20;
       refSheet.getCell('D1').value = 'Brands';
       brands.forEach((brand, i) => {
         refSheet.getCell(`D${i + 2}`).value = brand;
       });
-      
+
       // Column E: Units
       refSheet.getColumn(5).width = 10;
       refSheet.getCell('E1').value = 'Units';
       units.forEach((unit, i) => {
         refSheet.getCell(`E${i + 2}`).value = unit;
       });
-      
+
       // Column F: Show Rate
       refSheet.getColumn(6).width = 15;
       refSheet.getCell('F1').value = 'Show Rate';
       refSheet.getCell('F2').value = 'Yes';
       refSheet.getCell('F3').value = 'No';
-      
+
       // Style Lists header row
       const listsHeaderRow = refSheet.getRow(1);
       listsHeaderRow.font = { bold: true };
-      
+
       // Configure Offers sheet
       offersSheet.columns = [
         { header: 'Board Type*', key: 'boardType', width: 15 },
@@ -1924,7 +1924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { header: 'Show Rate', key: 'showRate', width: 12 },
         { header: 'Comments', key: 'comments', width: 30 }
       ];
-      
+
       // Style header row
       const headerRow = offersSheet.getRow(1);
       headerRow.font = { bold: true };
@@ -1933,7 +1933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pattern: 'solid',
         fgColor: { argb: 'FFE0E0E0' }
       };
-      
+
       // Add data validation dropdowns to rows 2-51
       for (let rowNum = 2; rowNum <= 51; rowNum++) {
         // Board Type dropdown (Column A) - reference Lists sheet
@@ -1945,7 +1945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorTitle: 'Invalid Board Type',
           error: 'Please select Paper, Board, or Kraft Reel'
         };
-        
+
         // Make/Manufacturer dropdown from Lists sheet (Column B)
         if (makes.length > 0) {
           offersSheet.getCell(`B${rowNum}`).dataValidation = {
@@ -1955,7 +1955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             showErrorMessage: false // Allow new values
           };
         }
-        
+
         // Grade dropdown from Lists sheet (Column C)
         if (grades.length > 0) {
           offersSheet.getCell(`C${rowNum}`).dataValidation = {
@@ -1965,7 +1965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             showErrorMessage: false // Allow new values
           };
         }
-        
+
         // Brand dropdown from Lists sheet (Column D)
         if (brands.length > 0) {
           offersSheet.getCell(`D${rowNum}`).dataValidation = {
@@ -1975,7 +1975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             showErrorMessage: false // Allow new values
           };
         }
-        
+
         // Unit dropdown (Column H) - reference Lists sheet
         offersSheet.getCell(`H${rowNum}`).dataValidation = {
           type: 'list',
@@ -1985,7 +1985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorTitle: 'Invalid Unit',
           error: 'Please select MT, Kg, Sheet, Pkt, Nos, or Reel'
         };
-        
+
         // Show Rate dropdown (Column K) - reference Lists sheet
         offersSheet.getCell(`K${rowNum}`).dataValidation = {
           type: 'list',
@@ -1996,11 +1996,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: 'Please enter Yes or No'
         };
       }
-      
+
       // Create Instructions sheet
       const instructionsSheet = workbook.addWorksheet('Instructions');
       instructionsSheet.columns = [{ width: 80 }];
-      
+
       const instructions = [
         ['BULK UPLOAD INSTRUCTIONS'],
         [''],
@@ -2034,21 +2034,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['- Check the "Lists" sheet for all available dropdown options'],
         ['- Maximum 100 rows per upload'],
       ];
-      
+
       instructions.forEach((row, index) => {
         instructionsSheet.getRow(index + 1).getCell(1).value = row[0];
         if (index === 0) {
           instructionsSheet.getRow(index + 1).font = { bold: true, size: 14 };
         }
       });
-      
+
       // Generate buffer
       const buffer = await workbook.xlsx.writeBuffer();
-      
+
       res.setHeader('Content-Disposition', 'attachment; filename=bulk_upload_template.xlsx');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(Buffer.from(buffer));
-      
+
     } catch (error) {
       console.error('Error generating template:', error);
       res.status(500).json({ message: 'Failed to generate template' });
@@ -2059,7 +2059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/deals/bulk-upload', requireAuth, upload.single('file'), async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -2099,7 +2099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get hierarchy for validation
       const hierarchy = await dealService.getStockHierarchy();
-      
+
       // Map board types to group IDs
       const groupMap: Record<string, number> = {};
       if (hierarchy.groups) {
@@ -2118,7 +2118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const rowNum = i + 2; // Account for header row
-        
+
         const boardType = String(row[0] || '').trim();
         const make = String(row[1] || '').trim();
         const grade = String(row[2] || '').trim();
@@ -2193,11 +2193,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Get group ID
           const groupId = groupMap[boardType.toLowerCase()] || groupMap['paper'];
-          
+
           // Convert dimensions to mm
           const deckle_mm = deckle * 10;
           const grain_mm = grain * 10;
-          
+
           validRecords.push({
             groupId,
             boardType,
@@ -2271,7 +2271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               show_rate_in_marketplace: record.showRate,
               seller_comments: record.comments
             });
-            
+
             if (result) {
               created++;
             }
@@ -2332,11 +2332,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle exclude_member_id from query parameter or session
       let excludeMemberId = undefined;
-      
+
       // First check if exclude_member_id is explicitly provided in query
       if (exclude_member_id) {
         excludeMemberId = parseInt(exclude_member_id as string);
-      } 
+      }
       // Otherwise, if not viewing seller-specific products and user is logged in, exclude their own products
       else if (!actualSellerId && req.session?.memberId) {
         excludeMemberId = req.session.memberId;
@@ -2377,7 +2377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
-      
+
       const deal = await dealService.getDealById(dealId);
       if (!deal) {
         return res.status(404).json({ message: "Deal not found" });
@@ -2392,7 +2392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/deals', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -2448,7 +2448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!spare_part_no) missingFields.push('spare_part_no');
           if (!quantity) missingFields.push('quantity');
           if (!unit) missingFields.push('unit');
-          
+
           return res.status(400).json({
             success: false,
             message: `Required fields are missing: ${missingFields.join(', ')}`
@@ -2459,7 +2459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const hasMake = make_id || make_text;
         const hasGrade = grade_id || grade_text;
         const hasBrand = brand_id || brand_text;
-        
+
         // Check if this is a Kraft Reel group (Brand is optional for Kraft Reel)
         let isKraftReel = false;
         if (group_id) {
@@ -2470,10 +2470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error('Error checking group name:', error);
           }
         }
-        
+
         // Brand is optional for Kraft Reel, required for all other groups
         const brandRequired = !isKraftReel;
-        
+
         if (!group_id || !hasMake || !hasGrade || (brandRequired && !hasBrand) || !deal_title || !quantity || !unit) {
           const missingFields = [];
           if (!group_id) missingFields.push('group_id');
@@ -2483,7 +2483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!deal_title) missingFields.push('deal_title');
           if (!quantity) missingFields.push('quantity');
           if (!unit) missingFields.push('unit');
-          
+
           return res.status(400).json({
             success: false,
             message: `Required fields are missing: ${missingFields.join(', ')}`
@@ -2493,7 +2493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user information for the deal
       const member = await executeQuerySingle('SELECT member_id, mname, company_name FROM bmpa_members WHERE member_id = ?', [sellerId]);
-      
+
       const userInfo = {
         member_id: sellerId,
         name: member?.mname || '',
@@ -2541,11 +2541,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const dealId = parseInt(req.params.id);
       const userId = req.session.memberId;
-      
+
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
-      
+
       console.log('🔄 Update Deal Request:', {
         dealId,
         userId,
@@ -2559,7 +2559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: req.body.quantity,
         StockAge: req.body.StockAge
       });
-      
+
       // Ensure all fields are passed through properly
       const updateData = {
         ...req.body,
@@ -2575,7 +2575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stock_description: req.body.stock_description,
         StockAge: req.body.StockAge
       };
-      
+
       const result = await dealService.updateDeal(dealId, userId, updateData);
       res.json(result);
     } catch (error) {
@@ -2588,11 +2588,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const dealId = parseInt(req.params.id);
       const userId = req.session.memberId;
-      
+
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
-      
+
       const result = await dealService.deleteDeal(dealId, userId);
       res.json(result);
     } catch (error) {
@@ -2606,7 +2606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sellerId = req.session.memberId;
       const dealId = parseInt(req.params.id);
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -2617,7 +2617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid deal ID" });
       }
-      
+
       // Update deal status through direct database query
       await executeQuery('UPDATE deal_master SET StockStatus = 2, deal_updated_at = NOW() WHERE TransID = ? AND memberID = ?', [dealId, sellerId]);
       const result = { success: true, message: 'Deal marked as sold' };
@@ -2632,7 +2632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/seller/stats', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -2700,7 +2700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inquiriesSent: inquiriesSentResult?.count || 0,
         inquiriesReceived: inquiriesReceivedResult?.count || 0
       });
-      
+
       console.log('📧 Enquiry Counts:', {
         sent: inquiriesSentResult?.count || 0,
         received: inquiriesReceivedResult?.count || 0
@@ -2712,7 +2712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Expires', '0');
       res.removeHeader('ETag');
       res.removeHeader('Last-Modified');
-      
+
       res.json(stats);
     } catch (error) {
       console.error('Error fetching seller stats:', error);
@@ -2753,7 +2753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const result = await dealService.getDeals(filters);
-      
+
       // Format response to match old structure
       res.json({
         listings: result.deals,
@@ -2771,7 +2771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(dealId)) {
         return res.status(400).json({ message: "Invalid listing ID" });
       }
-      
+
       const listing = await dealService.getDealById(dealId);
       if (!listing) {
         return res.status(404).json({ message: "Stock listing not found" });
@@ -2787,7 +2787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stock/listings', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -2850,11 +2850,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const memberId = req.session.memberId;
       const role = req.query.role as 'buyer' | 'seller' || 'seller';
-      
+
       console.log(`🔍 Fetching inquiries for member ${memberId} with role ${role}`);
-      
+
       let orders = [];
-      
+
       if (role === 'seller') {
         // Get inquiries where this member is the seller (inquiries received FROM buyers)
         orders = await executeQuery(`
@@ -2876,14 +2876,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           WHERE d.memberID = ? OR d.created_by_member_id = ? OR i.seller_id = ?
           ORDER BY i.created_at DESC
         `, [memberId, memberId, memberId]);
-        
+
       } else if (role === 'buyer') {
         // Get inquiries sent BY this member TO sellers (Counter Offers)
         // First get the member's email to match inquiries
         const memberInfo = await executeQuerySingle(`
           SELECT email FROM bmpa_members WHERE member_id = ?
         `, [memberId]);
-        
+
         if (memberInfo && memberInfo.email) {
           orders = await executeQuery(`
             SELECT 
@@ -2923,7 +2923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Failed to fetch orders',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -2982,7 +2982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN bmpa_members parent ON mb.parent_member_id = parent.member_id
         WHERE d.TransID = ?
       `, [productId]);
-      
+
       if (!sellerQuery) {
         return res.status(404).json({
           success: false,
@@ -2992,7 +2992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const sellerId = sellerQuery.seller_id;
       const sellerEmail = sellerQuery.seller_email;
-      
+
       if (!sellerEmail) {
         return res.status(400).json({
           success: false,
@@ -3016,30 +3016,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sellerName: sellerQuery.seller_name || sellerName,
         sellerCompany: sellerQuery.seller_company || sellerCompany
       };
-      
+
       console.log('📧 Inquiry Email Data:', JSON.stringify({
         productDetails: inquiryData.productDetails,
         quantity: inquiryData.quantity,
         hasUnit: !!inquiryData.productDetails?.unit,
         unit: inquiryData.productDetails?.unit
       }, null, 2));
-      
+
       const emailHtml = generateInquiryEmail(inquiryData);
-      
+
       // Send email using emailService to the actual seller's email
       const emailSent = await sendEmail({
         to: sellerEmail, // Use the actual seller email from database
         subject,
         html: emailHtml
       });
-      
+
       if (emailSent) {
         // Log the inquiry to both tables for tracking
         try {
-          
+
           // Generate unique inquiry reference
           const inquiryRef = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          
+
           // Insert into BMPA_inquiries (for the buyer - Counter Offers tab)
           await executeQuery(`
             INSERT INTO BMPA_inquiries (
@@ -3073,7 +3073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             quantity || null,
             message || null
           ]);
-          
+
           // Insert into bmpa_received_inquiries (for the seller - Inquiries tab)
           await executeQuery(`
             INSERT INTO bmpa_received_inquiries (
@@ -3105,9 +3105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             quantity || null,
             message || null
           ]);
-          
+
           console.log('✅ Inquiry logged to both BMPA_inquiries and bmpa_received_inquiries tables');
-          
+
           // Update buyer's inquiry count in their profile
           await executeQuery(`
             UPDATE bmpa_members 
@@ -3115,9 +3115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 last_inquiry_date = NOW()
             WHERE member_id = ?
           `, [buyerId]);
-          
+
           console.log('✅ Updated buyer profile with inquiry count');
-          
+
           // Create notification for seller (if seller exists)
           if (sellerId) {
             await executeQuery(`
@@ -3133,7 +3133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               )
               VALUES (?, 'new_inquiry', LAST_INSERT_ID(), ?, ?, ?, 0, NOW())
             `, [sellerId, buyerName, productId, `New inquiry for your product from ${buyerName}`]);
-            
+
             console.log('✅ Created notification for seller');
           }
         } catch (dbError) {
@@ -3165,7 +3165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inquiries/seller', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
-      
+
       if (!sellerId) {
         return res.status(401).json({
           success: false,
@@ -3196,9 +3196,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, inquiries });
     } catch (error) {
       console.error('Error fetching seller inquiries:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to fetch inquiries' 
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch inquiries'
       });
     }
   });
@@ -3207,7 +3207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inquiries/buyer', requireAuth, async (req: any, res) => {
     try {
       const buyerId = req.session.memberId;
-      
+
       if (!buyerId) {
         return res.status(401).json({
           success: false,
@@ -3286,7 +3286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // BMPA Membership fee: ₹2,118 + 18% GST = ₹2,499
       const amount = 249900; // Amount in paise (₹2,499)
       const currency = 'INR';
-      
+
       // Create Razorpay order
       const order = await createRazorpayOrder({
         amount,
@@ -3410,7 +3410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.membershipPaid = true;
       req.session.membershipValidTill = oneYearFromNow;
       req.session.mstatus = 1;
-      
+
       // Save session to ensure changes persist
       await new Promise<void>((resolve, reject) => {
         req.session.save((err: any) => {
@@ -3454,7 +3454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
 
           const emailHtml = generatePaymentSuccessEmail(paymentEmailData);
-          
+
           await sendEmail({
             to: updatedMember.email,
             subject: '✓ Payment Successful - Stock Laabh Membership',
@@ -3561,8 +3561,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         configured,
-        message: configured 
-          ? 'Razorpay is configured and ready' 
+        message: configured
+          ? 'Razorpay is configured and ready'
           : 'Razorpay is not configured'
       });
     } catch (error: any) {

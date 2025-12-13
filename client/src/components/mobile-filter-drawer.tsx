@@ -18,6 +18,7 @@ interface MobileFilterDrawerProps {
   availableBrands: any[];
   availableGsm: any[];
   availableLocations: any[];
+  availableStates: any[];
   onSearchChange: (value: string) => void;
   onFilterChange: (type: string, value: string, checked: boolean) => void;
   onRangeFilterChange: (type: string, range: any) => void;
@@ -39,6 +40,7 @@ export function MobileFilterDrawer({
   availableBrands,
   availableGsm,
   availableLocations,
+  availableStates,
   onSearchChange,
   onFilterChange,
   onRangeFilterChange,
@@ -54,12 +56,13 @@ export function MobileFilterDrawer({
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   // Count active filters
-  const activeFilterCount = 
+  const activeFilterCount =
     clientFilters.makes.length +
     clientFilters.grades.length +
     clientFilters.brands.length +
     clientFilters.gsm.length +
-    clientFilters.categories.length;
+    clientFilters.categories.length +
+    (clientFilters.states?.length || 0);
 
   const handleApply = () => {
     setIsOpen(false);
@@ -90,8 +93,8 @@ export function MobileFilterDrawer({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
           data-testid="button-mobile-filter"
         >
@@ -104,9 +107,9 @@ export function MobileFilterDrawer({
           )}
         </Button>
       </SheetTrigger>
-      
-      <SheetContent 
-        side="bottom" 
+
+      <SheetContent
+        side="bottom"
         className="h-[85vh] rounded-t-xl p-0"
       >
         {/* Header */}
@@ -115,8 +118,8 @@ export function MobileFilterDrawer({
             <div className="flex items-center justify-between">
               <SheetTitle>Filters</SheetTitle>
               {activeFilterCount > 0 && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={onClearFilters}
                   className="text-sm"
@@ -159,15 +162,15 @@ export function MobileFilterDrawer({
             {/* Categories */}
             <FilterSection title={`Categories ${clientFilters.categories.length > 0 ? `(${clientFilters.categories.length})` : ''}`} type="categories">
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ? 
-                  getUniqueValues('categories') : 
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('categories') :
                   (searchAggregations?.categories || []).map((category: any) => ({
                     value: category.category_name || category.name || category.value || (typeof category === 'string' ? category : 'Unknown'),
                     count: category.count || 0
                   }))
                 ).map((category: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={clientFilters.categories.includes(category.value)}
                       onCheckedChange={(checked) => onFilterChange('categories', category.value, checked as boolean)}
                       data-testid={`checkbox-mobile-category-${category.value}`}
@@ -194,7 +197,7 @@ export function MobileFilterDrawer({
                   }))
                 ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((make: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={clientFilters.makes.includes(make.value)}
                       onCheckedChange={(checked) => onFilterChange('makes', make.value, checked as boolean)}
                       data-testid={`checkbox-mobile-make-${make.value}`}
@@ -221,7 +224,7 @@ export function MobileFilterDrawer({
                   }))
                 ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((grade: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={clientFilters.grades.includes(grade.value)}
                       onCheckedChange={(checked) => onFilterChange('grades', grade.value, checked as boolean)}
                       data-testid={`checkbox-mobile-grade-${grade.value}`}
@@ -248,7 +251,7 @@ export function MobileFilterDrawer({
                   }))
                 ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((brand: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={clientFilters.brands.includes(brand.value)}
                       onCheckedChange={(checked) => onFilterChange('brands', brand.value, checked as boolean)}
                       data-testid={`checkbox-mobile-brand-${brand.value}`}
@@ -279,7 +282,7 @@ export function MobileFilterDrawer({
                   return numA - numB;
                 }).map((gsm: any, index: number) => (
                   <label key={index} className="flex items-center space-x-3 py-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={clientFilters.gsm.includes(gsm.value)}
                       onCheckedChange={(checked) => onFilterChange('gsm', gsm.value, checked as boolean)}
                       data-testid={`checkbox-mobile-gsm-${gsm.value}`}
@@ -294,13 +297,40 @@ export function MobileFilterDrawer({
                 ))}
               </div>
             </FilterSection>
+
+            {/* States */}
+            <FilterSection title={`States ${(clientFilters.states?.length || 0) > 0 ? `(${clientFilters.states.length})` : ''}`} type="states">
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {(searchResults?.maxRecords && allPreciseSearchResults.length > 0 ?
+                  getUniqueValues('states') :
+                  (searchAggregations?.states || availableStates || []).map((state: any) => ({
+                    value: state.state || state.name || state.value || (typeof state === 'string' ? state : 'Unknown'),
+                    count: state.count || 0
+                  }))
+                ).sort((a: any, b: any) => a.value.localeCompare(b.value)).map((state: any, index: number) => (
+                  <label key={index} className="flex items-center space-x-3 py-2">
+                    <Checkbox
+                      checked={(clientFilters.states || []).includes(state.value)}
+                      onCheckedChange={(checked) => onFilterChange('states', state.value, checked as boolean)}
+                      data-testid={`checkbox-mobile-state-${state.value}`}
+                    />
+                    <span className="flex-1 text-sm">{state.value}</span>
+                    {state.count > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {state.count}
+                      </Badge>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
           </div>
         </ScrollArea>
 
         {/* Footer Actions */}
         <div className="sticky bottom-0 bg-background border-t p-4 flex gap-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="flex-1"
             onClick={handleClear}
             data-testid="button-mobile-clear-filters"
@@ -308,7 +338,7 @@ export function MobileFilterDrawer({
             Clear All
           </Button>
           <SheetClose asChild>
-            <Button 
+            <Button
               className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white"
               data-testid="button-mobile-apply-filters"
             >
