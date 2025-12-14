@@ -333,7 +333,9 @@ class DealService {
           mb.phone as seller_phone,
           creator.user_type as created_by_user_type,
           creator.child_user_name as created_by_child_name,
-          COALESCE(creator.child_user_name, creator.mname, d.created_by_name) as created_by_display_name
+          COALESCE(creator.child_user_name, creator.mname, d.created_by_name) as created_by_display_name,
+          DATEDIFF(NOW(), COALESCE(d.deal_updated_at, d.deal_created_at, NOW())) as days_since_update,
+          GREATEST(0, 45 - DATEDIFF(NOW(), COALESCE(d.deal_updated_at, d.deal_created_at, NOW()))) as days_until_deactivation
         FROM deal_master d
         LEFT JOIN stock_groups g ON d.groupID = g.GroupID
         LEFT JOIN stock_make_master m ON d.Make = m.make_ID

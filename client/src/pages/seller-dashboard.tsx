@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail, UserCog } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail, UserCog, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,63 @@ export default function SellerDashboard() {
     } else {
       const years = Math.floor(stockAgeDays / 365);
       return `${years} year${years === 1 ? '' : 's'}`;
+    }
+  };
+
+  // Helper function to get listing health status (reminder system)
+  const getListingHealthStatus = (deal: any) => {
+    const daysUntilDeactivation = deal.days_until_deactivation ?? 45;
+    const daysSinceUpdate = deal.days_since_update ?? 0;
+    const reminder1Sent = deal.reminder_1_sent === 1;
+    const reminder2Sent = deal.reminder_2_sent === 1;
+    const reminder3Sent = deal.reminder_3_sent === 1;
+    
+    // Determine status color and message
+    if (daysUntilDeactivation <= 0 || deal.StockStatus === 0) {
+      return {
+        color: 'bg-gray-100 text-gray-700 border-gray-300',
+        iconColor: 'text-gray-500',
+        label: 'Inactive',
+        daysLeft: 0,
+        urgency: 'inactive',
+        reminders: { r1: reminder1Sent, r2: reminder2Sent, r3: reminder3Sent }
+      };
+    } else if (daysUntilDeactivation <= 7) {
+      return {
+        color: 'bg-red-100 text-red-700 border-red-300',
+        iconColor: 'text-red-500',
+        label: `${daysUntilDeactivation}d left`,
+        daysLeft: daysUntilDeactivation,
+        urgency: 'critical',
+        reminders: { r1: reminder1Sent, r2: reminder2Sent, r3: reminder3Sent }
+      };
+    } else if (daysUntilDeactivation <= 15) {
+      return {
+        color: 'bg-orange-100 text-orange-700 border-orange-300',
+        iconColor: 'text-orange-500',
+        label: `${daysUntilDeactivation}d left`,
+        daysLeft: daysUntilDeactivation,
+        urgency: 'warning',
+        reminders: { r1: reminder1Sent, r2: reminder2Sent, r3: reminder3Sent }
+      };
+    } else if (daysUntilDeactivation <= 30) {
+      return {
+        color: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+        iconColor: 'text-yellow-500',
+        label: `${daysUntilDeactivation}d left`,
+        daysLeft: daysUntilDeactivation,
+        urgency: 'attention',
+        reminders: { r1: reminder1Sent, r2: reminder2Sent, r3: reminder3Sent }
+      };
+    } else {
+      return {
+        color: 'bg-green-100 text-green-700 border-green-300',
+        iconColor: 'text-green-500',
+        label: `${daysUntilDeactivation}d left`,
+        daysLeft: daysUntilDeactivation,
+        urgency: 'healthy',
+        reminders: { r1: reminder1Sent, r2: reminder2Sent, r3: reminder3Sent }
+      };
     }
   };
 
@@ -429,6 +486,38 @@ export default function SellerDashboard() {
 
           {/* Offers Tab */}
           <TabsContent value="offers" className="space-y-6">
+            {/* Listing Health Info Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Timer className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm">Listing Health System</h4>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    Listings expire after 45 days without updates. You'll receive reminders at 15, 30, and 45 days. 
+                    <strong> Update or edit your listings to reset the timer!</strong>
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                      <span className="text-muted-foreground">30+ days left</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                      <span className="text-muted-foreground">15-30 days left</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                      <span className="text-muted-foreground">7-15 days left</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                      <span className="text-muted-foreground">&lt;7 days (urgent!)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <Card className="border-2 border-border shadow-lg bg-card">
               <CardHeader className="bg-muted border-b-2 border-border">
                 <div className="flex items-center justify-between">
@@ -494,6 +583,7 @@ export default function SellerDashboard() {
                             <TableHead className="font-semibold text-foreground">Category</TableHead>
                             <TableHead className="font-semibold text-foreground">Specifications</TableHead>
                             <TableHead className="font-semibold text-foreground">Status</TableHead>
+                            <TableHead className="font-semibold text-foreground">Listing Health</TableHead>
                             <TableHead className="font-semibold text-foreground">Posted on</TableHead>
                             <TableHead className="font-semibold text-foreground">Stock Age</TableHead>
                             <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
@@ -539,6 +629,29 @@ export default function SellerDashboard() {
                                     {getStatusText(deal.StockStatus || 1)}
                                   </Badge>
                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                {(() => {
+                                  const health = getListingHealthStatus(deal);
+                                  return (
+                                    <div className="flex flex-col gap-1.5">
+                                      <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${health.color}`}>
+                                        {health.urgency === 'critical' && <AlertTriangle className="h-3 w-3" />}
+                                        {health.urgency === 'warning' && <Timer className="h-3 w-3" />}
+                                        {health.urgency === 'attention' && <Clock className="h-3 w-3" />}
+                                        {health.urgency === 'healthy' && <CheckCircle2 className="h-3 w-3" />}
+                                        {health.urgency === 'inactive' && <X className="h-3 w-3" />}
+                                        <span>{health.label}</span>
+                                      </div>
+                                      {/* Reminder indicators */}
+                                      <div className="flex items-center gap-1" title={`Reminders: ${health.reminders.r1 ? '1st sent' : '1st pending'}, ${health.reminders.r2 ? '2nd sent' : '2nd pending'}, ${health.reminders.r3 ? '3rd sent' : '3rd pending'}`}>
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r1 ? 'bg-blue-500' : 'bg-gray-200'}`} title={health.reminders.r1 ? '1st reminder sent' : '1st reminder pending'} />
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r2 ? 'bg-orange-500' : 'bg-gray-200'}`} title={health.reminders.r2 ? '2nd reminder sent' : '2nd reminder pending'} />
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r3 ? 'bg-red-500' : 'bg-gray-200'}`} title={health.reminders.r3 ? '3rd reminder sent' : '3rd reminder pending'} />
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2 text-sm text-foreground" title="When offer was created">
@@ -646,6 +759,41 @@ export default function SellerDashboard() {
                               <p className="text-xs text-muted-foreground mb-1">Category</p>
                               <p className="text-sm font-medium text-foreground">{deal.GroupName || 'No Category'}</p>
                             </div>
+
+                            {/* Listing Health */}
+                            {(() => {
+                              const health = getListingHealthStatus(deal);
+                              return (
+                                <div className="mb-3 p-2 rounded-lg border bg-muted/30">
+                                  <p className="text-xs text-muted-foreground mb-1.5">Listing Health</p>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${health.color}`}>
+                                      {health.urgency === 'critical' && <AlertTriangle className="h-3 w-3" />}
+                                      {health.urgency === 'warning' && <Timer className="h-3 w-3" />}
+                                      {health.urgency === 'attention' && <Clock className="h-3 w-3" />}
+                                      {health.urgency === 'healthy' && <CheckCircle2 className="h-3 w-3" />}
+                                      {health.urgency === 'inactive' && <X className="h-3 w-3" />}
+                                      <span>{health.label}</span>
+                                    </div>
+                                    {/* Reminder indicators with labels */}
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r1 ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                                        <span className={health.reminders.r1 ? 'text-blue-600' : 'text-muted-foreground'}>1st</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r2 ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                                        <span className={health.reminders.r2 ? 'text-orange-600' : 'text-muted-foreground'}>2nd</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-2 h-2 rounded-full ${health.reminders.r3 ? 'bg-red-500' : 'bg-gray-300'}`} />
+                                        <span className={health.reminders.r3 ? 'text-red-600' : 'text-muted-foreground'}>3rd</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
                             {/* Product Specifications */}
                             <div className="mb-3">

@@ -2590,6 +2590,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const result = await dealService.updateDeal(dealId, userId, updateData);
+      
+      // Reset reminder flags when deal is updated (so 45-day countdown starts fresh)
+      if (result.success) {
+        const { dealReminderService } = await import('./dealReminderService');
+        await dealReminderService.resetRemindersOnUpdate(dealId);
+      }
+      
       res.json(result);
     } catch (error) {
       console.error("Error updating deal:", error);
@@ -2611,6 +2618,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting deal:", error);
       res.status(500).json({ message: "Failed to delete deal" });
+    }
+  });
+
+  // Get reminder status for a deal
+  app.get('/api/deals/:id/reminder-status', requireAuth, async (req: any, res) => {
+    try {
+      const dealId = parseInt(req.params.id);
+      
+      if (isNaN(dealId)) {
+        return res.status(400).json({ success: false, message: "Invalid deal ID" });
+      }
+      
+      const { dealReminderService } = await import('./dealReminderService');
+      const status = await dealReminderService.getReminderStatus(dealId);
+      
+      if (!status) {
+        return res.status(404).json({ success: false, message: "Deal not found" });
+      }
+      
+      res.json({ success: true, data: status });
+    } catch (error) {
+      console.error("Error getting reminder status:", error);
+      res.status(500).json({ success: false, message: "Failed to get reminder status" });
     }
   });
 

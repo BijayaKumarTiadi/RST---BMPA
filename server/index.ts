@@ -7,12 +7,25 @@ import connectPgSimple from 'connect-pg-simple';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./database";
+import { addReminderColumns } from "./addReminderColumns";
+import { dealReminderService } from "./dealReminderService";
 import searchRouter from "./searchRoutes";
 
 const app = express();
 
-// Initialize database
-initializeDatabase().catch(console.error);
+// Initialize database and reminder system
+initializeDatabase()
+  .then(async () => {
+    // Add reminder columns if they don't exist
+    await addReminderColumns();
+    
+    // Start the deal reminder scheduler (runs every hour)
+    // In production, you might want to run this less frequently or use a proper job scheduler
+    dealReminderService.startScheduler(60 * 60 * 1000); // Every 1 hour
+    
+    console.log('✅ Database and reminder system initialized');
+  })
+  .catch(console.error);
 
 // Setup session store with PostgreSQL
 import MemoryStore from 'memorystore';

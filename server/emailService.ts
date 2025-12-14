@@ -754,6 +754,206 @@ export interface ChildUserWelcomeEmailData {
   membershipValidTill: string;
 }
 
+export interface DealReminderEmailData {
+  memberName: string;
+  memberEmail: string;
+  companyName: string;
+  deals: Array<{
+    TransID: number;
+    stock_description: string;
+    MakeName: string;
+    GradeName: string;
+    BrandName: string;
+    GSM: number;
+    Deckle_mm: number;
+    grain_mm: number;
+    OfferPrice: number;
+    OfferUnit: string;
+    quantity: number;
+    deal_created_at: string;
+    daysOld: number;
+  }>;
+  reminderNumber: 1 | 2 | 3; // 1 = 15 days, 2 = 30 days, 3 = 45 days (final)
+  daysUntilDeactivation: number;
+}
+
+export function generateDealReminderEmail(data: DealReminderEmailData): string {
+  const isFirstReminder = data.reminderNumber === 1;
+  const isSecondReminder = data.reminderNumber === 2;
+  const isFinalReminder = data.reminderNumber === 3;
+  
+  const headerColor = isFinalReminder 
+    ? 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)' 
+    : isSecondReminder 
+      ? 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)'
+      : 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)';
+  
+  const headerTitle = isFinalReminder 
+    ? '⚠️ Final Reminder - Action Required!' 
+    : isSecondReminder 
+      ? '⏰ Reminder: Update Your Listings'
+      : '📋 Time to Review Your Listings';
+  
+  const urgencyMessage = isFinalReminder
+    ? `<strong style="color: #dc2626;">Your listings will be automatically deactivated in ${data.daysUntilDeactivation} days if not updated!</strong>`
+    : isSecondReminder
+      ? `Your listings will be deactivated in ${data.daysUntilDeactivation} days if not updated.`
+      : `Please review and update your listings to keep them active.`;
+
+  const dealRows = data.deals.map(deal => {
+    const dimensions = deal.Deckle_mm && deal.grain_mm 
+      ? `${(deal.Deckle_mm / 10).toFixed(1)} × ${(deal.grain_mm / 10).toFixed(1)} cm` 
+      : 'N/A';
+    const description = deal.stock_description || `${deal.MakeName || ''} ${deal.GradeName || ''} ${deal.BrandName || ''}`.trim() || 'Product';
+    
+    return `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 8px; color: #1f2937; font-size: 14px;">
+          <strong>${description}</strong><br>
+          <span style="color: #6b7280; font-size: 12px;">ID: ${deal.TransID}</span>
+        </td>
+        <td style="padding: 12px 8px; color: #1f2937; font-size: 14px; text-align: center;">
+          ${deal.GSM || 'N/A'}
+        </td>
+        <td style="padding: 12px 8px; color: #1f2937; font-size: 14px; text-align: center;">
+          ${dimensions}
+        </td>
+        <td style="padding: 12px 8px; color: #1f2937; font-size: 14px; text-align: center;">
+          ${deal.quantity || 0} ${deal.OfferUnit || ''}
+        </td>
+        <td style="padding: 12px 8px; color: #1f2937; font-size: 14px; text-align: center;">
+          <span style="color: ${deal.daysOld >= 40 ? '#dc2626' : deal.daysOld >= 25 ? '#f59e0b' : '#059669'}; font-weight: bold;">
+            ${deal.daysOld} days
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${headerTitle} - Stock Laabh</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: ${headerColor}; padding: 30px 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: bold;">
+            ${headerTitle}
+          </h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
+            Stock Laabh - Listing Update Reminder
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 15px 0; font-size: 22px;">
+            Hello ${data.memberName},
+          </h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            This is a reminder that the following listings from <strong>${data.companyName}</strong> need your attention:
+          </p>
+
+          <!-- Urgency Banner -->
+          <div style="background-color: ${isFinalReminder ? '#fef2f2' : isSecondReminder ? '#fef3c7' : '#eff6ff'}; 
+                      border: 2px solid ${isFinalReminder ? '#fecaca' : isSecondReminder ? '#fcd34d' : '#bfdbfe'}; 
+                      border-radius: 8px; padding: 15px 20px; margin: 20px 0; text-align: center;">
+            <p style="color: ${isFinalReminder ? '#991b1b' : isSecondReminder ? '#92400e' : '#1e40af'}; margin: 0; font-size: 15px;">
+              ${urgencyMessage}
+            </p>
+          </div>
+
+          <!-- Deals Table -->
+          <div style="margin: 25px 0; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 500px;">
+              <thead>
+                <tr style="background-color: #f8fafc;">
+                  <th style="padding: 12px 8px; text-align: left; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0;">Product</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0;">GSM</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0;">Size</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0;">Qty</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0;">Age</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dealRows}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Action Required -->
+          <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 18px;">✅ Actions You Can Take:</h3>
+            <ul style="color: #047857; margin: 0; padding-left: 20px; line-height: 1.8;">
+              <li><strong>Update availability</strong> - Confirm stock is still available</li>
+              <li><strong>Modify pricing</strong> - Update prices if changed</li>
+              <li><strong>Edit details</strong> - Update quantity, specifications, or comments</li>
+              <li><strong>Mark as sold</strong> - Remove listings that are no longer available</li>
+            </ul>
+          </div>
+
+          <!-- Call to Action -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://stocklaabh.com/seller-dashboard" 
+               style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);">
+              Update My Listings Now
+            </a>
+          </div>
+
+          ${isFinalReminder ? `
+          <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+            <h3 style="color: #991b1b; margin: 0 0 10px 0; font-size: 16px;">⚠️ Important Notice:</h3>
+            <p style="color: #7f1d1d; margin: 0; font-size: 14px; line-height: 1.6;">
+              This is your <strong>final reminder</strong>. If you do not update or modify your listings within the next <strong>${data.daysUntilDeactivation} days</strong>, 
+              they will be automatically deactivated and removed from the marketplace. You can reactivate them at any time from your seller dashboard.
+            </p>
+          </div>
+          ` : ''}
+
+          <!-- Why This Matters -->
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 12px 0; font-size: 16px;">💡 Why keeping listings updated matters:</h3>
+            <ul style="color: #64748b; margin: 0; padding-left: 20px; line-height: 1.8; font-size: 14px;">
+              <li>Updated listings appear higher in search results</li>
+              <li>Accurate information builds buyer trust</li>
+              <li>Reduces inquiries for out-of-stock items</li>
+              <li>Helps maintain a quality marketplace experience</li>
+            </ul>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+            If you have any questions or need assistance, please contact our support team at 
+            <a href="mailto:support@bmpa.org" style="color: #3b82f6;">support@bmpa.org</a>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 25px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 14px;">
+            © 2025 Stock Laabh. All rights reserved.
+          </p>
+          <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">
+            This is an automated reminder to help you maintain your listings.
+          </p>
+          <p style="color: #9ca3af; margin: 5px 0 0 0; font-size: 11px;">
+            Powered by Renuka Print ERP Solutions
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 export function generateChildUserWelcomeEmail(data: ChildUserWelcomeEmailData): string {
   return `
     <!DOCTYPE html>
