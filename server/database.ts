@@ -35,8 +35,20 @@ export async function testConnection(): Promise<boolean> {
 export async function executeQuery<T = any>(
   query: string,
   params: any[] = [],
-  retries: number = 3
+  retries: number = 3,
+  connection?: any
 ): Promise<T[]> {
+  // If a connection is provided, use it directly without retry logic (transaction context handles errors)
+  if (connection) {
+    try {
+      const [rows] = await connection.execute(query, params);
+      return rows as T[];
+    } catch (error: any) {
+      console.error('Database query error (transaction):', error.message || error);
+      throw error;
+    }
+  }
+
   let lastError: any;
 
   for (let i = 0; i < retries; i++) {
@@ -49,10 +61,10 @@ export async function executeQuery<T = any>(
 
       // Check if it's a connection error that we should retry
       if (error.code === 'EACCES' ||
-          error.code === 'ETIMEDOUT' ||
-          error.code === 'ECONNREFUSED' ||
-          error.code === 'ENOTFOUND' ||
-          error.code === 'PROTOCOL_CONNECTION_LOST') {
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'PROTOCOL_CONNECTION_LOST') {
 
         // Wait before retrying (exponential backoff)
         if (i < retries - 1) {
@@ -77,9 +89,10 @@ export async function executeQuery<T = any>(
 export async function executeQuerySingle<T = any>(
   query: string,
   params: any[] = [],
-  retries: number = 3
+  retries: number = 3,
+  connection?: any
 ): Promise<T | null> {
-  const rows = await executeQuery<T>(query, params, retries);
+  const rows = await executeQuery<T>(query, params, retries, connection);
   return rows.length > 0 ? rows[0] : null;
 }
 

@@ -26,9 +26,9 @@ const normalizeMakeText = (text: string): string => {
 // Helper function to check if make is craft type
 const isCraftMake = (makeText: string): boolean => {
   const normalized = normalizeMakeText(makeText);
-  return normalized === 'craft reel' || 
-         normalized === 'craft paper b s' || 
-         normalized === 'craft paper bs';
+  return normalized === 'craft reel' ||
+    normalized === 'craft paper b s' ||
+    normalized === 'craft paper bs';
 };
 
 // Helper function to check if group is Kraft Reel
@@ -85,7 +85,7 @@ const dealSchema = z.object({
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
   const isSparePart = isSparePartGroup(data.groupName || '');
-  
+
   if (isSparePart) {
     // Spare part validations (new cascading structure)
     if (!data.spareProcess || data.spareProcess.trim() === '') {
@@ -146,11 +146,11 @@ const dealSchema = z.object({
         path: ["GSM"]
       });
     }
-    
+
     // Validate GSM ranges for Paper and Board categories
     const isPaper = isPaperGroup(data.groupName || '');
     const isBoard = isBoardGroup(data.groupName || '');
-    
+
     if (isPaper && data.GSM && data.GSM >= 180) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -158,7 +158,7 @@ const dealSchema = z.object({
         path: ["GSM"]
       });
     }
-    
+
     if (isBoard && data.GSM && data.GSM <= 175) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -180,7 +180,7 @@ const dealSchema = z.object({
         path: ["grain_mm"]
       });
     }
-    
+
     // Grade validation - required unless Kraft Reel
     if (!isKraftReel && (!data.gradeText || data.gradeText.trim() === '')) {
       ctx.addIssue({
@@ -189,7 +189,7 @@ const dealSchema = z.object({
         path: ["gradeText"]
       });
     }
-    
+
     // Grain validation - allow 0 only for Kraft Reel (for "B.S." value)
     if (!isKraftReel && data.grain_mm! <= 0) {
       ctx.addIssue({
@@ -226,7 +226,7 @@ export default function AddDeal() {
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
   const [isGradeAutoSet, setIsGradeAutoSet] = useState(false);
   const [isKraftReelAutoSet, setIsKraftReelAutoSet] = useState(false);
-  
+
   // Spare part category states
   const [selectedProcess, setSelectedProcess] = useState("");
   const [selectedCategoryType, setSelectedCategoryType] = useState("");
@@ -328,10 +328,10 @@ export default function AddDeal() {
       // Convert mm to cm
       const deckleCm = deckle / 10;
       const grainCm = grain / 10;
-      
+
       // Formula: (No. of sheets × Length(cm) × Breadth(cm) × GSM) / 10,000,000
       const totalKg = (quantity * deckleCm * grainCm * gsm) / 10000000;
-      
+
       return totalKg.toFixed(2);
     }
     return null;
@@ -401,21 +401,21 @@ export default function AddDeal() {
   const currentMakeText = form.watch("makeText");
   const currentGradeText = form.watch("gradeText");
   const currentGroupName = form.watch("groupName");
-  
+
   // Set dimension unit from user settings only on initial load
   useEffect(() => {
     if (userSettings?.dimension_unit && !dimensionUnit) {
       setDimensionUnit(userSettings.dimension_unit);
     }
   }, [userSettings]);
-  
+
   // Set initial dimension unit from settings on component mount
   useEffect(() => {
     if (userSettings?.dimension_unit && dimensionUnit === "cm") {
       setDimensionUnit(userSettings.dimension_unit);
     }
   }, [userSettings]);
-  
+
   // Handle craft reel/craft paper B.S. auto-grade setting
   useEffect(() => {
     // Don't run craft logic if Kraft Reel group is selected
@@ -597,7 +597,7 @@ export default function AddDeal() {
     const subscription = form.watch((values, { name }) => {
       // Skip if the change was to deal_description itself to avoid infinite loop
       if (name === 'deal_description') return;
-      
+
       const description = generateStockDescription();
       if (description && description !== form.getValues('deal_description')) {
         form.setValue('deal_description', description, { shouldValidate: false });
@@ -610,7 +610,7 @@ export default function AddDeal() {
   const handleGroupChange = (value: string, item?: any) => {
     setSelectedGroup(value);
     form.setValue("groupID", value);
-    
+
     // Set group name for Kraft Reel logic
     const groupName = item?.GroupName || value;
     setSelectedGroupName(groupName);
@@ -620,7 +620,7 @@ export default function AddDeal() {
   const handleMakeChange = (value: string, item: any) => {
     if (item) {
       setSelectedMake(value);
-      
+
       // Set form values properly for both dropdown and free text
       if (item.make_ID) {
         // This is a dropdown selection - convert ID to string
@@ -674,7 +674,7 @@ export default function AddDeal() {
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
       const isSparePart = isSparePartGroup(data.groupName || '');
-      
+
       if (isSparePart) {
         // Spare Part submission - using new cascading fields
         const partFullName = [
@@ -686,10 +686,10 @@ export default function AddDeal() {
           data.sparePartName,
           data.sparePartNo
         ].filter(Boolean).join(' - ');
-        
+
         const spareDescription = `${data.sparePartName} (${data.sparePartNo})`;
         const searchKey = partFullName.toLowerCase().replace(/[\s.]/g, '');
-        
+
         const payload = {
           group_id: data.groupID ? parseInt(data.groupID) : 0,
           is_spare_part: true,
@@ -711,7 +711,7 @@ export default function AddDeal() {
           location: 'India',
           show_rate_in_marketplace: data.showRateInMarketplace ?? true,
         };
-        
+
         console.log('✅ SPARE PART PAYLOAD:', JSON.stringify(payload, null, 2));
         console.log('✅ is_spare_part flag:', payload.is_spare_part);
         return apiRequest("POST", "/api/deals", payload);
@@ -719,7 +719,7 @@ export default function AddDeal() {
         // Regular product submission
         const stockDescription = generateStockDescription();
         const searchKey = generateNormalizationKey();
-        
+
         const payload = {
           group_id: data.groupID ? parseInt(data.groupID) : 0,
           make_text: data.makeText || makeText || "",
@@ -745,7 +745,7 @@ export default function AddDeal() {
           location: 'India',
           show_rate_in_marketplace: data.showRateInMarketplace ?? true,
         };
-        
+
         console.log('Regular product payload being sent to backend:', payload);
         return apiRequest("POST", "/api/deals", payload);
       }
@@ -754,7 +754,7 @@ export default function AddDeal() {
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stock/hierarchy"] });
-      
+
       if (saveAndAddAnother) {
         toast({
           title: "Success",
@@ -832,22 +832,22 @@ export default function AddDeal() {
   // Bulk upload functions
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/deals/bulk-upload-template');
+      const response = await fetch('/api/deals/export');
       if (!response.ok) {
-        throw new Error('Failed to download template');
+        throw new Error('Failed to download offers');
       }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'bulk_upload_template.xlsx';
+      a.download = 'my_offers.xlsx';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast({
-        title: "Template Downloaded",
-        description: "Fill in the Excel file and upload it to add multiple offers at once.",
+        title: "Offers Downloaded",
+        description: "You can edit these offers or add new ones and upload the file back.",
       });
     } catch (error) {
       toast({
@@ -915,7 +915,7 @@ export default function AddDeal() {
       // Reset file input
       const fileInput = document.getElementById('bulk-upload-input') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/deals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deals/my'] });
@@ -965,7 +965,7 @@ export default function AddDeal() {
                 </Button>
               </div>
               <CardDescription className="text-muted-foreground">
-                Upload multiple offers at once using an Excel template
+                Download your offers, make changes, or add new rows, then upload. (Supports Creating & Updating)
               </CardDescription>
             </CardHeader>
             {showBulkUpload && (
@@ -979,9 +979,9 @@ export default function AddDeal() {
                     data-testid="button-download-template"
                   >
                     <Download className="h-4 w-4" />
-                    Download Template
+                    Download My Offers (Excel)
                   </Button>
-                  
+
                   <div className="flex-1 flex items-center gap-2">
                     <Input
                       id="bulk-upload-input"
@@ -992,7 +992,7 @@ export default function AddDeal() {
                       data-testid="input-bulk-upload-file"
                     />
                   </div>
-                  
+
                   <Button
                     type="button"
                     onClick={handleBulkUpload}
@@ -1371,7 +1371,7 @@ export default function AddDeal() {
                           )}
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                           control={form.control}
@@ -1481,218 +1481,218 @@ export default function AddDeal() {
               ) : (
                 /* Regular Product Form */
                 <>
-              {/* Stock Selection */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Package className="h-5 w-5" />
-                    Offer Details
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* First Row: Group and Make */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="groupID"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={field.value}
-                              onChange={(value) => {
-                                // Handle value change for form binding
-                                setSelectedGroup(value);
-                                form.setValue("groupID", value);
-                              }}
-                              onSelect={(value, item) => {
-                                // Handle item selection with full data
-                                handleGroupChange(value, item);
-                              }}
-                              onTextChange={(text) => {
-                                // Handle free text entry
-                                setSelectedGroupName(text);
-                                form.setValue("groupName", text);
-                              }}
-                              placeholder="Type to search groups..."
-                              suggestions={groups}
-                              displayField="GroupName"
-                              valueField="GroupID"
-                              testId="input-group"
-                              allowFreeText={true}
-                              maxLength={60}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Stock Selection */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Package className="h-5 w-5" />
+                        Offer Details
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* First Row: Group and Make */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="groupID"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <AutocompleteInput
+                                  value={field.value}
+                                  onChange={(value) => {
+                                    // Handle value change for form binding
+                                    setSelectedGroup(value);
+                                    form.setValue("groupID", value);
+                                  }}
+                                  onSelect={(value, item) => {
+                                    // Handle item selection with full data
+                                    handleGroupChange(value, item);
+                                  }}
+                                  onTextChange={(text) => {
+                                    // Handle free text entry
+                                    setSelectedGroupName(text);
+                                    form.setValue("groupName", text);
+                                  }}
+                                  placeholder="Type to search groups..."
+                                  suggestions={groups}
+                                  displayField="GroupName"
+                                  valueField="GroupID"
+                                  testId="input-group"
+                                  allowFreeText={true}
+                                  maxLength={60}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="makeText"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Product Make <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={makeText}
-                              onChange={(value) => {
-                                form.setValue("MakeID", value);
-                                form.setValue("makeText", value);
-                                setMakeText(value);
-                              }}
-                              onSelect={handleMakeChange}
-                              onTextChange={(text) => {
-                                form.setValue("makeText", text);
-                                form.setValue("MakeID", "");
-                                setMakeText(text);
-                              }}
-                              placeholder="Type to search or enter make..."
-                              suggestions={filteredMakes}
-                              displayField="make_Name"
-                              valueField="make_ID"
-                              testId="input-make"
-                              allowFreeText={true}
-                              maxLength={60}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                        <FormField
+                          control={form.control}
+                          name="makeText"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Product Make <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <AutocompleteInput
+                                  value={makeText}
+                                  onChange={(value) => {
+                                    form.setValue("MakeID", value);
+                                    form.setValue("makeText", value);
+                                    setMakeText(value);
+                                  }}
+                                  onSelect={handleMakeChange}
+                                  onTextChange={(text) => {
+                                    form.setValue("makeText", text);
+                                    form.setValue("MakeID", "");
+                                    setMakeText(text);
+                                  }}
+                                  placeholder="Type to search or enter make..."
+                                  suggestions={filteredMakes}
+                                  displayField="make_Name"
+                                  valueField="make_ID"
+                                  testId="input-make"
+                                  allowFreeText={true}
+                                  maxLength={60}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  {/* Second Row: Grade and Brand */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="gradeText"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            Grade {isKraftReelGroup(currentGroupName || '') ? "(Auto-filled)" : <span className="text-red-500">*</span>}
-                          </FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={gradeText}
-                              onChange={(value) => {
-                                if (!isKraftReelGroup(currentGroupName || '')) {
-                                  form.setValue("GradeID", value);
-                                  form.setValue("gradeText", value);
-                                  setGradeText(value);
-                                }
-                              }}
-                              onSelect={handleGradeChange}
-                              onTextChange={(text) => {
-                                if (!isKraftReelGroup(currentGroupName || '')) {
-                                  form.setValue("gradeText", text);
-                                  form.setValue("GradeID", "");
-                                  setGradeText(text);
-                                }
-                              }}
-                              placeholder={isKraftReelGroup(currentGroupName || '') ? "Kraft Paper (auto-filled)" : "Type to search or enter grade..."}
-                              suggestions={filteredGrades}
-                              displayField="GradeName"
-                              valueField="gradeID"
-                              testId="input-grade"
-                              allowFreeText={true}
-                              maxLength={60}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      {/* Second Row: Grade and Brand */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="gradeText"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Grade {isKraftReelGroup(currentGroupName || '') ? "(Auto-filled)" : <span className="text-red-500">*</span>}
+                              </FormLabel>
+                              <FormControl>
+                                <AutocompleteInput
+                                  value={gradeText}
+                                  onChange={(value) => {
+                                    if (!isKraftReelGroup(currentGroupName || '')) {
+                                      form.setValue("GradeID", value);
+                                      form.setValue("gradeText", value);
+                                      setGradeText(value);
+                                    }
+                                  }}
+                                  onSelect={handleGradeChange}
+                                  onTextChange={(text) => {
+                                    if (!isKraftReelGroup(currentGroupName || '')) {
+                                      form.setValue("gradeText", text);
+                                      form.setValue("GradeID", "");
+                                      setGradeText(text);
+                                    }
+                                  }}
+                                  placeholder={isKraftReelGroup(currentGroupName || '') ? "Kraft Paper (auto-filled)" : "Type to search or enter grade..."}
+                                  suggestions={filteredGrades}
+                                  displayField="GradeName"
+                                  valueField="gradeID"
+                                  testId="input-grade"
+                                  allowFreeText={true}
+                                  maxLength={60}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="brandText"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            Brand {isKraftReelGroup(currentGroupName || '') || isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
-                          </FormLabel>
-                          <FormControl>
-                            <AutocompleteInput
-                              value={brandText}
-                              onChange={(value) => {
-                                if (!isKraftReelGroup(currentGroupName || '')) {
-                                  form.setValue("BrandID", value);
-                                  form.setValue("brandText", value);
-                                  setBrandText(value);
-                                }
-                              }}
-                              onSelect={handleBrandChange}
-                              onTextChange={(text) => {
-                                if (!isKraftReelGroup(currentGroupName || '')) {
-                                  form.setValue("brandText", text);
-                                  form.setValue("BrandID", "");
-                                  setBrandText(text);
-                                }
-                              }}
-                              placeholder={isKraftReelGroup(currentGroupName || '') ? "Not required for Kraft Reel" : "Type to search or enter brand..."}
-                              suggestions={filteredBrands}
-                              displayField="brandname"
-                              valueField="brandID"
-                              testId="input-brand"
-                              allowFreeText={true}
-                              maxLength={60}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                        <FormField
+                          control={form.control}
+                          name="brandText"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Brand {isKraftReelGroup(currentGroupName || '') || isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
+                              </FormLabel>
+                              <FormControl>
+                                <AutocompleteInput
+                                  value={brandText}
+                                  onChange={(value) => {
+                                    if (!isKraftReelGroup(currentGroupName || '')) {
+                                      form.setValue("BrandID", value);
+                                      form.setValue("brandText", value);
+                                      setBrandText(value);
+                                    }
+                                  }}
+                                  onSelect={handleBrandChange}
+                                  onTextChange={(text) => {
+                                    if (!isKraftReelGroup(currentGroupName || '')) {
+                                      form.setValue("brandText", text);
+                                      form.setValue("BrandID", "");
+                                      setBrandText(text);
+                                    }
+                                  }}
+                                  placeholder={isKraftReelGroup(currentGroupName || '') ? "Not required for Kraft Reel" : "Type to search or enter brand..."}
+                                  suggestions={filteredBrands}
+                                  displayField="brandname"
+                                  valueField="brandID"
+                                  testId="input-brand"
+                                  allowFreeText={true}
+                                  maxLength={60}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  {/* Description Row - Hidden but functional for backend */}
-                  <div className="hidden">
-                    <FormField
-                      control={form.control}
-                      name="deal_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Description (Auto-generated)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              value={field.value || generateStockDescription()}
-                              readOnly
-                              className="bg-muted border-border text-foreground cursor-not-allowed"
-                              placeholder="Auto-generated from selections"
-                              data-testid="input-description"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                      {/* Description Row - Hidden but functional for backend */}
+                      <div className="hidden">
+                        <FormField
+                          control={form.control}
+                          name="deal_description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Description (Auto-generated)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  value={field.value || generateStockDescription()}
+                                  readOnly
+                                  className="bg-muted border-border text-foreground cursor-not-allowed"
+                                  placeholder="Auto-generated from selections"
+                                  data-testid="input-description"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              {/* Technical Specifications */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Hash className="h-5 w-5" />
-                    Technical Specifications
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Enter the technical details for your stock
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="GSM"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">GSM <span className="text-red-500">*</span></FormLabel>
+                  {/* Technical Specifications */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Hash className="h-5 w-5" />
+                        Technical Specifications
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Enter the technical details for your stock
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="GSM"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">GSM <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input
                                   type="text"
@@ -1716,329 +1716,329 @@ export default function AddDeal() {
                                   className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="Deckle_mm"
-                      render={({ field }) => (
+                        <FormField
+                          control={form.control}
+                          name="Deckle_mm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Deckle ({dimensionUnit}) <span className="text-red-500">*</span>
+                                {deckleInputValue && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    = {getDeckleDimensions()}
+                                  </span>
+                                )}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder={dimensionUnit === "cm" ? "65" : "25.59"}
+                                  value={deckleInputValue}
+                                  onChange={(e) => handleDeckleChange(e.target.value)}
+                                  data-testid="input-deckle"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="grain_mm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                {isKraftReelGroup(currentGroupName || '') ? 'B.F.' : `Grain (${dimensionUnit})`} <span className="text-red-500">*</span>
+                                {grainInputValue && !isKraftReelGroup(currentGroupName || '') && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    = {getGrainDimensions()}
+                                  </span>
+                                )}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder={dimensionUnit === "cm" ? "100" : "39.37"}
+                                  value={grainInputValue}
+                                  onChange={(e) => handleGrainChange(e.target.value)}
+                                  data-testid="input-grain"
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <FormItem>
-                          <FormLabel className="text-foreground">
-                            Deckle ({dimensionUnit}) <span className="text-red-500">*</span>
-                            {deckleInputValue && (
-                              <span className="text-xs text-muted-foreground ml-2">
-                                = {getDeckleDimensions()}
-                              </span>
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder={dimensionUnit === "cm" ? "65" : "25.59"} 
-                              value={deckleInputValue}
-                              onChange={(e) => handleDeckleChange(e.target.value)}
-                              data-testid="input-deckle"
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            />
-                          </FormControl>
-                          <FormMessage />
+                          <FormLabel className="text-foreground">Dimension Unit</FormLabel>
+                          <Select value={dimensionUnit} onValueChange={handleUnitChange}>
+                            <SelectTrigger className="bg-popover border-border text-foreground">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border">
+                              <SelectItem value="cm" className="text-foreground hover:bg-accent">cm</SelectItem>
+                              <SelectItem value="inch" className="text-foreground hover:bg-accent">inch</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="grain_mm"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            {isKraftReelGroup(currentGroupName || '') ? 'B.F.' : `Grain (${dimensionUnit})`} <span className="text-red-500">*</span>
-                            {grainInputValue && !isKraftReelGroup(currentGroupName || '') && (
-                              <span className="text-xs text-muted-foreground ml-2">
-                                = {getGrainDimensions()}
-                              </span>
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder={dimensionUnit === "cm" ? "100" : "39.37"} 
-                              value={grainInputValue}
-                              onChange={(e) => handleGrainChange(e.target.value)}
-                              data-testid="input-grain"
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormItem>
-                      <FormLabel className="text-foreground">Dimension Unit</FormLabel>
-                      <Select value={dimensionUnit} onValueChange={handleUnitChange}>
-                        <SelectTrigger className="bg-popover border-border text-foreground">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border">
-                          <SelectItem value="cm" className="text-foreground hover:bg-accent">cm</SelectItem>
-                          <SelectItem value="inch" className="text-foreground hover:bg-accent">inch</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Inventory */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Package className="h-5 w-5" />
-                    Inventory
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Set your available quantity and unit
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <FormField
-                      control={form.control}
-                      name="OfferUnit"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              data-testid="select-unit"
-                            >
-                              <SelectTrigger className="bg-popover border-border text-foreground">
-                                <SelectValue placeholder="Select unit" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover border-border">
-                                <SelectItem value="Kg" className="text-foreground hover:bg-accent">Kg</SelectItem>
-                                <SelectItem value="Sheet" className="text-foreground hover:bg-accent">Sheet</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Weight calculation display */}
-                  {form.watch("OfferUnit") === "Sheet" && calculateWeightInKg() && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="font-semibold text-blue-800 dark:text-blue-200">Calculated Weight</span>
                       </div>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        {form.watch("quantity")} sheets × {((form.watch("Deckle_mm") || 0) / 10).toFixed(1)}cm × {((form.watch("grain_mm") || 0) / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        Formula: (Sheets × Length × Breadth × GSM) ÷ 10,000,000
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="quantity"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="Enter quantity"
-                              {...field}
-                              data-testid="input-quantity"
-                              maxLength={6}
-                              onBeforeInput={(e: any) => {
-                                const char = e.data;
-                                if (char && !/^[0-9]$/.test(char)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, '');
-                                field.onChange(value);
-                              }}
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    </CardContent>
+                  </Card>
 
-                    <FormField
-                      control={form.control}
-                      name="stockAge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            Stock Age (days)
-                            <span className="text-xs text-muted-foreground ml-2">(optional)</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="Enter stock age in days (e.g., 30)"
-                              {...field}
-                              data-testid="input-stock-age"
-                              maxLength={3}
-                              onBeforeInput={(e: any) => {
-                                const char = e.data;
-                                if (char && !/^[0-9]$/.test(char)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, '');
-                                field.onChange(value);
-                              }}
-                              className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                  {/* Inventory */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Package className="h-5 w-5" />
+                        Inventory
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Set your available quantity and unit
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <FormField
+                          control={form.control}
+                          name="OfferUnit"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Unit <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  data-testid="select-unit"
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select unit" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    <SelectItem value="Kg" className="text-foreground hover:bg-accent">Kg</SelectItem>
+                                    <SelectItem value="Sheet" className="text-foreground hover:bg-accent">Sheet</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-              {/* Pricing Section */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <IndianRupee className="h-5 w-5" />
-                    Pricing
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Set your offer rate and visibility preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="offerRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">
-                            Offer Rate (per {form.watch("OfferUnit") || "unit"})
-                            <span className="text-xs text-muted-foreground ml-2">(optional)</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                <IndianRupee className="h-4 w-4" />
-                              </span>
-                              <Input
-                                type="text"
-                                inputMode="decimal"
-                                placeholder="Enter rate"
-                                {...field}
-                                data-testid="input-offer-rate"
-                                maxLength={10}
-                                onBeforeInput={(e: any) => {
-                                  const char = e.data;
-                                  if (char && !/^[0-9.]$/.test(char)) {
-                                    e.preventDefault();
-                                  }
-                                }}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                                  // Only allow one decimal point
-                                  const parts = value.split('.');
-                                  const sanitized = parts.length > 2 
-                                    ? parts[0] + '.' + parts.slice(1).join('')
-                                    : value;
-                                  field.onChange(sanitized);
-                                }}
-                                className="pl-9 bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="showRateInMarketplace"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-muted/50">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-show-rate"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="text-foreground font-medium">
-                            Show rate in marketplace
-                          </FormLabel>
-                          <p className="text-sm text-muted-foreground">
-                            When unchecked, "Rate on request" will be displayed to buyers instead of the actual rate
+                      {/* Weight calculation display */}
+                      {form.watch("OfferUnit") === "Sheet" && calculateWeightInKg() && (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <span className="font-semibold text-blue-800 dark:text-blue-200">Calculated Weight</span>
+                          </div>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            {form.watch("quantity")} sheets × {((form.watch("Deckle_mm") || 0) / 10).toFixed(1)}cm × {((form.watch("grain_mm") || 0) / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            Formula: (Sheets × Length × Breadth × GSM) ÷ 10,000,000
                           </p>
                         </div>
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+                      )}
 
-              {/* Additional Information */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-foreground">
-                    Additional Information
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Add any additional comments or details about the stock
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="Seller_comments"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Seller Comments</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Add any special notes, delivery terms, or additional specifications..."
-                            className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
-                            {...field}
-                            data-testid="textarea-comments"
-                            maxLength={400}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="quantity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Quantity <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="Enter quantity"
+                                  {...field}
+                                  data-testid="input-quantity"
+                                  maxLength={6}
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    if (char && !/^[0-9]$/.test(char)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    field.onChange(value);
+                                  }}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="stockAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Stock Age (days)
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="Enter stock age in days (e.g., 30)"
+                                  {...field}
+                                  data-testid="input-stock-age"
+                                  maxLength={3}
+                                  onBeforeInput={(e: any) => {
+                                    const char = e.data;
+                                    if (char && !/^[0-9]$/.test(char)) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    field.onChange(value);
+                                  }}
+                                  className="bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Pricing Section */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <IndianRupee className="h-5 w-5" />
+                        Pricing
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Set your offer rate and visibility preferences
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="offerRate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">
+                                Offer Rate (per {form.watch("OfferUnit") || "unit"})
+                                <span className="text-xs text-muted-foreground ml-2">(optional)</span>
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                    <IndianRupee className="h-4 w-4" />
+                                  </span>
+                                  <Input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="Enter rate"
+                                    {...field}
+                                    data-testid="input-offer-rate"
+                                    maxLength={10}
+                                    onBeforeInput={(e: any) => {
+                                      const char = e.data;
+                                      if (char && !/^[0-9.]$/.test(char)) {
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^0-9.]/g, '');
+                                      // Only allow one decimal point
+                                      const parts = value.split('.');
+                                      const sanitized = parts.length > 2
+                                        ? parts[0] + '.' + parts.slice(1).join('')
+                                        : value;
+                                      field.onChange(sanitized);
+                                    }}
+                                    className="pl-9 bg-popover border-border text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="showRateInMarketplace"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-muted/50">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="checkbox-show-rate"
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="text-foreground font-medium">
+                                Show rate in marketplace
+                              </FormLabel>
+                              <p className="text-sm text-muted-foreground">
+                                When unchecked, "Rate on request" will be displayed to buyers instead of the actual rate
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Additional Information */}
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-foreground">
+                        Additional Information
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Add any additional comments or details about the stock
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="Seller_comments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Seller Comments</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Add any special notes, delivery terms, or additional specifications..."
+                                className="min-h-[100px] bg-popover border-border text-foreground placeholder:text-muted-foreground"
+                                {...field}
+                                data-testid="textarea-comments"
+                                maxLength={400}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
                 </>
               )}
 

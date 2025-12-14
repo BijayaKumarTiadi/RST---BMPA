@@ -5,7 +5,7 @@ import { otpService } from "./otpService";
 import { adminService } from "./adminService";
 import { dealService } from "./dealService";
 import { storage } from "./storage";
-import { executeQuery, executeQuerySingle } from "./database";
+import { executeQuery, executeQuerySingle, pool } from "./database";
 import { sendEmail, generateInquiryEmail, generatePaymentSuccessEmail, type InquiryEmailData, type PaymentSuccessEmailData } from "./emailService";
 import * as sparePartCategoryService from "./sparePartCategoryService";
 import { createSparePartTables } from "./createSparePartTables";
@@ -63,6 +63,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRouter);
 
   // IMPORTANT: Register spare-parts routes BEFORE search routes to prevent conflicts
+  // Export Deals - Moved to top to avoid route conflict
+  app.get('/api/deals/export', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+
+      const deals = await executeQuery(`
+        SELECT dm.*, sg.GroupName,
+        COALESCE(m.make_Name, dm.Make) as ResolvedMake,
+        COALESCE(gr.GradeName, dm.Grade) as ResolvedGrade,
+        COALESCE(b.brandname, dm.Brand) as ResolvedBrand
+        FROM deal_master dm
+        LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
+        LEFT JOIN stock_make_master m ON dm.Make = m.make_ID
+        LEFT JOIN stock_grade gr ON dm.Grade = gr.gradeID
+        LEFT JOIN stock_brand b ON dm.Brand = b.brandID
+        WHERE dm.created_by_member_id = ? AND dm.StockStatus = 1 AND dm.GSM > 0 AND dm.Deckle_mm > 0
+        ORDER BY dm.TransID DESC
+      `, [sellerId]);
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('My Offers');
+
+      sheet.addRow([
+        'TransID (Do not edit)', 'Group ID', 'Group Name', 'Make', 'Grade', 'Brand',
+        'GSM', 'Deckle (cm)', 'Grain (cm)', 'Unit', 'Quantity', 'Rate', 'Show Rate (Yes/No)', 'Comments'
+      ]);
+
+      deals.forEach((deal: any) => {
+        sheet.addRow([
+          deal.TransID,
+          deal.groupID,
+          deal.GroupName,
+          deal.ResolvedMake,
+          deal.ResolvedGrade,
+          deal.ResolvedBrand,
+          deal.GSM,
+          (deal.Deckle_mm || 0) / 10,
+          (deal.grain_mm || 0) / 10,
+          deal.OfferUnit,
+          deal.quantity,
+          deal.OfferPrice,
+          deal.show_rate_in_marketplace ? 'Yes' : 'No',
+          deal.Seller_comments
+        ]);
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=my_offers.xlsx');
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error('Export error:', error);
+      res.status(500).send('Failed to export deals');
+    }
+  });
+
   // Search spare parts from deal_master - MUST come before /api/search routes
   app.post('/api/spare-parts/search', async (req, res) => {
     try {
@@ -2055,210 +2111,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export route moved to top of file to avoid conflicts
+
   // Bulk Upload Process
   app.post('/api/deals/bulk-upload', requireAuth, upload.single('file'), async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
 
-      if (!sellerId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
-      }
-
       if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'No file uploaded'
-        });
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
       }
 
-      // Parse Excel file
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
-      // Skip header row
+      // Skip header
       const rows = data.slice(1).filter(row => row.length > 0 && row.some(cell => cell !== undefined && cell !== ''));
 
       if (rows.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'No data found in the Excel file'
-        });
+        return res.status(400).json({ success: false, message: 'No data found' });
       }
 
-      if (rows.length > 100) {
-        return res.status(400).json({
-          success: false,
-          message: 'Maximum 100 rows allowed per upload'
-        });
+      if (rows.length > 200) {
+        return res.status(400).json({ success: false, message: 'Maximum 200 rows allowed per upload' });
       }
 
-      // Get hierarchy for validation
       const hierarchy = await dealService.getStockHierarchy();
-
-      // Map board types to group IDs
       const groupMap: Record<string, number> = {};
       if (hierarchy.groups) {
         hierarchy.groups.forEach((group: any) => {
-          const name = group.GroupName?.toLowerCase().trim();
-          if (name === 'paper') groupMap['paper'] = group.GroupID;
-          if (name === 'board') groupMap['board'] = group.GroupID;
-          if (name === 'kraft reel' || name === 'kraftreel') groupMap['kraft reel'] = group.GroupID;
+          if (group.GroupName) {
+            groupMap[group.GroupName.toLowerCase().trim()] = group.GroupID;
+          }
+          // Also map string ID to ID
+          groupMap[String(group.GroupID)] = group.GroupID;
         });
       }
 
       const errors: string[] = [];
       const validRecords: any[] = [];
 
-      // Process each row
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const rowNum = i + 2; // Account for header row
+        const rowNum = i + 2;
 
-        const boardType = String(row[0] || '').trim();
-        const make = String(row[1] || '').trim();
-        const grade = String(row[2] || '').trim();
-        const brand = String(row[3] || '').trim();
-        const gsm = parseFloat(String(row[4] || ''));
-        const deckle = parseFloat(String(row[5] || ''));
-        const grain = parseFloat(String(row[6] || ''));
-        const unit = String(row[7] || '').trim();
-        const quantity = parseFloat(String(row[8] || ''));
-        const rate = row[9] !== undefined && row[9] !== '' ? parseFloat(String(row[9])) : null;
-        const showRate = String(row[10] || 'Yes').toLowerCase();
-        const comments = String(row[11] || '').trim();
+        // Header: TransID, GroupID, GroupName, Make, Grade, Brand, GSM, Deckle, Grain, Unit, Qty, Rate, Show, Comments
+        const transId = row[0] ? parseInt(String(row[0])) : null;
+        const groupIdInput = String(row[1] || '').trim();
+        const groupNameInput = String(row[2] || '').trim();
 
-        // Validation
+        const make = String(row[3] || '').trim();
+        const grade = String(row[4] || '').trim();
+        const brand = String(row[5] || '').trim();
+        const gsm = parseFloat(String(row[6] || ''));
+        const deckle = parseFloat(String(row[7] || ''));
+        const grain = parseFloat(String(row[8] || ''));
+        const unit = String(row[9] || '').trim();
+        const quantity = parseFloat(String(row[10] || ''));
+        const rate = row[11] !== undefined && row[11] !== '' ? parseFloat(String(row[11])) : null;
+        const showRate = String(row[12] || 'Yes').toLowerCase();
+        const comments = String(row[13] || '').trim();
+
         const rowErrors: string[] = [];
 
-        if (!boardType) {
-          rowErrors.push('Board Type is required');
-        } else {
-          const boardTypeLower = boardType.toLowerCase();
-          if (!['paper', 'board', 'kraft reel'].includes(boardTypeLower)) {
-            rowErrors.push('Board Type must be Paper, Board, or Kraft Reel');
-          }
+        // Validate Group
+        let finalGroupId: number | undefined;
+        if (groupIdInput && groupMap[groupIdInput]) {
+          finalGroupId = groupMap[groupIdInput];
+        } else if (groupNameInput && groupMap[groupNameInput.toLowerCase()]) {
+          finalGroupId = groupMap[groupNameInput.toLowerCase()];
         }
 
-        if (!make) {
-          rowErrors.push('Make/Manufacturer is required');
+        if (!finalGroupId) {
+          rowErrors.push('Valid Group ID or Group Name is required');
         }
 
-        if (isNaN(gsm) || gsm <= 0) {
-          rowErrors.push('GSM must be a positive number');
-        }
+        if (!make) rowErrors.push('Make is required');
+        if (isNaN(gsm) || gsm <= 0) rowErrors.push('GSM must be positive');
+        if (isNaN(deckle) || deckle <= 0) rowErrors.push('Deckle must be positive');
+        // Grain can be 0 for Kraft Reel (BF)
+        // logic: if group is Kraft Reel, grain can be > 0. If regular, grain > 0.
+        // Simplified check:
+        if (isNaN(grain) || grain < 0) rowErrors.push('Grain must be 0 or greater');
 
-        if (isNaN(deckle) || deckle <= 0) {
-          rowErrors.push('Deckle must be a positive number');
-        }
-
-        if (isNaN(grain) || grain < 0) {
-          rowErrors.push('Grain must be 0 or greater');
-        }
-
-        const validUnits = ['mt', 'kg', 'sheet', 'pkt', 'nos', 'reel'];
-        if (!unit || !validUnits.includes(unit.toLowerCase())) {
-          rowErrors.push('Unit must be one of: MT, Kg, Sheet, Pkt, Nos, Reel');
-        }
-
-        if (isNaN(quantity) || quantity <= 0) {
-          rowErrors.push('Quantity must be a positive number');
-        }
-
-        if (rate !== null && (isNaN(rate) || rate < 0)) {
-          rowErrors.push('Rate must be a non-negative number');
-        }
-
-        if (comments && comments.length > 400) {
-          rowErrors.push('Comments cannot exceed 400 characters');
-        }
-
-        // Check grade and brand for non-Kraft Reel
-        const isKraftReel = boardType.toLowerCase() === 'kraft reel';
-        if (!isKraftReel) {
-          if (!grade) {
-            rowErrors.push('Grade is required for Paper/Board');
-          }
-          if (!brand) {
-            rowErrors.push('Brand is required for Paper/Board');
-          }
-        }
+        if (isNaN(quantity) || quantity <= 0) rowErrors.push('Quantity must be positive');
 
         if (rowErrors.length > 0) {
           errors.push(`Row ${rowNum}: ${rowErrors.join(', ')}`);
         } else {
-          // Get group ID
-          const groupId = groupMap[boardType.toLowerCase()] || groupMap['paper'];
-
-          // Convert dimensions to mm
-          const deckle_mm = deckle * 10;
-          const grain_mm = grain * 10;
-
           validRecords.push({
-            groupId,
-            boardType,
-            make,
-            grade: grade || '',
-            brand: brand || '',
-            gsm,
-            deckle_mm,
-            grain_mm,
-            unit: unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase(),
-            quantity,
-            rate,
-            showRate: showRate === 'yes' || showRate === 'true' || showRate === '1',
+            transId,
+            groupId: finalGroupId,
+            make, grade, brand, gsm,
+            deckle_mm: deckle * 10,
+            grain_mm: grain * 10,
+            unit, quantity, rate,
+            showRate: showRate === 'yes' || showRate === 'true',
             comments
           });
         }
       }
 
-      // If there are validation errors, return them
       if (errors.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation errors found',
-          errors
-        });
+        return res.status(400).json({ success: false, message: 'Validation errors found', errors });
       }
 
-      // Process valid records
-      let created = 0;
-      let updated = 0;
+      // Transaction
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-      for (const record of validRecords) {
-        try {
-          // Check if a similar record exists
-          const existingDeal = await executeQuerySingle(`
-            SELECT TransID, quantity FROM deal_master 
-            WHERE created_by_member_id = ? 
-              AND groupID = ?
-              AND Make = ?
-              AND COALESCE(Grade, '') = ?
-              AND COALESCE(Brand, '') = ?
-              AND GSM = ?
-              AND Deckle_mm = ?
-              AND grain_mm = ?
-              AND StockStatus = 1
-            LIMIT 1
-          `, [sellerId, record.groupId, record.make, record.grade, record.brand, record.gsm, record.deckle_mm, record.grain_mm]);
+      try {
+        let created = 0;
+        let updated = 0;
 
-          if (existingDeal) {
-            // Update quantity only
-            await executeQuery(`
-              UPDATE deal_master 
-              SET quantity = ?, deal_updated_at = NOW()
-              WHERE TransID = ?
-            `, [record.quantity, existingDeal.TransID]);
-            updated++;
-          } else {
-            // Create new deal
-            const result = await dealService.createDeal({
+        for (const record of validRecords) {
+          // Resolve IDs for Update logic consistency using hierarchy
+          let finalMake = record.make;
+          let finalGrade = record.grade;
+          let finalBrand = record.brand;
+
+          if (hierarchy.makes) {
+            const m = hierarchy.makes.find((x: any) => x.make_Name?.toLowerCase() === record.make.toLowerCase() && String(x.GroupID) === String(record.groupId));
+            if (m) finalMake = m.make_ID;
+          }
+          if (hierarchy.grades) {
+            const g = hierarchy.grades.find((x: any) => x.GradeName?.toLowerCase() === record.grade.toLowerCase());
+            if (g) finalGrade = g.gradeID;
+          }
+          if (hierarchy.brands) {
+            const b = hierarchy.brands.find((x: any) => x.brandname?.toLowerCase() === record.brand.toLowerCase());
+            if (b) finalBrand = b.brandID;
+          }
+
+          const deal_title = `${record.make} ${record.grade} ${record.brand} ${record.gsm} GSM`;
+
+          let performCreate = !record.transId;
+
+          if (record.transId) {
+            // Verify ownership
+            const exists = await executeQuerySingle('SELECT TransID FROM deal_master WHERE TransID = ? AND created_by_member_id = ?', [record.transId, sellerId], 3, connection);
+            if (exists) {
+              const sellerComments = record.comments ? `${deal_title}\n${record.comments}` : deal_title;
+
+              await executeQuery(`
+                 UPDATE deal_master SET 
+                   groupID=?, Make=?, Grade=?, Brand=?, GSM=?, Deckle_mm=?, grain_mm=?, 
+                   OfferUnit=?, quantity=?, OfferPrice=?, show_rate_in_marketplace=?, Seller_comments=?, deal_updated_at=NOW()
+                 WHERE TransID=?
+               `, [
+                record.groupId, finalMake, finalGrade, finalBrand, record.gsm, record.deckle_mm, record.grain_mm,
+                record.unit, record.quantity, record.rate || 0, record.showRate, sellerComments, record.transId
+              ], 3, connection);
+              updated++;
+            } else {
+              performCreate = true;
+            }
+          }
+
+          if (performCreate) {
+            // Create
+            await dealService.createDeal({
               seller_id: sellerId,
               group_id: record.groupId,
+              make_id: 0,
+              grade_id: 0,
+              brand_id: 0,
+              deal_title,
               make_text: record.make,
               grade_text: record.grade,
               brand_text: record.brand,
@@ -2269,33 +2289,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               quantity: record.quantity,
               price: record.rate || 0,
               show_rate_in_marketplace: record.showRate,
-              seller_comments: record.comments
-            });
-
-            if (result) {
-              created++;
-            }
+              deal_description: record.comments
+            }, undefined, connection);
+            created++;
           }
-        } catch (err: any) {
-          console.error('Error processing record:', err);
-          errors.push(`Failed to process: ${record.make} ${record.grade} ${record.brand} - ${err.message}`);
         }
+
+        await connection.commit();
+        res.json({ success: true, message: `Process complete: ${created} created, ${updated} updated` });
+
+      } catch (err: any) {
+        if (connection) await connection.rollback();
+        console.error('Transaction error:', err);
+        res.status(400).json({ success: false, message: err.message || 'Database error during upload' });
+      } finally {
+        if (connection) connection.release();
       }
 
-      res.json({
-        success: true,
-        message: `Successfully processed ${created + updated} records`,
-        created,
-        updated,
-        errors: errors.length > 0 ? errors : undefined
-      });
-
     } catch (error: any) {
-      console.error('Error processing bulk upload:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to process bulk upload'
-      });
+      console.error('Upload error:', error);
+      res.status(500).json({ success: false, message: 'Server error detected' });
     }
   });
 

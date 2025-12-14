@@ -78,6 +78,9 @@ export interface CreateDealData {
   location?: string;
   deal_specifications?: any;
   expires_at?: Date;
+  gsm?: number;
+  deckle_mm?: number;
+  grain_mm?: number;
 }
 
 export interface StockHierarchy {
@@ -112,7 +115,7 @@ class DealService {
       const allMakes = [...makes as any[]];
       const allGrades = [...grades as any[]];
       const allBrands = [...brands as any[]];
-      
+
       // Add custom makes from deal_master
       (dealMakes as any[]).forEach(dm => {
         if (dm.make_Name && !allMakes.find(m => m.make_Name === dm.make_Name)) {
@@ -123,7 +126,7 @@ class DealService {
           });
         }
       });
-      
+
       // Add custom grades from deal_master
       (dealGrades as any[]).forEach(dg => {
         if (dg.GradeName && !allGrades.find(g => g.GradeName === dg.GradeName)) {
@@ -134,7 +137,7 @@ class DealService {
           });
         }
       });
-      
+
       // Add custom brands from deal_master
       (dealBrands as any[]).forEach(db => {
         if (db.brandname && !allBrands.find(b => b.brandname === db.brandname)) {
@@ -146,8 +149,8 @@ class DealService {
         }
       });
 
-      return { 
-        groups, 
+      return {
+        groups,
         makes: allMakes.sort((a, b) => a.make_Name.localeCompare(b.make_Name)),
         grades: allGrades.sort((a, b) => a.GradeName.localeCompare(b.GradeName)),
         brands: allBrands.sort((a, b) => a.brandname.localeCompare(b.brandname))
@@ -269,7 +272,7 @@ class DealService {
       if (filters?.search) {
         const searchConditions = [
           'd.Seller_comments LIKE ?',
-          'g.GroupName LIKE ?', 
+          'g.GroupName LIKE ?',
           'm.make_Name LIKE ?',
           'gr.GradeName LIKE ?',
           'b.brandname LIKE ?',
@@ -348,7 +351,7 @@ class DealService {
       // Parse JSON fields safely and extract deal_description from Seller_comments
       const parsedDeals = deals.map((deal: any) => {
         let specifications = null;
-        
+
         if (deal.DealSpecifications) {
           try {
             if (typeof deal.DealSpecifications === 'string') {
@@ -361,10 +364,10 @@ class DealService {
             specifications = null;
           }
         }
-        
+
         // Use ONLY the exact database value for stock_description - NO auto-generation
         const deal_comments = deal.Seller_comments || '';
-        
+
         return {
           ...deal,
           DealSpecifications: specifications,
@@ -416,7 +419,7 @@ class DealService {
 
       // Parse JSON fields safely
       let specifications = null;
-      
+
       if (deal.DealSpecifications) {
         try {
           if (typeof deal.DealSpecifications === 'string') {
@@ -429,10 +432,10 @@ class DealService {
           specifications = null;
         }
       }
-      
+
       // Use ONLY the exact database value for stock_description - NO auto-generation
       const deal_comments = deal.Seller_comments || '';
-      
+
       return {
         ...deal,
         DealSpecifications: specifications,
@@ -460,7 +463,7 @@ class DealService {
     spare_part_name?: string;
     spare_part_no?: string;
     show_rate_in_marketplace?: boolean;
-  }, userInfo?: { member_id: number; name: string; company: string }): Promise<{ success: boolean; message: string; dealId?: number }> {
+  }, userInfo?: { member_id: number; name: string; company: string }, connection?: any): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
         group_id,
@@ -505,7 +508,7 @@ class DealService {
         gsm = 0;
         deckle_mm = 0;
         grain_mm = 0;
-        
+
         console.log('Creating spare part with new cascading values:', {
           spare_process,
           spare_category_type,
@@ -515,7 +518,7 @@ class DealService {
           spare_part_name,
           spare_part_no,
         });
-        
+
         // Auto-save custom model to spare_part_categories if provided
         if (spare_model && spare_process && spare_category_type && spare_machine_type && spare_manufacturer) {
           await saveCustomModel({
@@ -531,12 +534,12 @@ class DealService {
         finalMake = make_text || make_id || '';
         finalGrade = grade_text || grade_id || '';
         finalBrand = brand_text || brand_id || '';
-        
+
         // Extract GSM, Deckle_mm, grain_mm from deal_specifications
         gsm = deal_specifications?.GSM || 0;
         deckle_mm = deal_specifications?.Deckle_mm || 0;
         grain_mm = deal_specifications?.grain_mm || 0;
-        
+
         console.log('Creating regular product with values:', {
           finalMake,
           finalGrade,
@@ -593,7 +596,7 @@ class DealService {
         userInfo?.name || '',
         userInfo?.company || '',
         show_rate_in_marketplace ? 1 : 0
-      ]);
+      ], 3, connection);
 
       const insertId = (result as any).insertId;
 
@@ -612,12 +615,12 @@ class DealService {
   }
 
   // Update a deal
-  async updateDeal(dealId: number, userId: number, updateData: Partial<CreateDealData>): Promise<{ success: boolean; message: string }> {
+  async updateDeal(dealId: number, userId: number, updateData: Partial<CreateDealData>, connection?: any): Promise<{ success: boolean; message: string }> {
     try {
       // Verify the deal belongs to the user who created it
       const deal = await executeQuerySingle(`
         SELECT created_by_member_id, memberID FROM deal_master WHERE TransID = ?
-      `, [dealId]);
+      `, [dealId], 3, connection);
 
       if (!deal) {
         return {
@@ -628,7 +631,7 @@ class DealService {
 
       // Check if the user owns this deal (check both created_by_member_id and memberID)
       const isOwner = deal.created_by_member_id === userId || deal.memberID === userId;
-      
+
       if (!isOwner) {
         console.error(`Authorization failed: userId=${userId}, created_by=${deal.created_by_member_id}, memberID=${deal.memberID}`);
         return {
@@ -636,7 +639,7 @@ class DealService {
           message: 'Unauthorized to update this deal'
         };
       }
-      
+
       console.log(`✅ Authorization passed for deal ${dealId}, user ${userId}`);
 
       // Extract main product fields from updateData
@@ -668,13 +671,13 @@ class DealService {
       const updateFields = [];
       const updateValues = [];
       let updateStockDescription = false;
-      
+
       // Handle main product fields
       if (group_id !== undefined || groupID !== undefined) {
         updateFields.push(`groupID = ?`);
         updateValues.push(group_id || groupID);
       }
-      
+
       // Handle Make field - always use text value
       if (make_text !== undefined || make_id !== undefined || MakeID !== undefined) {
         updateFields.push(`Make = ?`);
@@ -682,7 +685,7 @@ class DealService {
         updateValues.push(makeValue);
         console.log('Updating Make field to:', makeValue);
       }
-      
+
       // Handle Grade field - always use text value
       if (grade_text !== undefined || grade_id !== undefined || GradeID !== undefined) {
         updateFields.push(`Grade = ?`);
@@ -690,7 +693,7 @@ class DealService {
         updateValues.push(gradeValue);
         console.log('Updating Grade field to:', gradeValue);
       }
-      
+
       // Handle Brand field - always use text value
       if (brand_text !== undefined || brand_id !== undefined || BrandID !== undefined) {
         updateFields.push(`Brand = ?`);
@@ -698,67 +701,67 @@ class DealService {
         updateValues.push(brandValue);
         console.log('Updating Brand field to:', brandValue);
       }
-      
+
       // Handle technical specifications
       if (GSM !== undefined) {
         updateFields.push(`GSM = ?`);
         updateValues.push(GSM);
       }
-      
+
       if (Deckle_mm !== undefined) {
         updateFields.push(`Deckle_mm = ?`);
         updateValues.push(Deckle_mm);
       }
-      
+
       if (grain_mm !== undefined) {
         updateFields.push(`grain_mm = ?`);
         updateValues.push(grain_mm);
       }
-      
+
       // Handle pricing and quantity
       if (OfferPrice !== undefined || price !== undefined) {
         updateFields.push(`OfferPrice = ?`);
         updateValues.push(OfferPrice || price);
       }
-      
+
       if (OfferUnit !== undefined || unit !== undefined) {
         updateFields.push(`OfferUnit = ?`);
         updateValues.push(OfferUnit || unit);
       }
-      
+
       if (quantity !== undefined) {
         updateFields.push(`quantity = ?`);
         updateValues.push(quantity);
       }
-      
+
       if (Seller_comments !== undefined || deal_description !== undefined) {
         updateFields.push(`Seller_comments = ?`);
         updateValues.push(Seller_comments || deal_description);
       }
-      
+
       // Handle stock description
       if (stock_description !== undefined) {
         updateFields.push(`stock_description = ?`);
         updateValues.push(stock_description);
         updateStockDescription = true;
       }
-      
+
       // Handle stock age
       if (StockAge !== undefined) {
         updateFields.push(`StockAge = ?`);
         updateValues.push(StockAge !== undefined && StockAge !== null ? String(StockAge) : '');
       }
-      
+
       // Handle show_rate_in_marketplace
       if (show_rate_in_marketplace !== undefined) {
         updateFields.push(`show_rate_in_marketplace = ?`);
         updateValues.push(show_rate_in_marketplace ? 1 : 0);
       }
-      
+
       // Skip fields that don't exist in the deal_master table
       // DealTitle, DealSpecifications, MinOrderQuantity, Location, ExpiresAt are not in the schema
       // These fields are handled differently or don't exist in the current database schema
-      
+
       console.log(`📝 Preparing to update ${updateFields.length} fields:`, updateFields);
 
       // If stock_description is updated, also update search_key
@@ -767,19 +770,21 @@ class DealService {
         updateFields.push(`search_key = ?`);
         updateValues.push(search_key);
       }
-      
+
       if (updateFields.length === 0) {
         return {
           success: false,
           message: 'No valid fields to update'
         };
       }
-      
+
       updateValues.push(dealId);
-      
+
       await executeQuery(
         `UPDATE deal_master SET ${updateFields.join(', ')}, deal_updated_at = CURRENT_TIMESTAMP WHERE TransID = ?`,
-        updateValues
+        updateValues,
+        3,
+        connection
       );
 
       return {
@@ -855,7 +860,7 @@ class DealService {
 
       return deals.map((deal: any) => {
         let specifications = null;
-        
+
         if (deal.DealSpecifications) {
           try {
             if (typeof deal.DealSpecifications === 'string') {
@@ -868,7 +873,7 @@ class DealService {
             specifications = null;
           }
         }
-        
+
         return {
           ...deal,
           DealSpecifications: specifications
