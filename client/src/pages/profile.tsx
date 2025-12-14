@@ -11,7 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Building2, Mail, Phone, MapPin, Calendar, Edit, Save, X, Shield, CheckCircle } from "lucide-react";
+import { User, Building2, Mail, Phone, MapPin, Calendar, Edit, Save, X, Shield, CheckCircle, FileText, Download, ExternalLink } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import indianCitiesStates from "@/data/indian-cities-states.json";
 
@@ -526,6 +533,82 @@ export default function Profile() {
             </Button>
           )}
         </div>
+
+        {/* SOP Section */}
+        <Card className="border-0 shadow-lg mt-8">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b">
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <FileText className="h-5 w-5 text-amber-600" />
+              Standard Operating Procedure (SOP)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground mb-4">
+              Access the STOCK LAABH Standard Operating Procedure document that outlines the rules, 
+              guidelines, and best practices for using our platform.
+            </p>
+            
+            <div className="flex flex-wrap gap-3">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View SOP
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      Standard Operating Procedure - STOCK LAABH
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-hidden">
+                    <iframe 
+                      src="/BMPA_SLaP_SOP_V1.pdf" 
+                      className="w-full h-[70vh] border rounded-lg"
+                      title="STOCK LAABH SOP"
+                    />
+                  </div>
+                  <div className="flex justify-end pt-4 border-t">
+                    <a 
+                      href="/BMPA_SLaP_SOP_V1.pdf" 
+                      download="BMPA_SLaP_SOP.pdf"
+                      className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </a>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <a 
+                href="/BMPA_SLaP_SOP_V1.pdf" 
+                download="BMPA_SLaP_SOP.pdf"
+                className="inline-flex"
+              >
+                <Button 
+                  variant="default" 
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700"
+                >
+                  <Download className="h-4 w-4" />
+                  Download SOP
+                </Button>
+              </a>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+              <p className="text-sm text-blue-800">
+                <strong>Tip:</strong> Keep a copy of the SOP for your reference. 
+                Following these guidelines ensures a smooth experience on STOCK LAABH.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

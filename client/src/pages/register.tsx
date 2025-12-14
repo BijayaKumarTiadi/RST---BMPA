@@ -19,8 +19,19 @@ import {
   MapPin,
   CheckCircle,
   Loader2,
-  Shield
+  Shield,
+  FileText,
+  Download,
+  ExternalLink
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -38,6 +49,8 @@ export default function Register() {
     state: ''
   });
   const [success, setSuccess] = useState(false);
+  const [sopAccepted, setSopAccepted] = useState(false);
+  const [sopDialogOpen, setSopDialogOpen] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -676,10 +689,96 @@ export default function Register() {
                   </p>
                 </div>
 
+                {/* SOP Section */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-5 w-5 text-amber-600" />
+                    <span className="font-semibold text-amber-800">Standard Operating Procedure (SOP)</span>
+                  </div>
+                  <p className="text-sm text-amber-700 mb-4">
+                    Please read and accept our Standard Operating Procedure before completing your registration. 
+                    This document outlines the rules, guidelines, and best practices for using STOCK LAABH.
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <Dialog open={sopDialogOpen} onOpenChange={setSopDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View SOP
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                            Standard Operating Procedure - STOCK LAABH
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1 overflow-hidden">
+                          <iframe 
+                            src="/BMPA_SLaP_SOP_V1.pdf" 
+                            className="w-full h-[70vh] border rounded-lg"
+                            title="STOCK LAABH SOP"
+                          />
+                        </div>
+                        <div className="flex justify-between items-center pt-4 border-t">
+                          <a 
+                            href="/BMPA_SLaP_SOP_V1.pdf" 
+                            download="BMPA_SLaP_SOP.pdf"
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download PDF
+                          </a>
+                          <Button onClick={() => setSopDialogOpen(false)}>
+                            Close
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <a 
+                      href="/BMPA_SLaP_SOP_V1.pdf" 
+                      download="BMPA_SLaP_SOP.pdf"
+                      className="inline-flex"
+                    >
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download SOP
+                      </Button>
+                    </a>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 bg-white rounded-md border border-amber-200">
+                    <Checkbox 
+                      id="sop-accept" 
+                      checked={sopAccepted}
+                      onCheckedChange={(checked) => setSopAccepted(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label 
+                      htmlFor="sop-accept" 
+                      className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                    >
+                      I have read, understood, and agree to abide by the <strong>Standard Operating Procedure (SOP)</strong> of STOCK LAABH. 
+                      I understand that violation of these guidelines may result in account suspension or termination.
+                    </label>
+                  </div>
+                </div>
+
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-lg" 
-                  disabled={registering || !otpSent || !otp || otp.length !== 6}
+                  disabled={registering || !otpSent || !otp || otp.length !== 6 || !sopAccepted}
                   data-testid="button-register"
                 >
                   {registering ? (
