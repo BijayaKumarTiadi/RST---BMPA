@@ -315,24 +315,35 @@ export default function AddDeal() {
     return "";
   };
 
-  // Calculate weight in kg when unit is Sheet
+  // Calculate weight in kg based on dimensions and GSM
   const calculateWeightInKg = () => {
     const formValues = form.getValues();
-    const unit = formValues.OfferUnit;
     const quantity = formValues.quantity;
-    const deckle = formValues.Deckle_mm;
-    const grain = formValues.grain_mm;
+    const deckle_mm = formValues.Deckle_mm;
+    const grain_mm = formValues.grain_mm;
     const gsm = formValues.GSM;
 
-    if (unit === "Sheet" && quantity && deckle && grain && gsm) {
-      // Convert mm to cm
-      const deckleCm = deckle / 10;
-      const grainCm = grain / 10;
+    if (quantity && deckle_mm && grain_mm && gsm) {
+      // Convert mm to cm first
+      const deckle_cm = deckle_mm / 10;
+      const grain_cm = grain_mm / 10;
 
-      // Formula: (No. of sheets × Length(cm) × Breadth(cm) × GSM) / 10,000,000
-      const totalKg = (quantity * deckleCm * grainCm * gsm) / 10000000;
+      // Formula: (GSM × Deckle_cm × Grain_cm × Quantity) / 10,000,000
+      const totalKg = (gsm * deckle_cm * grain_cm * quantity) / 10000000;
 
-      return totalKg.toFixed(2);
+      // Custom rounding logic:
+      // If second decimal >= 6, round first decimal up
+      // Otherwise, truncate to 1 decimal
+      const rounded = Math.floor(totalKg * 10) / 10; // Get first decimal
+      const secondDecimal = Math.floor((totalKg * 100) % 10); // Get second decimal digit
+
+      if (secondDecimal >= 6) {
+        // Round up the first decimal
+        return (Math.ceil(totalKg * 10) / 10).toFixed(1);
+      } else {
+        // Keep first decimal as is
+        return rounded.toFixed(1);
+      }
     }
     return null;
   };
@@ -1860,13 +1871,15 @@ export default function AddDeal() {
                         <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <span className="font-semibold text-blue-800 dark:text-blue-200">Calculated Weight</span>
+                            <span className="font-semibold text-blue-800 dark:text-blue-200">
+                              Calculated Weight (KG) = <strong className="text-lg">{calculateWeightInKg()} KG</strong>
+                            </span>
                           </div>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            {form.watch("quantity")} sheets × {((form.watch("Deckle_mm") || 0) / 10).toFixed(1)}cm × {((form.watch("grain_mm") || 0) / 10).toFixed(1)}cm × {form.watch("GSM")} GSM = <strong>{calculateWeightInKg()} kg</strong>
-                          </p>
                           <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            Formula: (Sheets × Length × Breadth × GSM) ÷ 10,000,000
+                            Formula: (GSM × Deckle_cm × Grain_cm × Quantity) ÷ 10,000,000
+                          </p>
+                          <p className="text-xs text-blue-500 dark:text-blue-300 mt-1">
+                            {form.watch("quantity")} sheets × {((form.watch("Deckle_mm") || 0) / 10).toFixed(1)}cm × {((form.watch("grain_mm") || 0) / 10).toFixed(1)}cm × {form.watch("GSM")} GSM
                           </p>
                         </div>
                       )}
