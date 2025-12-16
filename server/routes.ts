@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { executeQuery, executeQuerySingle, pool } from "./database";
 import { sendEmail, generateInquiryEmail, generatePaymentSuccessEmail, type InquiryEmailData, type PaymentSuccessEmailData } from "./emailService";
 import * as sparePartCategoryService from "./sparePartCategoryService";
+import * as materialHierarchyService from "./materialHierarchyService";
 import { createSparePartTables } from "./createSparePartTables";
 import { runSparePartCategoriesMigration } from "./updateSparePartCategories";
 import searchRouter from "./searchRoutes";
@@ -3656,6 +3657,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Failed to fetch payment history',
         error: error.message
       });
+    }
+  });
+
+  // Material Hierarchy Routes
+  app.get('/api/material-hierarchy/grades', async (req, res) => {
+    try {
+      const grades = await materialHierarchyService.getGradesOfMaterial();
+      res.json(grades);
+    } catch (error) {
+      console.error("Error fetching grades of material:", error);
+      res.status(500).json({ message: "Failed to fetch grades of material" });
+    }
+  });
+
+  app.get('/api/material-hierarchy/material-kinds', async (req, res) => {
+    try {
+      const { gradeOfMaterial } = req.query;
+      const materialKinds = await materialHierarchyService.getMaterialKinds(gradeOfMaterial as string);
+      res.json(materialKinds);
+    } catch (error) {
+      console.error("Error fetching material kinds:", error);
+      res.status(500).json({ message: "Failed to fetch material kinds" });
+    }
+  });
+
+  app.get('/api/material-hierarchy/manufacturers', async (req, res) => {
+    try {
+      const { gradeOfMaterial, materialKind } = req.query;
+      const manufacturers = await materialHierarchyService.getMaterialManufacturers(
+        gradeOfMaterial as string,
+        materialKind as string
+      );
+      res.json(manufacturers);
+    } catch (error) {
+      console.error("Error fetching manufacturers:", error);
+      res.status(500).json({ message: "Failed to fetch manufacturers" });
+    }
+  });
+
+  app.get('/api/material-hierarchy/brands', async (req, res) => {
+    try {
+      const { gradeOfMaterial, materialKind, manufacturer } = req.query;
+      const brands = await materialHierarchyService.getMaterialBrands(
+        gradeOfMaterial as string,
+        materialKind as string,
+        manufacturer as string
+      );
+      res.json(brands);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+      res.status(500).json({ message: "Failed to fetch brands" });
     }
   });
 

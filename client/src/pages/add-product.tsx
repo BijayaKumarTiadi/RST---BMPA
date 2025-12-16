@@ -51,6 +51,17 @@ const isBoardGroup = (groupName: string): boolean => {
   return groupName?.toLowerCase().trim() === 'board';
 };
 
+// Helper function to check if group is Paper Reel
+const isPaperReelGroup = (groupName: string): boolean => {
+  return groupName?.toLowerCase().trim() === 'paper reel';
+};
+
+// Helper function to check if group uses material hierarchy
+const isMaterialHierarchyGroup = (groupName: string): boolean => {
+  return isPaperGroup(groupName) || isBoardGroup(groupName) || isPaperReelGroup(groupName);
+};
+
+
 // Single validation schema with conditional validation
 const dealSchema = z.object({
   groupID: z.string().min(1, "Product group is required"),
@@ -62,6 +73,7 @@ const dealSchema = z.object({
   makeText: z.string().optional(),
   gradeText: z.string().optional(),
   brandText: z.string().optional(),
+  gradeOfMaterial: z.string().optional(), // Grade of Material for Paper/Board
   GSM: z.coerce.number().optional(),
   Deckle_mm: z.coerce.number().optional(),
   grain_mm: z.coerce.number().optional(),
@@ -233,6 +245,13 @@ export default function AddDeal() {
   const [selectedMachineType, setSelectedMachineType] = useState("");
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
+
+  // Material hierarchy states (for Paper/Board)
+  const [selectedGradeOfMaterial, setSelectedGradeOfMaterial] = useState("");
+  const [selectedMaterialKind, setSelectedMaterialKind] = useState("");
+  const [selectedMaterialManufacturer, setSelectedMaterialManufacturer] = useState("");
+  const [selectedMaterialBrand, setSelectedMaterialBrand] = useState("");
+
 
   // Unit state - single unit selector for both Deckle and Grain
   const [dimensionUnit, setDimensionUnit] = useState("cm");
@@ -583,6 +602,91 @@ export default function AddDeal() {
       console.log('Manufacturers:', manufacturers, 'Loading:', manufacturersLoading);
     }
   }, [processes, categoryTypes, machineTypes, manufacturers, currentGroupName, processesLoading, categoryTypesLoading, machineTypesLoading, manufacturersLoading]);
+
+  // Material Hierarchy Queries (for Paper/Board products)
+  // Fetch Grades of Material
+  const { data: gradesOfMaterial } = useQuery({
+    queryKey: ['/api/material-hierarchy/grades'],
+    queryFn: async () => {
+      const response = await fetch('/api/material-hierarchy/grades');
+      if (!response.ok) throw new Error('Failed to fetch grades');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyGroup(currentGroupName || ''),
+  });
+
+  // Fetch Material Kinds (filtered by Grade of Material)
+  const { data: materialKinds } = useQuery({
+    queryKey: ['/api/material-hierarchy/material-kinds', selectedGradeOfMaterial],
+    queryFn: async () => {
+      const url = selectedGradeOfMaterial
+        ? `/api/material-hierarchy/material-kinds?gradeOfMaterial=${encodeURIComponent(selectedGradeOfMaterial)}`
+        : '/api/material-hierarchy/material-kinds';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch material kinds');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyGroup(currentGroupName || '') && !!selectedGradeOfMaterial,
+  });
+
+  // Fetch Manufacturers (filtered by Grade and Material Kind)
+  const { data: materialManufacturers } = useQuery({
+    queryKey: ['/api/material-hierarchy/manufacturers', selectedGradeOfMaterial, selectedMaterialKind],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedGradeOfMaterial) params.append('gradeOfMaterial', selectedGradeOfMaterial);
+      if (selectedMaterialKind) params.append('materialKind', selectedMaterialKind);
+      const response = await fetch(`/api/material-hierarchy/manufacturers?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch manufacturers');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyGroup(currentGroupName || '') && !!selectedMaterialKind,
+  });
+
+  // Fetch Brands (filtered by all previous selections)
+  const { data: materialBrands } = useQuery({
+    queryKey: ['/api/material-hierarchy/brands', selectedGradeOfMaterial, selectedMaterialKind, selectedMaterialManufacturer],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedGradeOfMaterial) params.append('gradeOfMaterial', selectedGradeOfMaterial);
+      if (selectedMaterialKind) params.append('materialKind', selectedMaterialKind);
+      if (selectedMaterialManufacturer) params.append('manufacturer', selectedMaterialManufacturer);
+      const response = await fetch(`/api/material-hierarchy/brands?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch brands');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyGroup(currentGroupName || '') && !!selectedMaterialManufacturer,
+  });
+
+  // Clear dependent fields when Grade of Material changes
+  useEffect(() => {
+    if (isMaterialHierarchyGroup(currentGroupName || '')) {
+      setSelectedMaterialKind("");
+      setSelectedMaterialManufacturer("");
+      setSelectedMaterialBrand("");
+      form.setValue("makeText", "");
+      form.setValue("gradeText", "");
+      form.setValue("brandText", "");
+    }
+  }, [selectedGradeOfMaterial, currentGroupName, form]);
+
+  // Clear dependent fields when Material Kind changes
+  useEffect(() => {
+    if (isMaterialHierarchyGroup(currentGroupName || '')) {
+      setSelectedMaterialManufacturer("");
+      setSelectedMaterialBrand("");
+      form.setValue("gradeText", "");
+      form.setValue("brandText", "");
+    }
+  }, [selectedMaterialKind, currentGroupName, form]);
+
+  // Clear Brand when Manufacturer changes
+  useEffect(() => {
+    if (isMaterialHierarchyGroup(currentGroupName || '')) {
+      setSelectedMaterialBrand("");
+      form.setValue("brandText", "");
+    }
+  }, [selectedMaterialManufacturer, currentGroupName, form]);
 
   // Show all options without filtering
   const filteredMakes = makes;
@@ -1564,123 +1668,270 @@ export default function AddDeal() {
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="makeText"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">Product Make <span className="text-red-500">*</span></FormLabel>
-                              <FormControl>
-                                <AutocompleteInput
-                                  value={makeText}
-                                  onChange={(value) => {
-                                    form.setValue("MakeID", value);
-                                    form.setValue("makeText", value);
-                                    setMakeText(value);
-                                  }}
-                                  onSelect={handleMakeChange}
-                                  onTextChange={(text) => {
-                                    form.setValue("makeText", text);
-                                    form.setValue("MakeID", "");
-                                    setMakeText(text);
-                                  }}
-                                  placeholder="Type to search or enter make..."
-                                  suggestions={filteredMakes}
-                                  displayField="make_Name"
-                                  valueField="make_ID"
-                                  testId="input-make"
-                                  allowFreeText={true}
-                                  maxLength={60}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {/* Conditional Field: Grade of Material for Paper/Board, Product Make for others */}
+                        {isMaterialHierarchyGroup(currentGroupName || '') ? (
+                          <FormField
+                            control={form.control}
+                            name="gradeOfMaterial"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-foreground">Grade of Material <span className="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                  <Select
+                                    value={selectedGradeOfMaterial}
+                                    onValueChange={(value) => {
+                                      setSelectedGradeOfMaterial(value);
+                                      form.setValue("gradeOfMaterial", value);
+                                    }}
+                                  >
+                                    <SelectTrigger className="bg-popover border-border text-foreground">
+                                      <SelectValue placeholder="Select grade of material" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover border-border">
+                                      {(gradesOfMaterial || []).map((grade: any) => (
+                                        <SelectItem key={grade.grade_of_material} value={grade.grade_of_material} className="text-foreground hover:bg-accent">
+                                          {grade.grade_of_material}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name="makeText"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-foreground">Product Make <span className="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                  <AutocompleteInput
+                                    value={makeText}
+                                    onChange={(value) => {
+                                      form.setValue("MakeID", value);
+                                      form.setValue("makeText", value);
+                                      setMakeText(value);
+                                    }}
+                                    onSelect={handleMakeChange}
+                                    onTextChange={(text) => {
+                                      form.setValue("makeText", text);
+                                      form.setValue("MakeID", "");
+                                      setMakeText(text);
+                                    }}
+                                    placeholder="Type to search or enter make..."
+                                    suggestions={filteredMakes}
+                                    displayField="make_Name"
+                                    valueField="make_ID"
+                                    testId="input-make"
+                                    allowFreeText={true}
+                                    maxLength={60}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
 
-                      {/* Second Row: Grade and Brand */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="gradeText"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">
-                                Grade {isKraftReelGroup(currentGroupName || '') ? "(Auto-filled)" : <span className="text-red-500">*</span>}
-                              </FormLabel>
-                              <FormControl>
-                                <AutocompleteInput
-                                  value={gradeText}
-                                  onChange={(value) => {
-                                    if (!isKraftReelGroup(currentGroupName || '')) {
-                                      form.setValue("GradeID", value);
-                                      form.setValue("gradeText", value);
-                                      setGradeText(value);
-                                    }
-                                  }}
-                                  onSelect={handleGradeChange}
-                                  onTextChange={(text) => {
-                                    if (!isKraftReelGroup(currentGroupName || '')) {
-                                      form.setValue("gradeText", text);
-                                      form.setValue("GradeID", "");
-                                      setGradeText(text);
-                                    }
-                                  }}
-                                  placeholder={isKraftReelGroup(currentGroupName || '') ? "Kraft Paper (auto-filled)" : "Type to search or enter grade..."}
-                                  suggestions={filteredGrades}
-                                  displayField="GradeName"
-                                  valueField="gradeID"
-                                  testId="input-grade"
-                                  allowFreeText={true}
-                                  maxLength={60}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      {/* Material Kind (Make), Manufacturer (Grade), Brand for Paper/Board */}
+                      {isMaterialHierarchyGroup(currentGroupName || '') && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Material Kind (replaces Make) */}
+                            <FormField
+                              control={form.control}
+                              name="makeText"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-foreground">Material Kind <span className="text-red-500">*</span></FormLabel>
+                                  <FormControl>
+                                    <Select
+                                      value={selectedMaterialKind}
+                                      onValueChange={(value) => {
+                                        setSelectedMaterialKind(value);
+                                        form.setValue("makeText", value);
+                                        setMakeText(value);
+                                      }}
+                                      disabled={!selectedGradeOfMaterial}
+                                    >
+                                      <SelectTrigger className="bg-popover border-border text-foreground">
+                                        <SelectValue placeholder={!selectedGradeOfMaterial ? "Select grade of material first" : "Select material kind"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover border-border">
+                                        {(materialKinds || []).map((kind: any) => (
+                                          <SelectItem key={kind.material_kind} value={kind.material_kind} className="text-foreground hover:bg-accent">
+                                            {kind.material_kind}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                        <FormField
-                          control={form.control}
-                          name="brandText"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground">
-                                Brand {isKraftReelGroup(currentGroupName || '') || isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
-                              </FormLabel>
-                              <FormControl>
-                                <AutocompleteInput
-                                  value={brandText}
-                                  onChange={(value) => {
-                                    if (!isKraftReelGroup(currentGroupName || '')) {
-                                      form.setValue("BrandID", value);
-                                      form.setValue("brandText", value);
-                                      setBrandText(value);
-                                    }
-                                  }}
-                                  onSelect={handleBrandChange}
-                                  onTextChange={(text) => {
-                                    if (!isKraftReelGroup(currentGroupName || '')) {
-                                      form.setValue("brandText", text);
-                                      form.setValue("BrandID", "");
-                                      setBrandText(text);
-                                    }
-                                  }}
-                                  placeholder={isKraftReelGroup(currentGroupName || '') ? "Not required for Kraft Reel" : "Type to search or enter brand..."}
-                                  suggestions={filteredBrands}
-                                  displayField="brandname"
-                                  valueField="brandID"
-                                  testId="input-brand"
-                                  allowFreeText={true}
-                                  maxLength={60}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                            {/* Manufacturer (replaces Grade) */}
+                            <FormField
+                              control={form.control}
+                              name="gradeText"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-foreground">Manufacturer <span className="text-red-500">*</span></FormLabel>
+                                  <FormControl>
+                                    <Select
+                                      value={selectedMaterialManufacturer}
+                                      onValueChange={(value) => {
+                                        setSelectedMaterialManufacturer(value);
+                                        form.setValue("gradeText", value);
+                                        setGradeText(value);
+                                      }}
+                                      disabled={!selectedMaterialKind}
+                                    >
+                                      <SelectTrigger className="bg-popover border-border text-foreground">
+                                        <SelectValue placeholder={!selectedMaterialKind ? "Select material kind first" : "Select manufacturer"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover border-border">
+                                        {(materialManufacturers || []).map((mfr: any) => (
+                                          <SelectItem key={mfr.manufacturer} value={mfr.manufacturer} className="text-foreground hover:bg-accent">
+                                            {mfr.manufacturer}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Brand Name */}
+                            <FormField
+                              control={form.control}
+                              name="brandText"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-foreground">Brand Name <span className="text-red-500">*</span></FormLabel>
+                                  <FormControl>
+                                    <Select
+                                      value={selectedMaterialBrand}
+                                      onValueChange={(value) => {
+                                        setSelectedMaterialBrand(value);
+                                        form.setValue("brandText", value);
+                                        setBrandText(value);
+                                      }}
+                                      disabled={!selectedMaterialManufacturer}
+                                    >
+                                      <SelectTrigger className="bg-popover border-border text-foreground">
+                                        <SelectValue placeholder={!selectedMaterialManufacturer ? "Select manufacturer first" : "Select brand"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover border-border">
+                                        {(materialBrands || []).map((brand: any) => (
+                                          <SelectItem key={brand.brand_name} value={brand.brand_name} className="text-foreground hover:bg-accent">
+                                            {brand.brand_name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Second Row: Grade and Brand (Hidden for Paper/Board) */}
+                      {!isMaterialHierarchyGroup(currentGroupName || '') && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={form.control}
+                            name="gradeText"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-foreground">
+                                  Grade {isKraftReelGroup(currentGroupName || '') ? "(Auto-filled)" : <span className="text-red-500">*</span>}
+                                </FormLabel>
+                                <FormControl>
+                                  <AutocompleteInput
+                                    value={gradeText}
+                                    onChange={(value) => {
+                                      if (!isKraftReelGroup(currentGroupName || '')) {
+                                        form.setValue("GradeID", value);
+                                        form.setValue("gradeText", value);
+                                        setGradeText(value);
+                                      }
+                                    }}
+                                    onSelect={handleGradeChange}
+                                    onTextChange={(text) => {
+                                      if (!isKraftReelGroup(currentGroupName || '')) {
+                                        form.setValue("gradeText", text);
+                                        form.setValue("GradeID", "");
+                                        setGradeText(text);
+                                      }
+                                    }}
+                                    placeholder={isKraftReelGroup(currentGroupName || '') ? "Kraft Paper (auto-filled)" : "Type to search or enter grade..."}
+                                    suggestions={filteredGrades}
+                                    displayField="GradeName"
+                                    valueField="gradeID"
+                                    testId="input-grade"
+                                    allowFreeText={true}
+                                    maxLength={60}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="brandText"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-foreground">
+                                  Brand {isKraftReelGroup(currentGroupName || '') || isCraftMake(currentMakeText || "") ? "(Optional)" : <span className="text-red-500">*</span>}
+                                </FormLabel>
+                                <FormControl>
+                                  <AutocompleteInput
+                                    value={brandText}
+                                    onChange={(value) => {
+                                      if (!isKraftReelGroup(currentGroupName || '')) {
+                                        form.setValue("BrandID", value);
+                                        form.setValue("brandText", value);
+                                        setBrandText(value);
+                                      }
+                                    }}
+                                    onSelect={handleBrandChange}
+                                    onTextChange={(text) => {
+                                      if (!isKraftReelGroup(currentGroupName || '')) {
+                                        form.setValue("brandText", text);
+                                        form.setValue("BrandID", "");
+                                        setBrandText(text);
+                                      }
+                                    }}
+                                    placeholder={isKraftReelGroup(currentGroupName || '') ? "Not required for Kraft Reel" : "Type to search or enter brand..."}
+                                    suggestions={filteredBrands}
+                                    displayField="brandname"
+                                    valueField="brandID"
+                                    testId="input-brand"
+                                    allowFreeText={true}
+                                    maxLength={60}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       {/* Description Row - Hidden but functional for backend */}
                       <div className="hidden">
