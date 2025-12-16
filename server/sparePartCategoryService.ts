@@ -49,7 +49,7 @@ export async function getCategoryTypes(process?: string): Promise<string[]> {
     'SELECT DISTINCT category_type FROM spare_part_categories WHERE category_type IS NOT NULL AND category_type != \'\' ORDER BY category_type'
   );
   const categoryTypes = results.map(r => r.category_type).filter(Boolean);
-  
+
   if (categoryTypes.length === 0) {
     return ['Electronics', 'Mechanical', 'Pneumatic'];
   }
@@ -57,14 +57,26 @@ export async function getCategoryTypes(process?: string): Promise<string[]> {
 }
 
 /**
- * Get machine types - independent of previous selections
+ * Get machine types - filtered by process only
  */
 export async function getMachineTypes(process?: string, categoryType?: string): Promise<string[]> {
-  const results = await executeQuery<{ machine_type: string }>(
-    'SELECT DISTINCT machine_type FROM spare_part_categories WHERE machine_type IS NOT NULL AND machine_type != \'\' ORDER BY machine_type'
-  );
-  const machineTypes = results.map(r => r.machine_type).filter(Boolean);
-  
+  let query = 'SELECT DISTINCT TRIM(machine_type) as machine_type FROM spare_part_categories WHERE machine_type IS NOT NULL AND TRIM(machine_type) != \'\'';
+  const params: any[] = [];
+
+  // Filter by process if provided - machine type depends on process
+  if (process) {
+    query += ' AND process = ?';
+    params.push(process);
+  }
+
+  query += ' ORDER BY machine_type';
+
+  const results = await executeQuery<{ machine_type: string }>(query, params);
+  const machineTypes = results
+    .map(r => r.machine_type)
+    .filter(Boolean)
+    .filter(mt => mt.trim() !== ''); // Extra filter to remove any whitespace-only values
+
   if (machineTypes.length === 0) {
     return ['Offset', 'Flexo', 'Digital', 'Screen', 'Perfect Binding', 'Saddle Stitch', 'Die Cutting', 'Flatbed', 'Folder Gluer', 'Box Making', 'Window Patcher', 'Film Applicator', 'Thermal', 'Cold', 'General'];
   }
@@ -72,8 +84,8 @@ export async function getMachineTypes(process?: string, categoryType?: string): 
 }
 
 /**
- * Get manufacturers - filtered by process
- * Manufacturer is linked to process, so dropdown shows only manufacturers for selected process
+ * Get manufacturers - filtered by process and machine_type
+ * Manufacturer is linked to process and machine type
  */
 export async function getManufacturers(
   process?: string,
@@ -82,15 +94,21 @@ export async function getManufacturers(
 ): Promise<string[]> {
   let query = 'SELECT DISTINCT manufacturer FROM spare_part_categories WHERE manufacturer IS NOT NULL';
   const params: any[] = [];
-  
-  // Filter by process if provided - this is the key relationship
+
+  // Filter by process if provided
   if (process) {
     query += ' AND process = ?';
     params.push(process);
   }
-  
+
+  // Filter by machine_type if provided - this is the key relationship
+  if (machineType) {
+    query += ' AND machine_type = ?';
+    params.push(machineType);
+  }
+
   query += ' ORDER BY manufacturer';
-  
+
   const results = await executeQuery<{ manufacturer: string }>(query, params);
   return results.map(r => r.manufacturer);
 }

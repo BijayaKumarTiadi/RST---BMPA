@@ -1614,7 +1614,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/spare-parts/machine-types', async (req, res) => {
     try {
-      const types = await sparePartCategoryService.getMachineTypes();
+      const { process, categoryType } = req.query;
+      const types = await sparePartCategoryService.getMachineTypes(process as string, categoryType as string);
       res.json(types);
     } catch (error) {
       console.error("Error fetching machine types:", error);
@@ -1624,8 +1625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/spare-parts/manufacturers', async (req, res) => {
     try {
-      const { process } = req.query;
-      const manufacturers = await sparePartCategoryService.getManufacturers(process as string);
+      const { process, machineType } = req.query;
+      const manufacturers = await sparePartCategoryService.getManufacturers(process as string, undefined, machineType as string);
       res.json(manufacturers);
     } catch (error) {
       console.error("Error fetching manufacturers:", error);
@@ -2590,13 +2591,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const result = await dealService.updateDeal(dealId, userId, updateData);
-      
+
       // Reset reminder flags when deal is updated (so 45-day countdown starts fresh)
       if (result.success) {
         const { dealReminderService } = await import('./dealReminderService');
         await dealReminderService.resetRemindersOnUpdate(dealId);
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error updating deal:", error);
@@ -2625,18 +2626,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/deals/:id/reminder-status', requireAuth, async (req: any, res) => {
     try {
       const dealId = parseInt(req.params.id);
-      
+
       if (isNaN(dealId)) {
         return res.status(400).json({ success: false, message: "Invalid deal ID" });
       }
-      
+
       const { dealReminderService } = await import('./dealReminderService');
       const status = await dealReminderService.getReminderStatus(dealId);
-      
+
       if (!status) {
         return res.status(404).json({ success: false, message: "Deal not found" });
       }
-      
+
       res.json({ success: true, data: status });
     } catch (error) {
       console.error("Error getting reminder status:", error);

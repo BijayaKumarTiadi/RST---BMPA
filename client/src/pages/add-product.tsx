@@ -509,36 +509,58 @@ export default function AddDeal() {
     enabled: isSparePartGroup(currentGroupName || ''),
   });
 
-  // Fetch machine types - independent of previous selections
+  // Fetch machine types - filtered by process only
   const { data: machineTypes, isLoading: machineTypesLoading } = useQuery({
-    queryKey: ['/api/spare-parts/machine-types'],
+    queryKey: ['/api/spare-parts/machine-types', selectedProcess],
     queryFn: async () => {
-      console.log('Fetching machine types...');
-      const response = await fetch(`/api/spare-parts/machine-types`);
+      console.log('Fetching machine types for process:', selectedProcess);
+      const params = new URLSearchParams();
+      if (selectedProcess) params.append('process', selectedProcess);
+
+      const url = `/api/spare-parts/machine-types${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch machine types');
       const data = await response.json();
       console.log('Machine types data:', data);
       return data;
     },
-    enabled: isSparePartGroup(currentGroupName || ''),
+    enabled: isSparePartGroup(currentGroupName || '') && !!selectedProcess,
   });
 
-  // Fetch manufacturers - filtered by Process
+  // Clear machine type when process changes
+  useEffect(() => {
+    if (isSparePartGroup(currentGroupName || '')) {
+      form.setValue('spareMachineType', '');
+      setSelectedMachineType('');
+    }
+  }, [selectedProcess, currentGroupName, form]);
+
+  // Fetch manufacturers - filtered by Process and Machine Type
   const { data: manufacturers, isLoading: manufacturersLoading } = useQuery({
-    queryKey: ['/api/spare-parts/manufacturers', selectedProcess],
+    queryKey: ['/api/spare-parts/manufacturers', selectedProcess, selectedMachineType],
     queryFn: async () => {
-      console.log('Fetching manufacturers for process:', selectedProcess);
-      const url = selectedProcess
-        ? `/api/spare-parts/manufacturers?process=${encodeURIComponent(selectedProcess)}`
-        : `/api/spare-parts/manufacturers`;
+      console.log('Fetching manufacturers for process:', selectedProcess, 'machineType:', selectedMachineType);
+      const params = new URLSearchParams();
+      if (selectedProcess) params.append('process', selectedProcess);
+      if (selectedMachineType) params.append('machineType', selectedMachineType);
+
+      const url = `/api/spare-parts/manufacturers${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch manufacturers');
       const data = await response.json();
       console.log('Manufacturers data:', data);
       return data;
     },
-    enabled: isSparePartGroup(currentGroupName || '') && !!selectedProcess,
+    enabled: isSparePartGroup(currentGroupName || '') && !!selectedProcess && !!selectedMachineType,
   });
+
+  // Clear manufacturer when process or machine type changes
+  useEffect(() => {
+    if (isSparePartGroup(currentGroupName || '')) {
+      form.setValue('spareManufacturer', '');
+      setSelectedManufacturer('');
+    }
+  }, [selectedProcess, selectedMachineType, currentGroupName, form]);
 
   // Debug log when data changes
   useEffect(() => {
@@ -1085,31 +1107,26 @@ export default function AddDeal() {
                           <FormItem>
                             <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
-                              <AutocompleteInput
+                              <Select
                                 value={field.value}
-                                onChange={(value) => {
-                                  setSelectedGroup(value);
-                                  form.setValue("groupID", value);
-                                }}
-                                onSelect={(value, item) => {
-                                  console.log('Group selected:', value, item);
-                                  handleGroupChange(value, item);
+                                onValueChange={(value) => {
+                                  const selectedItem = groups.find((g: any) => String(g.GroupID) === value);
+                                  console.log('Group selected:', value, selectedItem);
+                                  handleGroupChange(value, selectedItem);
                                   console.log('After handleGroupChange - currentGroupName:', form.getValues('groupName'));
                                 }}
-                                onTextChange={(text) => {
-                                  console.log('Group text changed:', text);
-                                  setSelectedGroupName(text);
-                                  form.setValue("groupName", text);
-                                  console.log('Is spare part group?', isSparePartGroup(text));
-                                }}
-                                placeholder="Type to search groups..."
-                                suggestions={groups}
-                                displayField="GroupName"
-                                valueField="GroupID"
-                                testId="input-group"
-                                allowFreeText={true}
-                                maxLength={120}
-                              />
+                              >
+                                <SelectTrigger className="bg-popover border-border text-foreground">
+                                  <SelectValue placeholder="Select product group" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border-border" style={{ zIndex: 9999 }}>
+                                  {groups?.map((group: any) => (
+                                    <SelectItem key={group.GroupID} value={String(group.GroupID)} className="text-foreground hover:bg-accent">
+                                      {group.GroupName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1155,24 +1172,25 @@ export default function AddDeal() {
                           )}
                         />
 
-                        <FormField
+                        <Controller
                           control={form.control}
                           name="spareMachineType"
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem>
                               <FormLabel className="text-foreground">Machine Type <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Select
-                                  value={field.value}
+                                  value={field.value || ""}
                                   onValueChange={(value) => {
                                     field.onChange(value);
                                     setSelectedMachineType(value);
                                   }}
+                                  disabled={!selectedProcess}
                                 >
                                   <SelectTrigger className="bg-popover border-border text-foreground">
-                                    <SelectValue placeholder="Select machine type" />
+                                    <SelectValue placeholder={!selectedProcess ? "Select process first" : "Select machine type"} />
                                   </SelectTrigger>
-                                  <SelectContent className="bg-popover border-border">
+                                  <SelectContent className="bg-popover border-border" style={{ zIndex: 9999 }}>
                                     {machineTypes?.map((type: string) => (
                                       <SelectItem key={type} value={type} className="text-foreground hover:bg-accent">
                                         {type}
@@ -1181,7 +1199,9 @@ export default function AddDeal() {
                                   </SelectContent>
                                 </Select>
                               </FormControl>
-                              <FormMessage />
+                              {fieldState.error && (
+                                <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>
+                              )}
                             </FormItem>
                           )}
                         />
@@ -1202,10 +1222,16 @@ export default function AddDeal() {
                                     field.onChange(value);
                                     setSelectedManufacturer(value);
                                   }}
-                                  disabled={!selectedProcess}
+                                  disabled={!selectedProcess || !selectedMachineType}
                                 >
                                   <SelectTrigger className="bg-popover border-border text-foreground">
-                                    <SelectValue placeholder={selectedProcess ? "Select manufacturer" : "Select process first"} />
+                                    <SelectValue placeholder={
+                                      !selectedProcess
+                                        ? "Select process first"
+                                        : !selectedMachineType
+                                          ? "Select machine type first"
+                                          : "Select manufacturer"
+                                    } />
                                   </SelectTrigger>
                                   <SelectContent className="bg-popover border-border">
                                     {manufacturers?.map((mfr: string) => (
@@ -1501,30 +1527,26 @@ export default function AddDeal() {
                             <FormItem>
                               <FormLabel className="text-foreground">Product Group <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
-                                <AutocompleteInput
+                                <Select
                                   value={field.value}
-                                  onChange={(value) => {
-                                    // Handle value change for form binding
-                                    setSelectedGroup(value);
-                                    form.setValue("groupID", value);
+                                  onValueChange={(value) => {
+                                    const selectedItem = groups.find((g: any) => String(g.GroupID) === value);
+                                    console.log('Group selected:', value, selectedItem);
+                                    handleGroupChange(value, selectedItem);
+                                    console.log('After handleGroupChange - currentGroupName:', form.getValues('groupName'));
                                   }}
-                                  onSelect={(value, item) => {
-                                    // Handle item selection with full data
-                                    handleGroupChange(value, item);
-                                  }}
-                                  onTextChange={(text) => {
-                                    // Handle free text entry
-                                    setSelectedGroupName(text);
-                                    form.setValue("groupName", text);
-                                  }}
-                                  placeholder="Type to search groups..."
-                                  suggestions={groups}
-                                  displayField="GroupName"
-                                  valueField="GroupID"
-                                  testId="input-group"
-                                  allowFreeText={true}
-                                  maxLength={60}
-                                />
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select product group" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    {groups.map((group: any) => (
+                                      <SelectItem key={group.GroupID} value={String(group.GroupID)} className="text-foreground hover:bg-accent">
+                                        {group.GroupName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                               <FormMessage />
                             </FormItem>

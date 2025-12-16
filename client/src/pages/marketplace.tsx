@@ -39,6 +39,7 @@ export default function Marketplace() {
     selectedCategories: [] as string[],
     selectedLocations: [] as string[],
     gsmRange: { min: "", max: "" },
+    quantityRange: { min: "", max: "" }, // Quantity range in KG for Paper/Board/Kraft
     dimensionRange: {
       deckle: { min: "", max: "" },
       grain: { min: "", max: "" }
@@ -198,7 +199,7 @@ export default function Marketplace() {
   // Auto-apply client filters when they change
   useEffect(() => {
     applyClientFilters();
-  }, [clientFilters, allPreciseSearchResults]);
+  }, [clientFilters, allPreciseSearchResults, appliedFilters.quantityRange]);
 
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     categories: true,
@@ -210,6 +211,7 @@ export default function Marketplace() {
     units: false,
     location: false,
     gsmRange: false,
+    quantityRange: false,
     priceRange: false,
     dimensionRange: false,
     // Spare part sections
@@ -400,7 +402,9 @@ export default function Marketplace() {
 
   if (searchResults?.maxRecords && allPreciseSearchResults.length > 0) {
     // Use filtered results if filters are applied, otherwise use all results
-    const rawData = hasClientFilters() ? filteredResults : allPreciseSearchResults;
+    const rawData = hasClientFilters() || appliedFilters.quantityRange.min || appliedFilters.quantityRange.max
+      ? filteredResults
+      : allPreciseSearchResults;
 
     // Apply client-side sorting first
     const sortedData = sortDeals(rawData, sortBy);
@@ -412,7 +416,27 @@ export default function Marketplace() {
     totalDeals = sortedData.length;
   } else {
     // Get raw data from search results or regular deals
-    const rawData = searchResults?.data || dealsData?.deals || [];
+    let rawData = searchResults?.data || dealsData?.deals || [];
+
+    // Apply quantity filter to regular deals
+    if (appliedFilters.quantityRange.min || appliedFilters.quantityRange.max) {
+      rawData = rawData.filter((deal: any) => {
+        let quantityInKg = deal.quantity || 0;
+
+        // Convert to KG based on unit
+        const unit = (deal.OfferUnit || deal.unit || '').toLowerCase();
+        if (unit === 'mt') {
+          quantityInKg = quantityInKg * 1000;
+        } else if (unit === 'kg') {
+          quantityInKg = quantityInKg;
+        }
+
+        const minQty = appliedFilters.quantityRange.min ? parseInt(appliedFilters.quantityRange.min) : 0;
+        const maxQty = appliedFilters.quantityRange.max ? parseInt(appliedFilters.quantityRange.max) : Infinity;
+
+        return quantityInKg >= minQty && quantityInKg <= maxQty;
+      });
+    }
 
     // Apply client-side sorting to existing data (NO API CALLS)
     const sortedData = sortDeals(rawData, sortBy);
@@ -479,6 +503,11 @@ export default function Marketplace() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // Reset page when quantity filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [appliedFilters.quantityRange]);
 
   // Load initial filter data when component mounts
   useEffect(() => {
@@ -774,6 +803,8 @@ export default function Marketplace() {
       appliedFilters.selectedLocations.length > 0 ||
       appliedFilters.gsmRange.min !== "" ||
       appliedFilters.gsmRange.max !== "" ||
+      appliedFilters.quantityRange.min !== "" ||
+      appliedFilters.quantityRange.max !== "" ||
       appliedFilters.dimensionRange.deckle.min !== "" ||
       appliedFilters.dimensionRange.deckle.max !== "" ||
       appliedFilters.dimensionRange.grain.min !== "" ||
@@ -790,6 +821,7 @@ export default function Marketplace() {
       selectedCategories: [],
       selectedLocations: [],
       gsmRange: { min: "", max: "" },
+      quantityRange: { min: "", max: "" },
       dimensionRange: {
         deckle: { min: "", max: "" },
         grain: { min: "", max: "" }
@@ -915,7 +947,7 @@ export default function Marketplace() {
 
   // Client-side filtering function
   const applyClientFilters = () => {
-    if (!hasClientFilters()) {
+    if (!hasClientFilters() && !appliedFilters.quantityRange.min && !appliedFilters.quantityRange.max) {
       setFilteredResults(allPreciseSearchResults);
       return;
     }
@@ -949,6 +981,27 @@ export default function Marketplace() {
       // Check states filter (from member profile)
       if (clientFilters.states.length > 0 && !clientFilters.states.includes(deal.member_state)) {
         return false;
+      }
+
+      // Quantity Range Filter (client-side) - Convert to KG
+      if (appliedFilters.quantityRange.min || appliedFilters.quantityRange.max) {
+        let quantityInKg = deal.quantity || 0;
+
+        // Convert to KG based on unit
+        const unit = (deal.OfferUnit || deal.unit || '').toLowerCase();
+        if (unit === 'mt') {
+          quantityInKg = quantityInKg * 1000;
+        } else if (unit === 'kg') {
+          quantityInKg = quantityInKg;
+        }
+        // For other units (Sheet, Reel, etc.), use as-is or skip filtering
+
+        const minQty = appliedFilters.quantityRange.min ? parseInt(appliedFilters.quantityRange.min) : 0;
+        const maxQty = appliedFilters.quantityRange.max ? parseInt(appliedFilters.quantityRange.max) : Infinity;
+
+        if (quantityInKg < minQty || quantityInKg > maxQty) {
+          return false;
+        }
       }
 
       // Spare part filters
@@ -2434,6 +2487,63 @@ export default function Marketplace() {
                         </div>
                       )}
                     </div>
+                    {/* Quantity Range Filter - Only for Paper/Board/Kraft */}
+                    <>
+                      <Separator />
+                      <div>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between p-0 h-auto font-semibold"
+                          onClick={() => toggleSection('quantityRange')}
+                        >
+                          Quantity Range (KG)
+                          {expandedSections.quantityRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                        {expandedSections.quantityRange && (
+                          <div className="mt-3 space-y-3">
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{appliedFilters.quantityRange.min || '0'} KG</span>
+                                <span>{appliedFilters.quantityRange.max || '1000'} KG</span>
+                              </div>
+                              <Slider
+                                min={0}
+                                max={1000}
+                                step={10}
+                                value={[
+                                  parseInt(appliedFilters.quantityRange.min) || 0,
+                                  parseInt(appliedFilters.quantityRange.max) || 1000
+                                ]}
+                                onValueChange={(values) => {
+                                  const newFilters = { ...appliedFilters };
+                                  newFilters.quantityRange.min = values[0].toString();
+                                  newFilters.quantityRange.max = values[1].toString();
+                                  setAppliedFilters(newFilters);
+                                }}
+                                className="w-full"
+                              />
+                              <div className="text-xs text-center text-muted-foreground">
+                                Drag to set range
+                              </div>
+                            </div>
+                            {(appliedFilters.quantityRange.min !== "" || appliedFilters.quantityRange.max !== "") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  const newFilters = { ...appliedFilters };
+                                  newFilters.quantityRange = { min: "", max: "" };
+                                  setAppliedFilters(newFilters);
+                                }}
+                              >
+                                Clear Quantity Filter
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   </>
                 )}
 
