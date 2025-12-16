@@ -2445,6 +2445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spare_model,
         spare_part_name,
         spare_part_no,
+        packing_type,
+        sheets_per_packet,
       } = req.body;
 
       // Check if this is a spare part submission
@@ -2543,6 +2545,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spare_model,
         spare_part_name,
         spare_part_no,
+        packing_type,
+        sheets_per_packet,
       }, userInfo);
 
       res.json(result);

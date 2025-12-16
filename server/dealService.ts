@@ -465,6 +465,8 @@ class DealService {
     spare_part_name?: string;
     spare_part_no?: string;
     show_rate_in_marketplace?: boolean;
+    packing_type?: string;
+    sheets_per_packet?: string;
   }, userInfo?: { member_id: number; name: string; company: string }, connection?: any): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
@@ -497,7 +499,17 @@ class DealService {
         spare_part_name,
         spare_part_no,
         show_rate_in_marketplace = true,
+        packing_type,
+        sheets_per_packet,
       } = dealData as any;
+
+      // DEBUG: Log packing fields
+      console.log('🔍 PACKING FIELDS DEBUG:', {
+        packing_type,
+        sheets_per_packet,
+        dealData_packing_type: (dealData as any).packing_type,
+        dealData_sheets_per_packet: (dealData as any).sheets_per_packet
+      });
 
       let finalMake, finalGrade, finalBrand, gsm, deckle_mm, grain_mm;
 
@@ -571,13 +583,21 @@ class DealService {
         sellerComments = `${deal_title}\n${deal_description}`;
       }
 
+      // DEBUG: Log values before INSERT
+      console.log('💾 VALUES BEFORE INSERT:', {
+        packing_type_value: packing_type || null,
+        sheets_per_packet_value: sheets_per_packet || null,
+        position_in_array: 'positions 19 and 20'
+      });
+
       const result = await executeQuery(`
         INSERT INTO deal_master (
           groupID, Make, Grade, Brand, memberID,
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
           GSM, Deckle_mm, grain_mm, search_key, StockAge,
-          created_by_member_id, created_by_name, created_by_company, show_rate_in_marketplace
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          created_by_member_id, created_by_name, created_by_company, show_rate_in_marketplace,
+          packing_type, sheets_per_packet
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         finalMake,
@@ -597,7 +617,9 @@ class DealService {
         userInfo?.member_id || seller_id,
         userInfo?.name || '',
         userInfo?.company || '',
-        show_rate_in_marketplace ? 1 : 0
+        show_rate_in_marketplace ? 1 : 0,
+        packing_type || null,
+        sheets_per_packet || null
       ], 3, connection);
 
       const insertId = (result as any).insertId;
@@ -758,6 +780,18 @@ class DealService {
       if (show_rate_in_marketplace !== undefined) {
         updateFields.push(`show_rate_in_marketplace = ?`);
         updateValues.push(show_rate_in_marketplace ? 1 : 0);
+      }
+
+      // Handle packing_type
+      if ((updateData as any).packing_type !== undefined) {
+        updateFields.push(`packing_type = ?`);
+        updateValues.push((updateData as any).packing_type || null);
+      }
+
+      // Handle sheets_per_packet
+      if ((updateData as any).sheets_per_packet !== undefined) {
+        updateFields.push(`sheets_per_packet = ?`);
+        updateValues.push((updateData as any).sheets_per_packet || null);
       }
 
       // Skip fields that don't exist in the deal_master table

@@ -94,6 +94,9 @@ const dealSchema = z.object({
   // Offer rate fields
   offerRate: z.coerce.number().min(0, "Rate must be 0 or greater").optional(),
   showRateInMarketplace: z.boolean().default(true),
+  // Packing fields
+  packingType: z.string().optional(),
+  sheetsPerPacket: z.string().optional(),
 }).superRefine((data, ctx) => {
   const isKraftReel = isKraftReelGroup(data.groupName || '');
   const isSparePart = isSparePartGroup(data.groupName || '');
@@ -410,6 +413,8 @@ export default function AddDeal() {
       Seller_comments: "",
       offerRate: "" as any,
       showRateInMarketplace: true,
+      packingType: "",
+      sheetsPerPacket: "",
     },
     mode: "onChange",
   });
@@ -847,6 +852,8 @@ export default function AddDeal() {
           StockAge: data.stockAge || 0,
           location: 'India',
           show_rate_in_marketplace: data.showRateInMarketplace ?? true,
+          packing_type: data.packingType || null,
+          sheets_per_packet: data.sheetsPerPacket || null,
         };
 
         console.log('✅ SPARE PART PAYLOAD:', JSON.stringify(payload, null, 2));
@@ -881,6 +888,8 @@ export default function AddDeal() {
           },
           location: 'India',
           show_rate_in_marketplace: data.showRateInMarketplace ?? true,
+          packing_type: data.packingType || null,
+          sheets_per_packet: data.sheetsPerPacket || null,
         };
 
         console.log('Regular product payload being sent to backend:', payload);
@@ -2303,7 +2312,71 @@ export default function AddDeal() {
                         Add any additional comments or details about the stock
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
+                      {/* Packing Type and Sheets Per Packet */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="packingType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Packing Type</FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select packing type" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    <SelectItem value="Original MILL Packing" className="text-foreground hover:bg-accent">
+                                      Original MILL Packing
+                                    </SelectItem>
+                                    <SelectItem value="Repack by the seller" className="text-foreground hover:bg-accent">
+                                      Repack by the seller
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="sheetsPerPacket"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground">Sheets Per Packet</FormLabel>
+                              <FormControl>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger className="bg-popover border-border text-foreground">
+                                    <SelectValue placeholder="Select sheets per packet" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border-border">
+                                    <SelectItem value="50" className="text-foreground hover:bg-accent">50</SelectItem>
+                                    <SelectItem value="72" className="text-foreground hover:bg-accent">72</SelectItem>
+                                    <SelectItem value="100" className="text-foreground hover:bg-accent">100</SelectItem>
+                                    <SelectItem value="144" className="text-foreground hover:bg-accent">144</SelectItem>
+                                    <SelectItem value="150" className="text-foreground hover:bg-accent">150</SelectItem>
+                                    <SelectItem value="200" className="text-foreground hover:bg-accent">200</SelectItem>
+                                    <SelectItem value="250" className="text-foreground hover:bg-accent">250</SelectItem>
+                                    <SelectItem value="500" className="text-foreground hover:bg-accent">500</SelectItem>
+                                    <SelectItem value="Others" className="text-foreground hover:bg-accent">Others</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <FormField
                         control={form.control}
                         name="Seller_comments"

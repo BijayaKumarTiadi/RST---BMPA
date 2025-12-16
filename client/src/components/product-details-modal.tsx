@@ -35,10 +35,10 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
   // Helper function to format Deckle with conversions
   const formatDeckleWithConversions = (deckle_mm?: number, groupName?: string, groupID?: number | string) => {
     if (!deckle_mm) return null;
-    
+
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
     const isKraftReel = isKraftReelGroup(groupName || '', groupID);
-    
+
     if (isKraftReel) {
       // For Kraft Reel: show only user's preferred unit, no conversions
       if (userUnit === 'inch') {
@@ -65,9 +65,9 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
   // Helper function to format Grain (for normal products)
   const formatGrainWithConversions = (grain_mm?: number) => {
     if (!grain_mm) return null;
-    
+
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
-    
+
     // Show only user's preferred unit
     if (userUnit === 'inch') {
       const grainInch = (grain_mm / 25.4).toFixed(2);
@@ -158,6 +158,18 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                   <span className="ml-2 font-medium">{deal.quantity} {deal.OfferUnit || deal.Unit || ''}</span>
                 </div>
               )}
+              {deal.packing_type && (
+                <div>
+                  <span className="text-muted-foreground">Packing Type:</span>
+                  <span className="ml-2 font-medium">{deal.packing_type}</span>
+                </div>
+              )}
+              {deal.sheets_per_packet && (
+                <div>
+                  <span className="text-muted-foreground">Sheets Per Packet:</span>
+                  <span className="ml-2 font-medium">{deal.sheets_per_packet}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -222,7 +234,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
           {/* Action Buttons */}
           <div className="flex gap-3 mt-4">
             {onSendEnquiry && (
-              <Button 
+              <Button
                 onClick={() => onSendEnquiry(deal)}
                 className="flex-1"
                 size="lg"
@@ -232,7 +244,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
               </Button>
             )}
             {onSendWhatsApp && (
-              <Button 
+              <Button
                 onClick={() => onSendWhatsApp(deal)}
                 variant="secondary"
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"

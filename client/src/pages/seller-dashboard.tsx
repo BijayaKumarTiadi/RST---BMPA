@@ -39,7 +39,7 @@ export default function SellerDashboard() {
   // Helper function to calculate relative time
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'N/A';
-    
+
     const now = new Date();
     const date = new Date(dateString);
     const diffInMs = now.getTime() - date.getTime();
@@ -66,10 +66,10 @@ export default function SellerDashboard() {
   // Helper function to format dimensions based on user preference
   const formatDimensions = (deckle_mm?: number, grain_mm?: number, groupName?: string, groupID?: number) => {
     if (!deckle_mm || !grain_mm) return 'N/A';
-    
+
     const userUnit = (userSettings as any)?.dimension_unit || 'cm';
     const isKraftReel = isKraftReelGroup(groupName || '', groupID);
-    
+
     if (isKraftReel) {
       // For Kraft Reel: use "," separator and show original grain_mm value with "B.S" suffix
       if (userUnit === 'inch') {
@@ -119,7 +119,7 @@ export default function SellerDashboard() {
   // Helper function to format stock age from API's StockAge field (days)
   const formatStockAge = (stockAgeDays: number) => {
     if (stockAgeDays === undefined || stockAgeDays === null) return 'N/A';
-    
+
     if (stockAgeDays === 0) {
       return 'Fresh';
     } else if (stockAgeDays === 1) {
@@ -145,7 +145,7 @@ export default function SellerDashboard() {
     const reminder1Sent = deal.reminder_1_sent === 1;
     const reminder2Sent = deal.reminder_2_sent === 1;
     const reminder3Sent = deal.reminder_3_sent === 1;
-    
+
     // Determine status color and message
     if (daysUntilDeactivation <= 0 || deal.StockStatus === 0) {
       return {
@@ -324,7 +324,7 @@ export default function SellerDashboard() {
   const receivedOrdersArray = receivedOrders || [];
   const sentOrdersArray = sentOrders || [];
   const allOrders = [...receivedOrdersArray, ...sentOrdersArray];
-  
+
   // Sort by created_at date (newest first)
   allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -351,25 +351,25 @@ export default function SellerDashboard() {
   // Filter deals based on search and status
   const filteredDeals = deals.filter((deal: any) => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === "" || 
-                         deal.Seller_comments?.toLowerCase().includes(searchLower) ||
-                         deal.stock_description?.toLowerCase().includes(searchLower) ||
-                         deal.GroupName?.toLowerCase().includes(searchLower) ||
-                         deal.Make?.toLowerCase().includes(searchLower) ||
-                         deal.Grade?.toLowerCase().includes(searchLower) ||
-                         deal.Brand?.toLowerCase().includes(searchLower) ||
-                         deal.GSM?.toString().includes(searchTerm) ||
-                         deal.Deckle_mm?.toString().includes(searchTerm) ||
-                         deal.grain_mm?.toString().includes(searchTerm) ||
-                         deal.TransID.toString().includes(searchTerm) ||
-                         deal.category_name?.toLowerCase().includes(searchLower);
-    
+    const matchesSearch = searchTerm === "" ||
+      deal.Seller_comments?.toLowerCase().includes(searchLower) ||
+      deal.stock_description?.toLowerCase().includes(searchLower) ||
+      deal.GroupName?.toLowerCase().includes(searchLower) ||
+      deal.Make?.toLowerCase().includes(searchLower) ||
+      deal.Grade?.toLowerCase().includes(searchLower) ||
+      deal.Brand?.toLowerCase().includes(searchLower) ||
+      deal.GSM?.toString().includes(searchTerm) ||
+      deal.Deckle_mm?.toString().includes(searchTerm) ||
+      deal.grain_mm?.toString().includes(searchTerm) ||
+      deal.TransID.toString().includes(searchTerm) ||
+      deal.category_name?.toLowerCase().includes(searchLower);
+
     const stockStatus = deal.StockStatus || 1; // Default to Active if null
-    const matchesStatus = statusFilter === "all" || 
-                         (statusFilter === "active" && stockStatus === 1) ||
-                         (statusFilter === "sold" && stockStatus === 2) ||
-                         (statusFilter === "inactive" && stockStatus === 0);
-    
+    const matchesStatus = statusFilter === "all" ||
+      (statusFilter === "active" && stockStatus === 1) ||
+      (statusFilter === "sold" && stockStatus === 2) ||
+      (statusFilter === "inactive" && stockStatus === 0);
+
     return matchesSearch && matchesStatus;
   });
 
@@ -393,7 +393,7 @@ export default function SellerDashboard() {
   return (
     <div className="min-h-screen bg-muted">
       <Navigation />
-      
+
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
         {/* Header */}
         <div className="mb-4 sm:mb-8">
@@ -404,9 +404,9 @@ export default function SellerDashboard() {
                 Welcome back, {user?.mname || user?.name}! Manage your products and track your business.
               </p>
             </div>
-            <Button 
-              asChild 
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg" 
+            <Button
+              asChild
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
               data-testid="button-add-deal"
             >
               <Link href="/add-product">
@@ -431,7 +431,7 @@ export default function SellerDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-100">Total Offers</CardTitle>
@@ -444,7 +444,7 @@ export default function SellerDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-purple-100">Sold Offers</CardTitle>
@@ -459,7 +459,7 @@ export default function SellerDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           {user?.user_type === 'parent' && (
             <Card className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-0 cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/manage-users')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -493,7 +493,7 @@ export default function SellerDashboard() {
                 <div className="flex-1">
                   <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm">Listing Health System</h4>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    Listings expire after 45 days without updates. You'll receive reminders at 15, 30, and 45 days. 
+                    Listings expire after 45 days without updates. You'll receive reminders at 15, 30, and 45 days.
                     <strong> Update or edit your listings to reset the timer!</strong>
                   </p>
                   <div className="flex flex-wrap items-center gap-4 mt-2 text-xs">
@@ -591,8 +591,8 @@ export default function SellerDashboard() {
                         </TableHeader>
                         <TableBody>
                           {filteredDeals.map((deal: any) => (
-                            <TableRow 
-                              key={deal.TransID} 
+                            <TableRow
+                              key={deal.TransID}
                               className="hover:bg-muted/50 transition-colors"
                               data-testid={`deal-row-${deal.TransID}`}
                             >
@@ -621,7 +621,7 @@ export default function SellerDashboard() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col gap-1">
-                                  <Badge 
+                                  <Badge
                                     variant="secondary"
                                     className={getStatusColor(deal.StockStatus || 1)}
                                     data-testid={`deal-status-${deal.TransID}`}
@@ -667,8 +667,8 @@ export default function SellerDashboard() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="ghost"
                                     onClick={() => {
                                       setSelectedDeal(deal);
@@ -679,9 +679,9 @@ export default function SellerDashboard() {
                                   >
                                     <Eye className="h-4 w-4 text-blue-600" />
                                   </Button>
-                                  
-                                  <Button 
-                                    size="sm" 
+
+                                  <Button
+                                    size="sm"
                                     variant="ghost"
                                     asChild
                                     className="h-8 w-8 p-0 hover:bg-green-100"
@@ -691,9 +691,9 @@ export default function SellerDashboard() {
                                       <Edit2 className="h-4 w-4 text-green-600" />
                                     </Link>
                                   </Button>
-                                  
-                                  <Button 
-                                    size="sm" 
+
+                                  <Button
+                                    size="sm"
                                     variant="ghost"
                                     onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
                                     disabled={markAsSoldMutation.isPending || (deal.StockStatus || 1) === 2}
@@ -703,9 +703,9 @@ export default function SellerDashboard() {
                                     <IndianRupee className="h-3 w-3 text-orange-600 mr-1" />
                                     Sold
                                   </Button>
-                                  
-                                  <Button 
-                                    size="sm" 
+
+                                  <Button
+                                    size="sm"
                                     variant="ghost"
                                     onClick={() => {
                                       if (confirm('Are you sure you want to delete this product?')) {
@@ -744,7 +744,7 @@ export default function SellerDashboard() {
                                 </div>
                               </div>
                               <div className="flex flex-col gap-1 items-end">
-                                <Badge 
+                                <Badge
                                   variant="secondary"
                                   className={`text-xs ${getStatusColor(deal.StockStatus || 1)}`}
                                   data-testid={`deal-status-${deal.TransID}`}
@@ -845,8 +845,8 @@ export default function SellerDashboard() {
 
                             {/* Action Buttons */}
                             <div className="flex gap-2 pt-3 border-t border-border">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 asChild
                                 className="flex-1 text-xs"
@@ -857,9 +857,9 @@ export default function SellerDashboard() {
                                   View
                                 </Link>
                               </Button>
-                              
-                              <Button 
-                                size="sm" 
+
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 asChild
                                 className="flex-1 text-xs"
@@ -870,9 +870,9 @@ export default function SellerDashboard() {
                                   Edit
                                 </Link>
                               </Button>
-                              
-                              <Button 
-                                size="sm" 
+
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => markAsSoldMutation.mutate(deal.TransID.toString())}
                                 disabled={markAsSoldMutation.isPending || (deal.StockStatus || 1) === 2}
@@ -882,9 +882,9 @@ export default function SellerDashboard() {
                                 <IndianRupee className="h-3 w-3 mr-1" />
                                 Sold
                               </Button>
-                              
-                              <Button 
-                                size="sm" 
+
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   if (confirm('Are you sure you want to delete this product?')) {
@@ -942,8 +942,8 @@ export default function SellerDashboard() {
                     </TableHeader>
                     <TableBody>
                       {sellerInquiries.inquiries.map((inquiry: any) => (
-                        <TableRow 
-                          key={inquiry.id} 
+                        <TableRow
+                          key={inquiry.id}
                           className="hover:bg-muted/50 transition-colors"
                           data-testid={`inquiry-row-${inquiry.id}`}
                         >
@@ -964,12 +964,11 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              className={`text-base font-medium ${
-                                inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                                inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}
+                              className={`text-base font-medium ${inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                                  inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                    inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-gray-100 text-gray-700'
+                                }`}
                               data-testid={`inquiry-status-${inquiry.id}`}
                             >
                               {inquiry.status || 'open'}
@@ -982,8 +981,8 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   setSelectedEnquiry(inquiry);
@@ -994,7 +993,7 @@ export default function SellerDashboard() {
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
-                              
+
                               {inquiry.buyerEmail && (
                                 <Button
                                   size="sm"
@@ -1055,8 +1054,8 @@ export default function SellerDashboard() {
                     </TableHeader>
                     <TableBody>
                       {buyerInquiries.inquiries.map((inquiry: any) => (
-                        <TableRow 
-                          key={inquiry.id} 
+                        <TableRow
+                          key={inquiry.id}
                           className="hover:bg-muted/50 transition-colors"
                           data-testid={`sent-inquiry-row-${inquiry.id}`}
                         >
@@ -1080,12 +1079,11 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              className={`text-base font-medium ${
-                                inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                                inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}
+                              className={`text-base font-medium ${inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                                  inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                    inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-gray-100 text-gray-700'
+                                }`}
                               data-testid={`sent-inquiry-status-${inquiry.id}`}
                             >
                               {inquiry.status || 'open'}
@@ -1098,8 +1096,8 @@ export default function SellerDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   setSelectedEnquiry(inquiry);
@@ -1110,7 +1108,7 @@ export default function SellerDashboard() {
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
-                              
+
                               {inquiry.sellerEmail && (
                                 <Button
                                   size="sm"
@@ -1163,12 +1161,12 @@ export default function SellerDashboard() {
                     <p className="text-sm font-medium text-muted-foreground">Status</p>
                     <Badge className={
                       selectedOrder.status === 'inquiry' ? 'bg-blue-100 text-blue-700' :
-                      selectedOrder.status === 'sent' ? 'bg-purple-100 text-purple-700' :
-                      'bg-gray-100 text-gray-700'
+                        selectedOrder.status === 'sent' ? 'bg-purple-100 text-purple-700' :
+                          'bg-gray-100 text-gray-700'
                     }>
                       {selectedOrder.status === 'inquiry' ? 'Received Enquiry' :
-                       selectedOrder.status === 'sent' ? 'Sent Enquiry' :
-                       selectedOrder.status}
+                        selectedOrder.status === 'sent' ? 'Sent Enquiry' :
+                          selectedOrder.status}
                     </Badge>
                   </div>
                   <div>
@@ -1186,7 +1184,7 @@ export default function SellerDashboard() {
                   <h3 className="text-lg font-semibold">Product Information</h3>
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-semibold text-lg mb-2">{selectedOrder.product_title}</h4>
-                    
+
                     {/* Product Details */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -1208,8 +1206,8 @@ export default function SellerDashboard() {
                       <div>
                         <span className="text-muted-foreground">Dimensions:</span>
                         <span className="ml-2 font-medium">
-                          {selectedOrder.deckle && selectedOrder.grain 
-                            ? `${selectedOrder.deckle}×${selectedOrder.grain}mm` 
+                          {selectedOrder.deckle && selectedOrder.grain
+                            ? `${selectedOrder.deckle}×${selectedOrder.grain}mm`
                             : 'N/A'}
                         </span>
                       </div>
@@ -1250,7 +1248,7 @@ export default function SellerDashboard() {
                         <p className="font-semibold">{selectedOrder.buyer_quantity || 'Not specified'}</p>
                       </div>
                     </div>
-                    
+
                     {selectedOrder.buyer_message && (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">Message</p>
@@ -1278,9 +1276,9 @@ export default function SellerDashboard() {
                       Reply via Gmail
                     </Button>
                   )}
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     onClick={() => setIsOrderModalOpen(false)}
                   >
                     Close
@@ -1306,7 +1304,7 @@ export default function SellerDashboard() {
                     <p className="text-xs font-medium text-muted-foreground">Description</p>
                     <p className="text-sm font-semibold">{selectedDeal.stock_description || selectedDeal.Seller_comments || 'N/A'}</p>
                   </div>
-                  
+
                   {/* Product Attributes Grid */}
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
@@ -1404,6 +1402,26 @@ export default function SellerDashboard() {
                   </div>
                 </div>
 
+                {/* Packing Information */}
+                {(selectedDeal.packing_type || selectedDeal.sheets_per_packet) && (
+                  <div className="p-3 border rounded-lg">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {selectedDeal.packing_type && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Packing Type</p>
+                          <p className="text-sm font-semibold">{selectedDeal.packing_type}</p>
+                        </div>
+                      )}
+                      {selectedDeal.sheets_per_packet && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Sheets Per Packet</p>
+                          <p className="text-sm font-semibold">{selectedDeal.sheets_per_packet}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Seller Comments */}
                 {selectedDeal.Seller_comments && (
                   <div className="p-3 border rounded-lg">
@@ -1414,7 +1432,7 @@ export default function SellerDashboard() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-3 border-t">
-                  <Button 
+                  <Button
                     asChild
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                   >
@@ -1423,9 +1441,9 @@ export default function SellerDashboard() {
                       Edit Product
                     </Link>
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     onClick={() => setViewModalOpen(false)}
                   >
                     Close
@@ -1435,14 +1453,14 @@ export default function SellerDashboard() {
             )}
           </DialogContent>
         </Dialog>
-        
+
         {/* Enquiry Details Modal */}
         <Dialog open={inquiryModalOpen} onOpenChange={setEnquiryModalOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="pb-2">
               <DialogTitle>Enquiry Details</DialogTitle>
             </DialogHeader>
-            
+
             {selectedEnquiry && (
               <div className="space-y-2">
                 {/* Buyer Information */}
@@ -1502,12 +1520,11 @@ export default function SellerDashboard() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Status</p>
-                      <Badge className={`text-xs ${
-                        selectedEnquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                        selectedEnquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                        selectedEnquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                      <Badge className={`text-xs ${selectedEnquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                          selectedEnquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                            selectedEnquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                        }`}>
                         {selectedEnquiry.status || 'open'}
                       </Badge>
                     </div>
@@ -1520,7 +1537,7 @@ export default function SellerDashboard() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {selectedEnquiry.message && (
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground mb-1">Message</p>
@@ -1544,7 +1561,7 @@ export default function SellerDashboard() {
                       Reply via Gmail
                     </Button>
                   )}
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => setEnquiryModalOpen(false)}
