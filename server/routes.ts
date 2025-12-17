@@ -64,50 +64,289 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRouter);
 
   // IMPORTANT: Register spare-parts routes BEFORE search routes to prevent conflicts
-  // Export Deals - Moved to top to avoid route conflict
+  // Export Deals with Material Hierarchy - includes all offers and dropdown lists for re-upload
   app.get('/api/deals/export', requireAuth, async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
 
+      // Fetch all active offers for this seller (including Spare Parts now excluded from material hierarchy)
       const deals = await executeQuery(`
         SELECT dm.*, sg.GroupName,
-        COALESCE(m.make_Name, dm.Make) as ResolvedMake,
-        COALESCE(gr.GradeName, dm.Grade) as ResolvedGrade,
-        COALESCE(b.brandname, dm.Brand) as ResolvedBrand
+        COALESCE(dm.Make, '') as ResolvedMake,
+        COALESCE(dm.Grade, '') as ResolvedGrade,
+        COALESCE(dm.Brand, '') as ResolvedBrand,
+        COALESCE(dm.grade_of_material, '') as GradeOfMaterial
         FROM deal_master dm
         LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
-        LEFT JOIN stock_make_master m ON dm.Make = m.make_ID
-        LEFT JOIN stock_grade gr ON dm.Grade = gr.gradeID
-        LEFT JOIN stock_brand b ON dm.Brand = b.brandID
-        WHERE dm.created_by_member_id = ? AND dm.StockStatus = 1 AND dm.GSM > 0 AND dm.Deckle_mm > 0
+        WHERE dm.created_by_member_id = ? AND dm.StockStatus = 1
         ORDER BY dm.TransID DESC
       `, [sellerId]);
 
+      // Fetch material hierarchy data for dropdowns
+      const gradesOfMaterial = await executeQuery(`SELECT DISTINCT grade_of_material FROM material_hierarchy WHERE grade_of_material IS NOT NULL ORDER BY grade_of_material`);
+      const materialKinds = await executeQuery(`SELECT DISTINCT material_kind FROM material_hierarchy WHERE material_kind IS NOT NULL ORDER BY material_kind`);
+      const manufacturers = await executeQuery(`SELECT DISTINCT manufacturer FROM material_hierarchy WHERE manufacturer IS NOT NULL ORDER BY manufacturer`);
+      const brands = await executeQuery(`SELECT DISTINCT brand_name FROM material_hierarchy WHERE brand_name IS NOT NULL ORDER BY brand_name`);
+      
+      // Get stock groups
+      const groups = await executeQuery(`SELECT GroupID, GroupName FROM stock_groups ORDER BY GroupName`);
+
+      const boardTypes = groups.map((g: any) => g.GroupName);
+      const units = ['MT', 'Kg', 'Sheet', 'Pkt', 'Nos', 'Reel'];
+
       const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet('My Offers');
+      workbook.creator = 'Stock Laabh';
+      workbook.created = new Date();
 
-      sheet.addRow([
-        'TransID (Do not edit)', 'Group ID', 'Group Name', 'Make', 'Grade', 'Brand',
-        'GSM', 'Deckle (cm)', 'Grain (cm)', 'Unit', 'Quantity', 'Rate', 'Show Rate (Yes/No)', 'Comments'
-      ]);
+      // Create main Offers sheet FIRST
+      const offersSheet = workbook.addWorksheet('Offers');
 
+      // Create Reference Values sheet (hidden dropdown sources)
+      const refSheet = workbook.addWorksheet('Lists');
+
+      // Populate Lists sheet with dropdown values
+      // Column A: Board Types (Group Names)
+      refSheet.getColumn(1).width = 20;
+      refSheet.getCell('A1').value = 'Board Types';
+      boardTypes.forEach((type: string, i: number) => {
+        refSheet.getCell(`A${i + 2}`).value = type;
+      });
+
+      // Column B: Grade of Material
+      refSheet.getColumn(2).width = 25;
+      refSheet.getCell('B1').value = 'Grade of Material';
+      gradesOfMaterial.forEach((g: any, i: number) => {
+        refSheet.getCell(`B${i + 2}`).value = g.grade_of_material;
+      });
+
+      // Column C: Material Kind
+      refSheet.getColumn(3).width = 25;
+      refSheet.getCell('C1').value = 'Material Kind';
+      materialKinds.forEach((k: any, i: number) => {
+        refSheet.getCell(`C${i + 2}`).value = k.material_kind;
+      });
+
+      // Column D: Manufacturer
+      refSheet.getColumn(4).width = 25;
+      refSheet.getCell('D1').value = 'Manufacturer';
+      manufacturers.forEach((m: any, i: number) => {
+        refSheet.getCell(`D${i + 2}`).value = m.manufacturer;
+      });
+
+      // Column E: Brands
+      refSheet.getColumn(5).width = 25;
+      refSheet.getCell('E1').value = 'Brands';
+      brands.forEach((b: any, i: number) => {
+        refSheet.getCell(`E${i + 2}`).value = b.brand_name;
+      });
+
+      // Column F: Units
+      refSheet.getColumn(6).width = 10;
+      refSheet.getCell('F1').value = 'Units';
+      units.forEach((unit, i) => {
+        refSheet.getCell(`F${i + 2}`).value = unit;
+      });
+
+      // Column G: Show Rate
+      refSheet.getColumn(7).width = 15;
+      refSheet.getCell('G1').value = 'Show Rate';
+      refSheet.getCell('G2').value = 'Yes';
+      refSheet.getCell('G3').value = 'No';
+
+      // Style Lists header row
+      const listsHeaderRow = refSheet.getRow(1);
+      listsHeaderRow.font = { bold: true };
+
+      // Configure Offers sheet columns
+      offersSheet.columns = [
+        { header: 'TransID (Do not edit)', key: 'transId', width: 18 },
+        { header: 'Board Type*', key: 'boardType', width: 15 },
+        { header: 'Grade of Material*', key: 'gradeOfMaterial', width: 20 },
+        { header: 'Material Kind*', key: 'materialKind', width: 20 },
+        { header: 'Manufacturer*', key: 'manufacturer', width: 20 },
+        { header: 'Brand', key: 'brand', width: 20 },
+        { header: 'GSM*', key: 'gsm', width: 10 },
+        { header: 'Deckle (cm)*', key: 'deckle', width: 12 },
+        { header: 'Grain (cm)*', key: 'grain', width: 12 },
+        { header: 'Unit*', key: 'unit', width: 10 },
+        { header: 'Quantity*', key: 'quantity', width: 12 },
+        { header: 'Rate (Rs)', key: 'rate', width: 12 },
+        { header: 'Show Rate', key: 'showRate', width: 12 },
+        { header: 'Stock Age', key: 'stockAge', width: 12 },
+        { header: 'Comments', key: 'comments', width: 30 }
+      ];
+
+      // Style header row
+      const headerRow = offersSheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // Add existing deals data
       deals.forEach((deal: any) => {
-        sheet.addRow([
-          deal.TransID,
-          deal.groupID,
-          deal.GroupName,
-          deal.ResolvedMake,
-          deal.ResolvedGrade,
-          deal.ResolvedBrand,
-          deal.GSM,
-          (deal.Deckle_mm || 0) / 10,
-          (deal.grain_mm || 0) / 10,
-          deal.OfferUnit,
-          deal.quantity,
-          deal.OfferPrice,
-          deal.show_rate_in_marketplace ? 'Yes' : 'No',
-          deal.Seller_comments
-        ]);
+        // Skip spare parts - they have a different structure
+        if (deal.GroupName && deal.GroupName.toLowerCase().includes('spare part')) {
+          return;
+        }
+        
+        offersSheet.addRow({
+          transId: deal.TransID,
+          boardType: deal.GroupName || '',
+          gradeOfMaterial: deal.GradeOfMaterial || '',
+          materialKind: deal.ResolvedMake || '',  // Make = Material Kind
+          manufacturer: deal.ResolvedGrade || '', // Grade = Manufacturer
+          brand: deal.ResolvedBrand || '',        // Brand = Brand
+          gsm: deal.GSM || '',
+          deckle: deal.Deckle_mm ? (deal.Deckle_mm / 10) : '',
+          grain: deal.grain_mm ? (deal.grain_mm / 10) : '',
+          unit: deal.OfferUnit || '',
+          quantity: deal.quantity || '',
+          rate: deal.OfferPrice || '',
+          showRate: deal.show_rate_in_marketplace ? 'Yes' : 'No',
+          stockAge: deal.StockAge || '',
+          comments: deal.Seller_comments || ''
+        });
+      });
+
+      // Determine how many rows to add dropdowns to (existing + 100 empty rows)
+      const startRow = 2;
+      const endRow = Math.max(deals.length + 100, 101);
+
+      // Add data validation dropdowns
+      for (let rowNum = startRow; rowNum <= endRow; rowNum++) {
+        // Board Type dropdown (Column B)
+        offersSheet.getCell(`B${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: false,
+          formulae: [`Lists!$A$2:$A$${boardTypes.length + 1}`],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Board Type',
+          error: 'Please select a valid Board Type from the list'
+        };
+
+        // Grade of Material dropdown (Column C)
+        if (gradesOfMaterial.length > 0) {
+          offersSheet.getCell(`C${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$B$2:$B$${gradesOfMaterial.length + 1}`],
+            showErrorMessage: false
+          };
+        }
+
+        // Material Kind dropdown (Column D)
+        if (materialKinds.length > 0) {
+          offersSheet.getCell(`D${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$C$2:$C$${materialKinds.length + 1}`],
+            showErrorMessage: false
+          };
+        }
+
+        // Manufacturer dropdown (Column E)
+        if (manufacturers.length > 0) {
+          offersSheet.getCell(`E${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$D$2:$D$${manufacturers.length + 1}`],
+            showErrorMessage: false
+          };
+        }
+
+        // Brand dropdown (Column F)
+        if (brands.length > 0) {
+          offersSheet.getCell(`F${rowNum}`).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`Lists!$E$2:$E$${brands.length + 1}`],
+            showErrorMessage: false
+          };
+        }
+
+        // Unit dropdown (Column J)
+        offersSheet.getCell(`J${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: false,
+          formulae: [`Lists!$F$2:$F$${units.length + 1}`],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Unit',
+          error: 'Please select a valid Unit from the list'
+        };
+
+        // Show Rate dropdown (Column M)
+        offersSheet.getCell(`M${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: ['Lists!$G$2:$G$3'],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Value',
+          error: 'Please select Yes or No'
+        };
+      }
+
+      // Protect TransID column (Column A) - make it read-only appearance
+      for (let rowNum = startRow; rowNum <= endRow; rowNum++) {
+        const cell = offersSheet.getCell(`A${rowNum}`);
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF0F0F0' }
+        };
+      }
+
+      // Create Instructions sheet
+      const instructionsSheet = workbook.addWorksheet('Instructions');
+      instructionsSheet.columns = [{ width: 80 }];
+
+      const instructions = [
+        ['BULK UPLOAD/EDIT INSTRUCTIONS'],
+        [''],
+        ['HOW TO USE:'],
+        ['- This file contains all your existing offers'],
+        ['- You can EDIT existing offers by modifying rows (keep TransID unchanged)'],
+        ['- You can ADD new offers by filling in empty rows (leave TransID blank)'],
+        ['- Upload the modified file back to update/create offers'],
+        [''],
+        ['FIELDS (* = required for new offers):'],
+        ['1. TransID: DO NOT EDIT - Used to identify existing offers'],
+        ['2. Board Type*: Select from dropdown - Paper, Board, Kraft Reel, etc.'],
+        ['3. Grade of Material*: Select from dropdown (for Paper/Board/Kraft Reel)'],
+        ['4. Material Kind*: Select from dropdown (maps to Make)'],
+        ['5. Manufacturer*: Select from dropdown (maps to Grade)'],
+        ['6. Brand: Select from dropdown (optional for Kraft Reel)'],
+        ['7. GSM*: Enter numeric value (e.g., 120, 250)'],
+        ['8. Deckle*: Enter size in centimeters'],
+        ['9. Grain*: Enter size in centimeters (0 for B.S.)'],
+        ['10. Unit*: Select from dropdown'],
+        ['11. Quantity*: Enter numeric value'],
+        ['12. Rate: Optional - your offer price per unit'],
+        ['13. Show Rate: Yes to show rate in marketplace, No to hide'],
+        ['14. Stock Age: Days the stock has been held'],
+        ['15. Comments: Optional remarks (max 400 characters)'],
+        [''],
+        ['UPDATE vs CREATE:'],
+        ['- Rows WITH TransID: Will UPDATE the existing offer'],
+        ['- Rows WITHOUT TransID: Will CREATE a new offer'],
+        [''],
+        ['DROPDOWN LISTS:'],
+        ['- All dropdown values are in the "Lists" sheet'],
+        ['- Dropdowns help ensure data consistency'],
+        ['- Values not in dropdown may cause validation errors on upload'],
+        [''],
+        ['NOTES:'],
+        ['- Spare Parts cannot be bulk uploaded - use the web form'],
+        ['- Maximum 200 rows per upload']
+      ];
+
+      instructions.forEach((row, i) => {
+        instructionsSheet.getCell(`A${i + 1}`).value = row[0];
+        if (i === 0) {
+          instructionsSheet.getCell(`A${i + 1}`).font = { bold: true, size: 14 };
+        }
       });
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2115,7 +2354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Export route moved to top of file to avoid conflicts
 
-  // Bulk Upload Process
+  // Bulk Upload Process - Updated to match new export format with material hierarchy
   app.post('/api/deals/bulk-upload', requireAuth, upload.single('file'), async (req: any, res) => {
     try {
       const sellerId = req.session.memberId;
@@ -2140,17 +2379,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, message: 'Maximum 200 rows allowed per upload' });
       }
 
-      const hierarchy = await dealService.getStockHierarchy();
+      // Get group mapping
+      const groups = await executeQuery(`SELECT GroupID, GroupName FROM stock_groups`);
       const groupMap: Record<string, number> = {};
-      if (hierarchy.groups) {
-        hierarchy.groups.forEach((group: any) => {
-          if (group.GroupName) {
-            groupMap[group.GroupName.toLowerCase().trim()] = group.GroupID;
-          }
-          // Also map string ID to ID
-          groupMap[String(group.GroupID)] = group.GroupID;
-        });
-      }
+      groups.forEach((group: any) => {
+        if (group.GroupName) {
+          groupMap[group.GroupName.toLowerCase().trim()] = group.GroupID;
+        }
+        groupMap[String(group.GroupID)] = group.GroupID;
+      });
 
       const errors: string[] = [];
       const validRecords: any[] = [];
@@ -2159,13 +2396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const row = rows[i];
         const rowNum = i + 2;
 
-        // Header: TransID, GroupID, GroupName, Make, Grade, Brand, GSM, Deckle, Grain, Unit, Qty, Rate, Show, Comments
+        // New Header: TransID, BoardType, GradeOfMaterial, MaterialKind, Manufacturer, Brand, GSM, Deckle, Grain, Unit, Qty, Rate, ShowRate, StockAge, Comments
         const transId = row[0] ? parseInt(String(row[0])) : null;
-        const groupIdInput = String(row[1] || '').trim();
-        const groupNameInput = String(row[2] || '').trim();
-
-        const make = String(row[3] || '').trim();
-        const grade = String(row[4] || '').trim();
+        const boardType = String(row[1] || '').trim();
+        const gradeOfMaterial = String(row[2] || '').trim();
+        const materialKind = String(row[3] || '').trim();  // Maps to Make
+        const manufacturer = String(row[4] || '').trim();  // Maps to Grade  
         const brand = String(row[5] || '').trim();
         const gsm = parseFloat(String(row[6] || ''));
         const deckle = parseFloat(String(row[7] || ''));
@@ -2173,31 +2409,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const unit = String(row[9] || '').trim();
         const quantity = parseFloat(String(row[10] || ''));
         const rate = row[11] !== undefined && row[11] !== '' ? parseFloat(String(row[11])) : null;
-        const showRate = String(row[12] || 'Yes').toLowerCase();
-        const comments = String(row[13] || '').trim();
+        const showRateInput = String(row[12] || 'Yes').toLowerCase().trim();
+        const stockAge = row[13] !== undefined && row[13] !== '' ? parseInt(String(row[13])) : 0;
+        const comments = String(row[14] || '').trim();
 
         const rowErrors: string[] = [];
 
-        // Validate Group
+        // Validate Board Type (Group)
         let finalGroupId: number | undefined;
-        if (groupIdInput && groupMap[groupIdInput]) {
-          finalGroupId = groupMap[groupIdInput];
-        } else if (groupNameInput && groupMap[groupNameInput.toLowerCase()]) {
-          finalGroupId = groupMap[groupNameInput.toLowerCase()];
+        if (boardType && groupMap[boardType.toLowerCase()]) {
+          finalGroupId = groupMap[boardType.toLowerCase()];
         }
 
         if (!finalGroupId) {
-          rowErrors.push('Valid Group ID or Group Name is required');
+          rowErrors.push('Valid Board Type is required');
         }
 
-        if (!make) rowErrors.push('Make is required');
+        // Check if this is a material hierarchy group (Paper, Board, Kraft Reel, Paper Reel)
+        const isMaterialHierarchyGroup = ['paper', 'board', 'kraft reel', 'paper reel'].includes(boardType.toLowerCase());
+        const isKraftReel = boardType.toLowerCase() === 'kraft reel';
+
+        // Validate material hierarchy fields
+        if (isMaterialHierarchyGroup) {
+          if (!gradeOfMaterial) rowErrors.push('Grade of Material is required');
+          if (!materialKind) rowErrors.push('Material Kind is required');
+          if (!manufacturer) rowErrors.push('Manufacturer is required');
+          // Brand is optional for Kraft Reel
+          if (!isKraftReel && !brand) rowErrors.push('Brand is required');
+        } else {
+          // For non-hierarchy groups, Material Kind is still required (as Make)
+          if (!materialKind) rowErrors.push('Material Kind (Make) is required');
+        }
+
         if (isNaN(gsm) || gsm <= 0) rowErrors.push('GSM must be positive');
         if (isNaN(deckle) || deckle <= 0) rowErrors.push('Deckle must be positive');
-        // Grain can be 0 for Kraft Reel (BF)
-        // logic: if group is Kraft Reel, grain can be > 0. If regular, grain > 0.
-        // Simplified check:
         if (isNaN(grain) || grain < 0) rowErrors.push('Grain must be 0 or greater');
-
+        if (!unit) rowErrors.push('Unit is required');
         if (isNaN(quantity) || quantity <= 0) rowErrors.push('Quantity must be positive');
 
         if (rowErrors.length > 0) {
@@ -2206,11 +2453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           validRecords.push({
             transId,
             groupId: finalGroupId,
-            make, grade, brand, gsm,
+            boardType,
+            gradeOfMaterial,
+            materialKind,    // This becomes Make
+            manufacturer,    // This becomes Grade
+            brand,
+            gsm,
             deckle_mm: deckle * 10,
             grain_mm: grain * 10,
-            unit, quantity, rate,
-            showRate: showRate === 'yes' || showRate === 'true',
+            unit,
+            quantity,
+            rate,
+            showRate: showRateInput === 'yes' || showRateInput === 'true' || showRateInput === '1',
+            stockAge,
             comments
           });
         }
@@ -2227,53 +2482,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let created = 0;
         let updated = 0;
+        let skipped = 0;
 
         for (const record of validRecords) {
-          // Resolve IDs for Update logic consistency using hierarchy
-          let finalMake = record.make;
-          let finalGrade = record.grade;
-          let finalBrand = record.brand;
-
-          if (hierarchy.makes) {
-            const m = hierarchy.makes.find((x: any) => x.make_Name?.toLowerCase() === record.make.toLowerCase() && String(x.GroupID) === String(record.groupId));
-            if (m) finalMake = m.make_ID;
-          }
-          if (hierarchy.grades) {
-            const g = hierarchy.grades.find((x: any) => x.GradeName?.toLowerCase() === record.grade.toLowerCase());
-            if (g) finalGrade = g.gradeID;
-          }
-          if (hierarchy.brands) {
-            const b = hierarchy.brands.find((x: any) => x.brandname?.toLowerCase() === record.brand.toLowerCase());
-            if (b) finalBrand = b.brandID;
-          }
-
-          const deal_title = `${record.make} ${record.grade} ${record.brand} ${record.gsm} GSM`;
+          const deal_title = `${record.materialKind} ${record.manufacturer} ${record.brand || ''} ${record.gsm}GSM`.trim();
+          const stockDescription = `${record.materialKind} ${record.manufacturer} ${record.brand || ''} ${record.gsm}gsm`.trim();
+          const searchKey = stockDescription.toLowerCase().replace(/[\s.]/g, '');
 
           let performCreate = !record.transId;
 
           if (record.transId) {
-            // Verify ownership
-            const exists = await executeQuerySingle('SELECT TransID FROM deal_master WHERE TransID = ? AND created_by_member_id = ?', [record.transId, sellerId], 3, connection);
+            // Verify ownership before update
+            const exists = await executeQuerySingle(
+              'SELECT TransID FROM deal_master WHERE TransID = ? AND created_by_member_id = ?', 
+              [record.transId, sellerId], 
+              3, 
+              connection
+            );
+            
             if (exists) {
-              const sellerComments = record.comments ? `${deal_title}\n${record.comments}` : deal_title;
-
+              // Update existing record
               await executeQuery(`
-                 UPDATE deal_master SET 
-                   groupID=?, Make=?, Grade=?, Brand=?, GSM=?, Deckle_mm=?, grain_mm=?, 
-                   OfferUnit=?, quantity=?, OfferPrice=?, show_rate_in_marketplace=?, Seller_comments=?, deal_updated_at=NOW()
-                 WHERE TransID=?
-               `, [
-                record.groupId, finalMake, finalGrade, finalBrand, record.gsm, record.deckle_mm, record.grain_mm,
-                record.unit, record.quantity, record.rate || 0, record.showRate, sellerComments, record.transId
+                UPDATE deal_master SET 
+                  groupID = ?,
+                  grade_of_material = ?,
+                  Make = ?,
+                  Grade = ?,
+                  Brand = ?,
+                  GSM = ?,
+                  Deckle_mm = ?,
+                  grain_mm = ?,
+                  OfferUnit = ?,
+                  quantity = ?,
+                  OfferPrice = ?,
+                  show_rate_in_marketplace = ?,
+                  StockAge = ?,
+                  Seller_comments = ?,
+                  deal_title = ?,
+                  StockDescription = ?,
+                  normalization_key = ?,
+                  deal_updated_at = NOW()
+                WHERE TransID = ?
+              `, [
+                record.groupId,
+                record.gradeOfMaterial || null,
+                record.materialKind,
+                record.manufacturer,
+                record.brand || '',
+                record.gsm,
+                record.deckle_mm,
+                record.grain_mm,
+                record.unit,
+                record.quantity,
+                record.rate || 0,
+                record.showRate,
+                record.stockAge,
+                record.comments,
+                deal_title,
+                stockDescription,
+                searchKey,
+                record.transId
               ], 3, connection);
               updated++;
             } else {
-              performCreate = true;
+              // TransID exists but doesn't belong to this user - skip or create new
+              skipped++;
+              continue;
             }
           }
 
           if (performCreate) {
-            // Create
+            // Create new record
             await dealService.createDeal({
               seller_id: sellerId,
               group_id: record.groupId,
@@ -2281,9 +2560,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               grade_id: 0,
               brand_id: 0,
               deal_title,
-              make_text: record.make,
-              grade_text: record.grade,
-              brand_text: record.brand,
+              make_text: record.materialKind,
+              grade_text: record.manufacturer,
+              brand_text: record.brand || '',
+              grade_of_material: record.gradeOfMaterial || '',
               gsm: record.gsm,
               deckle_mm: record.deckle_mm,
               grain_mm: record.grain_mm,
@@ -2291,6 +2571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               quantity: record.quantity,
               price: record.rate || 0,
               show_rate_in_marketplace: record.showRate,
+              stock_age: record.stockAge,
               deal_description: record.comments
             }, undefined, connection);
             created++;
@@ -2298,7 +2579,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await connection.commit();
-        res.json({ success: true, message: `Process complete: ${created} created, ${updated} updated` });
+        
+        let message = `Process complete: ${created} created, ${updated} updated`;
+        if (skipped > 0) {
+          message += `, ${skipped} skipped (ownership mismatch)`;
+        }
+        
+        res.json({ success: true, message, created, updated, skipped });
 
       } catch (err: any) {
         if (connection) await connection.rollback();

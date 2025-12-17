@@ -1188,11 +1188,12 @@ export default function AddDeal() {
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p className="font-medium">Instructions:</p>
                   <ol className="list-decimal list-inside space-y-0.5 ml-2">
-                    <li>Download the template Excel file</li>
-                    <li>Fill in the data using the dropdown lists for Brand, Manufacturer, and Board Type</li>
-                    <li>Enter GSM, Size (Deckle x Grain), Unit (UOM), and Quantity</li>
-                    <li>Upload the file - it will be validated before processing</li>
-                    <li>If records with same details already exist, only quantity will be updated</li>
+                    <li>Download Excel file - it contains all your existing offers</li>
+                    <li>Edit existing rows or add new rows (leave TransID blank for new offers)</li>
+                    <li>Use dropdowns for: Board Type, Grade of Material, Material Kind, Manufacturer, Brand</li>
+                    <li>Enter GSM, Size (Deckle x Grain in cm), Unit, and Quantity</li>
+                    <li>Upload the file - rows WITH TransID will be updated, rows WITHOUT will be created</li>
+                    <li>Maximum 200 rows per upload</li>
                   </ol>
                 </div>
               </CardContent>
