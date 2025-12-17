@@ -274,8 +274,8 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
               </div>
             )}
             
-            {/* Rate on Request - only show if rate is hidden and not own product */}
-            {isRateHidden && !isOwnProduct && (
+            {/* Rate on Request - only show if rate is hidden, not approved, and not own product */}
+            {isRateHidden && !canSeeRate && !isOwnProduct && (
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                 {isLoadingRateStatus ? (
                   <div className="text-center py-2">
