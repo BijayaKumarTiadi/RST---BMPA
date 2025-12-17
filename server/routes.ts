@@ -3715,6 +3715,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Material Hierarchy CRUD Routes (protected with admin auth)
+  app.get('/api/admin/material-hierarchy', requireAdminAuth, async (req, res) => {
+    try {
+      const entries = await materialHierarchyService.getAllMaterialHierarchyEntries();
+      res.json({ success: true, data: entries });
+    } catch (error) {
+      console.error("Error fetching material hierarchy entries:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch material hierarchy entries" });
+    }
+  });
+
+  app.post('/api/admin/material-hierarchy', requireAdminAuth, async (req, res) => {
+    try {
+      let { grade_of_material, material_kind, manufacturer, brand_name } = req.body;
+      
+      // Normalize to uppercase and trim
+      grade_of_material = grade_of_material?.trim().toUpperCase();
+      material_kind = material_kind?.trim().toUpperCase();
+      manufacturer = manufacturer?.trim().toUpperCase();
+      brand_name = brand_name?.trim().toUpperCase();
+      
+      if (!grade_of_material || !material_kind || !manufacturer || !brand_name) {
+        return res.status(400).json({ success: false, message: "All fields are required" });
+      }
+
+      const result = await materialHierarchyService.createMaterialHierarchyEntry({
+        grade_of_material,
+        material_kind,
+        manufacturer,
+        brand_name
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating material hierarchy entry:", error);
+      res.status(500).json({ success: false, message: "Failed to create material hierarchy entry" });
+    }
+  });
+
+  app.put('/api/admin/material-hierarchy/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      let { grade_of_material, material_kind, manufacturer, brand_name } = req.body;
+      
+      // Normalize to uppercase and trim
+      grade_of_material = grade_of_material?.trim().toUpperCase();
+      material_kind = material_kind?.trim().toUpperCase();
+      manufacturer = manufacturer?.trim().toUpperCase();
+      brand_name = brand_name?.trim().toUpperCase();
+      
+      if (!grade_of_material || !material_kind || !manufacturer || !brand_name) {
+        return res.status(400).json({ success: false, message: "All fields are required" });
+      }
+
+      const result = await materialHierarchyService.updateMaterialHierarchyEntry(id, {
+        grade_of_material,
+        material_kind,
+        manufacturer,
+        brand_name
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating material hierarchy entry:", error);
+      res.status(500).json({ success: false, message: "Failed to update material hierarchy entry" });
+    }
+  });
+
+  app.delete('/api/admin/material-hierarchy/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await materialHierarchyService.deleteMaterialHierarchyEntry(id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error deleting material hierarchy entry:", error);
+      res.status(500).json({ success: false, message: "Failed to delete material hierarchy entry" });
+    }
+  });
+
   // Create HTTP server
   return createServer(app);
 }

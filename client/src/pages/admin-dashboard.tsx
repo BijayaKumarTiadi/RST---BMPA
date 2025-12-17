@@ -101,6 +101,16 @@ interface SummaryReport {
   totalResponses: number;
 }
 
+interface MaterialHierarchyEntry {
+  id: number;
+  grade_of_material: string;
+  material_kind: string;
+  manufacturer: string;
+  brand_name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -159,6 +169,93 @@ export default function AdminDashboard() {
       return response.json();
     },
     enabled: !!adminUser,
+  });
+
+  // Material Hierarchy state
+  const [materialSearchTerm, setMaterialSearchTerm] = useState("");
+  const [editingMaterial, setEditingMaterial] = useState<MaterialHierarchyEntry | null>(null);
+  const [isAddMaterialDialogOpen, setIsAddMaterialDialogOpen] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({
+    grade_of_material: "",
+    material_kind: "",
+    manufacturer: "",
+    brand_name: ""
+  });
+
+  // Get all material hierarchy entries
+  const { data: materialHierarchyData, isLoading: isMaterialsLoading } = useQuery<{ success: boolean; data: MaterialHierarchyEntry[] }>({
+    queryKey: ["/api/admin/material-hierarchy"],
+    enabled: !!adminUser,
+  });
+
+  const materialHierarchyEntries = materialHierarchyData?.data || [];
+
+  // Filter material hierarchy entries
+  const filteredMaterials = materialHierarchyEntries.filter(entry =>
+    entry.grade_of_material.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    entry.material_kind.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    entry.manufacturer.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    entry.brand_name.toLowerCase().includes(materialSearchTerm.toLowerCase())
+  );
+
+  // Create material hierarchy entry mutation
+  const createMaterialMutation = useMutation({
+    mutationFn: async (data: typeof newMaterial) => {
+      const response = await apiRequest("POST", "/api/admin/material-hierarchy", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ title: "Success", description: "Material hierarchy entry created successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
+        setIsAddMaterialDialogOpen(false);
+        setNewMaterial({ grade_of_material: "", material_kind: "", manufacturer: "", brand_name: "" });
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create material hierarchy entry", variant: "destructive" });
+    }
+  });
+
+  // Update material hierarchy entry mutation
+  const updateMaterialMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: typeof newMaterial }) => {
+      const response = await apiRequest("PUT", `/api/admin/material-hierarchy/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ title: "Success", description: "Material hierarchy entry updated successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
+        setEditingMaterial(null);
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update material hierarchy entry", variant: "destructive" });
+    }
+  });
+
+  // Delete material hierarchy entry mutation
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/material-hierarchy/${id}`, {});
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ title: "Success", description: "Material hierarchy entry deleted successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete material hierarchy entry", variant: "destructive" });
+    }
   });
 
   // Filter members based on search term
@@ -439,12 +536,13 @@ export default function AdminDashboard() {
 
         {/* Main Content */}
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="members" data-testid="tab-members">All Members</TabsTrigger>
             <TabsTrigger value="pending" data-testid="tab-pending">Pending</TabsTrigger>
             <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">Payments</TabsTrigger>
             <TabsTrigger value="summary" data-testid="tab-summary">Summary</TabsTrigger>
+            <TabsTrigger value="materials" data-testid="tab-materials">Materials</TabsTrigger>
           </TabsList>
 
           {/* Members Tab */}
@@ -1287,6 +1385,223 @@ export default function AdminDashboard() {
                     </Card>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Materials Tab */}
+          <TabsContent value="materials">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <CardTitle>Paper Material Hierarchy</CardTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search materials..."
+                        value={materialSearchTerm}
+                        onChange={(e) => setMaterialSearchTerm(e.target.value)}
+                        className="w-64"
+                        data-testid="input-material-search"
+                      />
+                    </div>
+                    <Dialog open={isAddMaterialDialogOpen} onOpenChange={setIsAddMaterialDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-add-material">
+                          Add New Entry
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Material Hierarchy Entry</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <div>
+                            <Label htmlFor="new-grade">Grade of Material</Label>
+                            <Input
+                              id="new-grade"
+                              value={newMaterial.grade_of_material}
+                              onChange={(e) => setNewMaterial({ ...newMaterial, grade_of_material: e.target.value.toUpperCase() })}
+                              placeholder="e.g., VIRGIN, RECYCLED"
+                              data-testid="input-new-grade"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="new-kind">Material Kind</Label>
+                            <Input
+                              id="new-kind"
+                              value={newMaterial.material_kind}
+                              onChange={(e) => setNewMaterial({ ...newMaterial, material_kind: e.target.value.toUpperCase() })}
+                              placeholder="e.g., FBB, SBS, DUPLEX"
+                              data-testid="input-new-kind"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="new-manufacturer">Manufacturer</Label>
+                            <Input
+                              id="new-manufacturer"
+                              value={newMaterial.manufacturer}
+                              onChange={(e) => setNewMaterial({ ...newMaterial, manufacturer: e.target.value.toUpperCase() })}
+                              placeholder="e.g., ITC, EMAMI"
+                              data-testid="input-new-manufacturer"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="new-brand">Brand Name</Label>
+                            <Input
+                              id="new-brand"
+                              value={newMaterial.brand_name}
+                              onChange={(e) => setNewMaterial({ ...newMaterial, brand_name: e.target.value.toUpperCase() })}
+                              placeholder="e.g., CYBER XL, PEARL XL"
+                              data-testid="input-new-brand"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => createMaterialMutation.mutate(newMaterial)}
+                            disabled={createMaterialMutation.isPending || !newMaterial.grade_of_material || !newMaterial.material_kind || !newMaterial.manufacturer || !newMaterial.brand_name}
+                            className="w-full"
+                            data-testid="button-save-new-material"
+                          >
+                            {createMaterialMutation.isPending ? "Creating..." : "Create Entry"}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[50px]">ID</TableHead>
+                        <TableHead className="min-w-[120px]">Grade of Material</TableHead>
+                        <TableHead className="min-w-[120px]">Material Kind</TableHead>
+                        <TableHead className="min-w-[120px]">Manufacturer</TableHead>
+                        <TableHead className="min-w-[120px]">Brand Name</TableHead>
+                        <TableHead className="min-w-[120px] sticky right-0 bg-background z-10 shadow-sm">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isMaterialsLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredMaterials.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No material hierarchy entries found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredMaterials.map((entry) => (
+                          <TableRow key={entry.id} data-testid={`row-material-${entry.id}`}>
+                            <TableCell>{entry.id}</TableCell>
+                            <TableCell>
+                              {editingMaterial?.id === entry.id ? (
+                                <Input
+                                  value={editingMaterial.grade_of_material}
+                                  onChange={(e) => setEditingMaterial({ ...editingMaterial, grade_of_material: e.target.value.toUpperCase() })}
+                                  data-testid={`input-edit-grade-${entry.id}`}
+                                />
+                              ) : (
+                                entry.grade_of_material
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingMaterial?.id === entry.id ? (
+                                <Input
+                                  value={editingMaterial.material_kind}
+                                  onChange={(e) => setEditingMaterial({ ...editingMaterial, material_kind: e.target.value.toUpperCase() })}
+                                  data-testid={`input-edit-kind-${entry.id}`}
+                                />
+                              ) : (
+                                entry.material_kind
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingMaterial?.id === entry.id ? (
+                                <Input
+                                  value={editingMaterial.manufacturer}
+                                  onChange={(e) => setEditingMaterial({ ...editingMaterial, manufacturer: e.target.value.toUpperCase() })}
+                                  data-testid={`input-edit-manufacturer-${entry.id}`}
+                                />
+                              ) : (
+                                entry.manufacturer
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingMaterial?.id === entry.id ? (
+                                <Input
+                                  value={editingMaterial.brand_name}
+                                  onChange={(e) => setEditingMaterial({ ...editingMaterial, brand_name: e.target.value.toUpperCase() })}
+                                  data-testid={`input-edit-brand-${entry.id}`}
+                                />
+                              ) : (
+                                entry.brand_name
+                              )}
+                            </TableCell>
+                            <TableCell className="sticky right-0 bg-background z-10 shadow-sm">
+                              <div className="flex gap-1">
+                                {editingMaterial?.id === entry.id ? (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => updateMaterialMutation.mutate({ id: entry.id, data: editingMaterial })}
+                                      disabled={updateMaterialMutation.isPending}
+                                      data-testid={`button-save-material-${entry.id}`}
+                                    >
+                                      {updateMaterialMutation.isPending ? "..." : "Save"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingMaterial(null)}
+                                      data-testid={`button-cancel-material-${entry.id}`}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingMaterial(entry)}
+                                      data-testid={`button-edit-material-${entry.id}`}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => {
+                                        if (confirm("Are you sure you want to delete this entry?")) {
+                                          deleteMaterialMutation.mutate(entry.id);
+                                        }
+                                      }}
+                                      disabled={deleteMaterialMutation.isPending}
+                                      data-testid={`button-delete-material-${entry.id}`}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Total entries: {filteredMaterials.length}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
