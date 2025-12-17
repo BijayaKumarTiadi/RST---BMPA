@@ -176,8 +176,29 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                   <span className="ml-2 font-medium">{deal.fsc_type}</span>
                 </div>
               )}
+              {deal.StockAge && (
+                <div>
+                  <span className="text-muted-foreground">Stock Age:</span>
+                  <span className="ml-2 font-medium">{deal.StockAge}</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Pricing Information - Only show if seller allows */}
+          {deal.OfferPrice && (deal.show_rate_in_marketplace === 1 || deal.show_rate_in_marketplace === true || deal.ShowRate === 'Yes') && (
+            <div>
+              <h4 className="font-semibold text-lg mb-3 text-center">Pricing</h4>
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="text-center">
+                  <span className="text-2xl font-bold text-green-700 dark:text-green-400">
+                    ₹{!isNaN(parseFloat(deal.OfferPrice)) ? parseFloat(deal.OfferPrice).toLocaleString('en-IN') : deal.OfferPrice}
+                  </span>
+                  <span className="text-muted-foreground ml-2">per {deal.OfferUnit || deal.Unit || 'unit'}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Seller Information */}
           <div>
