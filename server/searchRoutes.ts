@@ -65,6 +65,7 @@ searchRouter.post('/precise', async (req, res) => {
     } = req.body;
     
     console.log('Precise search - fetching ALL records:', req.body);
+    console.log('🔍 DEBUG - gradeOfMaterial:', gradeOfMaterial, 'materialKind:', materialKind, 'materialManufacturer:', materialManufacturer, 'materialBrand:', materialBrand);
     
     let whereClause = 'WHERE dm.StockStatus = 1'; // Only active stock
     const queryParams: any[] = [];
@@ -86,8 +87,9 @@ searchRouter.post('/precise', async (req, res) => {
     // which store the selected material hierarchy values from the cascading dropdowns
     
     // Grade of Material filter (stored in grade_of_material column)
+    // For backward compatibility: match the value OR include records where grade_of_material is NULL (old records)
     if (gradeOfMaterial && gradeOfMaterial.trim()) {
-      whereClause += ` AND dm.grade_of_material = ?`;
+      whereClause += ` AND (dm.grade_of_material = ? OR dm.grade_of_material IS NULL)`;
       queryParams.push(gradeOfMaterial.trim());
     }
     
@@ -186,6 +188,9 @@ searchRouter.post('/precise', async (req, res) => {
       ORDER BY dm.TransID DESC
       LIMIT 100
     `;
+    
+    console.log('🔍 DEBUG - WHERE clause:', whereClause);
+    console.log('🔍 DEBUG - Query params:', queryParams);
     
     const results = await executeQuery(searchQuery, queryParams);
     
