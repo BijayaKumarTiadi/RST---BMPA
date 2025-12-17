@@ -2771,6 +2771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spare_part_no,
         packing_type,
         sheets_per_packet,
+        show_rate_in_marketplace,
       } = req.body;
 
       // Check if this is a spare part submission
@@ -2872,6 +2873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spare_part_no,
         packing_type,
         sheets_per_packet,
+        show_rate_in_marketplace: show_rate_in_marketplace !== undefined ? show_rate_in_marketplace : true,
       }, userInfo);
 
       res.json(result);
@@ -4189,7 +4191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get requester details
       const requester = await executeQuerySingle(`
-        SELECT company_name, email, contact_person FROM bmpa_members WHERE member_id = ?
+        SELECT company_name, email, mname FROM bmpa_members WHERE member_id = ?
       `, [requesterId]);
 
       if (!requester) {
@@ -4206,7 +4208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal_id: deal_id,
         requester_id: requesterId,
         seller_id: deal.seller_id,
-        requester_name: requester.contact_person || requester.company_name,
+        requester_name: requester.mname || requester.company_name,
         requester_company: requester.company_name,
         requester_email: requester.email,
         seller_email: deal.seller_email,
@@ -4223,7 +4225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1a1a1a;">Rate Request Received</h2>
             <p>Hello,</p>
-            <p><strong>${requester.contact_person || requester.company_name}</strong> from <strong>${requester.company_name}</strong> has requested to view the rate for your product:</p>
+            <p><strong>${requester.mname || requester.company_name}</strong> from <strong>${requester.company_name}</strong> has requested to view the rate for your product:</p>
             <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Product:</strong> ${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''}</p>
               <p style="margin: 5px 0;"><strong>GSM:</strong> ${deal.GSM || 'N/A'}</p>
@@ -4251,7 +4253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const buyerEmailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1a1a1a;">Rate Request Sent</h2>
-            <p>Hello ${requester.contact_person || requester.company_name},</p>
+            <p>Hello ${requester.mname || requester.company_name},</p>
             <p>Your rate request has been sent to the seller for the following product:</p>
             <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Product:</strong> ${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''}</p>
