@@ -101,6 +101,51 @@ export async function deleteMaterialHierarchyEntry(id: number): Promise<{ succes
     }
 }
 
+// Batch create multiple material hierarchy entries (multiple brand names for same parent)
+export async function createMaterialHierarchyBatch(data: {
+    grade_of_material: string;
+    material_kind: string;
+    manufacturer: string;
+    brand_names: string[];
+}): Promise<{ success: boolean; message: string; created: number; skipped: number; details: { brand: string; status: 'created' | 'exists' }[] }> {
+    const results: { brand: string; status: 'created' | 'exists' }[] = [];
+    let created = 0;
+    let skipped = 0;
+
+    for (const brand_name of data.brand_names) {
+        const normalizedBrand = brand_name.trim().toUpperCase();
+        if (!normalizedBrand) continue;
+
+        // Check if entry already exists
+        const existing = await executeQuery(
+            `SELECT id FROM material_hierarchy 
+             WHERE UPPER(grade_of_material) = ? AND UPPER(material_kind) = ? AND UPPER(manufacturer) = ? AND UPPER(brand_name) = ?`,
+            [data.grade_of_material.toUpperCase(), data.material_kind.toUpperCase(), data.manufacturer.toUpperCase(), normalizedBrand]
+        );
+
+        if ((existing as any[]).length > 0) {
+            results.push({ brand: normalizedBrand, status: 'exists' });
+            skipped++;
+        } else {
+            await executeQuery(
+                `INSERT INTO material_hierarchy (grade_of_material, material_kind, manufacturer, brand_name) 
+                 VALUES (?, ?, ?, ?)`,
+                [data.grade_of_material.toUpperCase(), data.material_kind.toUpperCase(), data.manufacturer.toUpperCase(), normalizedBrand]
+            );
+            results.push({ brand: normalizedBrand, status: 'created' });
+            created++;
+        }
+    }
+
+    return {
+        success: created > 0,
+        message: `Created ${created} entries, ${skipped} already existed`,
+        created,
+        skipped,
+        details: results
+    };
+}
+
 // Get all unique Grade of Materials
 export async function getGradesOfMaterial() {
     const result = await executeQuery(

@@ -181,6 +181,13 @@ export default function AdminDashboard() {
     manufacturer: "",
     brand_name: ""
   });
+  // Multi-brand state for batch creation
+  const [newBatchMaterial, setNewBatchMaterial] = useState({
+    grade_of_material: "",
+    material_kind: "",
+    manufacturer: "",
+    brand_names: [""] // Array of brand names
+  });
 
   // Get all material hierarchy entries
   const { data: materialHierarchyData, isLoading: isMaterialsLoading } = useQuery<{ success: boolean; data: MaterialHierarchyEntry[] }>({
@@ -216,6 +223,30 @@ export default function AdminDashboard() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to create material hierarchy entry", variant: "destructive" });
+    }
+  });
+
+  // Batch create material hierarchy entries mutation (multiple brands)
+  const batchCreateMaterialMutation = useMutation({
+    mutationFn: async (data: typeof newBatchMaterial) => {
+      const response = await apiRequest("POST", "/api/admin/material-hierarchy/batch", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success || data.created > 0) {
+        toast({ 
+          title: "Success", 
+          description: `Created ${data.created} entries${data.skipped > 0 ? `, ${data.skipped} already existed` : ''}` 
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
+        setIsAddMaterialDialogOpen(false);
+        setNewBatchMaterial({ grade_of_material: "", material_kind: "", manufacturer: "", brand_names: [""] });
+      } else {
+        toast({ title: "Info", description: data.message || "No new entries created", variant: "default" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create material hierarchy entries", variant: "destructive" });
     }
   });
 
@@ -1406,23 +1437,28 @@ export default function AdminDashboard() {
                         data-testid="input-material-search"
                       />
                     </div>
-                    <Dialog open={isAddMaterialDialogOpen} onOpenChange={setIsAddMaterialDialogOpen}>
+                    <Dialog open={isAddMaterialDialogOpen} onOpenChange={(open) => {
+                      setIsAddMaterialDialogOpen(open);
+                      if (!open) {
+                        setNewBatchMaterial({ grade_of_material: "", material_kind: "", manufacturer: "", brand_names: [""] });
+                      }
+                    }}>
                       <DialogTrigger asChild>
                         <Button data-testid="button-add-material">
-                          Add New Entry
+                          Add New Entries
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>Add New Material Hierarchy Entry</DialogTitle>
+                          <DialogTitle>Add Material Hierarchy Entries</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <div>
                             <Label htmlFor="new-grade">Grade of Material</Label>
                             <Input
                               id="new-grade"
-                              value={newMaterial.grade_of_material}
-                              onChange={(e) => setNewMaterial({ ...newMaterial, grade_of_material: e.target.value.toUpperCase() })}
+                              value={newBatchMaterial.grade_of_material}
+                              onChange={(e) => setNewBatchMaterial({ ...newBatchMaterial, grade_of_material: e.target.value.toUpperCase() })}
                               placeholder="e.g., VIRGIN, RECYCLED"
                               data-testid="input-new-grade"
                             />
@@ -1431,8 +1467,8 @@ export default function AdminDashboard() {
                             <Label htmlFor="new-kind">Material Kind</Label>
                             <Input
                               id="new-kind"
-                              value={newMaterial.material_kind}
-                              onChange={(e) => setNewMaterial({ ...newMaterial, material_kind: e.target.value.toUpperCase() })}
+                              value={newBatchMaterial.material_kind}
+                              onChange={(e) => setNewBatchMaterial({ ...newBatchMaterial, material_kind: e.target.value.toUpperCase() })}
                               placeholder="e.g., FBB, SBS, DUPLEX"
                               data-testid="input-new-kind"
                             />
@@ -1441,29 +1477,84 @@ export default function AdminDashboard() {
                             <Label htmlFor="new-manufacturer">Manufacturer</Label>
                             <Input
                               id="new-manufacturer"
-                              value={newMaterial.manufacturer}
-                              onChange={(e) => setNewMaterial({ ...newMaterial, manufacturer: e.target.value.toUpperCase() })}
+                              value={newBatchMaterial.manufacturer}
+                              onChange={(e) => setNewBatchMaterial({ ...newBatchMaterial, manufacturer: e.target.value.toUpperCase() })}
                               placeholder="e.g., ITC, EMAMI"
                               data-testid="input-new-manufacturer"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="new-brand">Brand Name</Label>
-                            <Input
-                              id="new-brand"
-                              value={newMaterial.brand_name}
-                              onChange={(e) => setNewMaterial({ ...newMaterial, brand_name: e.target.value.toUpperCase() })}
-                              placeholder="e.g., CYBER XL, PEARL XL"
-                              data-testid="input-new-brand"
-                            />
+                            <Label>Brand Names (add multiple)</Label>
+                            <div className="space-y-2 mt-2">
+                              {newBatchMaterial.brand_names.map((brand, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <Input
+                                    value={brand}
+                                    onChange={(e) => {
+                                      const updated = [...newBatchMaterial.brand_names];
+                                      updated[index] = e.target.value.toUpperCase();
+                                      setNewBatchMaterial({ ...newBatchMaterial, brand_names: updated });
+                                    }}
+                                    placeholder={`Brand ${index + 1}`}
+                                    data-testid={`input-new-brand-${index}`}
+                                  />
+                                  {newBatchMaterial.brand_names.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="destructive"
+                                      onClick={() => {
+                                        const updated = newBatchMaterial.brand_names.filter((_, i) => i !== index);
+                                        setNewBatchMaterial({ ...newBatchMaterial, brand_names: updated });
+                                      }}
+                                      data-testid={`button-remove-brand-${index}`}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setNewBatchMaterial({ 
+                                    ...newBatchMaterial, 
+                                    brand_names: [...newBatchMaterial.brand_names, ""] 
+                                  });
+                                }}
+                                data-testid="button-add-brand-row"
+                              >
+                                + Add Another Brand
+                              </Button>
+                            </div>
                           </div>
                           <Button
-                            onClick={() => createMaterialMutation.mutate(newMaterial)}
-                            disabled={createMaterialMutation.isPending || !newMaterial.grade_of_material || !newMaterial.material_kind || !newMaterial.manufacturer || !newMaterial.brand_name}
+                            onClick={() => {
+                              const validBrands = newBatchMaterial.brand_names
+                                .map(b => b.trim().toUpperCase())
+                                .filter(b => b !== "");
+                              // Dedupe on frontend before sending
+                              const uniqueBrands = [...new Set(validBrands)];
+                              batchCreateMaterialMutation.mutate({
+                                ...newBatchMaterial,
+                                brand_names: uniqueBrands
+                              });
+                            }}
+                            disabled={
+                              batchCreateMaterialMutation.isPending || 
+                              !newBatchMaterial.grade_of_material.trim() || 
+                              !newBatchMaterial.material_kind.trim() || 
+                              !newBatchMaterial.manufacturer.trim() || 
+                              [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
+                            }
                             className="w-full"
                             data-testid="button-save-new-material"
                           >
-                            {createMaterialMutation.isPending ? "Creating..." : "Create Entry"}
+                            {batchCreateMaterialMutation.isPending 
+                              ? "Creating..." 
+                              : `Create ${[...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length} Entries`}
                           </Button>
                         </div>
                       </DialogContent>

@@ -3794,6 +3794,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch create multiple entries (multiple brand names for same parent)
+  app.post('/api/admin/material-hierarchy/batch', requireAdminAuth, async (req, res) => {
+    try {
+      let { grade_of_material, material_kind, manufacturer, brand_names } = req.body;
+      
+      // Normalize parent fields to uppercase
+      grade_of_material = grade_of_material?.trim().toUpperCase();
+      material_kind = material_kind?.trim().toUpperCase();
+      manufacturer = manufacturer?.trim().toUpperCase();
+      
+      if (!grade_of_material || !material_kind || !manufacturer) {
+        return res.status(400).json({ success: false, message: "Grade, Material Kind, and Manufacturer are required" });
+      }
+      
+      if (!Array.isArray(brand_names) || brand_names.length === 0) {
+        return res.status(400).json({ success: false, message: "At least one brand name is required" });
+      }
+
+      // Clean, normalize, and dedupe brand names
+      const cleanedBrands = brand_names
+        .map((b: string) => b?.trim().toUpperCase())
+        .filter((b: string) => b && b.length > 0);
+      
+      // Remove duplicates using Set
+      const uniqueBrands = [...new Set(cleanedBrands)];
+      
+      if (uniqueBrands.length === 0) {
+        return res.status(400).json({ success: false, message: "At least one valid brand name is required" });
+      }
+
+      const result = await materialHierarchyService.createMaterialHierarchyBatch({
+        grade_of_material,
+        material_kind,
+        manufacturer,
+        brand_names: uniqueBrands
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error batch creating material hierarchy entries:", error);
+      res.status(500).json({ success: false, message: "Failed to create material hierarchy entries" });
+    }
+  });
+
   // Create HTTP server
   return createServer(app);
 }
