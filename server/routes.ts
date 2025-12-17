@@ -75,7 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         COALESCE(dm.Make, '') as ResolvedMake,
         COALESCE(dm.Grade, '') as ResolvedGrade,
         COALESCE(dm.Brand, '') as ResolvedBrand,
-        COALESCE(dm.grade_of_material, '') as GradeOfMaterial
+        COALESCE(dm.grade_of_material, '') as GradeOfMaterial,
+        COALESCE(dm.fsc_type, 'None') as FSCType
         FROM deal_master dm
         LEFT JOIN stock_groups sg ON dm.groupID = sg.GroupID
         WHERE dm.created_by_member_id = ? AND dm.StockStatus = 1
@@ -153,6 +154,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       refSheet.getCell('G2').value = 'Yes';
       refSheet.getCell('G3').value = 'No';
 
+      // Column H: FSC Types
+      refSheet.getColumn(8).width = 15;
+      refSheet.getCell('H1').value = 'FSC Types';
+      refSheet.getCell('H2').value = 'None';
+      refSheet.getCell('H3').value = 'FSC Recycle';
+      refSheet.getCell('H4').value = 'FSC Mix';
+      refSheet.getCell('H5').value = 'FSC Pure';
+
       // Style Lists header row
       const listsHeaderRow = refSheet.getRow(1);
       listsHeaderRow.font = { bold: true };
@@ -173,6 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { header: 'Rate (Rs)', key: 'rate', width: 12 },
         { header: 'Show Rate', key: 'showRate', width: 12 },
         { header: 'Stock Age', key: 'stockAge', width: 12 },
+        { header: 'FSC Type', key: 'fscType', width: 15 },
         { header: 'Comments', key: 'comments', width: 30 }
       ];
 
@@ -207,6 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rate: deal.OfferPrice || '',
           showRate: deal.show_rate_in_marketplace ? 'Yes' : 'No',
           stockAge: deal.StockAge || '',
+          fscType: deal.FSCType || 'None',
           comments: deal.Seller_comments || ''
         });
       });
@@ -285,6 +296,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           showErrorMessage: true,
           errorTitle: 'Invalid Value',
           error: 'Please select Yes or No'
+        };
+
+        // FSC Type dropdown (Column O)
+        offersSheet.getCell(`O${rowNum}`).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: ['Lists!$H$2:$H$5'],
+          showErrorMessage: true,
+          errorTitle: 'Invalid FSC Type',
+          error: 'Please select a valid FSC Type from the list'
         };
       }
 
@@ -2422,7 +2443,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rate = row[11] !== undefined && row[11] !== '' ? parseFloat(String(row[11])) : null;
         const showRateInput = String(row[12] || 'Yes').toLowerCase().trim();
         const stockAge = row[13] !== undefined && row[13] !== '' ? parseInt(String(row[13])) : 0;
-        const comments = String(row[14] || '').trim();
+        const fscType = String(row[14] || 'None').trim();
+        const comments = String(row[15] || '').trim();
 
         const rowErrors: string[] = [];
 
@@ -2477,6 +2499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate,
             showRate: showRateInput === 'yes' || showRateInput === 'true' || showRateInput === '1',
             stockAge,
+            fscType,
             comments
           });
         }
@@ -2531,6 +2554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   Seller_comments = ?,
                   stock_description = ?,
                   search_key = ?,
+                  fsc_type = ?,
                   deal_updated_at = NOW()
                 WHERE TransID = ?
               `, [
@@ -2550,6 +2574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 `${deal_title}\n${record.comments || ''}`.trim(),
                 stockDescription,
                 searchKey,
+                record.fscType || 'None',
                 record.transId
               ], 3, connection);
               updated++;
@@ -2581,7 +2606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               price: record.rate || 0,
               show_rate_in_marketplace: record.showRate,
               stock_age: record.stockAge,
-              deal_description: record.comments
+              deal_description: record.comments,
+              fsc_type: record.fscType || 'None'
             }, undefined, connection);
             created++;
           }
