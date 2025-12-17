@@ -2518,9 +2518,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   show_rate_in_marketplace = ?,
                   StockAge = ?,
                   Seller_comments = ?,
-                  deal_title = ?,
-                  StockDescription = ?,
-                  normalization_key = ?,
+                  stock_description = ?,
+                  search_key = ?,
                   deal_updated_at = NOW()
                 WHERE TransID = ?
               `, [
@@ -2537,8 +2536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 record.rate || 0,
                 record.showRate,
                 record.stockAge,
-                record.comments,
-                deal_title,
+                `${deal_title}\n${record.comments || ''}`.trim(),
                 stockDescription,
                 searchKey,
                 record.transId
