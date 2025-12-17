@@ -86,12 +86,16 @@ export class PowerSearchService {
     page?: number;
     pageSize?: number;
     exclude_member_id?: number;
+    minQty?: number;
+    maxQty?: number;
   }): Promise<any> {
     const {
       query = '',
       page = 1,
       pageSize = 20,
-      exclude_member_id
+      exclude_member_id,
+      minQty,
+      maxQty
     } = params;
 
     const queryParams: any[] = [];
@@ -101,6 +105,27 @@ export class PowerSearchService {
     if (exclude_member_id) {
       whereConditions.push('(dm.memberID != ? AND dm.created_by_member_id != ?)');
       queryParams.push(exclude_member_id, exclude_member_id);
+    }
+
+    // Quantity filter - convert to normalized KG for comparison
+    // For MT: multiply by 1000, for KG: use as-is
+    if (minQty !== undefined && minQty > 0) {
+      whereConditions.push(`(
+        CASE 
+          WHEN LOWER(dm.OfferUnit) = 'mt' THEN dm.quantity * 1000
+          ELSE dm.quantity
+        END >= ?
+      )`);
+      queryParams.push(minQty);
+    }
+    if (maxQty !== undefined && maxQty < Infinity) {
+      whereConditions.push(`(
+        CASE 
+          WHEN LOWER(dm.OfferUnit) = 'mt' THEN dm.quantity * 1000
+          ELSE dm.quantity
+        END <= ?
+      )`);
+      queryParams.push(maxQty);
     }
 
     if (query && query.trim()) {

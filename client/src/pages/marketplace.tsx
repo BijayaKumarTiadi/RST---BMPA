@@ -596,10 +596,14 @@ export default function Marketplace() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Reset page when quantity filter changes
+  // Reset page and re-run search when quantity filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [appliedFilters.quantityRange]);
+    // If there's an active search, re-run it with the new quantity filter
+    if (searchResults && searchTerm) {
+      performSearch(searchTerm, appliedFilters);
+    }
+  }, [appliedFilters.quantityRange.min, appliedFilters.quantityRange.max]);
 
   // Load initial filter data when component mounts
   useEffect(() => {
@@ -649,8 +653,9 @@ export default function Marketplace() {
     performSearch(pendingSearchTerm);
   };
 
-  const performSearch = async (query: string) => {
+  const performSearch = async (query: string, filters?: typeof appliedFilters) => {
     setIsSearching(true);
+    const currentFilters = filters || appliedFilters;
     try {
       const response = await fetch('/api/search/search', {
         method: 'POST',
@@ -661,7 +666,9 @@ export default function Marketplace() {
           query: query.trim(),
           page: currentPage,
           pageSize: itemsPerPage,
-          exclude_member_id: user?.id // Exclude user's own products
+          exclude_member_id: user?.id, // Exclude user's own products
+          minQty: currentFilters.quantityRange.min ? parseInt(currentFilters.quantityRange.min) : undefined,
+          maxQty: currentFilters.quantityRange.max ? parseInt(currentFilters.quantityRange.max) : undefined
         })
       });
 
