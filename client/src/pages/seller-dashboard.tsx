@@ -9,12 +9,232 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail, UserCog, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
+import { Package, Plus, TrendingUp, DollarSign, Users, Eye, Edit2, Trash2, MessageCircle, ShoppingCart, Filter, Search, Calendar, IndianRupee, Clock, X, User, MessageSquare, Mail, UserCog, AlertTriangle, CheckCircle2, Timer, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPostingDate } from "@/lib/utils";
+
+// Rate Requests Tab Component
+function RateRequestsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [pendingRequestId, setPendingRequestId] = useState<number | null>(null);
+  
+  // Fetch rate requests for seller
+  const { data: rateRequests, isLoading } = useQuery({
+    queryKey: ['/api/rate-requests/seller'],
+  });
+
+  // Mutation to approve/deny rate requests
+  const updateRateRequest = useMutation({
+    mutationFn: async ({ requestId, status, notes }: { requestId: number; status: 'approved' | 'denied'; notes?: string }) => {
+      setPendingRequestId(requestId);
+      const response = await apiRequest('PATCH', `/api/rate-requests/${requestId}`, { status, notes });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+        throw new Error(errorData.message || 'Failed to update rate request');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setPendingRequestId(null);
+      if (data.success) {
+        toast({
+          title: data.data.status === 'approved' ? 'Request Approved' : 'Request Denied',
+          description: data.data.status === 'approved' 
+            ? 'The buyer can now see your rate for this product.' 
+            : 'The buyer has been notified.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/rate-requests/seller'] });
+      } else {
+        toast({
+          title: 'Action Failed',
+          description: data.message || 'Failed to update rate request',
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error: any) => {
+      setPendingRequestId(null);
+      toast({
+        title: 'Action Failed',
+        description: error.message || 'Failed to update rate request',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const requests = (rateRequests as any)?.success !== false ? ((rateRequests as any)?.data || []) : [];
+  const pendingRequests = requests.filter((r: any) => r.status === 'pending');
+  const processedRequests = requests.filter((r: any) => r.status !== 'pending');
+
+  return (
+    <TabsContent value="rate-requests" className="space-y-6">
+      <Card className="border-2 border-border shadow-lg bg-card">
+        <CardHeader className="bg-muted border-b-2 border-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Rate Requests
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Manage requests from buyers who want to see your product rates
+              </CardDescription>
+            </div>
+            {pendingRequests.length > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
+                {pendingRequests.length} Pending
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium">No rate requests yet</p>
+              <p className="text-sm">When buyers request to see your hidden rates, they will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Pending Requests */}
+              {pendingRequests.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-yellow-500" />
+                    Pending Requests ({pendingRequests.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {pendingRequests.map((request: any) => (
+                      <div 
+                        key={request.request_id} 
+                        className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+                        data-testid={`rate-request-${request.request_id}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{request.requester_name}</span>
+                            <span className="text-muted-foreground text-sm">from</span>
+                            <span className="font-medium">{request.requester_company}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Requested rate for: <span className="font-medium">{request.deal_description || request.deal_title || `Product #${request.deal_id}`}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {request.created_at ? new Date(request.created_at).toLocaleDateString('en-IN', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'Date not available'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => updateRateRequest.mutate({ requestId: request.request_id, status: 'approved' })}
+                            disabled={pendingRequestId === request.request_id}
+                            data-testid={`button-approve-${request.request_id}`}
+                          >
+                            {pendingRequestId === request.request_id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => updateRateRequest.mutate({ requestId: request.request_id, status: 'denied' })}
+                            disabled={pendingRequestId === request.request_id}
+                            data-testid={`button-deny-${request.request_id}`}
+                          >
+                            {pendingRequestId === request.request_id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Deny
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Processed Requests */}
+              {processedRequests.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                    Processed Requests ({processedRequests.length})
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Requester</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {processedRequests.map((request: any) => (
+                        <TableRow key={request.request_id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{request.requester_name}</p>
+                              <p className="text-xs text-muted-foreground">{request.requester_company}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {request.deal_description || request.deal_title || `Product #${request.deal_id}`}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={request.status === 'approved' 
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                              : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                            }>
+                              {request.status === 'approved' ? (
+                                <><CheckCircle className="h-3 w-3 mr-1" />Approved</>
+                              ) : (
+                                <><XCircle className="h-3 w-3 mr-1" />Denied</>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {request.decision_at ? new Date(request.decision_at).toLocaleDateString('en-IN') : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  );
+}
 
 export default function SellerDashboard() {
   const { user, isAuthenticated } = useAuth();
@@ -478,10 +698,11 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="offers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-background border shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-background border shadow-sm">
             <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
             <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
             <TabsTrigger value="counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
+            <TabsTrigger value="rate-requests" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rate Requests</TabsTrigger>
           </TabsList>
 
           {/* Offers Tab */}
@@ -1134,6 +1355,9 @@ export default function SellerDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Rate Requests Tab */}
+          <RateRequestsTab />
         </Tabs>
 
         {/* Order Details Modal */}

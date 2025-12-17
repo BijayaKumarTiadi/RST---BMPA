@@ -26,8 +26,19 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
     enabled: isOpen
   });
 
-  // Check if rate is hidden (not shown by seller)
-  const isRateHidden = !deal?.show_rate_in_marketplace && deal?.show_rate_in_marketplace !== 1 && deal?.ShowRate !== 'Yes';
+  // Check if rate is shown by seller (handle various data formats)
+  const showRateValue = String(deal?.show_rate_in_marketplace || '').toLowerCase();
+  const showRateField = String(deal?.ShowRate || '').toLowerCase();
+  const isRateShown = deal?.show_rate_in_marketplace === 1 || 
+                      deal?.show_rate_in_marketplace === true || 
+                      showRateValue === '1' ||
+                      showRateValue === 'true' ||
+                      showRateValue === 'yes' ||
+                      showRateValue === 'y' ||
+                      showRateField === 'yes' ||
+                      showRateField === 'y' ||
+                      showRateField === 'true';
+  const isRateHidden = !isRateShown;
   
   // Check rate request status for this deal
   const { data: rateRequestStatus, isLoading: isLoadingRateStatus } = useQuery({
