@@ -468,6 +468,7 @@ class DealService {
     packing_type?: string;
     sheets_per_packet?: string;
     grade_of_material?: string;
+    fsc_type?: string;
   }, userInfo?: { member_id: number; name: string; company: string }, connection?: any): Promise<{ success: boolean; message: string; dealId?: number }> {
     try {
       const {
@@ -503,6 +504,7 @@ class DealService {
         packing_type,
         sheets_per_packet,
         grade_of_material,
+        fsc_type,
       } = dealData as any;
 
       // DEBUG: Log packing fields
@@ -598,8 +600,8 @@ class DealService {
           Seller_comments, OfferPrice, OfferUnit, quantity, stock_description,
           GSM, Deckle_mm, grain_mm, search_key, StockAge,
           created_by_member_id, created_by_name, created_by_company, show_rate_in_marketplace,
-          packing_type, sheets_per_packet, grade_of_material
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          packing_type, sheets_per_packet, grade_of_material, fsc_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         group_id,
         finalMake,
@@ -622,7 +624,8 @@ class DealService {
         show_rate_in_marketplace ? 1 : 0,
         packing_type || null,
         sheets_per_packet || null,
-        grade_of_material || null
+        grade_of_material || null,
+        fsc_type || 'None'
       ], 3, connection);
 
       const insertId = (result as any).insertId;
@@ -795,6 +798,12 @@ class DealService {
       if ((updateData as any).sheets_per_packet !== undefined) {
         updateFields.push(`sheets_per_packet = ?`);
         updateValues.push((updateData as any).sheets_per_packet || null);
+      }
+
+      // Handle fsc_type
+      if ((updateData as any).fsc_type !== undefined) {
+        updateFields.push(`fsc_type = ?`);
+        updateValues.push((updateData as any).fsc_type || 'None');
       }
 
       // Skip fields that don't exist in the deal_master table

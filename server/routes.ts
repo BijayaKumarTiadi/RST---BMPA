@@ -2105,6 +2105,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // FSC Types endpoint
+  app.get('/api/fsc-types', async (req, res) => {
+    try {
+      const fscTypes = await executeQuery('SELECT id, name, logo_image, remarks FROM fsc_types ORDER BY id');
+      res.json({ success: true, data: fscTypes });
+    } catch (error) {
+      console.error("Error fetching FSC types:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch FSC types" });
+    }
+  });
+
   // Bulk Upload Template Download - Using ExcelJS for data validation support
   app.get('/api/deals/bulk-upload-template', async (req, res) => {
     try {
