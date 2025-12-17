@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
 import { Filter, Search, X, ChevronRight } from "lucide-react";
 
 interface MobileFilterDrawerProps {
@@ -29,6 +30,7 @@ interface MobileFilterDrawerProps {
   searchResults: any;
   allPreciseSearchResults: any[];
   getUniqueValues: (type: string) => any[];
+  setAppliedFilters?: (filters: any) => void;
 }
 
 export function MobileFilterDrawer({
@@ -50,7 +52,8 @@ export function MobileFilterDrawer({
   searchAggregations,
   searchResults,
   allPreciseSearchResults,
-  getUniqueValues
+  getUniqueValues,
+  setAppliedFilters
 }: MobileFilterDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -324,6 +327,103 @@ export function MobileFilterDrawer({
                 ))}
               </div>
             </FilterSection>
+
+            {/* Quantity Range */}
+            {setAppliedFilters && (
+              <FilterSection 
+                title={`Quantity Range ${appliedFilters.quantityRange?.min || appliedFilters.quantityRange?.max ? '(Active)' : ''}`} 
+                type="quantityRange"
+              >
+                <div className="space-y-4">
+                  {/* Min/Max Input Fields */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="text-xs text-muted-foreground mb-1 block">Min (KG)</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={10000}
+                        value={appliedFilters.quantityRange?.min || ''}
+                        onChange={(e) => {
+                          const newFilters = { ...appliedFilters };
+                          newFilters.quantityRange = { 
+                            ...newFilters.quantityRange, 
+                            min: e.target.value 
+                          };
+                          setAppliedFilters(newFilters);
+                        }}
+                        placeholder="0"
+                        className="h-9"
+                        data-testid="input-mobile-qty-min"
+                      />
+                    </div>
+                    <span className="text-muted-foreground mt-5">-</span>
+                    <div className="flex-1">
+                      <label className="text-xs text-muted-foreground mb-1 block">Max (KG)</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={10000}
+                        value={appliedFilters.quantityRange?.max || ''}
+                        onChange={(e) => {
+                          const newFilters = { ...appliedFilters };
+                          newFilters.quantityRange = { 
+                            ...newFilters.quantityRange, 
+                            max: e.target.value 
+                          };
+                          setAppliedFilters(newFilters);
+                        }}
+                        placeholder="10000"
+                        className="h-9"
+                        data-testid="input-mobile-qty-max"
+                      />
+                    </div>
+                  </div>
+                  {/* Dual-handle Slider */}
+                  <div className="space-y-2 pt-2">
+                    <Slider
+                      min={0}
+                      max={1000}
+                      step={10}
+                      value={[
+                        Math.min(parseInt(appliedFilters.quantityRange?.min) || 0, 1000),
+                        Math.min(parseInt(appliedFilters.quantityRange?.max) || 1000, 1000)
+                      ]}
+                      onValueChange={(values) => {
+                        const newFilters = { ...appliedFilters };
+                        newFilters.quantityRange = {
+                          min: values[0].toString(),
+                          max: values[1].toString()
+                        };
+                        setAppliedFilters(newFilters);
+                      }}
+                      className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-background"
+                      data-testid="slider-mobile-qty-range"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>0</span>
+                      <span>500</span>
+                      <span>1000+ KG</span>
+                    </div>
+                  </div>
+                  {(appliedFilters.quantityRange?.min !== "" || appliedFilters.quantityRange?.max !== "") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        const newFilters = { ...appliedFilters };
+                        newFilters.quantityRange = { min: "", max: "" };
+                        setAppliedFilters(newFilters);
+                      }}
+                      data-testid="button-mobile-clear-qty-filter"
+                    >
+                      Clear Quantity Filter
+                    </Button>
+                  )}
+                </div>
+              </FilterSection>
+            )}
           </div>
         </ScrollArea>
 

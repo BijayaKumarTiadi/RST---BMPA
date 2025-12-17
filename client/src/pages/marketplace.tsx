@@ -599,9 +599,9 @@ export default function Marketplace() {
   // Reset page and re-run search when quantity filter changes
   useEffect(() => {
     setCurrentPage(1);
-    // If there's an active search, re-run it with the new quantity filter
-    if (searchResults && searchTerm) {
-      performSearch(searchTerm, appliedFilters);
+    // If there's an active search or search results, re-run with the new quantity filter
+    if (searchResults) {
+      performSearch(searchTerm || '', appliedFilters);
     }
   }, [appliedFilters.quantityRange.min, appliedFilters.quantityRange.max]);
 
@@ -2185,6 +2185,7 @@ export default function Marketplace() {
             searchResults={searchResults}
             allPreciseSearchResults={allPreciseSearchResults}
             getUniqueValues={getUniqueValues}
+            setAppliedFilters={setAppliedFilters}
           />
         )}
 
@@ -2762,18 +2763,53 @@ export default function Marketplace() {
                         </Button>
                         {expandedSections.quantityRange && (
                           <div className="mt-3 space-y-3">
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>{appliedFilters.quantityRange.min || '0'} KG</span>
-                                <span>{appliedFilters.quantityRange.max || '1000'} KG</span>
+                            {/* Min/Max Input Fields */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <label className="text-xs text-muted-foreground mb-1 block">Min (KG)</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={10000}
+                                  value={appliedFilters.quantityRange.min || ''}
+                                  onChange={(e) => {
+                                    const newFilters = { ...appliedFilters };
+                                    newFilters.quantityRange.min = e.target.value;
+                                    setAppliedFilters(newFilters);
+                                  }}
+                                  placeholder="0"
+                                  className="h-9"
+                                  data-testid="input-qty-min"
+                                />
                               </div>
+                              <span className="text-muted-foreground mt-5">-</span>
+                              <div className="flex-1">
+                                <label className="text-xs text-muted-foreground mb-1 block">Max (KG)</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={10000}
+                                  value={appliedFilters.quantityRange.max || ''}
+                                  onChange={(e) => {
+                                    const newFilters = { ...appliedFilters };
+                                    newFilters.quantityRange.max = e.target.value;
+                                    setAppliedFilters(newFilters);
+                                  }}
+                                  placeholder="10000"
+                                  className="h-9"
+                                  data-testid="input-qty-max"
+                                />
+                              </div>
+                            </div>
+                            {/* Dual-handle Slider */}
+                            <div className="space-y-2 pt-2">
                               <Slider
                                 min={0}
                                 max={1000}
                                 step={10}
                                 value={[
-                                  parseInt(appliedFilters.quantityRange.min) || 0,
-                                  parseInt(appliedFilters.quantityRange.max) || 1000
+                                  Math.min(parseInt(appliedFilters.quantityRange.min) || 0, 1000),
+                                  Math.min(parseInt(appliedFilters.quantityRange.max) || 1000, 1000)
                                 ]}
                                 onValueChange={(values) => {
                                   const newFilters = { ...appliedFilters };
@@ -2781,10 +2817,13 @@ export default function Marketplace() {
                                   newFilters.quantityRange.max = values[1].toString();
                                   setAppliedFilters(newFilters);
                                 }}
-                                className="w-full"
+                                className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-background"
+                                data-testid="slider-qty-range"
                               />
-                              <div className="text-xs text-center text-muted-foreground">
-                                Drag to set range
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>0</span>
+                                <span>500</span>
+                                <span>1000+ KG</span>
                               </div>
                             </div>
                             {(appliedFilters.quantityRange.min !== "" || appliedFilters.quantityRange.max !== "") && (
@@ -2797,6 +2836,7 @@ export default function Marketplace() {
                                   newFilters.quantityRange = { min: "", max: "" };
                                   setAppliedFilters(newFilters);
                                 }}
+                                data-testid="button-clear-qty-filter"
                               >
                                 Clear Quantity Filter
                               </Button>
