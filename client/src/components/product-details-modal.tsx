@@ -170,6 +170,12 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                   <span className="ml-2 font-medium">{deal.sheets_per_packet}</span>
                 </div>
               )}
+              {deal.fsc_type && deal.fsc_type !== 'None' && (
+                <div>
+                  <span className="text-muted-foreground">FSC Type:</span>
+                  <span className="ml-2 font-medium">{deal.fsc_type}</span>
+                </div>
+              )}
             </div>
           </div>
 
