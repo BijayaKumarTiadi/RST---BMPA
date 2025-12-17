@@ -872,6 +872,7 @@ export default function AddDeal() {
           make_id: data.MakeID || data.makeText || makeText || "",
           grade_id: data.GradeID || data.gradeText || gradeText || "",
           brand_id: data.BrandID || data.brandText || brandText || "",
+          grade_of_material: data.gradeOfMaterial || selectedGradeOfMaterial || "",
           deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
           stock_description: stockDescription,
           search_key: searchKey,

@@ -85,8 +85,13 @@ searchRouter.post('/precise', async (req, res) => {
     // These filters work with the Make/Grade/Brand columns in deal_master
     // which store the selected material hierarchy values from the cascading dropdowns
     
+    // Grade of Material filter (stored in grade_of_material column)
+    if (gradeOfMaterial && gradeOfMaterial.trim()) {
+      whereClause += ` AND dm.grade_of_material = ?`;
+      queryParams.push(gradeOfMaterial.trim());
+    }
+    
     // Material Kind filter (stored in Make column for Paper/Board)
-    // When gradeOfMaterial is selected, we filter by material kinds that belong to that grade
     if (materialKind && materialKind.trim()) {
       whereClause += ` AND dm.Make = ?`;
       queryParams.push(materialKind.trim());
