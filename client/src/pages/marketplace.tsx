@@ -596,14 +596,8 @@ export default function Marketplace() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Reset page and re-run search when quantity filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-    // If there's an active search or search results, re-run with the new quantity filter
-    if (searchResults) {
-      performSearch(searchTerm || '', appliedFilters);
-    }
-  }, [appliedFilters.quantityRange.min, appliedFilters.quantityRange.max]);
+  // Note: Quantity range filtering is handled client-side in applyClientFilters
+  // No need to trigger a new search - the filter works on already loaded data
 
   // Load initial filter data when component mounts
   useEffect(() => {
@@ -666,9 +660,8 @@ export default function Marketplace() {
           query: query.trim(),
           page: currentPage,
           pageSize: itemsPerPage,
-          exclude_member_id: user?.id, // Exclude user's own products
-          minQty: currentFilters.quantityRange.min ? parseInt(currentFilters.quantityRange.min) : undefined,
-          maxQty: currentFilters.quantityRange.max ? parseInt(currentFilters.quantityRange.max) : undefined
+          exclude_member_id: user?.id // Exclude user's own products
+          // Note: Quantity filtering is done client-side in applyClientFilters
         })
       });
 
@@ -1138,7 +1131,7 @@ export default function Marketplace() {
     if (allPreciseSearchResults.length > 0) {
       applyClientFilters();
     }
-  }, [clientFilters, allPreciseSearchResults]);
+  }, [clientFilters, allPreciseSearchResults, appliedFilters.quantityRange.min, appliedFilters.quantityRange.max]);
 
   // Auto-suggestion functions for precise search
   const fetchGsmSuggestions = async (query: string | any) => {
