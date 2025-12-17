@@ -23,6 +23,7 @@ import {
   isRazorpayConfigured,
   type RazorpayPaymentVerification
 } from './razorpayService';
+import * as rateRequestService from './rateRequestService';
 
 // Middleware to check if user is authenticated
 const requireAuth = (req: any, res: any, next: any) => {
@@ -4159,6 +4160,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error batch creating material hierarchy entries:", error);
       res.status(500).json({ success: false, message: "Failed to create material hierarchy entries" });
+    }
+  });
+
+  // ============= RATE REQUEST ENDPOINTS =============
+  
+  // Create a rate request (buyer requests to see seller's rate)
+  app.post('/api/rate-requests', requireAuth, async (req: any, res) => {
+    try {
+      const requesterId = req.session.memberId;
+      const { deal_id } = req.body;
+
+      if (!deal_id) {
+        return res.status(400).json({ success: false, message: "Deal ID is required" });
+      }
+
+      // Get deal details
+      const deal = await executeQuerySingle(`
+        SELECT dm.*, m.company_name as seller_company, m.email as seller_email, m.member_id as seller_id
+        FROM deal_master dm
+        LEFT JOIN bmpa_members m ON dm.created_by_member_id = m.member_id
+        WHERE dm.TransID = ?
+      `, [deal_id]);
+
+      if (!deal) {
+        return res.status(404).json({ success: false, message: "Deal not found" });
+      }
+
+      // Get requester details
+      const requester = await executeQuerySingle(`
+        SELECT company_name, email, contact_person FROM bmpa_members WHERE member_id = ?
+      `, [requesterId]);
+
+      if (!requester) {
+        return res.status(404).json({ success: false, message: "Requester not found" });
+      }
+
+      // Prevent requesting own deals
+      if (deal.seller_id === requesterId) {
+        return res.status(400).json({ success: false, message: "You cannot request rate for your own product" });
+      }
+
+      // Create rate request
+      const rateRequest = await rateRequestService.createRateRequest({
+        deal_id: deal_id,
+        requester_id: requesterId,
+        seller_id: deal.seller_id,
+        requester_name: requester.contact_person || requester.company_name,
+        requester_company: requester.company_name,
+        requester_email: requester.email,
+        seller_email: deal.seller_email,
+        deal_description: `${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''} - ${deal.GSM || ''} GSM`.trim()
+      });
+
+      // Send email notification to seller
+      if (deal.seller_email) {
+        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+          : 'http://localhost:5000';
+        
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a1a;">Rate Request Received</h2>
+            <p>Hello,</p>
+            <p><strong>${requester.contact_person || requester.company_name}</strong> from <strong>${requester.company_name}</strong> has requested to view the rate for your product:</p>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Product:</strong> ${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''}</p>
+              <p style="margin: 5px 0;"><strong>GSM:</strong> ${deal.GSM || 'N/A'}</p>
+              <p style="margin: 5px 0;"><strong>Quantity:</strong> ${deal.Qty || 'N/A'} ${deal.OfferUnit || ''}</p>
+            </div>
+            <p>To approve or deny this request, please log in to your Stock Laabh dashboard:</p>
+            <p><a href="${baseUrl}/dashboard" style="background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Rate Requests</a></p>
+            <p style="color: #666; font-size: 12px; margin-top: 30px;">If you did not expect this request, please ignore this email.</p>
+          </div>
+        `;
+
+        try {
+          await sendEmail({
+            to: deal.seller_email,
+            subject: `Rate Request from ${requester.company_name} - Stock Laabh`,
+            html: emailHtml
+          });
+        } catch (emailError) {
+          console.error('Failed to send rate request email:', emailError);
+        }
+      }
+
+      res.json({ success: true, data: rateRequest });
+    } catch (error: any) {
+      console.error("Error creating rate request:", error);
+      res.status(400).json({ success: false, message: error.message || "Failed to create rate request" });
+    }
+  });
+
+  // Get rate requests for seller (pending requests to approve/deny)
+  app.get('/api/rate-requests/seller', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      const requests = await rateRequestService.getRateRequestsForSeller(sellerId);
+      res.json({ success: true, data: requests });
+    } catch (error: any) {
+      console.error("Error fetching seller rate requests:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch rate requests" });
+    }
+  });
+
+  // Get rate requests made by buyer
+  app.get('/api/rate-requests/buyer', requireAuth, async (req: any, res) => {
+    try {
+      const buyerId = req.session.memberId;
+      const requests = await rateRequestService.getRateRequestsForBuyer(buyerId);
+      res.json({ success: true, data: requests });
+    } catch (error: any) {
+      console.error("Error fetching buyer rate requests:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch rate requests" });
+    }
+  });
+
+  // Check rate request status for a specific deal
+  app.get('/api/rate-requests/status/:dealId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.memberId;
+      const dealId = parseInt(req.params.dealId);
+      
+      const status = await rateRequestService.getRateRequestStatus(dealId, userId);
+      const isApproved = await rateRequestService.checkRateApproval(dealId, userId);
+      
+      res.json({ success: true, status, isApproved });
+    } catch (error: any) {
+      console.error("Error checking rate request status:", error);
+      res.status(500).json({ success: false, message: "Failed to check rate request status" });
+    }
+  });
+
+  // Update rate request status (approve/deny) - seller only
+  app.patch('/api/rate-requests/:requestId', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      const requestId = parseInt(req.params.requestId);
+      const { status, notes } = req.body;
+
+      if (!['approved', 'denied'].includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status. Must be 'approved' or 'denied'" });
+      }
+
+      const updatedRequest = await rateRequestService.updateRateRequestStatus(requestId, sellerId, status, notes);
+
+      // Send email notification to requester about the decision
+      if (updatedRequest.requester_email) {
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a1a;">Rate Request ${status === 'approved' ? 'Approved' : 'Denied'}</h2>
+            <p>Hello,</p>
+            <p>Your rate request for the following product has been <strong>${status === 'approved' ? 'approved' : 'denied'}</strong>:</p>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Product:</strong> ${updatedRequest.deal_description}</p>
+            </div>
+            ${status === 'approved' 
+              ? '<p style="color: #22c55e;">You can now view the rate for this product in the marketplace.</p>' 
+              : '<p style="color: #666;">The seller has chosen not to share the rate at this time.</p>'
+            }
+            ${notes ? `<p><strong>Seller Notes:</strong> ${notes}</p>` : ''}
+          </div>
+        `;
+
+        try {
+          await sendEmail({
+            to: updatedRequest.requester_email,
+            subject: `Rate Request ${status === 'approved' ? 'Approved' : 'Denied'} - Stock Laabh`,
+            html: emailHtml
+          });
+        } catch (emailError) {
+          console.error('Failed to send rate request decision email:', emailError);
+        }
+      }
+
+      res.json({ success: true, data: updatedRequest });
+    } catch (error: any) {
+      console.error("Error updating rate request:", error);
+      res.status(400).json({ success: false, message: error.message || "Failed to update rate request" });
+    }
+  });
+
+  // Get pending rate requests count for seller
+  app.get('/api/rate-requests/pending-count', requireAuth, async (req: any, res) => {
+    try {
+      const sellerId = req.session.memberId;
+      const count = await rateRequestService.getPendingRequestsCount(sellerId);
+      res.json({ success: true, count });
+    } catch (error: any) {
+      console.error("Error fetching pending requests count:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch pending requests count" });
     }
   });
 
