@@ -75,7 +75,33 @@ Preferred communication style: Simple, everyday language.
 - **Email/SMS**: OTP verification system for user registration
 - **Search**: Built-in search functionality for stock listings and categories
 
-## Recent Changes (November 2025)
+## Recent Changes (December 2025)
+
+### Rate on Request Feature
+- **New Feature**: Buyers can now request to view hidden rates from sellers
+- **Database Table**: New `rate_requests` table to track rate requests with status (pending, approved, denied)
+- **Email Notifications**: 
+  - Seller receives email when a buyer requests rate access
+  - Buyer receives confirmation email when request is submitted
+  - Buyer receives notification when seller approves or denies the request
+- **Product Details Modal**: Shows pricing section with:
+  - Price displayed if seller allows or if request was approved
+  - "Request Rate" button for hidden rates
+  - Status indicators for pending/denied requests
+  - "Request Again" button for denied requests
+- **API Endpoints**:
+  - POST `/api/rate-requests` - Create new rate request
+  - GET `/api/rate-requests/seller` - Get requests for seller to approve
+  - GET `/api/rate-requests/buyer` - Get requests made by buyer
+  - GET `/api/rate-requests/status/:dealId` - Check request status for a deal
+  - PATCH `/api/rate-requests/:requestId` - Approve or deny request
+
+### Product Details Enhancements
+- **Stock Age**: Added display of Stock Age in product details modal
+- **Pricing Display**: Added ₹ price display with Indian number formatting when seller allows
+- **Packing Type & Sheets Per Packet**: Now displayed in product specifications
+
+## Previous Changes (November 2025)
 
 ### Admin Summary Report
 - **New Summary Tab**: Added a "Summary" tab in Admin Dashboard for comprehensive reporting
