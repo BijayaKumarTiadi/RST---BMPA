@@ -29,12 +29,12 @@ export interface CreateRateRequestInput {
 }
 
 export async function createRateRequest(input: CreateRateRequestInput): Promise<RateRequest> {
-  const existingRequest = await executeQuerySingle(`
+  const existingPendingRequest = await executeQuerySingle(`
     SELECT * FROM rate_requests 
     WHERE deal_id = ? AND requester_id = ? AND status = 'pending'
   `, [input.deal_id, input.requester_id]);
 
-  if (existingRequest) {
+  if (existingPendingRequest) {
     throw new Error('You already have a pending rate request for this product');
   }
 
@@ -46,6 +46,12 @@ export async function createRateRequest(input: CreateRateRequestInput): Promise<
   if (approvedRequest) {
     throw new Error('Your rate request has already been approved');
   }
+
+  // Delete any previously denied requests to allow re-request
+  await executeQuery(`
+    DELETE FROM rate_requests 
+    WHERE deal_id = ? AND requester_id = ? AND status = 'denied'
+  `, [input.deal_id, input.requester_id]);
 
   await executeQuery(`
     INSERT INTO rate_requests 

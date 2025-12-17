@@ -4246,6 +4246,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Send confirmation email to buyer
+      if (requester.email) {
+        const buyerEmailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a1a;">Rate Request Sent</h2>
+            <p>Hello ${requester.contact_person || requester.company_name},</p>
+            <p>Your rate request has been sent to the seller for the following product:</p>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Product:</strong> ${deal.Make || ''} ${deal.Grade || ''} ${deal.Brand || ''}</p>
+              <p style="margin: 5px 0;"><strong>GSM:</strong> ${deal.GSM || 'N/A'}</p>
+              <p style="margin: 5px 0;"><strong>Seller:</strong> ${deal.seller_company || 'N/A'}</p>
+            </div>
+            <p>You will receive an email notification when the seller responds to your request.</p>
+            <p style="color: #666; font-size: 12px; margin-top: 30px;">Thank you for using Stock Laabh.</p>
+          </div>
+        `;
+
+        try {
+          await sendEmail({
+            to: requester.email,
+            subject: `Rate Request Sent - Stock Laabh`,
+            html: buyerEmailHtml
+          });
+        } catch (emailError) {
+          console.error('Failed to send buyer confirmation email:', emailError);
+        }
+      }
+
       res.json({ success: true, data: rateRequest });
     } catch (error: any) {
       console.error("Error creating rate request:", error);

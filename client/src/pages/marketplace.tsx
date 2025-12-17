@@ -3347,6 +3347,7 @@ export default function Marketplace() {
         deal={selectedDeal}
         onSendEnquiry={handleSendEnquiry}
         onSendWhatsApp={handleSendWhatsAppFromModal}
+        currentUserId={user?.id}
       />
 
       <EnquiryFormModal

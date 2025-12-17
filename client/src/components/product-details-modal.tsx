@@ -2,9 +2,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, Building, Mail, MessageSquare, Phone } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { User, Building, Mail, MessageSquare, Phone, DollarSign, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatPostingDate } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface ProductDetailsModalProps {
   isOpen: boolean;
@@ -12,14 +14,63 @@ interface ProductDetailsModalProps {
   deal: any;
   onSendEnquiry?: (deal: any) => void;
   onSendWhatsApp?: (deal: any) => void;
+  currentUserId?: number;
 }
 
-export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnquiry, onSendWhatsApp }: ProductDetailsModalProps) {
+export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnquiry, onSendWhatsApp, currentUserId }: ProductDetailsModalProps) {
+  const { toast } = useToast();
+  
   // Fetch user settings to get dimension preference
   const { data: userSettings } = useQuery({
     queryKey: ['/api/settings'],
-    enabled: isOpen // Only fetch when modal is open
+    enabled: isOpen
   });
+
+  // Check if rate is hidden (not shown by seller)
+  const isRateHidden = !deal?.show_rate_in_marketplace && deal?.show_rate_in_marketplace !== 1 && deal?.ShowRate !== 'Yes';
+  
+  // Check rate request status for this deal
+  const { data: rateRequestStatus, isLoading: isLoadingRateStatus } = useQuery({
+    queryKey: ['/api/rate-requests/status', deal?.TransID],
+    enabled: isOpen && isRateHidden && !!deal?.TransID && !!currentUserId,
+  });
+
+  // Mutation to create a rate request
+  const createRateRequest = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/rate-requests', {
+        deal_id: deal.TransID
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Rate Request Sent",
+          description: "The seller has been notified. You'll receive an email when they respond.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/rate-requests/status', deal.TransID] });
+      } else {
+        toast({
+          title: "Request Failed",
+          description: data.message || "Failed to send rate request",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Request Failed",
+        description: error.message || "Failed to send rate request",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Check if buyer can see the rate (either seller shows it, or request is approved)
+  const canSeeRate = !isRateHidden || (rateRequestStatus as any)?.isApproved;
+  const requestStatus = (rateRequestStatus as any)?.status || 'none';
+  const isOwnProduct = currentUserId && deal?.created_by_member_id === currentUserId;
 
   if (!deal) return null;
 
@@ -185,10 +236,15 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
             </div>
           </div>
 
-          {/* Pricing Information - Only show if seller allows */}
-          {deal.OfferPrice && (deal.show_rate_in_marketplace === 1 || deal.show_rate_in_marketplace === true || deal.ShowRate === 'Yes') && (
-            <div>
-              <h4 className="font-semibold text-lg mb-3 text-center">Pricing</h4>
+          {/* Pricing Information */}
+          <div>
+            <h4 className="font-semibold text-lg mb-3 text-center flex items-center justify-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Pricing
+            </h4>
+            
+            {/* Show price if allowed or approved */}
+            {deal.OfferPrice && canSeeRate && (
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="text-center">
                   <span className="text-2xl font-bold text-green-700 dark:text-green-400">
@@ -196,9 +252,96 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                   </span>
                   <span className="text-muted-foreground ml-2">per {deal.OfferUnit || deal.Unit || 'unit'}</span>
                 </div>
+                {(rateRequestStatus as any)?.isApproved && (
+                  <div className="mt-2 text-center">
+                    <Badge variant="secondary" className="text-green-600 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Rate shared with you
+                    </Badge>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Rate on Request - only show if rate is hidden and not own product */}
+            {isRateHidden && !isOwnProduct && (
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                {isLoadingRateStatus ? (
+                  <div className="text-center py-2">
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                  </div>
+                ) : requestStatus === 'none' ? (
+                  <div className="text-center space-y-3">
+                    <p className="text-muted-foreground text-sm">
+                      Rate is available on request. Click below to request the seller to share the rate with you.
+                    </p>
+                    <Button
+                      onClick={() => createRateRequest.mutate()}
+                      disabled={createRateRequest.isPending}
+                      data-testid="button-request-rate"
+                    >
+                      {createRateRequest.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending Request...
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="mr-2 h-4 w-4" />
+                          Request Rate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : requestStatus === 'pending' ? (
+                  <div className="text-center space-y-2">
+                    <Badge variant="secondary" className="text-yellow-600 dark:text-yellow-400">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Rate Request Pending
+                    </Badge>
+                    <p className="text-muted-foreground text-sm">
+                      Your request has been sent. Waiting for seller approval.
+                    </p>
+                  </div>
+                ) : requestStatus === 'denied' ? (
+                  <div className="text-center space-y-3">
+                    <Badge variant="destructive">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Rate Request Denied
+                    </Badge>
+                    <p className="text-muted-foreground text-sm">
+                      The seller has chosen not to share the rate at this time.
+                    </p>
+                    <Button
+                      onClick={() => createRateRequest.mutate()}
+                      disabled={createRateRequest.isPending}
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-request-rate-again"
+                    >
+                      {createRateRequest.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Request Again'
+                      )}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+            
+            {/* If own product, just show message */}
+            {isOwnProduct && isRateHidden && (
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-center text-muted-foreground text-sm">
+                  Rate is hidden from marketplace. Only approved buyers can see it.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Seller Information */}
           <div>
