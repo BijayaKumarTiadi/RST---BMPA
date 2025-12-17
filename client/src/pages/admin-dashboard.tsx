@@ -226,6 +226,9 @@ export default function AdminDashboard() {
     }
   });
 
+  // Track if we should keep dialog open after save
+  const [keepDialogOpen, setKeepDialogOpen] = useState(false);
+
   // Batch create material hierarchy entries mutation (multiple brands)
   const batchCreateMaterialMutation = useMutation({
     mutationFn: async (data: typeof newBatchMaterial) => {
@@ -239,8 +242,19 @@ export default function AdminDashboard() {
           description: `Created ${data.created} entries${data.skipped > 0 ? `, ${data.skipped} already existed` : ''}` 
         });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
-        setIsAddMaterialDialogOpen(false);
-        setNewBatchMaterial({ grade_of_material: "", material_kind: "", manufacturer: "", brand_names: [""] });
+        
+        if (keepDialogOpen) {
+          // Keep dialog open and preserve parent fields, only reset brand names
+          setNewBatchMaterial(prev => ({ 
+            ...prev, 
+            brand_names: [""] 
+          }));
+          setKeepDialogOpen(false);
+        } else {
+          // Close dialog and reset everything
+          setIsAddMaterialDialogOpen(false);
+          setNewBatchMaterial({ grade_of_material: "", material_kind: "", manufacturer: "", brand_names: [""] });
+        }
       } else {
         toast({ title: "Info", description: data.message || "No new entries created", variant: "default" });
       }
@@ -1530,32 +1544,61 @@ export default function AdminDashboard() {
                               </Button>
                             </div>
                           </div>
-                          <Button
-                            onClick={() => {
-                              const validBrands = newBatchMaterial.brand_names
-                                .map(b => b.trim().toUpperCase())
-                                .filter(b => b !== "");
-                              // Dedupe on frontend before sending
-                              const uniqueBrands = [...new Set(validBrands)];
-                              batchCreateMaterialMutation.mutate({
-                                ...newBatchMaterial,
-                                brand_names: uniqueBrands
-                              });
-                            }}
-                            disabled={
-                              batchCreateMaterialMutation.isPending || 
-                              !newBatchMaterial.grade_of_material.trim() || 
-                              !newBatchMaterial.material_kind.trim() || 
-                              !newBatchMaterial.manufacturer.trim() || 
-                              [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
-                            }
-                            className="w-full"
-                            data-testid="button-save-new-material"
-                          >
-                            {batchCreateMaterialMutation.isPending 
-                              ? "Creating..." 
-                              : `Create ${[...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length} Entries`}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => {
+                                const validBrands = newBatchMaterial.brand_names
+                                  .map(b => b.trim().toUpperCase())
+                                  .filter(b => b !== "");
+                                const uniqueBrands = [...new Set(validBrands)];
+                                setKeepDialogOpen(false);
+                                batchCreateMaterialMutation.mutate({
+                                  ...newBatchMaterial,
+                                  brand_names: uniqueBrands
+                                });
+                              }}
+                              disabled={
+                                batchCreateMaterialMutation.isPending || 
+                                !newBatchMaterial.grade_of_material.trim() || 
+                                !newBatchMaterial.material_kind.trim() || 
+                                !newBatchMaterial.manufacturer.trim() || 
+                                [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
+                              }
+                              className="flex-1"
+                              data-testid="button-save-new-material"
+                            >
+                              {batchCreateMaterialMutation.isPending && !keepDialogOpen
+                                ? "Saving..." 
+                                : `Save (${[...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length})`}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                const validBrands = newBatchMaterial.brand_names
+                                  .map(b => b.trim().toUpperCase())
+                                  .filter(b => b !== "");
+                                const uniqueBrands = [...new Set(validBrands)];
+                                setKeepDialogOpen(true);
+                                batchCreateMaterialMutation.mutate({
+                                  ...newBatchMaterial,
+                                  brand_names: uniqueBrands
+                                });
+                              }}
+                              disabled={
+                                batchCreateMaterialMutation.isPending || 
+                                !newBatchMaterial.grade_of_material.trim() || 
+                                !newBatchMaterial.material_kind.trim() || 
+                                !newBatchMaterial.manufacturer.trim() || 
+                                [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
+                              }
+                              className="flex-1"
+                              data-testid="button-save-add-another"
+                            >
+                              {batchCreateMaterialMutation.isPending && keepDialogOpen
+                                ? "Saving..." 
+                                : "Save & Add More"}
+                            </Button>
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
