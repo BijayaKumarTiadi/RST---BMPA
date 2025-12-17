@@ -114,6 +114,19 @@ export default function Marketplace() {
   const [availableManufacturers, setAvailableManufacturers] = useState<any[]>([]);
   const [availableModels, setAvailableModels] = useState<any[]>([]);
 
+  // Material hierarchy mode (for Paper/Board/Paper Reel)
+  const [isMaterialHierarchyMode, setIsMaterialHierarchyMode] = useState(false);
+  const [selectedGradeOfMaterial, setSelectedGradeOfMaterial] = useState("");
+  const [selectedMaterialKind, setSelectedMaterialKind] = useState("");
+  const [selectedMaterialManufacturer, setSelectedMaterialManufacturer] = useState("");
+  const [selectedMaterialBrand, setSelectedMaterialBrand] = useState("");
+
+  // Helper function to check if category uses material hierarchy
+  const isMaterialHierarchyCategory = (category: string): boolean => {
+    const lowerCategory = category?.toLowerCase().trim() || '';
+    return lowerCategory === 'paper' || lowerCategory === 'board' || lowerCategory === 'paper reel';
+  };
+
   // Precise search states
   const [preciseSearch, setPreciseSearch] = useState({
     category: "",
@@ -269,6 +282,85 @@ export default function Marketplace() {
       setAvailableStates(statesData);
     }
   }, [statesData]);
+
+  // Material Hierarchy Queries (for Paper/Board/Paper Reel products in marketplace search)
+  // Fetch Grades of Material
+  const { data: gradesOfMaterial } = useQuery({
+    queryKey: ['/api/material-hierarchy/grades'],
+    queryFn: async () => {
+      const response = await fetch('/api/material-hierarchy/grades');
+      if (!response.ok) throw new Error('Failed to fetch grades');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyMode,
+  });
+
+  // Fetch Material Kinds (filtered by Grade of Material)
+  const { data: materialKinds } = useQuery({
+    queryKey: ['/api/material-hierarchy/material-kinds', selectedGradeOfMaterial],
+    queryFn: async () => {
+      const url = selectedGradeOfMaterial
+        ? `/api/material-hierarchy/material-kinds?gradeOfMaterial=${encodeURIComponent(selectedGradeOfMaterial)}`
+        : '/api/material-hierarchy/material-kinds';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch material kinds');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyMode && !!selectedGradeOfMaterial,
+  });
+
+  // Fetch Manufacturers (filtered by Grade and Material Kind)
+  const { data: materialManufacturers } = useQuery({
+    queryKey: ['/api/material-hierarchy/manufacturers', selectedGradeOfMaterial, selectedMaterialKind],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedGradeOfMaterial) params.append('gradeOfMaterial', selectedGradeOfMaterial);
+      if (selectedMaterialKind) params.append('materialKind', selectedMaterialKind);
+      const response = await fetch(`/api/material-hierarchy/manufacturers?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch manufacturers');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyMode && !!selectedMaterialKind,
+  });
+
+  // Fetch Brands (filtered by all previous selections)
+  const { data: materialBrands } = useQuery({
+    queryKey: ['/api/material-hierarchy/brands', selectedGradeOfMaterial, selectedMaterialKind, selectedMaterialManufacturer],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedGradeOfMaterial) params.append('gradeOfMaterial', selectedGradeOfMaterial);
+      if (selectedMaterialKind) params.append('materialKind', selectedMaterialKind);
+      if (selectedMaterialManufacturer) params.append('manufacturer', selectedMaterialManufacturer);
+      const response = await fetch(`/api/material-hierarchy/brands?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch brands');
+      return response.json();
+    },
+    enabled: isMaterialHierarchyMode && !!selectedMaterialManufacturer,
+  });
+
+  // Clear dependent fields when Grade of Material changes
+  useEffect(() => {
+    if (isMaterialHierarchyMode) {
+      setSelectedMaterialKind("");
+      setSelectedMaterialManufacturer("");
+      setSelectedMaterialBrand("");
+    }
+  }, [selectedGradeOfMaterial]);
+
+  // Clear dependent fields when Material Kind changes
+  useEffect(() => {
+    if (isMaterialHierarchyMode) {
+      setSelectedMaterialManufacturer("");
+      setSelectedMaterialBrand("");
+    }
+  }, [selectedMaterialKind]);
+
+  // Clear Brand when Manufacturer changes
+  useEffect(() => {
+    if (isMaterialHierarchyMode) {
+      setSelectedMaterialBrand("");
+    }
+  }, [selectedMaterialManufacturer]);
 
   // Fetch user settings for dimension unit preference
   const { data: userSettings } = useQuery({
@@ -1136,6 +1228,18 @@ export default function Marketplace() {
       const isSparePart = value?.toLowerCase()?.includes('spare part');
       setIsSparePartMode(isSparePart);
 
+      // Detect material hierarchy mode (Paper/Board/Paper Reel)
+      const isMaterialHierarchy = isMaterialHierarchyCategory(value);
+      setIsMaterialHierarchyMode(isMaterialHierarchy);
+
+      // Clear material hierarchy selections when category changes
+      if (isMaterialHierarchy) {
+        setSelectedGradeOfMaterial("");
+        setSelectedMaterialKind("");
+        setSelectedMaterialManufacturer("");
+        setSelectedMaterialBrand("");
+      }
+
       // If spare part mode, fetch spare part filter options
       if (isSparePart) {
         fetchSparePartFilterOptions();
@@ -1206,15 +1310,23 @@ export default function Marketplace() {
       // Determine which endpoint to use based on spare part mode
       const endpoint = isSparePartMode ? '/api/spare-parts/search' : '/api/search/precise';
 
+      // Include material hierarchy filters if in material hierarchy mode
+      const searchPayload = {
+        ...preciseSearch,
+        exclude_member_id: user?.id, // Exclude user's own products
+        // Add material hierarchy filters
+        gradeOfMaterial: selectedGradeOfMaterial || undefined,
+        materialKind: selectedMaterialKind || undefined,
+        materialManufacturer: selectedMaterialManufacturer || undefined,
+        materialBrand: selectedMaterialBrand || undefined,
+      };
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...preciseSearch,
-          exclude_member_id: user?.id // Exclude user's own products
-        })
+        body: JSON.stringify(searchPayload)
       });
 
       if (response.ok) {
@@ -1452,6 +1564,142 @@ export default function Marketplace() {
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Material Hierarchy Fields - Only show when Paper/Board/Paper Reel is selected */}
+                  {isMaterialHierarchyMode && !isSparePartMode && (
+                    <>
+                      {/* Grade of Material */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Grade of Material</label>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={selectedGradeOfMaterial}
+                            onValueChange={(value) => setSelectedGradeOfMaterial(value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm" data-testid="select-grade-of-material">
+                              <SelectValue placeholder="Select grade..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(gradesOfMaterial || []).map((grade: any, index: number) => (
+                                <SelectItem key={index} value={grade.grade_of_material}>
+                                  {grade.grade_of_material}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedGradeOfMaterial && (
+                            <button
+                              onClick={() => setSelectedGradeOfMaterial("")}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear grade of material"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Material Kind */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Material Kind</label>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={selectedMaterialKind}
+                            onValueChange={(value) => setSelectedMaterialKind(value)}
+                            disabled={!selectedGradeOfMaterial}
+                          >
+                            <SelectTrigger className="h-9 text-sm" data-testid="select-material-kind">
+                              <SelectValue placeholder={selectedGradeOfMaterial ? "Select kind..." : "Select grade first..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(materialKinds || []).map((kind: any, index: number) => (
+                                <SelectItem key={index} value={kind.material_kind}>
+                                  {kind.material_kind}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedMaterialKind && (
+                            <button
+                              onClick={() => setSelectedMaterialKind("")}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear material kind"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Manufacturer */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Manufacturer</label>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={selectedMaterialManufacturer}
+                            onValueChange={(value) => setSelectedMaterialManufacturer(value)}
+                            disabled={!selectedMaterialKind}
+                          >
+                            <SelectTrigger className="h-9 text-sm" data-testid="select-material-manufacturer">
+                              <SelectValue placeholder={selectedMaterialKind ? "Select manufacturer..." : "Select kind first..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(materialManufacturers || []).map((mfr: any, index: number) => (
+                                <SelectItem key={index} value={mfr.manufacturer}>
+                                  {mfr.manufacturer}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedMaterialManufacturer && (
+                            <button
+                              onClick={() => setSelectedMaterialManufacturer("")}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear manufacturer"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Brand */}
+                      <div className="flex-1 min-w-32">
+                        <label className="text-sm font-medium">Brand</label>
+                        <div className="relative flex items-center gap-1 mt-1">
+                          <Select
+                            value={selectedMaterialBrand}
+                            onValueChange={(value) => setSelectedMaterialBrand(value)}
+                            disabled={!selectedMaterialManufacturer}
+                          >
+                            <SelectTrigger className="h-9 text-sm" data-testid="select-material-brand">
+                              <SelectValue placeholder={selectedMaterialManufacturer ? "Select brand..." : "Select manufacturer first..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(materialBrands || []).map((brand: any, index: number) => (
+                                <SelectItem key={index} value={brand.brand_name}>
+                                  {brand.brand_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedMaterialBrand && (
+                            <button
+                              onClick={() => setSelectedMaterialBrand("")}
+                              className="flex-shrink-0 p-0.5 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              type="button"
+                              title="Clear brand"
+                            >
+                              <X className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* Spare Part Fields - Only show when spare part mode is active */}
@@ -1809,6 +2057,12 @@ export default function Marketplace() {
                         });
                         setGsmSuggestions([]);
                         setIsSparePartMode(false);
+                        // Clear material hierarchy selections
+                        setIsMaterialHierarchyMode(false);
+                        setSelectedGradeOfMaterial("");
+                        setSelectedMaterialKind("");
+                        setSelectedMaterialManufacturer("");
+                        setSelectedMaterialBrand("");
                       }}
                       className="h-9 px-3"
                     >

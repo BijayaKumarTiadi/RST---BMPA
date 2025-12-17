@@ -58,7 +58,11 @@ searchRouter.get('/health', async (req, res) => {
 searchRouter.post('/precise', async (req, res) => {
   try {
     const { executeQuery } = await import('./database');
-    const { category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, exclude_member_id } = req.body;
+    const { 
+      category, gsm, tolerance, deckle, deckleUnit, grain, grainUnit, dimensionTolerance, exclude_member_id,
+      // Material hierarchy filters for Paper/Board/Paper Reel
+      gradeOfMaterial, materialKind, materialManufacturer, materialBrand
+    } = req.body;
     
     console.log('Precise search - fetching ALL records:', req.body);
     
@@ -75,6 +79,29 @@ searchRouter.post('/precise', async (req, res) => {
     if (category && category.trim() && category !== 'all') {
       whereClause += ` AND sg.GroupName LIKE ?`;
       queryParams.push(`%${category.trim()}%`);
+    }
+    
+    // Add material hierarchy filters (for Paper/Board/Paper Reel products)
+    // These filters work with the Make/Grade/Brand columns in deal_master
+    // which store the selected material hierarchy values from the cascading dropdowns
+    
+    // Material Kind filter (stored in Make column for Paper/Board)
+    // When gradeOfMaterial is selected, we filter by material kinds that belong to that grade
+    if (materialKind && materialKind.trim()) {
+      whereClause += ` AND dm.Make = ?`;
+      queryParams.push(materialKind.trim());
+    }
+    
+    // Material Manufacturer filter (stored in Grade column for Paper/Board)
+    if (materialManufacturer && materialManufacturer.trim()) {
+      whereClause += ` AND dm.Grade = ?`;
+      queryParams.push(materialManufacturer.trim());
+    }
+    
+    // Material Brand filter (stored in Brand column)
+    if (materialBrand && materialBrand.trim()) {
+      whereClause += ` AND dm.Brand = ?`;
+      queryParams.push(materialBrand.trim());
     }
     
     // Add GSM filter with tolerance (skip for Spare Parts)
