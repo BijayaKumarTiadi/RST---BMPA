@@ -77,6 +77,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (December 2025)
 
+### Unified Add/Edit Offer Form (December 17, 2025)
+- **Design Consistency**: Edit and Add offer forms now use the same page (`add-product.tsx`)
+- **Edit Mode Detection**: Component detects edit mode from URL path (`/edit-product/:id` or `/edit-deal/:id`)
+- **Form Population**: In edit mode, form is automatically populated with existing offer data
+- **Conditional UI**:
+  - Bulk Upload section hidden in edit mode
+  - "Save & Add Another" button hidden in edit mode
+  - Submit button shows "Update Offer" in edit mode, "Save Offer" in add mode
+  - Page header shows "Edit Offer" in edit mode, "Add an Offer" in add mode
+- **Routing**: Both `/edit-product/:id` and `/edit-deal/:id` routes now use AddProduct component
+- **Deprecated**: `edit-product.tsx` is no longer used (replaced by unified `add-product.tsx`)
+
 ### Rate on Request Feature
 - **New Feature**: Buyers can now request to view hidden rates from sellers
 - **Database Table**: New `rate_requests` table to track rate requests with status (pending, approved, denied)

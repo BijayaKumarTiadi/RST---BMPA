@@ -12,9 +12,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Hash, Plus, Calculator, IndianRupee, Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
+import { Package, Hash, Plus, Calculator, IndianRupee, Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle, ArrowLeft, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -229,11 +229,22 @@ const dealSchema = z.object({
 
 type DealFormData = z.infer<typeof dealSchema>;
 
-export default function AddDeal() {
+// Props interface for edit mode
+interface AddDealProps {
+  editId?: string;
+}
+
+export default function AddDeal({ editId: propEditId }: AddDealProps = {}) {
   const [, setLocation] = useLocation();
+  const params = useParams<{ id?: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  
+  // Determine if we're in edit mode (from URL param or prop)
+  const editId = propEditId || params.id;
+  const isEditMode = Boolean(editId);
+  
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedGroupName, setSelectedGroupName] = useState(""); // Track group name for Kraft Reel logic
   const [selectedMake, setSelectedMake] = useState("");
@@ -243,6 +254,7 @@ export default function AddDeal() {
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
   const [isGradeAutoSet, setIsGradeAutoSet] = useState(false);
   const [isKraftReelAutoSet, setIsKraftReelAutoSet] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   // Spare part category states
   const [selectedProcess, setSelectedProcess] = useState("");
@@ -434,6 +446,98 @@ export default function AddDeal() {
     },
     enabled: isAuthenticated,
   });
+
+  // Fetch deal data for edit mode
+  const { data: dealData, isLoading: isDealLoading } = useQuery({
+    queryKey: ['/api/deals', editId],
+    queryFn: async () => {
+      const response = await fetch(`/api/deals/${editId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch deal');
+      return response.json();
+    },
+    enabled: isEditMode && Boolean(editId),
+  });
+
+  // Populate form when deal data is loaded in edit mode
+  useEffect(() => {
+    if (isEditMode && dealData && !isFormInitialized) {
+      const deal = dealData;
+      
+      // Set group
+      const groupId = deal.GroupID?.toString() || deal.group_id?.toString() || "";
+      const groupName = deal.GroupName || deal.group_name || "";
+      setSelectedGroup(groupId);
+      setSelectedGroupName(groupName);
+      form.setValue("groupID", groupId);
+      form.setValue("groupName", groupName);
+      
+      const isSparePart = isSparePartGroup(groupName);
+      
+      if (isSparePart) {
+        // Populate spare part fields
+        form.setValue("spareProcess", deal.spare_process || deal.SpareProcess || "");
+        form.setValue("spareCategoryType", deal.spare_category_type || deal.SpareCategoryType || "");
+        form.setValue("spareMachineType", deal.spare_machine_type || deal.SpareMachineType || "");
+        form.setValue("spareManufacturer", deal.spare_manufacturer || deal.SpareManufacturer || "");
+        form.setValue("spareModel", deal.spare_model || deal.SpareModel || "");
+        form.setValue("sparePartName", deal.spare_part_name || deal.SparePartName || "");
+        form.setValue("sparePartNo", deal.spare_part_no || deal.SparePartNo || "");
+        setSelectedProcess(deal.spare_process || deal.SpareProcess || "");
+        setSelectedCategoryType(deal.spare_category_type || deal.SpareCategoryType || "");
+        setSelectedMachineType(deal.spare_machine_type || deal.SpareMachineType || "");
+        setSelectedManufacturer(deal.spare_manufacturer || deal.SpareManufacturer || "");
+        setSelectedModel(deal.spare_model || deal.SpareModel || "");
+      } else {
+        // Populate regular product fields
+        const dealMakeText = deal.MakeText || deal.make_text || deal.MakeName || "";
+        const dealGradeText = deal.GradeText || deal.grade_text || deal.GradeName || "";
+        const dealBrandText = deal.BrandText || deal.brand_text || deal.BrandName || "";
+        
+        form.setValue("makeText", dealMakeText);
+        form.setValue("gradeText", dealGradeText);
+        form.setValue("brandText", dealBrandText);
+        form.setValue("gradeOfMaterial", deal.grade_of_material || deal.GradeOfMaterial || "");
+        setMakeText(dealMakeText);
+        setGradeText(dealGradeText);
+        setBrandText(dealBrandText);
+        setSelectedGradeOfMaterial(deal.grade_of_material || deal.GradeOfMaterial || "");
+        
+        // Set GSM
+        const gsm = deal.GSM || deal.gsm || "";
+        form.setValue("GSM", gsm ? Number(gsm) : "" as any);
+        
+        // Set Deckle and Grain (convert from mm to current unit)
+        const deckle = deal.Deckle_mm || deal.deckle_mm || deal.Deckle || "";
+        const grain = deal.grain_mm || deal.Grain_mm || deal.Grain || "";
+        
+        if (deckle) {
+          form.setValue("Deckle_mm", Number(deckle));
+          const convertedDeckle = convertFromMm(Number(deckle), dimensionUnit);
+          setDeckleInputValue(convertedDeckle.toFixed(2));
+        }
+        if (grain) {
+          form.setValue("grain_mm", Number(grain));
+          const convertedGrain = convertFromMm(Number(grain), dimensionUnit);
+          setGrainInputValue(convertedGrain.toFixed(2));
+        }
+      }
+      
+      // Common fields
+      form.setValue("OfferUnit", deal.OfferUnit || deal.unit || deal.Unit || "");
+      form.setValue("quantity", deal.Quantity || deal.quantity || "" as any);
+      form.setValue("stockAge", deal.StockAge || deal.stock_age || "" as any);
+      form.setValue("Seller_comments", deal.Seller_comments || deal.seller_comments || deal.deal_description || "");
+      form.setValue("offerRate", deal.OfferRate || deal.offer_rate || deal.price || "" as any);
+      form.setValue("showRateInMarketplace", deal.show_rate_in_marketplace !== false && deal.ShowRateInMarketplace !== false);
+      form.setValue("packingType", deal.packing_type || deal.PackingType || "");
+      form.setValue("sheetsPerPacket", deal.sheets_per_packet || deal.SheetsPerPacket || "");
+      form.setValue("fscType", deal.fsc_type || deal.FscType || "None");
+      
+      setIsFormInitialized(true);
+    }
+  }, [isEditMode, dealData, isFormInitialized, form, dimensionUnit]);
 
   // Watch form values for craft detection and Kraft Reel logic
   const currentMakeText = form.watch("makeText");
@@ -977,14 +1081,126 @@ export default function AddDeal() {
     },
   });
 
+  // Update deal mutation (for edit mode)
+  const updateDealMutation = useMutation({
+    mutationFn: async (data: DealFormData) => {
+      const isSparePart = isSparePartGroup(data.groupName || '');
+
+      if (isSparePart) {
+        // Spare Part submission - using new cascading fields
+        const partFullName = [
+          data.spareProcess,
+          data.spareCategoryType,
+          data.spareMachineType,
+          data.spareManufacturer,
+          data.spareModel,
+          data.sparePartName,
+          data.sparePartNo
+        ].filter(Boolean).join(' - ');
+
+        const spareDescription = `${data.sparePartName} (${data.sparePartNo})`;
+        const searchKey = partFullName.toLowerCase().replace(/[\s.]/g, '');
+
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          is_spare_part: true,
+          spare_process: data.spareProcess,
+          spare_category_type: data.spareCategoryType,
+          spare_machine_type: data.spareMachineType,
+          spare_manufacturer: data.spareManufacturer,
+          spare_model: data.spareModel || '',
+          spare_part_name: data.sparePartName,
+          spare_part_no: data.sparePartNo,
+          deal_title: spareDescription,
+          stock_description: partFullName,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || partFullName,
+          price: data.offerRate || 0,
+          quantity: data.quantity,
+          unit: data.OfferUnit,
+          StockAge: data.stockAge || 0,
+          location: 'India',
+          show_rate_in_marketplace: data.showRateInMarketplace ?? true,
+          packing_type: data.packingType || null,
+          sheets_per_packet: data.sheetsPerPacket || null,
+          fsc_type: data.fscType || 'None',
+        };
+
+        return apiRequest("PUT", `/api/deals/${editId}`, payload);
+      } else {
+        // Regular product submission
+        const stockDescription = generateStockDescription();
+        const searchKey = generateNormalizationKey();
+
+        const payload = {
+          group_id: data.groupID ? parseInt(data.groupID) : 0,
+          make_text: data.makeText || makeText || "",
+          grade_text: data.gradeText || gradeText || "",
+          brand_text: data.brandText || brandText || "",
+          make_id: data.MakeID || data.makeText || makeText || "",
+          grade_id: data.GradeID || data.gradeText || gradeText || "",
+          brand_id: data.BrandID || data.brandText || brandText || "",
+          grade_of_material: data.gradeOfMaterial || selectedGradeOfMaterial || "",
+          deal_title: `${data.brandText || 'Stock'} - ${data.GSM}GSM`,
+          stock_description: stockDescription,
+          search_key: searchKey,
+          deal_description: data.Seller_comments || `${data.Deckle_mm}x${data.grain_mm}mm, ${data.GSM}GSM`,
+          price: data.offerRate || 0,
+          quantity: data.quantity,
+          unit: data.OfferUnit,
+          min_order_quantity: 100,
+          StockAge: data.stockAge || 0,
+          deal_specifications: {
+            GSM: data.GSM,
+            Deckle_mm: data.Deckle_mm,
+            grain_mm: data.grain_mm,
+          },
+          location: 'India',
+          show_rate_in_marketplace: data.showRateInMarketplace ?? true,
+          packing_type: data.packingType || null,
+          sheets_per_packet: data.sheetsPerPacket || null,
+          fsc_type: data.fscType || 'None',
+        };
+
+        return apiRequest("PUT", `/api/deals/${editId}`, payload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deals", editId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/hierarchy"] });
+
+      toast({
+        title: "Success",
+        description: "Offer updated successfully!",
+      });
+      setLocation("/seller-dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update deal",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: DealFormData) => {
-    createDealMutation.mutate(data);
+    if (isEditMode) {
+      updateDealMutation.mutate(data);
+    } else {
+      createDealMutation.mutate(data);
+    }
   };
 
   const onSubmitAndAddAnother = (data: DealFormData) => {
     setSaveAndAddAnother(true);
     createDealMutation.mutate(data);
   };
+  
+  // Combined pending state for form buttons
+  const isMutationPending = createDealMutation.isPending || updateDealMutation.isPending;
 
   // Bulk upload functions
   const handleDownloadTemplate = async () => {
@@ -1098,12 +1314,28 @@ export default function AddDeal() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-3">
-            <div className="text-center">
-              <h1 className="text-xl font-bold text-foreground mb-1">Add an Offer</h1>
+            <div className="flex items-center gap-4">
+              <Link href="/seller-dashboard">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="text-xl font-bold text-foreground mb-1">
+                {isEditMode ? 'Edit Offer' : 'Add an Offer'}
+              </h1>
             </div>
           </div>
+          
+          {/* Loading state for edit mode */}
+          {isEditMode && isDealLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <span className="ml-3 text-muted-foreground">Loading offer data...</span>
+            </div>
+          )}
 
-          {/* Bulk Upload Section */}
+          {/* Bulk Upload Section - Only show in add mode */}
+          {!isEditMode && (
           <Card className="bg-card border-border mb-6">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1216,6 +1448,7 @@ export default function AddDeal() {
               </CardContent>
             )}
           </Card>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -2456,30 +2689,35 @@ export default function AddDeal() {
                     >
                       Cancel
                     </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={form.handleSubmit(onSubmitAndAddAnother)}
-                      disabled={createDealMutation.isPending}
-                      className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                      data-testid="button-save-add"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Save & Add Another
-                    </Button>
+                    {!isEditMode && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={form.handleSubmit(onSubmitAndAddAnother)}
+                        disabled={isMutationPending}
+                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        data-testid="button-save-add"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Save & Add Another
+                      </Button>
+                    )}
                     <Button
                       type="submit"
-                      disabled={createDealMutation.isPending}
+                      disabled={isMutationPending}
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
                       data-testid="button-save"
                     >
-                      {createDealMutation.isPending ? (
+                      {isMutationPending ? (
                         <>
                           <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                          Saving...
+                          {isEditMode ? 'Updating...' : 'Saving...'}
                         </>
                       ) : (
-                        "Save Offer"
+                        <>
+                          {isEditMode && <Save className="mr-2 h-4 w-4" />}
+                          {isEditMode ? 'Update Offer' : 'Save Offer'}
+                        </>
                       )}
                     </Button>
                   </div>

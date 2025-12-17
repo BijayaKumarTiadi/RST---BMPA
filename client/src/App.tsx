@@ -19,7 +19,6 @@ import Subscribe from "@/pages/subscribe";
 import RegistrationSuccess from "@/pages/registration-success";
 import About from "@/pages/about";
 import AddProduct from "@/pages/add-product";
-import EditProduct from "@/pages/edit-product";
 import ProductDetails from "@/pages/product-details";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
@@ -67,10 +66,10 @@ function Router() {
         {isAuthenticated ? <AddProduct /> : <Login />}
       </Route>
       <Route path="/edit-deal/:id">
-        {isAuthenticated ? <EditProduct /> : <Login />}
+        {isAuthenticated ? <AddProduct /> : <Login />}
       </Route>
       <Route path="/edit-product/:id">
-        {isAuthenticated ? <EditProduct /> : <Login />}
+        {isAuthenticated ? <AddProduct /> : <Login />}
       </Route>
       <Route path="/product/:id">
         {isAuthenticated ? <ProductDetails /> : <Login />}
