@@ -503,6 +503,44 @@ export async function initializeDatabase(): Promise<void> {
       console.log('✅ fsc_type column added to deal_master');
     }
 
+    // Create rate_requests table for "Rate on Request" feature
+    const rateRequestsTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'rate_requests'
+    `);
+
+    if (!rateRequestsTableExists || rateRequestsTableExists.count === 0) {
+      console.log('📋 Creating rate_requests table...');
+      await executeQuery(`
+        CREATE TABLE rate_requests (
+          request_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          deal_id INT NOT NULL,
+          requester_id INT NOT NULL,
+          seller_id INT NOT NULL,
+          status ENUM('pending', 'approved', 'denied') DEFAULT 'pending',
+          requester_name VARCHAR(100) DEFAULT '',
+          requester_company VARCHAR(100) DEFAULT '',
+          requester_email VARCHAR(100) DEFAULT '',
+          seller_email VARCHAR(100) DEFAULT '',
+          deal_description VARCHAR(255) DEFAULT '',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          decision_at DATETIME NULL,
+          decision_notes TEXT,
+          INDEX idx_deal_id (deal_id),
+          INDEX idx_requester_id (requester_id),
+          INDEX idx_seller_id (seller_id),
+          INDEX idx_status (status),
+          UNIQUE KEY unique_pending_request (deal_id, requester_id, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Rate requests table created');
+    } else {
+      console.log('✅ Rate requests table already exists');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
