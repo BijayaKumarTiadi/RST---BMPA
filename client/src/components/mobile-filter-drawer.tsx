@@ -58,14 +58,19 @@ export function MobileFilterDrawer({
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  // Count active filters
+  // Count active filters (including quantity range)
+  // Check for non-empty strings (not just truthy) since "0" is a valid filter value
+  const hasQuantityFilter = 
+    (appliedFilters.quantityRange?.min !== "" && appliedFilters.quantityRange?.min !== undefined) || 
+    (appliedFilters.quantityRange?.max !== "" && appliedFilters.quantityRange?.max !== undefined);
   const activeFilterCount =
     clientFilters.makes.length +
     clientFilters.grades.length +
     clientFilters.brands.length +
     clientFilters.gsm.length +
     clientFilters.categories.length +
-    (clientFilters.states?.length || 0);
+    (clientFilters.states?.length || 0) +
+    (hasQuantityFilter ? 1 : 0);
 
   const handleApply = () => {
     setIsOpen(false);
@@ -73,20 +78,28 @@ export function MobileFilterDrawer({
 
   const handleClear = () => {
     onClearFilters();
+    // Clear quantity filter using functional update to avoid stale state
+    if (setAppliedFilters) {
+      setAppliedFilters((prev: any) => ({
+        ...prev,
+        quantityRange: { min: "", max: "" }
+      }));
+    }
     setIsOpen(false);
   };
 
   const FilterSection = ({ title, type, children }: { title: string; type: string; children: React.ReactNode }) => (
-    <div className="border-b">
+    <div className="border-b border-border">
       <button
-        className="w-full flex items-center justify-between py-4 px-4 text-left hover:bg-gray-50"
+        className="w-full flex items-center justify-between py-4 px-4 text-left hover-elevate"
         onClick={() => setActiveSection(activeSection === type ? null : type)}
+        data-testid={`button-mobile-filter-${type}`}
       >
         <span className="font-medium">{title}</span>
         <ChevronRight className={`h-4 w-4 transition-transform ${activeSection === type ? 'rotate-90' : ''}`} />
       </button>
       {activeSection === type && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 bg-muted/30">
           {children}
         </div>
       )}
@@ -124,8 +137,18 @@ export function MobileFilterDrawer({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onClearFilters}
+                  onClick={() => {
+                    onClearFilters();
+                    // Clear quantity filter using functional update to avoid stale state
+                    if (setAppliedFilters) {
+                      setAppliedFilters((prev: any) => ({
+                        ...prev,
+                        quantityRange: { min: "", max: "" }
+                      }));
+                    }
+                  }}
                   className="text-sm"
+                  data-testid="button-mobile-clear-all"
                 >
                   Clear all ({activeFilterCount})
                 </Button>
