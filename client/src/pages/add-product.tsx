@@ -58,7 +58,7 @@ const isPaperReelGroup = (groupName: string): boolean => {
 
 // Helper function to check if group uses material hierarchy
 const isMaterialHierarchyGroup = (groupName: string): boolean => {
-  return isPaperGroup(groupName) || isBoardGroup(groupName) || isPaperReelGroup(groupName);
+  return isPaperGroup(groupName) || isBoardGroup(groupName) || isPaperReelGroup(groupName) || isKraftReelGroup(groupName);
 };
 
 
@@ -472,25 +472,18 @@ export default function AddDeal() {
   }, [currentMakeText, currentGradeText, isGradeAutoSet, currentGroupName, form]);
 
   // Handle Kraft Reel Group auto-grade setting
+  // Note: Kraft Reel now uses material hierarchy dropdowns, so no auto-grade setting needed
+  // The Manufacturer dropdown sets gradeText for Kraft Reel
   useEffect(() => {
+    // Clear any previous auto-set values when switching to Kraft Reel
+    // since it now uses material hierarchy
     if (currentGroupName && isKraftReelGroup(currentGroupName || '')) {
-      // Auto-set Grade to "Kraft Paper" when Kraft Reel is selected
-      if (!currentGradeText || isKraftReelAutoSet || currentGradeText === "Kraft Paper") {
-        form.setValue("gradeText", "Kraft Paper");
-        form.setValue("GradeID", "");
-        setGradeText("Kraft Paper");
-        setIsKraftReelAutoSet(true);
-        // Clear craft auto-set flag to prevent conflicts
-        setIsGradeAutoSet(false);
+      if (isKraftReelAutoSet) {
+        setIsKraftReelAutoSet(false);
       }
-    } else if (isKraftReelAutoSet && currentGradeText === "Kraft Paper") {
-      // Clear auto-set grade when not Kraft Reel anymore
-      form.setValue("gradeText", "");
-      form.setValue("GradeID", "");
-      setGradeText("");
-      setIsKraftReelAutoSet(false);
+      setIsGradeAutoSet(false);
     }
-  }, [currentGroupName, currentGradeText, isKraftReelAutoSet, form]);
+  }, [currentGroupName, isKraftReelAutoSet]);
 
   // Handle Kraft Reel Group specific auto-settings
   useEffect(() => {
@@ -1827,7 +1820,9 @@ export default function AddDeal() {
                               name="brandText"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="text-foreground">Brand Name <span className="text-red-500">*</span></FormLabel>
+                                  <FormLabel className="text-foreground">
+                                    Brand Name {isKraftReelGroup(currentGroupName || '') ? "(Optional)" : <span className="text-red-500">*</span>}
+                                  </FormLabel>
                                   <FormControl>
                                     <Select
                                       value={selectedMaterialBrand}
