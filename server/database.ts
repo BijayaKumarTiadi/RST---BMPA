@@ -452,6 +452,57 @@ export async function initializeDatabase(): Promise<void> {
       }
     }
     console.log('✅ Default categories added');
+
+    // Create fsc_types table if it doesn't exist
+    const fscTypesTableExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'fsc_types'
+    `);
+
+    if (!fscTypesTableExists || fscTypesTableExists.count === 0) {
+      console.log('📋 Creating fsc_types table...');
+      await executeQuery(`
+        CREATE TABLE fsc_types (
+          id INT NOT NULL PRIMARY KEY,
+          name VARCHAR(50) NOT NULL,
+          logo_image VARCHAR(255) DEFAULT '',
+          remarks VARCHAR(255) DEFAULT ''
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+
+      // Insert default FSC types
+      await executeQuery(`
+        INSERT INTO fsc_types (id, name, logo_image, remarks) VALUES 
+        (0, 'None', '', ''),
+        (1, 'FSC Recycle', '', ''),
+        (2, 'FSC Mix', '', ''),
+        (3, 'FSC Pure', '', '')
+      `);
+      console.log('✅ FSC Types table created with default values');
+    } else {
+      console.log('✅ FSC Types table already exists');
+    }
+
+    // Add fsc_type column to deal_master if it doesn't exist
+    const fscTypeColumnExists = await executeQuerySingle(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.columns 
+      WHERE table_schema = 'trade_bmpa25' 
+      AND table_name = 'deal_master' 
+      AND column_name = 'fsc_type'
+    `);
+
+    if (!fscTypeColumnExists || fscTypeColumnExists.count === 0) {
+      console.log('🔧 Adding fsc_type column to deal_master...');
+      await executeQuery(`
+        ALTER TABLE deal_master 
+        ADD COLUMN fsc_type VARCHAR(50) DEFAULT 'None'
+      `);
+      console.log('✅ fsc_type column added to deal_master');
+    }
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
