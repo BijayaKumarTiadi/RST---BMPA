@@ -1604,7 +1604,17 @@ export default function Marketplace() {
                               <SelectValue placeholder="Select grade..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {(gradesOfMaterial || []).map((grade: any, index: number) => (
+                              {(gradesOfMaterial || [])
+                                .filter((grade: any) => {
+                                  // For Kraft Reel, only show specific grades
+                                  if (preciseSearch.category?.toLowerCase().includes('kraft reel')) {
+                                    const gradeUpper = (grade.grade_of_material || '').toUpperCase().trim();
+                                    const allowedKraftGrades = ['VIRGIN', 'RECYCLED', 'COATED PAPER', 'MAPLITHO', 'HIGH VALUE PAPER', 'PE COATED', 'KRAFT'];
+                                    return allowedKraftGrades.includes(gradeUpper);
+                                  }
+                                  return true;
+                                })
+                                .map((grade: any, index: number) => (
                                 <SelectItem key={index} value={grade.grade_of_material}>
                                   {grade.grade_of_material}
                                 </SelectItem>
