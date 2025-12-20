@@ -236,6 +236,7 @@ export default function Marketplace() {
   });
   const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchCardRef = useRef<HTMLDivElement | null>(null);
 
   // Modal states
@@ -1211,6 +1212,28 @@ export default function Marketplace() {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
         hoverTimeoutRef.current = null;
+      }
+    };
+  }, [preciseSearchExpanded]);
+
+  // Auto-close search section after 2 minutes of being expanded
+  useEffect(() => {
+    if (preciseSearchExpanded) {
+      // Clear any existing auto-close timeout
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+      
+      // Set new timeout for 2 minutes (120000ms)
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        setPreciseSearchExpanded(false);
+      }, 120000);
+    }
+
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+        autoCloseTimeoutRef.current = null;
       }
     };
   }, [preciseSearchExpanded]);
