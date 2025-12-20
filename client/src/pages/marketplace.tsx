@@ -124,7 +124,7 @@ export default function Marketplace() {
   // Helper function to check if category uses material hierarchy
   const isMaterialHierarchyCategory = (category: string): boolean => {
     const lowerCategory = category?.toLowerCase().trim() || '';
-    return lowerCategory === 'paper' || lowerCategory === 'board' || lowerCategory === 'paper reel';
+    return lowerCategory === 'paper' || lowerCategory === 'board' || lowerCategory === 'paper reel' || lowerCategory === 'kraft reel';
   };
 
   // Precise search states
