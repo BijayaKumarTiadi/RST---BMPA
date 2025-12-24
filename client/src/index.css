@@ -246,7 +246,7 @@
      FORMS - MOBILE OPTIMIZED
      ========================================== */
   
-  /* Touch-friendly inputs */
+  /* Touch-friendly inputs - base styles */
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -259,8 +259,48 @@
   [role="combobox"] {
     min-height: 48px !important;
     font-size: 16px !important; /* Prevents zoom on iOS */
-    padding: 0.75rem 1rem !important;
     width: 100% !important;
+  }
+  
+  /* Only override padding on inputs WITHOUT icons (no pl-* class) */
+  input:not([class*="pl-"]),
+  textarea:not([class*="pl-"]),
+  select:not([class*="pl-"]) {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Inputs WITH left icons - preserve left padding, adjust top/bottom */
+  input[class*="pl-"],
+  textarea[class*="pl-"] {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-right: 1rem !important;
+    /* Left padding preserved from Tailwind class (pl-10, etc.) */
+  }
+  
+  /* Icon inside input container - center vertically on mobile */
+  /* Targets icons positioned absolutely inside relative containers with inputs */
+  .relative:has(input) > svg.absolute,
+  .relative:has(input) > [class*="lucide"].absolute,
+  .relative:has(input) > .absolute:has(svg),
+  .relative:has(textarea) > svg.absolute,
+  .relative:has(select) > svg.absolute {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Also handle icons with explicit top-3 class on mobile */
+  .relative > svg[class*="top-3"],
+  .relative > [class*="lucide"][class*="top-3"] {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  /* Currency/text prefix spans inside inputs */
+  .relative > span.absolute[class*="left-"] {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
   }
   
   /* Select trigger full width */
