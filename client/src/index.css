@@ -1088,6 +1088,59 @@
   }
   
   /* ==========================================
+     TABLE SCROLL INDICATOR - MOBILE
+     ========================================== */
+  
+  /* Table container with scroll indicator */
+  .overflow-x-auto:has(table) {
+    position: relative !important;
+  }
+  
+  /* Right fade indicator for scrollable tables */
+  .overflow-x-auto:has(table)::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 30px !important;
+    background: linear-gradient(to right, transparent, hsl(var(--card) / 0.9)) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+  }
+  
+  /* Left fade when scrolled */
+  .overflow-x-auto:has(table)::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 30px !important;
+    background: linear-gradient(to left, transparent, hsl(var(--card) / 0.9)) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    opacity: 0 !important;
+  }
+  
+  /* Table cells - minimum width for readability */
+  table th,
+  table td {
+    min-width: 80px !important;
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* First column sticky for context */
+  table th:first-child,
+  table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: hsl(var(--card)) !important;
+  }
+  
+  /* ==========================================
      SAFE AREA - iOS & ANDROID
      ========================================== */
   
