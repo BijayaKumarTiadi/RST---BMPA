@@ -1018,13 +1018,73 @@
   }
   
   /* Dashboard tabs - scrollable */
-  .dashboard-tabs [role="tablist"] {
+  [role="tablist"] {
     overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Tab triggers - prevent shrinking */
+  [role="tab"] {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 40px !important;
   }
   
   /* Marketplace filters - stack */
   .marketplace-filters {
     flex-direction: column !important;
+  }
+  
+  /* ==========================================
+     SELLER DASHBOARD - MOBILE OPTIMIZATIONS
+     ========================================== */
+  
+  /* Dashboard card action buttons - horizontal row */
+  [data-testid*="deal-card"] .flex.gap-2.pt-3 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Dashboard card action buttons - touch friendly */
+  [data-testid*="deal-card"] .flex.gap-2.pt-3 button {
+    min-height: 40px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Dashboard stats grid - 2 columns */
+  .grid.grid-cols-2.md\\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Dashboard filter row - stack on mobile */
+  [class*="CardHeader"]:has([data-testid*="filter"]) .flex.items-center.gap-4,
+  [class*="CardHeader"]:has([data-testid*="select"]) .flex.items-center.gap-4 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Rate request cards - better mobile layout */
+  [data-testid*="rate-request"] {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  [data-testid*="rate-request"] .flex.items-center.gap-2:has(button) {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+  
+  [data-testid*="rate-request"] .flex.items-center.gap-2:has(button) button {
+    flex: 1 !important;
   }
   
   /* ==========================================

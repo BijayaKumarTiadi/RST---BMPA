@@ -1230,14 +1230,15 @@ export default function SellerDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                asChild
+                                onClick={() => {
+                                  setSelectedDeal(deal);
+                                  setViewModalOpen(true);
+                                }}
                                 className="flex-1 text-xs"
                                 data-testid={`button-view-${deal.TransID}`}
                               >
-                                <Link href={`/deal/${deal.TransID}`}>
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Link>
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
                               </Button>
 
                               <Button
