@@ -168,6 +168,38 @@
     padding-bottom: 0.5rem !important;
   }
   
+  /* Navigation header - keep icon buttons in a row */
+  header .flex.items-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Header action buttons - smaller spacing */
+  header .flex.items-center.space-x-2,
+  header .flex.items-center.space-x-3 {
+    gap: 0.25rem !important;
+  }
+  
+  /* Header dropdown triggers - smaller touch targets allowed in header */
+  header button[data-testid="user-profile-dropdown"],
+  header button[data-testid="mobile-menu-toggle"] {
+    min-height: 40px !important;
+    min-width: 40px !important;
+    padding: 0.25rem !important;
+  }
+  
+  /* Logo area - compact */
+  header .flex.items-center.space-x-2:first-child,
+  header .flex.items-center.space-x-3:first-child {
+    gap: 0.375rem !important;
+  }
+  
+  /* Logo text on mobile */
+  header h1 {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+  
   /* ==========================================
      TYPOGRAPHY - MOBILE OPTIMIZED
      ========================================== */
@@ -220,17 +252,28 @@
     width: 100% !important;
   }
   
-  /* Button groups stack vertically */
-  .flex.gap-2:has(button),
-  .flex.gap-3:has(button),
-  .flex.gap-4:has(button) {
+  /* Button groups stack vertically - ONLY in form/content areas, NOT in headers or action bars */
+  main .flex.gap-2:has(button):not(.flex-row):not([class*="items-center"]),
+  main .flex.gap-3:has(button):not(.flex-row):not([class*="items-center"]),
+  main .flex.gap-4:has(button):not(.flex-row):not([class*="items-center"]),
+  form .flex.gap-2:has(button):not(.flex-row),
+  form .flex.gap-3:has(button):not(.flex-row) {
     flex-direction: column !important;
   }
   
-  .flex.gap-2:has(button) > *,
-  .flex.gap-3:has(button) > *,
-  .flex.gap-4:has(button) > * {
+  main .flex.gap-2:has(button):not(.flex-row):not([class*="items-center"]) > *,
+  main .flex.gap-3:has(button):not(.flex-row):not([class*="items-center"]) > *,
+  form .flex.gap-2:has(button):not(.flex-row) > *,
+  form .flex.gap-3:has(button):not(.flex-row) > * {
     width: 100% !important;
+  }
+  
+  /* Keep header action buttons in row - ONLY in header, not globally */
+  header .flex,
+  header .flex.items-center,
+  nav .flex.items-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
   }
   
   /* Icon buttons keep square shape */
@@ -554,6 +597,67 @@
     gap: 0.75rem !important;
   }
   
+  /* Power Search - mobile optimizations */
+  [data-testid="power-search-input"] {
+    padding-right: 3rem !important; /* Make room for buttons */
+    font-size: 16px !important; /* Prevent iOS zoom */
+  }
+  
+  /* Power Search container - ensure button is visible */
+  form:has([data-testid="power-search-input"]) .relative.flex.items-center {
+    flex-wrap: wrap !important;
+  }
+  
+  form:has([data-testid="power-search-input"]) button[type="submit"] {
+    position: relative !important;
+    right: auto !important;
+    margin-top: 0.5rem !important;
+    width: 100% !important;
+  }
+  
+  /* Results count and view toggle row */
+  .flex.justify-between.items-center:has([data-testid*="view"]) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Mobile filter button - ensure visibility */
+  [data-testid="button-mobile-filter"] {
+    z-index: 100 !important;
+    bottom: 1rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    min-height: 48px !important;
+    padding: 0.75rem 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Ensure filter sheet content scrollable */
+  [data-radix-sheet-content] .overflow-y-auto {
+    max-height: calc(100vh - 8rem) !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Filter section checkboxes - touch friendly */
+  [data-testid*="button-mobile-filter-"] {
+    min-height: 48px !important;
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Quick filter chips - horizontal scroll */
+  .flex.flex-wrap.gap-2:has([class*="Badge"]) {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.5rem !important;
+    scrollbar-width: none !important;
+  }
+  
+  .flex.flex-wrap.gap-2:has([class*="Badge"])::-webkit-scrollbar {
+    display: none !important;
+  }
+  
   /* ==========================================
      SIDEBAR - MOBILE HIDDEN
      ========================================== */
@@ -731,6 +835,39 @@
   .grid:has(.stock-card),
   .grid:has([data-testid*="card-product"]) {
     grid-template-columns: 1fr !important;
+  }
+  
+  /* Stock card action buttons - keep in row */
+  .stock-card .flex.gap-2:has(button),
+  [data-testid*="card-product"] .flex.gap-2:has(button) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  .stock-card .flex.gap-2:has(button) > *,
+  [data-testid*="card-product"] .flex.gap-2:has(button) > * {
+    width: auto !important;
+    flex: 1 1 auto !important;
+  }
+  
+  /* Stock card details - better spacing */
+  .stock-card dl,
+  .stock-card .grid {
+    gap: 0.25rem !important;
+  }
+  
+  /* Marketplace listing cards */
+  [class*="Card"]:has(.stock-card),
+  [class*="Card"]:has([data-testid*="product"]) {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* View Details / Enquiry / WhatsApp buttons */
+  .stock-card button,
+  [data-testid*="card-product"] button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8125rem !important;
   }
   
   /* ==========================================
