@@ -629,6 +629,63 @@
     right: 0.5rem !important;
   }
   
+  /* ==========================================
+     PRECISE SEARCH FORM - MOBILE SCROLLABLE
+     ========================================== */
+  
+  /* Make the precise search expandable section scrollable on mobile */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .max-h-96 {
+    max-height: calc(100vh - 180px) !important; /* Leave room for header and some bottom space */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Precise search form fields - stack vertically on mobile */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex.flex-wrap.items-end.gap-3 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2-column grid */
+    gap: 0.75rem !important;
+    align-items: end !important;
+  }
+  
+  /* Full-width fields on mobile */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex-1.min-w-32,
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex-1.min-w-24 {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Action buttons - full width at bottom */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex.gap-2:has([data-testid="button-precise-search"]) {
+    grid-column: 1 / -1 !important; /* Span full width */
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: inherit !important;
+    padding: 0.75rem 0 !important;
+    margin-top: 0.5rem !important;
+    z-index: 10 !important;
+  }
+  
+  /* Search button - flex grow */
+  [data-testid="button-precise-search"] {
+    flex: 1 !important;
+    min-height: 44px !important;
+  }
+  
+  /* Precise search select triggers - ensure proper height */
+  [class*="Card"]:has([data-testid="button-precise-search"]) [class*="SelectTrigger"] {
+    min-height: 44px !important;
+  }
+  
+  /* Precise search inputs - ensure proper height */
+  [class*="Card"]:has([data-testid="button-precise-search"]) input {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+  
   /* Results count and view toggle row */
   .flex.justify-between.items-center:has([data-testid*="view"]) {
     flex-direction: row !important;
