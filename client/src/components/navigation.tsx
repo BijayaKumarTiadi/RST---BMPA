@@ -98,20 +98,6 @@ export default function Navigation() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Theme Toggle for Mobile */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="md:hidden"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-            </Button>
-            
             {!isAuthenticated ? (
               <>
                 <Button 
@@ -131,7 +117,7 @@ export default function Navigation() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+                    className="hidden md:flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
                     data-testid="user-profile-dropdown"
                   >
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
@@ -329,7 +315,43 @@ export default function Navigation() {
                           }}
                         >
                           <User className="mr-2 h-4 w-4" />
-                          Profile
+                          My Profile
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/add-product');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <Package className="mr-2 h-4 w-4" />
+                          Add an Offer
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/settings');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setLocation('/membership');
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Membership
                         </Button>
                         
                       </>
@@ -344,7 +366,7 @@ export default function Navigation() {
                       }}
                     >
                       <Info className="mr-2 h-4 w-4" />
-                      About
+                      About Us
                     </Button>
                     
                     {/* Theme Toggle */}
