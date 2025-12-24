@@ -599,20 +599,34 @@
   
   /* Power Search - mobile optimizations */
   [data-testid="power-search-input"] {
-    padding-right: 3rem !important; /* Make room for buttons */
+    padding-right: 2.5rem !important; /* Room for clear button only */
     font-size: 16px !important; /* Prevent iOS zoom */
+    height: 48px !important;
   }
   
-  /* Power Search container - ensure button is visible */
-  form:has([data-testid="power-search-input"]) .relative.flex.items-center {
-    flex-wrap: wrap !important;
+  /* Power Search form - make search button visible below */
+  form:has([data-testid="power-search-input"]) {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
   }
   
-  form:has([data-testid="power-search-input"]) button[type="submit"] {
-    position: relative !important;
-    right: auto !important;
-    margin-top: 0.5rem !important;
+  /* Power Search input container */
+  form:has([data-testid="power-search-input"]) > .relative {
     width: 100% !important;
+  }
+  
+  /* Power Search submit button - full width below input */
+  form:has([data-testid="power-search-input"]) button[type="submit"] {
+    position: static !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Clear button inside input - reposition */
+  form:has([data-testid="power-search-input"]) button[type="button"] {
+    right: 0.5rem !important;
   }
   
   /* Results count and view toggle row */
