@@ -1494,7 +1494,7 @@ export default function Marketplace() {
             </div>
 
             {/* Expandable content */}
-            <div className={`transition-all duration-300 overflow-hidden ${preciseSearchExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className={`transition-all duration-300 ${preciseSearchExpanded ? 'max-h-[70vh] md:max-h-96 overflow-y-auto md:overflow-hidden opacity-100' : 'max-h-0 overflow-hidden opacity-0'}`}>
               <div className="px-3 pb-3">
                 <div className="border-t border-border mb-3"></div>
                 {/* Single Row Layout */}
