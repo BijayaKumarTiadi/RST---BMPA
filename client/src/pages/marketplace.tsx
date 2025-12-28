@@ -1172,7 +1172,9 @@ export default function Marketplace() {
     };
   }, [gsmSuggestions.length]);
 
-  // Click outside handler for precise search card
+  // Click outside handler for precise search card - DISABLED
+  // The search card will only close on mouse leave timeout, not on click outside
+  /*
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -1214,6 +1216,7 @@ export default function Marketplace() {
       }
     };
   }, [preciseSearchExpanded]);
+  */
 
 
   // Handle precise search field changes
@@ -1456,7 +1459,18 @@ export default function Marketplace() {
         >
           <Card className="w-full transition-all duration-300 hover:shadow-lg border-blue-200 dark:border-blue-800">
             {/* Always visible header */}
-            <div className="p-3 cursor-pointer">
+            <div
+              className="p-3 cursor-pointer"
+              onClick={() => {
+                // Clear any existing timeout
+                if (hoverTimeoutRef.current) {
+                  clearTimeout(hoverTimeoutRef.current);
+                  hoverTimeoutRef.current = null;
+                }
+                // Toggle the expanded state
+                setPreciseSearchExpanded(!preciseSearchExpanded);
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />

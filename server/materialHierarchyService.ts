@@ -46,8 +46,8 @@ export async function createMaterialHierarchyEntry(data: {
             [data.grade_of_material, data.material_kind, data.manufacturer, data.brand_name]
         );
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             message: 'Material hierarchy entry created successfully',
             id: (result as any).insertId
         };
@@ -90,11 +90,45 @@ export async function updateMaterialHierarchyEntry(id: number, data: {
     }
 }
 
-// Delete a material hierarchy entry
-export async function deleteMaterialHierarchyEntry(id: number): Promise<{ success: boolean; message: string }> {
+// Delete a material hierarchy entry and all related offers
+export async function deleteMaterialHierarchyEntry(id: number): Promise<{ success: boolean; message: string; deletedOffersCount?: number }> {
     try {
+        // First, get all fields from the hierarchy entry before deleting
+        const hierarchyEntry = await executeQuery(
+            `SELECT grade_of_material, material_kind, manufacturer, brand_name FROM material_hierarchy WHERE id = ?`,
+            [id]
+        );
+
+        if (!hierarchyEntry || (hierarchyEntry as any[]).length === 0) {
+            return { success: false, message: 'Material hierarchy entry not found' };
+        }
+
+        const entry = (hierarchyEntry as any[])[0];
+        const { grade_of_material, material_kind, manufacturer, brand_name } = entry;
+
+        // Delete all offers (deals) that match this hierarchy
+        // Match on EITHER:
+        // 1. The grade_of_material field (case-insensitive)
+        // 2. OR the combination of Make (manufacturer), Grade (material_kind), and Brand (brand_name)
+        const deleteOffersResult = await executeQuery(
+            `DELETE FROM deal_master 
+             WHERE UPPER(grade_of_material) = UPPER(?)
+             OR (UPPER(Make) = UPPER(?) AND UPPER(Grade) = UPPER(?) AND UPPER(Brand) = UPPER(?))`,
+            [grade_of_material, manufacturer, material_kind, brand_name]
+        );
+
+        const deletedOffersCount = (deleteOffersResult as any).affectedRows || 0;
+
+        // Delete the material hierarchy entry
         await executeQuery(`DELETE FROM material_hierarchy WHERE id = ?`, [id]);
-        return { success: true, message: 'Material hierarchy entry deleted successfully' };
+
+        console.log(`✅ Deleted material hierarchy entry (ID: ${id}, Grade: ${grade_of_material}, Kind: ${material_kind}, Manufacturer: ${manufacturer}, Brand: ${brand_name}) and ${deletedOffersCount} related offers`);
+
+        return {
+            success: true,
+            message: `Material hierarchy entry deleted successfully. ${deletedOffersCount} related offer(s) were also deleted.`,
+            deletedOffersCount
+        };
     } catch (error) {
         console.error('Error deleting material hierarchy entry:', error);
         return { success: false, message: 'Failed to delete material hierarchy entry' };

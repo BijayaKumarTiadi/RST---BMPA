@@ -12,13 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/queryClient";
 import AdminNavigation from "@/components/admin-navigation";
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
-  Clock, 
-  CreditCard, 
-  BarChart3, 
+import {
+  Users,
+  UserCheck,
+  UserX,
+  Clock,
+  CreditCard,
+  BarChart3,
   Search,
   LogOut,
   Shield,
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   const [editFormData, setEditFormData] = useState<Partial<Member>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // Summary Report filters
   const [reportFromDate, setReportFromDate] = useState("");
   const [reportToDate, setReportToDate] = useState("");
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/payment-history"],
     enabled: !!adminUser,
   });
-  
+
   // Get summary report
   const { data: summaryReport, isLoading: isSummaryLoading, refetch: refetchSummary } = useQuery<SummaryReport>({
     queryKey: ["/api/admin/summary-report", reportFromDate, reportToDate, reportCategory],
@@ -237,17 +237,17 @@ export default function AdminDashboard() {
     },
     onSuccess: (data) => {
       if (data.success || data.created > 0) {
-        toast({ 
-          title: "Success", 
-          description: `Created ${data.created} entries${data.skipped > 0 ? `, ${data.skipped} already existed` : ''}` 
+        toast({
+          title: "Success",
+          description: `Created ${data.created} entries${data.skipped > 0 ? `, ${data.skipped} already existed` : ''}`
         });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
-        
+
         if (keepDialogOpen) {
           // Keep dialog open and preserve parent fields, only reset brand names
-          setNewBatchMaterial(prev => ({ 
-            ...prev, 
-            brand_names: [""] 
+          setNewBatchMaterial(prev => ({
+            ...prev,
+            brand_names: [""]
           }));
           setKeepDialogOpen(false);
         } else {
@@ -292,7 +292,14 @@ export default function AdminDashboard() {
     },
     onSuccess: (data) => {
       if (data.success) {
-        toast({ title: "Success", description: "Material hierarchy entry deleted successfully" });
+        const message = data.deletedOffersCount
+          ? `Material hierarchy entry deleted successfully. ${data.deletedOffersCount} related marketplace offer(s) were also deleted.`
+          : "Material hierarchy entry deleted successfully.";
+        toast({
+          title: "Success",
+          description: message,
+          duration: 5000 // Show for 5 seconds since it's important information
+        });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/material-hierarchy"] });
       } else {
         toast({ title: "Error", description: data.message, variant: "destructive" });
@@ -450,7 +457,7 @@ export default function AdminDashboard() {
   };
 
   const getMembershipBadge = (paid: number) => {
-    return paid === 1 
+    return paid === 1
       ? <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">Paid</Badge>
       : <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Unpaid</Badge>;
   };
@@ -483,7 +490,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <AdminNavigation />
-      
+
       <div className="w-full px-4 sm:px-6 lg:max-w-7xl lg:mx-auto py-4 sm:py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
@@ -495,8 +502,8 @@ export default function AdminDashboard() {
               Welcome back, {adminUser.admin.name}
             </p>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
@@ -671,8 +678,8 @@ export default function AdminDashboard() {
                               <div className="flex space-x-2">
                                 <Dialog>
                                   <DialogTrigger asChild>
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="outline"
                                       onClick={() => handleEditMember(member)}
                                       data-testid={`button-edit-${member.member_id}`}
@@ -765,8 +772,8 @@ export default function AdminDashboard() {
 
                                 {member.mstatus === 0 && (
                                   <>
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="default"
                                       onClick={() => approveMutation.mutate(member.member_id)}
                                       disabled={approveMutation.isPending}
@@ -778,8 +785,8 @@ export default function AdminDashboard() {
                                         <CheckCircle className="w-3 h-3" />
                                       )}
                                     </Button>
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="destructive"
                                       onClick={() => rejectMutation.mutate(member.member_id)}
                                       disabled={rejectMutation.isPending}
@@ -794,8 +801,8 @@ export default function AdminDashboard() {
                                   </>
                                 )}
                                 {member.mstatus === -1 && (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="default"
                                     onClick={() => approveMutation.mutate(member.member_id)}
                                     disabled={approveMutation.isPending}
@@ -812,8 +819,8 @@ export default function AdminDashboard() {
                                   </Button>
                                 )}
                                 {member.mstatus === 1 && (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="destructive"
                                     onClick={() => rejectMutation.mutate(member.member_id)}
                                     disabled={rejectMutation.isPending}
@@ -912,8 +919,8 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell className="sticky right-0 bg-background min-w-[140px] z-10 shadow-sm">
                               <div className="flex space-x-2">
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="default"
                                   onClick={() => approveMutation.mutate(member.member_id)}
                                   disabled={approveMutation.isPending}
@@ -928,8 +935,8 @@ export default function AdminDashboard() {
                                     </>
                                   )}
                                 </Button>
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="destructive"
                                   onClick={() => rejectMutation.mutate(member.member_id)}
                                   disabled={rejectMutation.isPending}
@@ -1236,7 +1243,7 @@ export default function AdminDashboard() {
                               {getExpiryBadge(payment.days_remaining)}
                             </TableCell>
                             <TableCell className="hidden sm:table-cell min-w-[120px]">
-                              {payment.days_remaining < 0 
+                              {payment.days_remaining < 0
                                 ? `${Math.abs(payment.days_remaining)} days overdue`
                                 : `${payment.days_remaining} days left`
                               }
@@ -1300,8 +1307,8 @@ export default function AdminDashboard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button 
-                    onClick={() => refetchSummary()} 
+                  <Button
+                    onClick={() => refetchSummary()}
                     variant="default"
                     data-testid="button-generate-report"
                   >
@@ -1533,9 +1540,9 @@ export default function AdminDashboard() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setNewBatchMaterial({ 
-                                    ...newBatchMaterial, 
-                                    brand_names: [...newBatchMaterial.brand_names, ""] 
+                                  setNewBatchMaterial({
+                                    ...newBatchMaterial,
+                                    brand_names: [...newBatchMaterial.brand_names, ""]
                                   });
                                 }}
                                 data-testid="button-add-brand-row"
@@ -1550,7 +1557,7 @@ export default function AdminDashboard() {
                                 const validBrands = newBatchMaterial.brand_names
                                   .map(b => b.trim().toUpperCase())
                                   .filter(b => b !== "");
-                                const uniqueBrands = [...new Set(validBrands)];
+                                const uniqueBrands = Array.from(new Set(validBrands));
                                 setKeepDialogOpen(false);
                                 batchCreateMaterialMutation.mutate({
                                   ...newBatchMaterial,
@@ -1558,18 +1565,18 @@ export default function AdminDashboard() {
                                 });
                               }}
                               disabled={
-                                batchCreateMaterialMutation.isPending || 
-                                !newBatchMaterial.grade_of_material.trim() || 
-                                !newBatchMaterial.material_kind.trim() || 
-                                !newBatchMaterial.manufacturer.trim() || 
-                                [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
+                                batchCreateMaterialMutation.isPending ||
+                                !newBatchMaterial.grade_of_material.trim() ||
+                                !newBatchMaterial.material_kind.trim() ||
+                                !newBatchMaterial.manufacturer.trim() ||
+                                new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== "")).size === 0
                               }
                               className="flex-1"
                               data-testid="button-save-new-material"
                             >
                               {batchCreateMaterialMutation.isPending && !keepDialogOpen
-                                ? "Saving..." 
-                                : `Save (${[...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length})`}
+                                ? "Saving..."
+                                : `Save (${new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== "")).size})`}
                             </Button>
                             <Button
                               variant="outline"
@@ -1577,7 +1584,7 @@ export default function AdminDashboard() {
                                 const validBrands = newBatchMaterial.brand_names
                                   .map(b => b.trim().toUpperCase())
                                   .filter(b => b !== "");
-                                const uniqueBrands = [...new Set(validBrands)];
+                                const uniqueBrands = Array.from(new Set(validBrands));
                                 setKeepDialogOpen(true);
                                 batchCreateMaterialMutation.mutate({
                                   ...newBatchMaterial,
@@ -1585,17 +1592,17 @@ export default function AdminDashboard() {
                                 });
                               }}
                               disabled={
-                                batchCreateMaterialMutation.isPending || 
-                                !newBatchMaterial.grade_of_material.trim() || 
-                                !newBatchMaterial.material_kind.trim() || 
-                                !newBatchMaterial.manufacturer.trim() || 
-                                [...new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== ""))].length === 0
+                                batchCreateMaterialMutation.isPending ||
+                                !newBatchMaterial.grade_of_material.trim() ||
+                                !newBatchMaterial.material_kind.trim() ||
+                                !newBatchMaterial.manufacturer.trim() ||
+                                new Set(newBatchMaterial.brand_names.map(b => b.trim().toUpperCase()).filter(b => b !== "")).size === 0
                               }
                               className="flex-1"
                               data-testid="button-save-add-another"
                             >
                               {batchCreateMaterialMutation.isPending && keepDialogOpen
-                                ? "Saving..." 
+                                ? "Saving..."
                                 : "Save & Add More"}
                             </Button>
                           </div>

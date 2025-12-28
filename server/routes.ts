@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const materialKinds = await executeQuery(`SELECT DISTINCT material_kind FROM material_hierarchy WHERE material_kind IS NOT NULL ORDER BY material_kind`);
       const manufacturers = await executeQuery(`SELECT DISTINCT manufacturer FROM material_hierarchy WHERE manufacturer IS NOT NULL ORDER BY manufacturer`);
       const brands = await executeQuery(`SELECT DISTINCT brand_name FROM material_hierarchy WHERE brand_name IS NOT NULL ORDER BY brand_name`);
-      
+
       // Get stock groups
       const groups = await executeQuery(`SELECT GroupID, GroupName FROM stock_groups ORDER BY GroupName`);
 
@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (deal.GroupName && deal.GroupName.toLowerCase().includes('spare part')) {
           return;
         }
-        
+
         offersSheet.addRow({
           transId: deal.TransID,
           boardType: deal.GroupName || '',
@@ -1183,7 +1183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const pool = await dealService.getPool();
+      // pool is already imported from ./database at the top of this file
 
       // Total postings and aggregates
       const [postingStats]: any = await pool.query(`
@@ -2529,12 +2529,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (record.transId) {
             // Verify ownership before update
             const exists = await executeQuerySingle(
-              'SELECT TransID FROM deal_master WHERE TransID = ? AND created_by_member_id = ?', 
-              [record.transId, sellerId], 
-              3, 
+              'SELECT TransID FROM deal_master WHERE TransID = ? AND created_by_member_id = ?',
+              [record.transId, sellerId],
+              3,
               connection
             );
-            
+
             if (exists) {
               // Update existing record
               await executeQuery(`
@@ -2615,12 +2615,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await connection.commit();
-        
+
         let message = `Process complete: ${created} created, ${updated} updated`;
         if (skipped > 0) {
           message += `, ${skipped} skipped (ownership mismatch)`;
         }
-        
+
         res.json({ success: true, message, created, updated, skipped });
 
       } catch (err: any) {
@@ -4056,13 +4056,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/material-hierarchy', requireAdminAuth, async (req, res) => {
     try {
       let { grade_of_material, material_kind, manufacturer, brand_name } = req.body;
-      
+
       // Normalize to uppercase and trim
       grade_of_material = grade_of_material?.trim().toUpperCase();
       material_kind = material_kind?.trim().toUpperCase();
       manufacturer = manufacturer?.trim().toUpperCase();
       brand_name = brand_name?.trim().toUpperCase();
-      
+
       if (!grade_of_material || !material_kind || !manufacturer || !brand_name) {
         return res.status(400).json({ success: false, message: "All fields are required" });
       }
@@ -4073,7 +4073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manufacturer,
         brand_name
       });
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error creating material hierarchy entry:", error);
@@ -4085,13 +4085,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       let { grade_of_material, material_kind, manufacturer, brand_name } = req.body;
-      
+
       // Normalize to uppercase and trim
       grade_of_material = grade_of_material?.trim().toUpperCase();
       material_kind = material_kind?.trim().toUpperCase();
       manufacturer = manufacturer?.trim().toUpperCase();
       brand_name = brand_name?.trim().toUpperCase();
-      
+
       if (!grade_of_material || !material_kind || !manufacturer || !brand_name) {
         return res.status(400).json({ success: false, message: "All fields are required" });
       }
@@ -4102,7 +4102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manufacturer,
         brand_name
       });
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error updating material hierarchy entry:", error);
@@ -4125,16 +4125,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/material-hierarchy/batch', requireAdminAuth, async (req, res) => {
     try {
       let { grade_of_material, material_kind, manufacturer, brand_names } = req.body;
-      
+
       // Normalize parent fields to uppercase
       grade_of_material = grade_of_material?.trim().toUpperCase();
       material_kind = material_kind?.trim().toUpperCase();
       manufacturer = manufacturer?.trim().toUpperCase();
-      
+
       if (!grade_of_material || !material_kind || !manufacturer) {
         return res.status(400).json({ success: false, message: "Grade, Material Kind, and Manufacturer are required" });
       }
-      
+
       if (!Array.isArray(brand_names) || brand_names.length === 0) {
         return res.status(400).json({ success: false, message: "At least one brand name is required" });
       }
@@ -4143,10 +4143,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cleanedBrands = brand_names
         .map((b: string) => b?.trim().toUpperCase())
         .filter((b: string) => b && b.length > 0);
-      
+
       // Remove duplicates using Set
       const uniqueBrands = [...new Set(cleanedBrands)];
-      
+
       if (uniqueBrands.length === 0) {
         return res.status(400).json({ success: false, message: "At least one valid brand name is required" });
       }
@@ -4157,7 +4157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manufacturer,
         brand_names: uniqueBrands
       });
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error batch creating material hierarchy entries:", error);
@@ -4166,7 +4166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============= RATE REQUEST ENDPOINTS =============
-  
+
   // Create a rate request (buyer requests to see seller's rate)
   app.post('/api/rate-requests', requireAuth, async (req: any, res) => {
     try {
@@ -4217,10 +4217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notification to seller
       if (deal.seller_email) {
-        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        const baseUrl = process.env.REPLIT_DEV_DOMAIN
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
           : 'http://localhost:5000';
-        
+
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1a1a1a;">Rate Request Received</h2>
@@ -4312,10 +4312,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.memberId;
       const dealId = parseInt(req.params.dealId);
-      
+
       const status = await rateRequestService.getRateRequestStatus(dealId, userId);
       const isApproved = await rateRequestService.checkRateApproval(dealId, userId);
-      
+
       res.json({ success: true, status, isApproved });
     } catch (error: any) {
       console.error("Error checking rate request status:", error);
@@ -4346,10 +4346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Product:</strong> ${updatedRequest.deal_description}</p>
             </div>
-            ${status === 'approved' 
-              ? '<p style="color: #22c55e;">You can now view the rate for this product in the marketplace.</p>' 
-              : '<p style="color: #666;">The seller has chosen not to share the rate at this time.</p>'
-            }
+            ${status === 'approved'
+            ? '<p style="color: #22c55e;">You can now view the rate for this product in the marketplace.</p>'
+            : '<p style="color: #666;">The seller has chosen not to share the rate at this time.</p>'
+          }
             ${notes ? `<p><strong>Seller Notes:</strong> ${notes}</p>` : ''}
           </div>
         `;
