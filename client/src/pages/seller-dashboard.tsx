@@ -859,11 +859,11 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="offers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-background border shadow-sm">
-            <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
-            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
-            <TabsTrigger value="counter-offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
-            <TabsTrigger value="rate-requests" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rate Requests</TabsTrigger>
+          <TabsList className="flex w-full md:grid md:grid-cols-4 overflow-x-auto bg-background border shadow-sm gap-1 p-1">
+            <TabsTrigger value="offers" className="flex-shrink-0 px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
+            <TabsTrigger value="inquiries" className="flex-shrink-0 px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
+            <TabsTrigger value="counter-offers" className="flex-shrink-0 px-4 whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
+            <TabsTrigger value="rate-requests" className="flex-shrink-0 px-4 whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rate Requests</TabsTrigger>
           </TabsList>
 
           {/* Offers Tab */}
@@ -1230,14 +1230,15 @@ export default function SellerDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                asChild
+                                onClick={() => {
+                                  setSelectedDeal(deal);
+                                  setViewModalOpen(true);
+                                }}
                                 className="flex-1 text-xs"
                                 data-testid={`button-view-${deal.TransID}`}
                               >
-                                <Link href={`/deal/${deal.TransID}`}>
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Link>
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
                               </Button>
 
                               <Button

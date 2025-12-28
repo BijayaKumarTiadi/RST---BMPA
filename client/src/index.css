@@ -112,3 +112,1147 @@
     width: 280px;
   }
 }
+
+/* =====================================================
+   MOBILE-OPTIMIZED STYLES
+   All styles below apply ONLY to screens <= 768px
+   Desktop/Windows view remains completely untouched
+   Optimized for WebView / Web-to-APK
+   ===================================================== */
+
+@media (max-width: 768px) {
+  /* ==========================================
+     BASE MOBILE LAYOUT
+     ========================================== */
+  
+  /* Prevent horizontal scrolling */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Safe area padding for notched devices */
+  body {
+    padding-left: env(safe-area-inset-left) !important;
+    padding-right: env(safe-area-inset-right) !important;
+  }
+  
+  /* Main content containers - full width */
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl,
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl,
+  .max-w-xl,
+  .max-w-lg {
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Container padding adjustments */
+  .px-4, .px-6, .px-8 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  /* ==========================================
+     NAVIGATION MOBILE STYLES
+     ========================================== */
+  
+  /* Mobile header height optimization */
+  header {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Navigation header - keep icon buttons in a row */
+  header .flex.items-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Header action buttons - smaller spacing */
+  header .flex.items-center.space-x-2,
+  header .flex.items-center.space-x-3 {
+    gap: 0.25rem !important;
+  }
+  
+  /* Header dropdown triggers - smaller touch targets allowed in header */
+  header button[data-testid="user-profile-dropdown"],
+  header button[data-testid="mobile-menu-toggle"] {
+    min-height: 40px !important;
+    min-width: 40px !important;
+    padding: 0.25rem !important;
+  }
+  
+  /* Logo area - compact */
+  header .flex.items-center.space-x-2:first-child,
+  header .flex.items-center.space-x-3:first-child {
+    gap: 0.375rem !important;
+  }
+  
+  /* Logo text on mobile */
+  header h1 {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* ==========================================
+     TYPOGRAPHY - MOBILE OPTIMIZED
+     ========================================== */
+  
+  /* Responsive headings */
+  h1, .text-4xl, .text-5xl, .text-6xl {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  h2, .text-3xl {
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+  }
+  
+  h3, .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-xl {
+    font-size: 1.1rem !important;
+  }
+  
+  /* Smaller text for mobile */
+  .text-sm {
+    font-size: 0.8125rem !important;
+  }
+  
+  .text-xs {
+    font-size: 0.6875rem !important;
+  }
+  
+  /* ==========================================
+     BUTTONS - TOUCH FRIENDLY
+     ========================================== */
+  
+  /* Ensure minimum touch target size (44px) */
+  button,
+  [role="button"],
+  .btn,
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full-btn {
+    width: 100% !important;
+  }
+  
+  /* Button groups stack vertically - ONLY in form/content areas, NOT in headers or action bars */
+  main .flex.gap-2:has(button):not(.flex-row):not([class*="items-center"]),
+  main .flex.gap-3:has(button):not(.flex-row):not([class*="items-center"]),
+  main .flex.gap-4:has(button):not(.flex-row):not([class*="items-center"]),
+  form .flex.gap-2:has(button):not(.flex-row),
+  form .flex.gap-3:has(button):not(.flex-row) {
+    flex-direction: column !important;
+  }
+  
+  main .flex.gap-2:has(button):not(.flex-row):not([class*="items-center"]) > *,
+  main .flex.gap-3:has(button):not(.flex-row):not([class*="items-center"]) > *,
+  form .flex.gap-2:has(button):not(.flex-row) > *,
+  form .flex.gap-3:has(button):not(.flex-row) > * {
+    width: 100% !important;
+  }
+  
+  /* Keep header action buttons in row - ONLY in header, not globally */
+  header .flex,
+  header .flex.items-center,
+  nav .flex.items-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Icon buttons keep square shape */
+  button[class*="size-icon"],
+  .size-icon {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  
+  /* ==========================================
+     FORMS - MOBILE OPTIMIZED
+     ========================================== */
+  
+  /* Touch-friendly inputs - base styles */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="url"],
+  textarea,
+  select,
+  [role="combobox"] {
+    min-height: 48px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    width: 100% !important;
+  }
+  
+  /* Only override padding on inputs WITHOUT icons (no pl-* class) */
+  input:not([class*="pl-"]),
+  textarea:not([class*="pl-"]),
+  select:not([class*="pl-"]) {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Inputs WITH left icons - preserve left padding, adjust top/bottom */
+  input[class*="pl-"],
+  textarea[class*="pl-"] {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-right: 1rem !important;
+    /* Left padding preserved from Tailwind class (pl-10, etc.) */
+  }
+  
+  /* Icon inside input container - center vertically on mobile */
+  /* Targets icons positioned absolutely inside relative containers with inputs */
+  .relative:has(input) > svg.absolute,
+  .relative:has(input) > [class*="lucide"].absolute,
+  .relative:has(input) > .absolute:has(svg),
+  .relative:has(textarea) > svg.absolute,
+  .relative:has(select) > svg.absolute {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Also handle icons with explicit top-3 class on mobile */
+  .relative > svg[class*="top-3"],
+  .relative > [class*="lucide"][class*="top-3"] {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  /* Currency/text prefix spans inside inputs */
+  .relative > span.absolute[class*="left-"] {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  /* Select trigger full width */
+  [data-radix-select-trigger],
+  .select-trigger {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+  
+  /* Form layouts - single column */
+  .grid.md\\:grid-cols-2,
+  .grid.md\\:grid-cols-3,
+  .grid.lg\\:grid-cols-2,
+  .grid.lg\\:grid-cols-3,
+  .grid.lg\\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Form labels spacing */
+  label {
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+  }
+  
+  /* Form field spacing */
+  .space-y-4 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  /* ==========================================
+     CARDS - FULL WIDTH MOBILE
+     ========================================== */
+  
+  /* Cards take full width */
+  [class*="Card"],
+  .card {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0.5rem !important;
+  }
+  
+  /* Card padding adjustments */
+  [class*="CardContent"],
+  .card-content {
+    padding: 1rem !important;
+  }
+  
+  [class*="CardHeader"],
+  .card-header {
+    padding: 1rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* Card grids - single column */
+  .grid.gap-4:has([class*="Card"]),
+  .grid.gap-6:has([class*="Card"]),
+  .grid.gap-8:has([class*="Card"]) {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* ==========================================
+     TABLES - MOBILE OPTIMIZED
+     Horizontal scroll approach preserves all data
+     ========================================== */
+  
+  /* Table wrapper - horizontal scroll */
+  .relative:has(table),
+  .overflow-auto:has(table),
+  .overflow-x-auto:has(table),
+  div:has(> table) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100vw !important;
+    margin: 0 -0.75rem !important;
+    padding: 0 0.75rem !important;
+  }
+  
+  /* Table minimum width for readability */
+  table {
+    min-width: 600px !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  /* Compact table headers on mobile */
+  table th {
+    padding: 0.5rem 0.375rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Compact table cells on mobile */
+  table td {
+    padding: 0.5rem 0.375rem !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  /* Horizontal scroll hint shadow */
+  .relative:has(table)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, var(--background), transparent);
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  
+  /* ==========================================
+     TABS - MOBILE OPTIMIZED
+     ========================================== */
+  
+  /* Scrollable tabs */
+  [role="tablist"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    display: flex !important;
+    gap: 0.25rem !important;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Tab buttons */
+  [role="tab"] {
+    flex-shrink: 0 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    white-space: nowrap !important;
+  }
+  
+  /* ==========================================
+     DIALOGS & MODALS - FULLSCREEN MOBILE
+     ========================================== */
+  
+  /* Make modals fullscreen on mobile */
+  [role="dialog"],
+  [data-radix-dialog-content] {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    margin: 0 !important;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    transform: none !important;
+  }
+  
+  /* Dialog content scrolling */
+  [role="dialog"] > div,
+  [data-radix-dialog-content] > div {
+    max-height: calc(90vh - 4rem) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Sheet content */
+  [data-radix-sheet-content] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  /* ==========================================
+     BADGES - MOBILE SIZING
+     ========================================== */
+  
+  [class*="Badge"],
+  .badge {
+    font-size: 0.6875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    white-space: nowrap !important;
+  }
+  
+  /* ==========================================
+     FLEX LAYOUTS - MOBILE ADJUSTMENTS
+     ========================================== */
+  
+  /* Flex rows become columns on mobile */
+  .flex.flex-row.md\\:flex-row {
+    flex-direction: column !important;
+  }
+  
+  /* Justify between with wrap */
+  .flex.justify-between {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* ==========================================
+     HERO SECTIONS - MOBILE OPTIMIZED
+     ========================================== */
+  
+  .hero-gradient {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  
+  .hero-gradient h1 {
+    font-size: 1.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .hero-gradient p {
+    font-size: 0.9375rem !important;
+  }
+  
+  /* ==========================================
+     STATS GRIDS - MOBILE LAYOUT
+     ========================================== */
+  
+  /* 2-column stats on mobile */
+  .grid.grid-cols-2.md\\:grid-cols-4,
+  .grid.grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* Stats card padding */
+  .glass-card {
+    padding: 0.75rem !important;
+  }
+  
+  .glass-card .text-2xl {
+    font-size: 1.25rem !important;
+  }
+  
+  /* ==========================================
+     SEARCH & FILTERS - MOBILE OPTIMIZED
+     ========================================== */
+  
+  /* Search bar full width */
+  .relative:has(input[type="search"]),
+  .relative:has(input[placeholder*="Search"]) {
+    width: 100% !important;
+  }
+  
+  /* Filter containers stack vertically */
+  .flex.gap-4:has(select),
+  .flex.flex-col.md\\:flex-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* Power Search - mobile optimizations */
+  [data-testid="power-search-input"] {
+    padding-right: 2.5rem !important; /* Room for clear button only */
+    font-size: 16px !important; /* Prevent iOS zoom */
+    height: 48px !important;
+  }
+  
+  /* Power Search form - make search button visible below */
+  form:has([data-testid="power-search-input"]) {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Power Search input container */
+  form:has([data-testid="power-search-input"]) > .relative {
+    width: 100% !important;
+  }
+  
+  /* Power Search submit button - full width below input */
+  form:has([data-testid="power-search-input"]) button[type="submit"] {
+    position: static !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Clear button inside input - reposition */
+  form:has([data-testid="power-search-input"]) button[type="button"] {
+    right: 0.5rem !important;
+  }
+  
+  /* ==========================================
+     PRECISE SEARCH FORM - MOBILE SCROLLABLE
+     ========================================== */
+  
+  /* Precise search form fields - 2-column grid on mobile */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex.flex-wrap.items-end.gap-3 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    align-items: end !important;
+  }
+  
+  /* Full-width fields on mobile */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex-1.min-w-32,
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex-1.min-w-24 {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Action buttons - full width row at bottom */
+  [class*="Card"]:has([data-testid="button-precise-search"]) .flex.gap-2:has([data-testid="button-precise-search"]) {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+    background: hsl(var(--card)) !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 10 !important;
+  }
+  
+  /* Search button - flex grow */
+  [data-testid="button-precise-search"] {
+    flex: 1 !important;
+    min-height: 44px !important;
+  }
+  
+  /* Precise search select triggers - touch friendly */
+  [class*="Card"]:has([data-testid="button-precise-search"]) [class*="SelectTrigger"] {
+    min-height: 44px !important;
+  }
+  
+  /* Precise search inputs - touch friendly */
+  [class*="Card"]:has([data-testid="button-precise-search"]) input {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+  
+  /* Results count and view toggle row */
+  .flex.justify-between.items-center:has([data-testid*="view"]) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Mobile filter button - ensure visibility */
+  [data-testid="button-mobile-filter"] {
+    z-index: 100 !important;
+    bottom: 1rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    min-height: 48px !important;
+    padding: 0.75rem 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Ensure filter sheet content scrollable */
+  [data-radix-sheet-content] .overflow-y-auto {
+    max-height: calc(100vh - 8rem) !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Filter section checkboxes - touch friendly */
+  [data-testid*="button-mobile-filter-"] {
+    min-height: 48px !important;
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Quick filter chips - horizontal scroll */
+  .flex.flex-wrap.gap-2:has([class*="Badge"]) {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.5rem !important;
+    scrollbar-width: none !important;
+  }
+  
+  .flex.flex-wrap.gap-2:has([class*="Badge"])::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* ==========================================
+     SIDEBAR - MOBILE HIDDEN
+     ========================================== */
+  
+  /* Hide desktop sidebar content */
+  aside.hidden.md\\:block,
+  .md\\:block.hidden {
+    display: none !important;
+  }
+  
+  /* ==========================================
+     PAGINATION - MOBILE FRIENDLY
+     ========================================== */
+  
+  nav[aria-label*="pagination"] {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+  }
+  
+  nav[aria-label*="pagination"] button,
+  nav[aria-label*="pagination"] a {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0.5rem !important;
+  }
+  
+  /* ==========================================
+     IMAGES - RESPONSIVE
+     ========================================== */
+  
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* ==========================================
+     FOOTER - MOBILE LAYOUT
+     ========================================== */
+  
+  footer .grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  
+  footer .flex.justify-between {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 1rem !important;
+  }
+  
+  /* ==========================================
+     UTILITY CLASSES FOR MOBILE
+     ========================================== */
+  
+  /* Mobile-only visible */
+  .mobile-only {
+    display: block !important;
+  }
+  
+  /* Desktop-only hidden on mobile */
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+  
+  /* Mobile stack (flex column) */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  /* Mobile center */
+  .mobile-center {
+    text-align: center !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  /* ==========================================
+     SCROLL BEHAVIOR
+     ========================================== */
+  
+  /* Smooth scrolling */
+  * {
+    scroll-behavior: smooth !important;
+  }
+  
+  /* Touch scrolling optimization */
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    width: 4px !important;
+    height: 4px !important;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground) !important;
+    border-radius: 4px !important;
+  }
+  
+  /* ==========================================
+     ANIMATIONS - REDUCED FOR PERFORMANCE
+     ========================================== */
+  
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* ==========================================
+     DROPDOWN MENUS - MOBILE FRIENDLY
+     ========================================== */
+  
+  [data-radix-dropdown-menu-content],
+  [data-radix-popover-content],
+  [data-radix-select-content] {
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 50vh !important;
+  }
+  
+  /* ==========================================
+     ACCORDION - MOBILE OPTIMIZED
+     ========================================== */
+  
+  [data-radix-accordion-trigger] {
+    min-height: 48px !important;
+    padding: 1rem !important;
+  }
+  
+  [data-radix-accordion-content] {
+    padding: 0 1rem 1rem 1rem !important;
+  }
+  
+  /* ==========================================
+     TOAST NOTIFICATIONS - MOBILE POSITION
+     ========================================== */
+  
+  [data-sonner-toaster],
+  [class*="Toaster"] {
+    bottom: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    top: auto !important;
+  }
+  
+  [data-sonner-toast],
+  [class*="Toast"] {
+    width: 100% !important;
+  }
+  
+  /* ==========================================
+     PRODUCT/STOCK CARDS - MOBILE LAYOUT
+     ========================================== */
+  
+  /* Stock cards full width */
+  .stock-card,
+  [data-testid*="card-product"],
+  [data-testid*="stock-card"] {
+    width: 100% !important;
+  }
+  
+  /* Product grid - single column */
+  .grid:has(.stock-card),
+  .grid:has([data-testid*="card-product"]) {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Stock card action buttons - keep in row */
+  .stock-card .flex.gap-2:has(button),
+  [data-testid*="card-product"] .flex.gap-2:has(button) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  .stock-card .flex.gap-2:has(button) > *,
+  [data-testid*="card-product"] .flex.gap-2:has(button) > * {
+    width: auto !important;
+    flex: 1 1 auto !important;
+  }
+  
+  /* Stock card details - better spacing */
+  .stock-card dl,
+  .stock-card .grid {
+    gap: 0.25rem !important;
+  }
+  
+  /* Marketplace listing cards */
+  [class*="Card"]:has(.stock-card),
+  [class*="Card"]:has([data-testid*="product"]) {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* View Details / Enquiry / WhatsApp buttons */
+  .stock-card button,
+  [data-testid*="card-product"] button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  /* ==========================================
+     DASHBOARD STATS - MOBILE GRID
+     ========================================== */
+  
+  /* Dashboard stats 2-column grid */
+  .dashboard-stats,
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* ==========================================
+     FORM SECTIONS - MOBILE SPACING
+     ========================================== */
+  
+  fieldset,
+  .form-section {
+    margin-bottom: 1.5rem !important;
+    padding: 1rem !important;
+  }
+  
+  /* ==========================================
+     LIST ITEMS - TOUCH TARGETS
+     ========================================== */
+  
+  li:has(a),
+  li:has(button) {
+    min-height: 44px !important;
+  }
+  
+  /* ==========================================
+     AVATARS - MOBILE SIZE
+     ========================================== */
+  
+  [class*="Avatar"] {
+    flex-shrink: 0 !important;
+  }
+  
+  /* ==========================================
+     CHECKBOX & RADIO - TOUCH FRIENDLY
+     ========================================== */
+  
+  input[type="checkbox"],
+  input[type="radio"],
+  [role="checkbox"],
+  [role="radio"] {
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+  
+  /* Label with checkbox - touch spacing */
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* ==========================================
+     LOADING STATES
+     ========================================== */
+  
+  .animate-spin {
+    animation-duration: 1s !important;
+  }
+  
+  /* Skeleton loading full width */
+  [class*="Skeleton"],
+  .skeleton {
+    width: 100% !important;
+  }
+  
+  /* ==========================================
+     SPECIFIC PAGE OPTIMIZATIONS
+     ========================================== */
+  
+  /* Profile page - single column */
+  .profile-grid,
+  .grid.gap-6.md\\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Dashboard tabs - scrollable */
+  [role="tablist"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Tab triggers - prevent shrinking */
+  [role="tab"] {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 40px !important;
+  }
+  
+  /* Marketplace filters - stack */
+  .marketplace-filters {
+    flex-direction: column !important;
+  }
+  
+  /* ==========================================
+     SELLER DASHBOARD - MOBILE OPTIMIZATIONS
+     ========================================== */
+  
+  /* Dashboard card action buttons - horizontal row */
+  [data-testid*="deal-card"] .flex.gap-2.pt-3 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Dashboard card action buttons - touch friendly */
+  [data-testid*="deal-card"] .flex.gap-2.pt-3 button {
+    min-height: 40px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Dashboard stats grid - 2 columns */
+  .grid.grid-cols-2.md\\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Dashboard filter row - stack on mobile */
+  [class*="CardHeader"]:has([data-testid*="filter"]) .flex.items-center.gap-4,
+  [class*="CardHeader"]:has([data-testid*="select"]) .flex.items-center.gap-4 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Rate request cards - better mobile layout */
+  [data-testid*="rate-request"] {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  [data-testid*="rate-request"] .flex.items-center.gap-2:has(button) {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+  
+  [data-testid*="rate-request"] .flex.items-center.gap-2:has(button) button {
+    flex: 1 !important;
+  }
+  
+  /* ==========================================
+     TABLE SCROLL INDICATOR - MOBILE
+     ========================================== */
+  
+  /* Table container with scroll indicator */
+  .overflow-x-auto:has(table) {
+    position: relative !important;
+  }
+  
+  /* Right fade indicator for scrollable tables */
+  .overflow-x-auto:has(table)::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 30px !important;
+    background: linear-gradient(to right, transparent, hsl(var(--card) / 0.9)) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+  }
+  
+  /* Left fade when scrolled */
+  .overflow-x-auto:has(table)::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 30px !important;
+    background: linear-gradient(to left, transparent, hsl(var(--card) / 0.9)) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    opacity: 0 !important;
+  }
+  
+  /* Table cells - minimum width for readability */
+  table th,
+  table td {
+    min-width: 80px !important;
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* First column sticky for context */
+  table th:first-child,
+  table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: hsl(var(--card)) !important;
+  }
+  
+  /* ==========================================
+     SAFE AREA - iOS & ANDROID
+     ========================================== */
+  
+  /* Bottom safe area for bottom nav/actions */
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  
+  /* Top safe area for status bar */
+  .fixed.top-0 {
+    padding-top: env(safe-area-inset-top) !important;
+  }
+}
+
+/* =====================================================
+   SMALL MOBILE DEVICES (max-width: 375px)
+   Extra optimizations for very small screens
+   ===================================================== */
+
+@media (max-width: 375px) {
+  /* Even smaller text */
+  h1, .text-4xl, .text-5xl, .text-6xl {
+    font-size: 1.5rem !important;
+  }
+  
+  h2, .text-3xl {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Tighter padding */
+  .px-4, .px-6, .px-8 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  /* Smaller card padding */
+  [class*="CardContent"],
+  .card-content {
+    padding: 0.75rem !important;
+  }
+  
+  /* Stats grid - single column on very small screens */
+  .grid.grid-cols-2.md\\:grid-cols-4,
+  .grid.grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* =====================================================
+   LANDSCAPE MOBILE (max-height: 500px and landscape)
+   ===================================================== */
+
+@media (max-width: 768px) and (max-height: 500px) and (orientation: landscape) {
+  /* Reduce header height */
+  header {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Smaller hero section */
+  .hero-gradient {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce modal height */
+  [role="dialog"],
+  [data-radix-dialog-content] {
+    max-height: 80vh !important;
+  }
+  
+  /* Compact form fields */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    min-height: 40px !important;
+  }
+}
+
+/* =====================================================
+   WEBVIEW / APP-SPECIFIC STYLES
+   ===================================================== */
+
+@media (max-width: 768px) {
+  /* Disable text selection in app-like contexts */
+  .app-mode {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* Disable long-press context menu */
+  .app-mode * {
+    -webkit-touch-callout: none !important;
+  }
+  
+  /* Allow text selection in inputs */
+  .app-mode input,
+  .app-mode textarea {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+  
+  /* Tap highlight color */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .dark * {
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}

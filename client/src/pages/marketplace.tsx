@@ -124,7 +124,7 @@ export default function Marketplace() {
   // Helper function to check if category uses material hierarchy
   const isMaterialHierarchyCategory = (category: string): boolean => {
     const lowerCategory = category?.toLowerCase().trim() || '';
-    return lowerCategory === 'paper' || lowerCategory === 'board' || lowerCategory === 'paper reel';
+    return lowerCategory === 'paper' || lowerCategory === 'board' || lowerCategory === 'paper reel' || lowerCategory === 'kraft reel';
   };
 
   // Precise search states
@@ -236,6 +236,7 @@ export default function Marketplace() {
   });
   const [preciseSearchExpanded, setPreciseSearchExpanded] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchCardRef = useRef<HTMLDivElement | null>(null);
 
   // Modal states
@@ -1218,6 +1219,28 @@ export default function Marketplace() {
   }, [preciseSearchExpanded]);
   */
 
+  // Auto-close search section after 2 minutes of being expanded
+  useEffect(() => {
+    if (preciseSearchExpanded) {
+      // Clear any existing auto-close timeout
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+      
+      // Set new timeout for 2 minutes (120000ms)
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        setPreciseSearchExpanded(false);
+      }, 120000);
+    }
+
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+        autoCloseTimeoutRef.current = null;
+      }
+    };
+  }, [preciseSearchExpanded]);
+
 
   // Handle precise search field changes
   const handlePreciseSearchChange = (field: string, value: string) => {
@@ -1485,7 +1508,7 @@ export default function Marketplace() {
             </div>
 
             {/* Expandable content */}
-            <div className={`transition-all duration-300 overflow-hidden ${preciseSearchExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className={`transition-all duration-300 ${preciseSearchExpanded ? 'max-h-[70vh] md:max-h-96 overflow-y-auto md:overflow-hidden opacity-100' : 'max-h-0 overflow-hidden opacity-0'}`}>
               <div className="px-3 pb-3">
                 <div className="border-t border-border mb-3"></div>
                 {/* Single Row Layout */}
@@ -1595,7 +1618,17 @@ export default function Marketplace() {
                               <SelectValue placeholder="Select grade..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {(gradesOfMaterial || []).map((grade: any, index: number) => (
+                              {(gradesOfMaterial || [])
+                                .filter((grade: any) => {
+                                  // For Kraft Reel, only show specific grades
+                                  if (preciseSearch.category?.toLowerCase().includes('kraft reel')) {
+                                    const gradeUpper = (grade.grade_of_material || '').toUpperCase().trim();
+                                    const allowedKraftGrades = ['VIRGIN', 'RECYCLED', 'COATED PAPER', 'MAPLITHO', 'HIGH VALUE PAPER', 'PE COATED', 'KRAFT'];
+                                    return allowedKraftGrades.includes(gradeUpper);
+                                  }
+                                  return true;
+                                })
+                                .map((grade: any, index: number) => (
                                 <SelectItem key={index} value={grade.grade_of_material}>
                                   {grade.grade_of_material}
                                 </SelectItem>

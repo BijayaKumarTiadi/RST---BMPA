@@ -1942,7 +1942,17 @@ export default function AddDeal({ editId: propEditId }: AddDealProps = {}) {
                                       <SelectValue placeholder="Select grade of material" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover border-border">
-                                      {(gradesOfMaterial || []).map((grade: any) => (
+                                      {(gradesOfMaterial || [])
+                                        .filter((grade: any) => {
+                                          // For Kraft Reel, only show specific grades
+                                          if (isKraftReelGroup(currentGroupName || '')) {
+                                            const gradeUpper = (grade.grade_of_material || '').toUpperCase().trim();
+                                            const allowedKraftGrades = ['VIRGIN', 'RECYCLED', 'COATED PAPER', 'MAPLITHO', 'HIGH VALUE PAPER', 'PE COATED', 'KRAFT'];
+                                            return allowedKraftGrades.includes(gradeUpper);
+                                          }
+                                          return true;
+                                        })
+                                        .map((grade: any) => (
                                         <SelectItem key={grade.grade_of_material} value={grade.grade_of_material} className="text-foreground hover:bg-accent">
                                           {grade.grade_of_material}
                                         </SelectItem>
