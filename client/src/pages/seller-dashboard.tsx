@@ -22,7 +22,7 @@ function RateRequestsTab() {
   const queryClient = useQueryClient();
   const [pendingRequestId, setPendingRequestId] = useState<number | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'received' | 'sent'>('received');
-  
+
   // Fetch rate requests received by seller
   const { data: receivedRequests, isLoading: isLoadingReceived } = useQuery({
     queryKey: ['/api/rate-requests/seller'],
@@ -49,8 +49,8 @@ function RateRequestsTab() {
       if (data.success) {
         toast({
           title: data.data.status === 'approved' ? 'Request Approved' : 'Request Denied',
-          description: data.data.status === 'approved' 
-            ? 'The buyer can now see your rate for this product.' 
+          description: data.data.status === 'approved'
+            ? 'The buyer can now see your rate for this product.'
             : 'The buyer has been notified.',
         });
         queryClient.invalidateQueries({ queryKey: ['/api/rate-requests/seller'] });
@@ -87,7 +87,7 @@ function RateRequestsTab() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-foreground flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <IndianRupee className="h-5 w-5" />
                 Rate Requests
               </CardTitle>
               <CardDescription className="text-muted-foreground">
@@ -104,52 +104,36 @@ function RateRequestsTab() {
           </div>
         </CardHeader>
         <CardContent className="pt-4">
-          {/* Sub-tabs for Received and Sent */}
-          <div className="flex gap-2 mb-6 border-b border-border">
-            <button
-              onClick={() => setActiveSubTab('received')}
-              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-                activeSubTab === 'received' 
-                  ? 'text-primary border-b-2 border-primary -mb-px' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              data-testid="tab-received-requests"
-            >
-              Received
-              {pendingRequests.length > 0 && (
-                <span className="ml-2 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {pendingRequests.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveSubTab('sent')}
-              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-                activeSubTab === 'sent' 
-                  ? 'text-primary border-b-2 border-primary -mb-px' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              data-testid="tab-sent-requests"
-            >
-              Sent
-              {pendingSentRequests.length > 0 && (
-                <span className="ml-2 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {pendingSentRequests.length}
-                </span>
-              )}
-            </button>
-          </div>
+          {/* Sub-tabs for Received and Sent using proper Tabs component */}
+          <Tabs value={activeSubTab} onValueChange={(value) => setActiveSubTab(value as 'received' | 'sent')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="received" data-testid="tab-received-requests" className="relative">
+                Received
+                {pendingRequests.length > 0 && (
+                  <span className="ml-2 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="sent" data-testid="tab-sent-requests" className="relative">
+                Sent
+                {pendingSentRequests.length > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {pendingSentRequests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Received Requests Tab Content */}
-          {activeSubTab === 'received' && (
-            <>
+            {/* Received Requests Tab Content */}
+            <TabsContent value="received">
               {isLoadingReceived ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : requests.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <IndianRupee className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p className="text-lg font-medium">No rate requests received</p>
                   <p className="text-sm">When buyers request to see your hidden rates, they will appear here.</p>
                 </div>
@@ -164,8 +148,8 @@ function RateRequestsTab() {
                       </h3>
                       <div className="space-y-3">
                         {pendingRequests.map((request: any) => (
-                          <div 
-                            key={request.request_id} 
+                          <div
+                            key={request.request_id}
                             className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
                             data-testid={`rate-request-${request.request_id}`}
                           >
@@ -180,9 +164,9 @@ function RateRequestsTab() {
                                 Requested rate for: <span className="font-medium">{request.deal_description || request.deal_title || `Product #${request.deal_id}`}</span>
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {request.created_at ? new Date(request.created_at).toLocaleDateString('en-IN', { 
-                                  day: 'numeric', 
-                                  month: 'short', 
+                                {request.created_at ? new Date(request.created_at).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
                                   year: 'numeric',
                                   hour: '2-digit',
                                   minute: '2-digit'
@@ -259,8 +243,8 @@ function RateRequestsTab() {
                                 {request.deal_description || request.deal_title || `Product #${request.deal_id}`}
                               </TableCell>
                               <TableCell>
-                                <Badge className={request.status === 'approved' 
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                                <Badge className={request.status === 'approved'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                                   : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
                                 }>
                                   {request.status === 'approved' ? (
@@ -281,12 +265,10 @@ function RateRequestsTab() {
                   )}
                 </div>
               )}
-            </>
-          )}
+            </TabsContent>
 
-          {/* Sent Requests Tab Content */}
-          {activeSubTab === 'sent' && (
-            <>
+            {/* Sent Requests Tab Content */}
+            <TabsContent value="sent">
               {isLoadingSent ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -308,8 +290,8 @@ function RateRequestsTab() {
                       </h3>
                       <div className="space-y-3">
                         {pendingSentRequests.map((request: any) => (
-                          <div 
-                            key={request.request_id} 
+                          <div
+                            key={request.request_id}
                             className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
                             data-testid={`sent-request-${request.request_id}`}
                           >
@@ -322,9 +304,9 @@ function RateRequestsTab() {
                                 Seller: <span className="font-medium">{request.seller_company || 'Unknown Seller'}</span>
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Requested on: {request.created_at ? new Date(request.created_at).toLocaleDateString('en-IN', { 
-                                  day: 'numeric', 
-                                  month: 'short', 
+                                Requested on: {request.created_at ? new Date(request.created_at).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
                                   year: 'numeric',
                                   hour: '2-digit',
                                   minute: '2-digit'
@@ -367,8 +349,8 @@ function RateRequestsTab() {
                                 {request.seller_company || 'Unknown Seller'}
                               </TableCell>
                               <TableCell>
-                                <Badge className={request.status === 'approved' 
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                                <Badge className={request.status === 'approved'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                                   : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
                                 }>
                                   {request.status === 'approved' ? (
@@ -389,8 +371,8 @@ function RateRequestsTab() {
                   )}
                 </div>
               )}
-            </>
-          )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </TabsContent>
@@ -859,11 +841,11 @@ export default function SellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="offers" className="space-y-6">
-          <TabsList className="flex w-full md:grid md:grid-cols-4 overflow-x-auto bg-background border shadow-sm gap-1 p-1">
-            <TabsTrigger value="offers" className="flex-shrink-0 px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
-            <TabsTrigger value="inquiries" className="flex-shrink-0 px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
-            <TabsTrigger value="counter-offers" className="flex-shrink-0 px-4 whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
-            <TabsTrigger value="rate-requests" className="flex-shrink-0 px-4 whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rate Requests</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-background border shadow-sm gap-1 p-1">
+            <TabsTrigger value="offers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Offers</TabsTrigger>
+            <TabsTrigger value="inquiries" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Enquiries</TabsTrigger>
+            <TabsTrigger value="counter-offers" className="whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Counter Offers</TabsTrigger>
+            <TabsTrigger value="rate-requests" className="whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rate Requests</TabsTrigger>
           </TabsList>
 
           {/* Offers Tab */}
@@ -1348,9 +1330,9 @@ export default function SellerDashboard() {
                           <TableCell>
                             <Badge
                               className={`text-base font-medium ${inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                  inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                                    inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                      'bg-gray-100 text-gray-700'
+                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                  inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-gray-100 text-gray-700'
                                 }`}
                               data-testid={`inquiry-status-${inquiry.id}`}
                             >
@@ -1463,9 +1445,9 @@ export default function SellerDashboard() {
                           <TableCell>
                             <Badge
                               className={`text-base font-medium ${inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                                  inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                                    inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                      'bg-gray-100 text-gray-700'
+                                inquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                                  inquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-gray-100 text-gray-700'
                                 }`}
                               data-testid={`sent-inquiry-status-${inquiry.id}`}
                             >
@@ -1907,9 +1889,9 @@ export default function SellerDashboard() {
                     <div>
                       <p className="text-xs text-muted-foreground">Status</p>
                       <Badge className={`text-xs ${selectedEnquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-                          selectedEnquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                            selectedEnquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
+                        selectedEnquiry.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                          selectedEnquiry.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
                         }`}>
                         {selectedEnquiry.status || 'open'}
                       </Badge>

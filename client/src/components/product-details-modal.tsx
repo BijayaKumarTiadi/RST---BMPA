@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, Building, Mail, MessageSquare, Phone, DollarSign, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { User, Building, Mail, MessageSquare, Phone, IndianRupee, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatPostingDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,7 @@ interface ProductDetailsModalProps {
 
 export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnquiry, onSendWhatsApp, currentUserId }: ProductDetailsModalProps) {
   const { toast } = useToast();
-  
+
   // Fetch user settings to get dimension preference
   const { data: userSettings } = useQuery({
     queryKey: ['/api/settings'],
@@ -29,17 +29,17 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
   // Check if rate is shown by seller (handle various data formats)
   const showRateValue = String(deal?.show_rate_in_marketplace || '').toLowerCase();
   const showRateField = String(deal?.ShowRate || '').toLowerCase();
-  const isRateShown = deal?.show_rate_in_marketplace === 1 || 
-                      deal?.show_rate_in_marketplace === true || 
-                      showRateValue === '1' ||
-                      showRateValue === 'true' ||
-                      showRateValue === 'yes' ||
-                      showRateValue === 'y' ||
-                      showRateField === 'yes' ||
-                      showRateField === 'y' ||
-                      showRateField === 'true';
+  const isRateShown = deal?.show_rate_in_marketplace === 1 ||
+    deal?.show_rate_in_marketplace === true ||
+    showRateValue === '1' ||
+    showRateValue === 'true' ||
+    showRateValue === 'yes' ||
+    showRateValue === 'y' ||
+    showRateField === 'yes' ||
+    showRateField === 'y' ||
+    showRateField === 'true';
   const isRateHidden = !isRateShown;
-  
+
   // Check rate request status for this deal
   const { data: rateRequestStatus, isLoading: isLoadingRateStatus } = useQuery({
     queryKey: ['/api/rate-requests/status', deal?.TransID],
@@ -250,10 +250,10 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
           {/* Pricing Information */}
           <div>
             <h4 className="font-semibold text-lg mb-3 text-center flex items-center justify-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <IndianRupee className="h-4 w-4" />
               Pricing
             </h4>
-            
+
             {/* Show price if allowed or approved */}
             {deal.OfferPrice && canSeeRate && (
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
@@ -273,7 +273,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                 )}
               </div>
             )}
-            
+
             {/* Rate on Request - only show if rate is hidden, not approved, and not own product */}
             {isRateHidden && !canSeeRate && !isOwnProduct && (
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -298,7 +298,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                         </>
                       ) : (
                         <>
-                          <DollarSign className="mr-2 h-4 w-4" />
+                          <IndianRupee className="mr-2 h-4 w-4" />
                           Request Rate
                         </>
                       )}
@@ -343,7 +343,7 @@ export default function ProductDetailsModal({ isOpen, onClose, deal, onSendEnqui
                 ) : null}
               </div>
             )}
-            
+
             {/* If own product, just show message */}
             {isOwnProduct && isRateHidden && (
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
