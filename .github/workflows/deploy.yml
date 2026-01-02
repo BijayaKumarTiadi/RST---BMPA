@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup SSH using private key from GitHub Secrets
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -22,31 +20,25 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deploy to server
-      - name: Deploy on server
+      - name: Deploy on server (CloudPanel + NVM FIX)
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            # Load NVM (IMPORTANT)
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            # ---- FORCE LOGIN SHELL ----
+            bash -lc '
+              export NVM_DIR="$HOME/.nvm"
+              source "$NVM_DIR/nvm.sh"
 
-            # Verify environment
-            node -v
-            npm -v
-            pm2 -v
+              # Explicit PATH fix (CloudPanel requirement)
+              export PATH="$NVM_DIR/versions/node/v22.20.0/bin:$PATH"
 
-            # Go to app directory
-            cd ${{ secrets.APP_PATH }}
+              echo "Node:" \$(which node)
+              echo "NPM:"  \$(which npm)
+              echo "PM2:"  \$(which pm2)
 
-            # Pull latest code
-            git pull origin main
-
-            # Install dependencies
-            npm install
-
-            # Build project
-            npm run build
-
-            # Restart app with PM2
-            pm2 restart stocklaabh
+              cd ${{ secrets.APP_PATH }}
+              git pull origin main
+              npm install
+              npm run build
+              pm2 restart stocklaabh
+            '
           EOF
