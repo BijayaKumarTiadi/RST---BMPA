@@ -20,20 +20,18 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy on server (CloudPanel + NVM FIX)
+      - name: Deploy on server (CloudPanel + NVM)
         run: |
           ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            # ---- FORCE LOGIN SHELL ----
             bash -lc '
               export NVM_DIR="$HOME/.nvm"
               source "$NVM_DIR/nvm.sh"
 
-              # Explicit PATH fix (CloudPanel requirement)
               export PATH="$NVM_DIR/versions/node/v22.20.0/bin:$PATH"
 
-              echo "Node:" \$(which node)
-              echo "NPM:"  \$(which npm)
-              echo "PM2:"  \$(which pm2)
+              echo "Node:" $(which node)
+              echo "NPM:"  $(which npm)
+              echo "PM2:"  $(which pm2)
 
               cd ${{ secrets.APP_PATH }}
               git pull origin main
