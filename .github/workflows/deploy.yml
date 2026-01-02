@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup SSH
@@ -20,12 +20,25 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy on server
+      - name: Deploy on server (CloudPanel + NVM FIX)
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd ${{ secrets.APP_PATH }}
-            git pull origin main
-            npm install
-            npm run build
-            pm2 restart stocklaabh
+          ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            # ---- FORCE LOGIN SHELL ----
+            bash -lc '
+              export NVM_DIR="$HOME/.nvm"
+              source "$NVM_DIR/nvm.sh"
+
+              # Explicit PATH fix (CloudPanel requirement)
+              export PATH="$NVM_DIR/versions/node/v22.20.0/bin:$PATH"
+
+              echo "Node:" \$(which node)
+              echo "NPM:"  \$(which npm)
+              echo "PM2:"  \$(which pm2)
+
+              cd ${{ secrets.APP_PATH }}
+              git pull origin main
+              npm install
+              npm run build
+              pm2 restart stocklaabh
+            '
           EOF
