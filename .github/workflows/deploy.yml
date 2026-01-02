@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup SSH
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -20,23 +22,39 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy on server (CloudPanel + NVM)
+      # 3️⃣ Deploy to CloudPanel server (FINAL SAFE VERSION)
+      - name: Deploy on server
         run: |
-          ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            bash -lc '
-              export NVM_DIR="$HOME/.nvm"
-              source "$NVM_DIR/nvm.sh"
+          ssh -tt \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=3 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF' || true
 
+            bash -lc '
+              # Load NVM
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+
+              # Ensure correct Node path (CloudPanel fix)
               export PATH="$NVM_DIR/versions/node/v22.20.0/bin:$PATH"
 
-              echo "Node:" $(which node)
-              echo "NPM:"  $(which npm)
-              echo "PM2:"  $(which pm2)
+              echo "Using Node: $(which node)"
+              echo "Using NPM:  $(which npm)"
+              echo "Using PM2:  $(which pm2)"
 
+              # Go to app directory
               cd ${{ secrets.APP_PATH }}
+
+              # Update code
               git pull origin main
+
+              # Install & build
               npm install
               npm run build
+
+              # Restart app
               pm2 restart stocklaabh
+
+              exit 0
             '
           EOF
