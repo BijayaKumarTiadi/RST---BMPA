@@ -22,39 +22,20 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deploy to CloudPanel server (FINAL SAFE VERSION)
+      # 3️⃣ Deploy to CloudPanel server (FINAL NON-INTERACTIVE VERSION)
       - name: Deploy on server
         run: |
-          ssh -tt \
+          ssh \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=3 \
-            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF' || true
-
-            bash -lc '
-              # Load NVM
-              export NVM_DIR="$HOME/.nvm"
-              [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-
-              # Ensure correct Node path (CloudPanel fix)
-              export PATH="$NVM_DIR/versions/node/v22.20.0/bin:$PATH"
-
-              echo "Using Node: $(which node)"
-              echo "Using NPM:  $(which npm)"
-              echo "Using PM2:  $(which pm2)"
-
-              # Go to app directory
-              cd ${{ secrets.APP_PATH }}
-
-              # Update code
-              git pull origin main
-
-              # Install & build
-              npm install
-              npm run build
-
-              # Restart app
-              pm2 restart stocklaabh
-
-              exit 0
-            '
-          EOF
+            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} \
+            "export NVM_DIR=\$HOME/.nvm && \
+             source \$NVM_DIR/nvm.sh && \
+             export PATH=\$NVM_DIR/versions/node/v22.20.0/bin:\$PATH && \
+             cd ${{ secrets.APP_PATH }} && \
+             git pull origin main && \
+             npm install && \
+             npm run build && \
+             pm2 restart stocklaabh"
