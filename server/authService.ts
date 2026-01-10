@@ -36,6 +36,7 @@ export interface RegistrationData {
   address2: string;
   city: string;
   state: string;
+  gst_no?: string;
 }
 
 export class AuthService {
@@ -64,8 +65,40 @@ export class AuthService {
     }
   }
 
+  // Check external API for existing user
+  private async checkExternalUser(email: string, gstNo: string): Promise<{ exists: boolean; isActive: boolean; isPaid: boolean; rawData?: any }> {
+    try {
+      const apiUrl = `http://members.bmpa.org/BMPAService.svc/GetLogin?Emailid=${encodeURIComponent(email)}&GSTNO=${encodeURIComponent(gstNo)}`;
+      console.log('🔍 Register Check BMPA API:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'X-API-KEY': 'BMPA_API_2026'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('External API error:', response.status);
+        return { exists: false, isActive: false, isPaid: false };
+      }
+
+      const data = await response.json();
+      console.log('🔍 Register BMPA API Response:', JSON.stringify(data));
+
+      return {
+        exists: true,
+        isActive: data.UserStatus === 'Active',
+        isPaid: data.PaymentStatus === 'Paid',
+        rawData: data
+      };
+    } catch (error) {
+      console.error('Error checking external user:', error);
+      return { exists: false, isActive: false, isPaid: false };
+    }
+  }
+
   // Register new member
-  async registerMember(data: RegistrationData): Promise<{ success: boolean; message: string; memberId?: number }> {
+  async registerMember(data: RegistrationData): Promise<{ success: boolean; message: string; memberId?: number; apiDebug?: any }> {
     try {
       // Check if email already exists
       const emailExists = await this.emailExists(data.email);
@@ -76,14 +109,23 @@ export class AuthService {
         };
       }
 
+      // Check external API if GST number is provided (for logging purposes)
+      let externalCheck = null;
+      if (data.gst_no && data.gst_no.trim()) {
+        externalCheck = await this.checkExternalUser(data.email, data.gst_no);
+        if (externalCheck.exists && externalCheck.isActive && externalCheck.isPaid) {
+          console.log(`✅ User ${data.email} found in external system with Active/Paid status - fee will be waived`);
+        }
+      }
+
       // No password needed for OTP-based authentication
 
       // Insert new member as parent by default
       const result = await executeQuery(
         `INSERT INTO bmpa_members (
           mname, email, phone, company_name, address1, address2,
-          city, state, role, mstatus, bmpa_approval_id, user_type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          city, state, role, mstatus, bmpa_approval_id, user_type, gst_no
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.mname,
           data.email,
@@ -96,7 +138,8 @@ export class AuthService {
           'both', // role: explicitly set to 'both' for all new users
           0, // mstatus: 0 = pending approval
           0,  // bmpa_approval_id: 0 = not approved yet
-          'parent' // user_type: new users are parent accounts
+          'parent', // user_type: new users are parent accounts
+          data.gst_no || null // gst_no
         ]
       );
 
@@ -126,17 +169,17 @@ export class AuthService {
       // Send notification email to all admins
       try {
         // Get all active admin emails
-        const admins = await executeQuery<{email: string}>(
+        const admins = await executeQuery<{ email: string }>(
           'SELECT email FROM admin_users WHERE is_active = 1'
         );
-        
+
         if (admins && admins.length > 0) {
-          const registrationTime = new Date().toLocaleString('en-IN', { 
+          const registrationTime = new Date().toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
             dateStyle: 'medium',
             timeStyle: 'short'
           });
-          
+
           const adminNotificationHtml = generateAdminNotificationEmail({
             mname: data.mname,
             email: data.email,
@@ -146,7 +189,7 @@ export class AuthService {
             state: data.state,
             registrationTime: registrationTime
           });
-          
+
           // Send email to each admin
           for (const admin of admins) {
             try {
@@ -170,7 +213,8 @@ export class AuthService {
       return {
         success: true,
         message: 'Registration successful! Please wait for admin approval.',
-        memberId
+        memberId,
+        apiDebug: externalCheck?.rawData
       };
 
     } catch (error) {

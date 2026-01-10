@@ -3627,6 +3627,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
 
   // Create Razorpay order for membership payment
+  // Check membership waiver status
+  app.get('/api/check-membership-waiver', requireAuth, async (req: any, res) => {
+    try {
+      const memberId = req.session.memberId;
+      // Get member details including GST number
+      const member = await executeQuerySingle(`
+        SELECT member_id, email, gst_no FROM bmpa_members WHERE member_id = ?
+      `, [memberId]);
+
+      if (!member || !member.gst_no || !member.gst_no.trim()) {
+        return res.json({ waived: false, reason: 'No GST Number' });
+      }
+
+      const apiUrl = `http://members.bmpa.org/BMPAService.svc/GetLogin?Emailid=${encodeURIComponent(member.email)}&GSTNO=${encodeURIComponent(member.gst_no)}`;
+      // console.log('Checking Waiver API:', apiUrl); 
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'X-API-KEY': 'BMPA_API_2026'
+        }
+      });
+
+      if (!response.ok) {
+        return res.json({ waived: false, reason: 'External API Error' });
+      }
+
+      const data = await response.json();
+      const waived = (data.UserStatus === 'Active' && data.PaymentStatus === 'Paid');
+
+      res.json({
+        success: true,
+        waived,
+        details: {
+          status: data.UserStatus,
+          payment: data.PaymentStatus
+        }
+      });
+
+    } catch (error) {
+      console.error('Waiver check error:', error);
+      res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+  });
+
   app.post('/api/razorpay/create-order', requireAuth, async (req: any, res) => {
     try {
       // Check if Razorpay is configured
@@ -3645,9 +3689,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get member details
+      // Get member details including GST number if available
       const member = await executeQuerySingle(`
-        SELECT member_id, email, mname, company_name 
+        SELECT member_id, email, mname, company_name, gst_no
         FROM bmpa_members 
         WHERE member_id = ?
       `, [memberId]);
@@ -3659,7 +3703,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // BMPA Membership fee: ₹2,118 + 18% GST = ₹2,499
+      // Check external API if GST number exists
+      let isWaived = false;
+
+      if (member.gst_no && member.gst_no.trim()) {
+        try {
+          const apiUrl = `http://members.bmpa.org/BMPAService.svc/GetLogin?Emailid=${encodeURIComponent(member.email)}&GSTNO=${encodeURIComponent(member.gst_no)}`;
+          console.log('🔍 Checking BMPA API:', apiUrl);
+
+          const response = await fetch(apiUrl, {
+            headers: {
+              'X-API-KEY': 'BMPA_API_2026'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('🔍 BMPA API Response:', JSON.stringify(data));
+
+            if (data.UserStatus === 'Active' && data.PaymentStatus === 'Paid') {
+              isWaived = true;
+              console.log(`✅ User ${member.email} has Active/Paid status - fee waived`);
+            } else {
+              console.log(`ℹ️ User ${member.email} status: ${data.UserStatus}, Payment: ${data.PaymentStatus} - Fee NOT waived`);
+            }
+          } else {
+            console.log('❌ BMPA API Error Status:', response.status);
+          }
+        } catch (apiError) {
+          console.error('Error checking external API:', apiError);
+        }
+      }
+
+      // If fee is waived, activate membership immediately and skip Razorpay
+      if (isWaived) {
+        // Activate membership (1 year validity)
+        await executeQuery(
+          `UPDATE bmpa_members 
+           SET membership_paid = 1, 
+               mstatus = 1, 
+               membership_valid_till = DATE_ADD(NOW(), INTERVAL 1 YEAR) 
+           WHERE member_id = ?`,
+          [memberId]
+        );
+
+        // Record waived payment
+        await executeQuery(`
+          INSERT INTO bmpa_payment_history (
+            member_id,
+            order_id,
+            amount,
+            currency,
+            status,
+            payment_method,
+            created_at
+          ) VALUES (?, ?, ?, ?, 'success', 'waived', NOW())
+        `, [memberId, `waived_${memberId}_${Date.now()}`, 0, 'INR']);
+
+        return res.json({
+          success: true,
+          waived: true,
+          message: 'Membership fee waived based on existing BMPA active status'
+        });
+      }
+
+      // Standard Payment Flow (if not waived)
       const amount = 249900; // Amount in paise (₹2,499)
       const currency = 'INR';
 
