@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,21 @@ export default function Subscribe() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  const { data: waiverData, isLoading: isWaiverLoading } = useQuery({
+    queryKey: ['/api/check-membership-waiver'],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/check-membership-waiver");
+      if (!res.ok) {
+        // Silently fail or return default
+        return { waived: false };
+      }
+      return res.json();
+    }
+  });
+
+  const isWaived = waiverData?.waived;
+  const payAmount = isWaived ? 0 : 2499;
+
   useEffect(() => {
     // Load Razorpay script
     const script = document.createElement('script');
@@ -33,7 +49,7 @@ export default function Subscribe() {
 
   const handlePayment = async () => {
     setIsLoading(true);
-    
+
     try {
       // Check if Razorpay SDK is loaded
       if (!window.Razorpay) {
@@ -42,7 +58,7 @@ export default function Subscribe() {
 
       // Create Razorpay order
       const response = await apiRequest("POST", "/api/razorpay/create-order");
-      
+
       // Check if response is ok
       if (!response.ok) {
         const errorText = await response.text();
@@ -55,6 +71,23 @@ export default function Subscribe() {
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to create order');
+      }
+
+      // Handle waived payment
+      if (data.waived) {
+        // Invalidate auth query to refresh member status
+        await queryClient.invalidateQueries({
+          queryKey: ['/api/auth/current-member'],
+          type: 'all'
+        });
+
+        toast({
+          title: "Membership Active! 🎉",
+          description: data.message || "Your membership fee has been waived. Welcome to Stock Laabh!",
+        });
+
+        setLocation('/');
+        return;
       }
 
       const { order_id, amount, currency, key_id } = data;
@@ -75,7 +108,7 @@ export default function Subscribe() {
         order_id: order_id,
         handler: async function (response: any) {
           setIsProcessing(true);
-          
+
           try {
             // Verify payment
             const verifyResponse = await apiRequest("POST", "/api/razorpay/verify-payment", {
@@ -88,21 +121,21 @@ export default function Subscribe() {
 
             if (verifyData.success) {
               // Invalidate the auth query to force a fresh fetch
-              await queryClient.invalidateQueries({ 
-                queryKey: ['/api/auth/current-member'], 
-                type: 'all' 
+              await queryClient.invalidateQueries({
+                queryKey: ['/api/auth/current-member'],
+                type: 'all'
               });
-              
+
               // Fetch fresh auth data and wait for it to complete
-              const refreshed = await queryClient.fetchQuery({ 
-                queryKey: ['/api/auth/current-member'] 
+              const refreshed = await queryClient.fetchQuery({
+                queryKey: ['/api/auth/current-member']
               }) as any;
-              
+
               // Verify membership flags are set before navigating
               const member = refreshed?.member;
               const hasPaid = member?.membership_paid === 1 || member?.membershipPaid === 1;
               const isApproved = member?.mstatus === 1 || member?.status === 1;
-              
+
               if (hasPaid && isApproved) {
                 toast({
                   title: "Payment Successful!",
@@ -139,7 +172,7 @@ export default function Subscribe() {
           color: '#2563eb'
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setIsLoading(false);
             toast({
               title: "Payment Cancelled",
@@ -152,7 +185,7 @@ export default function Subscribe() {
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
-      
+
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
@@ -182,7 +215,7 @@ export default function Subscribe() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -215,16 +248,21 @@ export default function Subscribe() {
                     </p>
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={handlePayment}
-                    className="w-full h-12 text-lg" 
-                    disabled={isLoading}
+                    className="w-full h-12 text-lg"
+                    disabled={isLoading || isWaiverLoading}
                     data-testid="submit-payment"
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Processing...
+                      </>
+                    ) : isWaived ? (
+                      <>
+                        <Check className="mr-2 h-5 w-5" />
+                        Activate Membership (Fee Waived)
                       </>
                     ) : (
                       <>
@@ -262,7 +300,16 @@ export default function Subscribe() {
                   <hr className="border-border" />
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Total Amount</span>
-                    <span className="text-xl font-bold text-primary">₹2,499</span>
+                    <span className="text-xl font-bold text-primary">
+                      {isWaived ? (
+                        <div className="flex flex-col items-end">
+                          <span className="line-through text-sm text-muted-foreground">₹2,499</span>
+                          <span className="text-green-600">₹0 (Waived)</span>
+                        </div>
+                      ) : (
+                        "₹2,499"
+                      )}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -281,7 +328,7 @@ export default function Subscribe() {
                     <p className="text-sm text-muted-foreground">Access to secure B2B marketplace with verified suppliers</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3">
                   <Check className="h-5 w-5 text-chart-2 mt-0.5" />
                   <div>
@@ -289,15 +336,9 @@ export default function Subscribe() {
                     <p className="text-sm text-muted-foreground">Connect with 2,500+ printing industry professionals</p>
                   </div>
                 </div>
-                
-                <div className="flex items-start space-x-3">
-                  <Check className="h-5 w-5 text-chart-2 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium">Priority Support</h4>
-                    <p className="text-sm text-muted-foreground">Dedicated customer support and dispute resolution</p>
-                  </div>
-                </div>
-                
+
+
+
                 <div className="flex items-start space-x-3">
                   <Check className="h-5 w-5 text-chart-2 mt-0.5" />
                   <div>
@@ -305,7 +346,7 @@ export default function Subscribe() {
                     <p className="text-sm text-muted-foreground">Exclusive access to trading events and training programs</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3">
                   <Check className="h-5 w-5 text-chart-2 mt-0.5" />
                   <div>

@@ -43,6 +43,7 @@ export default function Register() {
     mname: '',
     phone: '',
     company_name: '',
+    gst_no: '',
     address1: '',
     address2: '',
     city: '',
@@ -62,8 +63,8 @@ export default function Register() {
       description: (
         <div className="space-y-2">
           <p>This email is already registered with us.</p>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="p-0 h-auto text-blue-600 underline"
             onClick={() => setLocation('/login')}
             data-testid="link-login-toast"
@@ -127,25 +128,25 @@ export default function Register() {
       // Check if error response contains specific messages
       let errorMessage = "Failed to send OTP. Please try again.";
       let isEmailAlreadyRegistered = false;
-      
+
       // Handle Error object thrown by apiRequest
       if (error instanceof Error) {
         // The error message format is "status: response body"
         // Extract the JSON part after the status code
         const errorText = error.message;
         const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
-        
+
         if (jsonMatch) {
           try {
             const errorData = JSON.parse(jsonMatch[1]);
             if (errorData.message) {
               errorMessage = errorData.message;
-              
+
               // Check for email already registered error
-              if (errorMessage.toLowerCase().includes('already registered') || 
-                  errorMessage.toLowerCase().includes('email exists') || 
-                  errorMessage.toLowerCase().includes('email is already') || 
-                  errorMessage.toLowerCase().includes('already exists')) {
+              if (errorMessage.toLowerCase().includes('already registered') ||
+                errorMessage.toLowerCase().includes('email exists') ||
+                errorMessage.toLowerCase().includes('email is already') ||
+                errorMessage.toLowerCase().includes('already exists')) {
                 isEmailAlreadyRegistered = true;
               }
             }
@@ -155,7 +156,7 @@ export default function Register() {
           }
         }
       }
-      
+
       if (isEmailAlreadyRegistered) {
         showEmailAlreadyRegisteredToast();
       } else {
@@ -202,25 +203,25 @@ export default function Register() {
       // Check if error response contains specific messages
       let errorMessage = "Failed to resend OTP. Please try again.";
       let isEmailAlreadyRegistered = false;
-      
+
       // Handle Error object thrown by apiRequest
       if (error instanceof Error) {
         // The error message format is "status: response body"
         // Extract the JSON part after the status code
         const errorText = error.message;
         const jsonMatch = errorText.match(/^\d+:\s*(.+)$/);
-        
+
         if (jsonMatch) {
           try {
             const errorData = JSON.parse(jsonMatch[1]);
             if (errorData.message) {
               errorMessage = errorData.message;
-              
+
               // Check for email already registered error
-              if (errorMessage.toLowerCase().includes('already registered') || 
-                  errorMessage.toLowerCase().includes('email exists') || 
-                  errorMessage.toLowerCase().includes('email is already') || 
-                  errorMessage.toLowerCase().includes('already exists')) {
+              if (errorMessage.toLowerCase().includes('already registered') ||
+                errorMessage.toLowerCase().includes('email exists') ||
+                errorMessage.toLowerCase().includes('email is already') ||
+                errorMessage.toLowerCase().includes('already exists')) {
                 isEmailAlreadyRegistered = true;
               }
             }
@@ -230,7 +231,7 @@ export default function Register() {
           }
         }
       }
-      
+
       if (isEmailAlreadyRegistered) {
         showEmailAlreadyRegisteredToast();
       } else {
@@ -247,7 +248,7 @@ export default function Register() {
 
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!email || !otp) {
       toast({ title: "Error", description: "Please enter your email and OTP verification code", variant: "destructive" });
@@ -258,9 +259,9 @@ export default function Register() {
       toast({ title: "Error", description: "Please enter the complete 6-digit verification code", variant: "destructive" });
       return;
     }
-    
-    if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() || 
-        !formData.address1.trim() || !formData.city.trim() || !formData.state.trim()) {
+
+    if (!formData.mname.trim() || !formData.phone.trim() || !formData.company_name.trim() ||
+      !formData.address1.trim() || !formData.city.trim() || !formData.state.trim()) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
@@ -286,21 +287,25 @@ export default function Register() {
       });
       const data = await response.json();
 
+      if (data.apiDebug) {
+        console.log('BMPA API Check Result during registration:', data.apiDebug);
+      }
+
       if (data.success) {
         // Store member ID in session storage for payment
         if (data.memberId) {
           sessionStorage.setItem('pendingPaymentMemberId', data.memberId);
         }
-        
+
         // Invalidate auth query to refetch user data
         await queryClient.invalidateQueries({ queryKey: ['/api/auth/current-member'] });
-        
+
         // Redirect to payment page instead of showing success
         toast({
           title: "Registration Successful! 🎉",
           description: "Redirecting to payment...",
         });
-        
+
         // Reduced timeout to make redirect faster
         setTimeout(() => {
           setLocation('/subscribe');
@@ -325,7 +330,7 @@ export default function Register() {
       // Check if error response contains OTP-related message
       let errorMessage = "Registration failed. Please try again.";
       let errorTitle = "Error";
-      
+
       // Handle Response object thrown by apiRequest
       if (error instanceof Response) {
         try {
@@ -347,7 +352,7 @@ export default function Register() {
         errorTitle = "Invalid OTP";
         errorMessage = "The verification code you entered is incorrect. Please check and try again.";
       }
-      
+
       toast({
         title: errorTitle,
         description: errorMessage,
@@ -367,12 +372,12 @@ export default function Register() {
               <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
-              
+
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to STOCK LAABH! 🎉</h1>
               <p className="text-gray-600 mb-6">
                 Account created for <strong>{email}</strong>
               </p>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="h-5 w-5 text-blue-600" />
@@ -443,7 +448,7 @@ export default function Register() {
                   <Shield className="h-4 w-4 mr-2 text-blue-600" />
                   Email Verification
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -463,7 +468,7 @@ export default function Register() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="phone-verify">Phone Number *</Label>
                       <Input
@@ -473,7 +478,7 @@ export default function Register() {
                         value={formData.phone}
                         onChange={(e) => {
                           const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                          setFormData({...formData, phone: value});
+                          setFormData({ ...formData, phone: value });
                         }}
                         data-testid="input-phone-verify"
                         disabled={otpSent}
@@ -483,7 +488,7 @@ export default function Register() {
                       <p className="text-xs text-gray-500">OTP will be sent to email & SMS</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-end">
                     <Button
                       type="button"
@@ -522,9 +527,9 @@ export default function Register() {
                         required
                       />
                     </div>
-                    
+
                     <div className="flex items-end">
-                      <Button 
+                      <Button
                         type="button"
                         onClick={handleResendOTP}
                         disabled={loading}
@@ -553,38 +558,18 @@ export default function Register() {
                   <User className="h-4 w-4 mr-2 text-blue-600" />
                   Member Information
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your full name"
-                      value={formData.mname}
-                      onChange={(e) => setFormData({...formData, mname: e.target.value})}
-                      data-testid="input-name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="10-digit mobile number"
-                      value={formData.phone}
-                      onChange={(e) => {
-                        // Only allow digits and limit to 10 characters
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                        setFormData({...formData, phone: value});
-                      }}
-                      data-testid="input-phone"
-                      maxLength={10}
-                      required
-                    />
-                    <p className="text-xs text-gray-500">Enter 10-digit number (will be saved as 91xxxxxxxxxx)</p>
-                  </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your full name"
+                    value={formData.mname}
+                    onChange={(e) => setFormData({ ...formData, mname: e.target.value })}
+                    data-testid="input-name"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -596,12 +581,28 @@ export default function Register() {
                       type="text"
                       placeholder="Your company name"
                       value={formData.company_name}
-                      onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                       className="pl-10"
                       data-testid="input-company"
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gst">GST Number (Optional)</Label>
+                  <Input
+                    id="gst"
+                    type="text"
+                    placeholder="e.g., 27AADPG1716E1Z9"
+                    value={formData.gst_no}
+                    onChange={(e) => setFormData({ ...formData, gst_no: e.target.value.toUpperCase() })}
+                    data-testid="input-gst"
+                    maxLength={15}
+                  />
+                  <p className="text-xs text-gray-500">
+                    If you're an existing BMPA member with active/paid status, your fee may be waived
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -613,7 +614,7 @@ export default function Register() {
                       type="text"
                       placeholder="Street address"
                       value={formData.address1}
-                      onChange={(e) => setFormData({...formData, address1: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, address1: e.target.value })}
                       className="pl-10"
                       data-testid="input-address1"
                       required
@@ -628,7 +629,7 @@ export default function Register() {
                     type="text"
                     placeholder="Apartment, suite, etc. (optional)"
                     value={formData.address2}
-                    onChange={(e) => setFormData({...formData, address2: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, address2: e.target.value })}
                     data-testid="input-address2"
                   />
                 </div>
@@ -639,7 +640,7 @@ export default function Register() {
                     <Select
                       value={formData.state}
                       onValueChange={(value) => {
-                        setFormData({...formData, state: value, city: ''});
+                        setFormData({ ...formData, state: value, city: '' });
                       }}
                       required
                     >
@@ -659,7 +660,7 @@ export default function Register() {
                     <Label htmlFor="city">City *</Label>
                     <Select
                       value={formData.city}
-                      onValueChange={(value) => setFormData({...formData, city: value})}
+                      onValueChange={(value) => setFormData({ ...formData, city: value })}
                       disabled={!formData.state}
                       required
                     >
@@ -684,7 +685,7 @@ export default function Register() {
                     <span className="text-sm font-medium text-blue-800">Secure OTP-Based Access</span>
                   </div>
                   <p className="text-sm text-blue-700">
-                    Your account will use OTP (One-Time Password) verification for secure login. 
+                    Your account will use OTP (One-Time Password) verification for secure login.
                     No password required - we'll send a verification code to your email whenever you log in.
                   </p>
                 </div>
@@ -696,16 +697,16 @@ export default function Register() {
                     <span className="font-semibold text-amber-800">Standard Operating Procedure (SOP)</span>
                   </div>
                   <p className="text-sm text-amber-700 mb-4">
-                    Please read and accept our Standard Operating Procedure before completing your registration. 
+                    Please read and accept our Standard Operating Procedure before completing your registration.
                     This document outlines the rules, guidelines, and best practices for using STOCK LAABH.
                   </p>
-                  
+
                   <div className="flex flex-wrap gap-3 mb-4">
                     <Dialog open={sopDialogOpen} onOpenChange={setSopDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -720,15 +721,15 @@ export default function Register() {
                           </DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-hidden">
-                          <iframe 
-                            src="/BMPA_SLaP_SOP_V1.pdf" 
+                          <iframe
+                            src="/BMPA_SLaP_SOP_V1.pdf"
                             className="w-full h-[70vh] border rounded-lg"
                             title="STOCK LAABH SOP"
                           />
                         </div>
                         <div className="flex justify-between items-center pt-4 border-t">
-                          <a 
-                            href="/BMPA_SLaP_SOP_V1.pdf" 
+                          <a
+                            href="/BMPA_SLaP_SOP_V1.pdf"
                             download="BMPA_SLaP_SOP.pdf"
                             className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
                           >
@@ -741,15 +742,15 @@ export default function Register() {
                         </div>
                       </DialogContent>
                     </Dialog>
-                    
-                    <a 
-                      href="/BMPA_SLaP_SOP_V1.pdf" 
+
+                    <a
+                      href="/BMPA_SLaP_SOP_V1.pdf"
                       download="BMPA_SLaP_SOP.pdf"
                       className="inline-flex"
                     >
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
                       >
                         <Download className="h-4 w-4" />
@@ -757,27 +758,27 @@ export default function Register() {
                       </Button>
                     </a>
                   </div>
-                  
+
                   <div className="flex items-start space-x-3 p-3 bg-white rounded-md border border-amber-200">
-                    <Checkbox 
-                      id="sop-accept" 
+                    <Checkbox
+                      id="sop-accept"
                       checked={sopAccepted}
                       onCheckedChange={(checked) => setSopAccepted(checked === true)}
                       className="mt-0.5"
                     />
-                    <label 
-                      htmlFor="sop-accept" 
+                    <label
+                      htmlFor="sop-accept"
                       className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                     >
-                      I have read, understood, and agree to abide by the <strong>Standard Operating Procedure (SOP)</strong> of STOCK LAABH. 
+                      I have read, understood, and agree to abide by the <strong>Standard Operating Procedure (SOP)</strong> of STOCK LAABH.
                       I understand that violation of these guidelines may result in account suspension or termination.
                     </label>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-lg" 
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-lg"
                   disabled={registering || !otpSent || !otp || otp.length !== 6 || !sopAccepted}
                   data-testid="button-register"
                 >
@@ -794,9 +795,9 @@ export default function Register() {
                 <div className="text-center pt-4 border-t">
                   <p className="text-sm text-gray-600">
                     Already have an account?{' '}
-                    <Button 
+                    <Button
                       type="button"
-                      variant="link" 
+                      variant="link"
                       className="p-0 h-auto text-blue-600"
                       onClick={() => window.location.href = '/'}
                       data-testid="link-login"
